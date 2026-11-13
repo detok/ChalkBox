@@ -2,6 +2,15 @@
 
 All notable changes to the public ChalkBox addon are documented here.
 
+## 1.8.1 — Native class and specialization icons for the DPS meter
+
+- Show compact genuine WoW **class emblems** beside combatant names, default on, using Blizzard's class sheet and `C_DamageMeter.classFilename`.
+- Offer **Class / Spec / Off** choices from the native Combat Meter options and `/chalk meter icons class|spec|off`.
+- Spec mode uses Blizzard's `specIconID` fileID when supplied, with an accurate class fallback. Unknown/pet sources use a neutral question mark instead of inventing a player class.
+- Icons fit inside the existing compact resizable rows; hiding them restores name width. Empty rows clear their icon to prevent stale player identification.
+- Protected player names and combat numbers remain untouched. Zero external files/dependencies, still one ZIP with all other modules preserved.
+- Extend mock tests for atlas coordinates, native fileID handling, unknown sources, icon toggles, row cleanup and settings integration.
+
 ## 1.8.0 — Forever QuestSense rebuilt, movable top toast, cleaner DPS meter
 
 - Replaced zone-POI-dependent QuestSense with a **C_QuestLog accepted-quest** watch manager that works even when Forever map pins aren't available.
