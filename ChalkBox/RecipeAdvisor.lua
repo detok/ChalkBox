@@ -66,8 +66,26 @@ local function DisplayName(record)
             return name
         end
     end
-    -- A valid recipe record without a localized name is still evidence of a
-    -- possible use. Mark the missing text honestly instead of hiding it.
+    -- Some Forever recipes have a valid crafted-item ID even when their
+    -- spell name is not available in the client cache.
+    local product=record.craftedItemID
+    if type(product)=="number" and product>0 then
+        local itemName
+        if C_Item and type(C_Item.GetItemNameByID)=="function" then
+            local ok,name=pcall(C_Item.GetItemNameByID,product)
+            if ok and Safe(name) then itemName=name end
+        end
+        if not itemName and type(GetItemInfo)=="function" then
+            local ok,name=pcall(GetItemInfo,product)
+            if ok and Safe(name) then itemName=name end
+        end
+        if type(itemName)=="string" and itemName~="" then
+            record.recipe="Crafts "..itemName.." (recipe #"..tostring(spell)..")"
+            return record.recipe
+        end
+    end
+    -- A valid recipe record without an accessible name is still evidence of a
+    -- possible use; never fabricate a name or say the recipe is learned.
     return "recipe #"..tostring(spell).." (name unavailable)"
 end
 
@@ -79,7 +97,8 @@ local function Register(profession,spellID,recipe)
     ReadReagent(recipe.reagents,function(id,qty)
         index[id]=index[id] or {}
         index[id][#index[id]+1]={
-            recipe=name,profession=profession,quantity=qty,spellID=spellID
+            recipe=name,profession=profession,quantity=qty,spellID=spellID,
+            craftedItemID=tonumber(recipe.craftedItemId)
         }
         stats.reagents=stats.reagents+1
         found=true
@@ -174,7 +193,11 @@ end
 local function FormatKnown(entry,itemID,count)
     local line="KNOWN RECIPE: "..entry.recipe.." ("..entry.profession..")"
     if entry.quantity and count then
-        line=line.." - "..count.."/"..entry.quantity.." in bags"
+        if count>=entry.quantity then
+            line=line.." - "..count.." in bags; needs "..entry.quantity.." per craft"
+        else
+            line=line.." - "..count.."/"..entry.quantity.." in bags"
+        end
     elseif entry.quantity then
         line=line.." - requires "..entry.quantity
     end
