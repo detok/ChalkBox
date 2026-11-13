@@ -73,6 +73,11 @@ s=ChalkBox_BarReadStats(playerMax)
 assert(s.bags.free==9 and s.bags.total==42,
     "a protected bag count must be skipped rather than changing the total to zero")
 supplies[2][2]=1
+supplies[3][3]=private
+s=ChalkBox_BarReadStats(playerMax)
+assert(s.bags.free==10 and s.bags.special==0 and s.bags.unknown==2,
+    "protected bag family must not be falsely identified as general space")
+supplies[3][3]=8
 _G.C_Container=nil
 _G.GetInventoryItemDurability=nil
 _G.GetXPExhaustion=nil
