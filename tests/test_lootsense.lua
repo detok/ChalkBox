@@ -88,7 +88,7 @@ local function Hover(id)
     tip.link="|Hitem:"..id..":0|h["..tip.name.."]|h"
     tip.owner={}
     onTooltip(tip)
-    return tip.lines[1] or ""
+    return table.concat(tip.lines," | ")
 end
 
 assert(loadfile("LootSense.lua"))("ChalkBox")
@@ -96,12 +96,16 @@ assert(type(onTooltip)=="function")
 callback(nil,"ADDON_LOADED","ChalkBox")
 assert(type(ChalkBoxDB)=="table" and type(ChalkBoxDB.keep)=="table")
 assert(Hover(101)=="","ordinary junk should not receive extra noise")
-assert(Hover(102):find("PROFESSION: possible Leatherworking",1,true),"character profession hint")
+assert(ChalkBox_LootPresentation("KNOWN RECIPE: Example")=="Used in a learned recipe",
+    "the presentation layer provides a concise native tooltip heading")
+assert(Hover(102):find("Possible profession material",1,true) and
+    Hover(102):find("possible Leatherworking",1,true),"character profession hint")
 recipeMode="known"
-assert(Hover(102):find("KNOWN RECIPE: Camp Tent",1,true),
+assert(Hover(102):find("Used in a learned recipe",1,true) and
+    Hover(102):find("Camp Tent",1,true),
     "verified learned recipe must outrank generic family info")
 recipeMode="future"
-assert(Hover(102):find("POTENTIAL USE: Camp Tent",1,true),
+assert(Hover(102):find("Possible crafting use",1,true) and Hover(102):find("not confirmed learned",1,true),
     "potential recipe is labeled not learned")
 recipeMode=nil
 -- Forever may call OnTooltipSetItem before item metadata finishes caching.
@@ -109,30 +113,32 @@ recipeMode=nil
 local getInfo=C_Item.GetItemInfo
 C_Item.GetItemInfo=function() return nil end
 recipeMode="known"
-assert(Hover(102):find("KNOWN RECIPE: Camp Tent",1,true),
+assert(Hover(102):find("Used in a learned recipe",1,true) and Hover(102):find("Camp Tent",1,true),
     "cold item cache must not suppress known recipe tooltip advice")
 C_Item.GetItemInfo=nil
-assert(Hover(102):find("KNOWN RECIPE: Camp Tent",1,true),
+assert(Hover(102):find("Used in a learned recipe",1,true) and Hover(102):find("Camp Tent",1,true),
     "missing item info API must not suppress known recipe advice")
 C_Item.GetItemInfo=getInfo
 recipeMode=nil
 assert(Hover(108)=="","irrelevant trade material should be quiet")
-assert(Hover(4470):find("CAMP SUPPLY",1,true),"wood must always be flagged for Forever camping")
-assert(Hover(4471):find("CAMP TOOL",1,true),"flint/tinder reusable utility flagged")
-assert(Hover(279981):find("CAMP:",1,true),"camp kit should be identified")
-assert(Hover(279978):find("CAMP:",1,true),"camp tent should be identified")
+assert(Hover(4470):find("Camp supply",1,true),"wood must always be flagged for Forever camping")
+assert(Hover(4471):find("Reusable camp tool",1,true),"flint/tinder reusable utility flagged")
+assert(Hover(279981):find("Camping utility",1,true),"camp kit should be identified")
+assert(Hover(279978):find("Camping utility",1,true),"camp tent should be identified")
 assert(Hover(103)=="","no unverified auction prediction")
 assert(Hover(104)=="","no generic equipment reviews")
-assert(Hover(106):find("KEEP: quest",1,true),"quest class should stay protected")
+assert(Hover(106):find("Keep this item",1,true),"quest class should stay protected")
 assert(Hover(107)=="","uncached quality should not produce sell advice")
 activeQuest["Broken Fang"]=true
-assert(Hover(101):find("KEEP:",1,true),"active quest protection overrides grey quality")
+assert(Hover(101):find("Keep this item",1,true),"active quest protection overrides grey quality")
 activeQuest["Broken Fang"]=nil
 SlashCmdList.CHALKBOX("keep |Hitem:101:0|h[Broken Fang]|h")
 assert(ChalkBoxDB.keep["id:101"] ~= nil,"keep command should use item ID")
-assert(Hover(101):find("KEEP:",1,true),"user protection overrides vendor advice")
+assert(Hover(101):find("Keep this item",1,true),"user protection overrides vendor advice")
+local before=#tip.lines
 onTooltip(tip)
-assert(#tip.lines==1,"hover refresh must not duplicate advice")
+assert(#tip.lines==before and before>=4,
+    "hover refresh must not duplicate the styled multi-line section")
 SlashCmdList.CHALKBOX("list")
 assert(messages[#messages]:find("Broken Fang",1,true),"list should show protected items")
 SlashCmdList.CHALKBOX("bags offset 30")
@@ -149,7 +155,7 @@ SlashCmdList.CHALKBOX("forget |Hitem:101:0|h[Broken Fang]|h")
 assert(Hover(101)=="","forget restores quiet default")
 SlashCmdList.CHALKBOX("keep Light Leather")
 assert(ChalkBoxDB.keep["name:light leather"],"exact name protection must be available")
-assert(Hover(102):find("KEEP:",1,true),"name protection applies to item link")
+assert(Hover(102):find("Keep this item",1,true),"name protection applies to item link")
 SlashCmdList.CHALKBOX("forget Light Leather")
 merchantOpen=true
 tip.name="Broken Fang";tip.link="|Hitem:101:0|h[Broken Fang]|h";tip.lines={};tip.owner=vendorButton
