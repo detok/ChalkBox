@@ -20,7 +20,7 @@ local function Bags()
     local last=PublicNumber(NUM_BAG_SLOTS) and NUM_BAG_SLOTS or 4
     -- Don't touch bank bags or reagent bank; this is the player's equipped bags.
     if last<backpack or last>8 then last=4 end
-    local free,total,general,special=0,0,0,0
+    local free,total,general,special,unknown=0,0,0,0,0
     local seen=0
     for bag=backpack,last do
         local count=Call(slots,bag)
@@ -30,7 +30,9 @@ local function Bags()
             total=total+count
             free=free+empty
             seen=seen+1
-            if PublicNumber(family) and family~=0 then
+            if not PublicNumber(family) then
+                unknown=unknown+empty
+            elseif family~=0 then
                 special=special+empty
             else
                 general=general+empty
@@ -38,7 +40,8 @@ local function Bags()
         end
     end
     if seen==0 then return end
-    return {free=free,total=total,general=general,special=special,bags=seen}
+    return {free=free,total=total,general=general,special=special,
+        unknown=unknown,bags=seen}
 end
 local function Gear()
     if type(GetInventoryItemDurability)~="function" then return end
