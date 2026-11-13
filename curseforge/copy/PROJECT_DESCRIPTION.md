@@ -20,7 +20,9 @@ Hover over an item to see contextual advice when ChalkBox has relevant evidence:
 - **Camping reagents and tools** are flagged when there is a relevant Forever-specific use.
 - **No misleading “safe to sell” verdicts.** ChalkBox does not automatically sell, delete, buy or use items.
 
-The download includes a local **2,511-recipe Forever database** for possible crafting uses; you do not need to install a separate recipe library. Open your profession window once to let ChalkBox learn what your character can actually craft. Where available, material tooltips show recipe names and the amounts in your bags.
+The download includes a local **2,511-recipe Forever database** for possible crafting uses; you do not need to install a separate recipe library. Open your profession window once to let ChalkBox learn what your character can actually craft.
+
+**New in 1.9:** the old verbose `LootSense: ...` text has become a clean **CHALKBOX | ITEM INSIGHT** section inside native item tooltips. And ChalkBox can outline real **known-recipe ingredients** with a soft emerald inset directly in Blizzard's own bag slots. **Only recipes actually learned and observed by your character** qualify—an offline-catalog possibility never gets a green outline. Adjust the effect in **ChalkBox → LootSense Appearance**; no bag icons, inventory clicks or rarity borders are replaced.
 
 ### TrailBar — your adventure dashboard in 18 pixels
 
@@ -34,7 +36,9 @@ A compact, **responsive 18-pixel** strip at the top or bottom of your screen sho
 - Optional **world latency** (home and world ping in the tooltip)
 - Session time, current gold and net gold change
 
-Choose **Balanced**, **Minimal**, or **All**, or enable individual widgets under **ChalkBox → TrailBar Stats**. The bar automatically hides lower-priority metrics at narrow UI widths so labels don't overlap. Increasing the width lets them reappear. The bar stays 18 pixels tall regardless of how many metrics you enable.
+Choose **Balanced**, **Minimal**, or **All**, or enable individual widgets under **ChalkBox → TrailBar Stats**. The bar automatically hides lower-priority metrics at narrow UI widths so labels don't overlap. Increasing the width lets them reappear.
+
+**New in 1.9: Edit Bar.** Drag individual stats to reorder them within the left, center or right side of the strip; right-click while editing to cycle that module's text alignment. Each character saves their own positions. The bar also has a **0–100% charcoal background-opacity slider**: fade the panel down to nothing while keeping the text and XP underline visible. All controls are in **ChalkBox → TrailBar Appearance**. The bar remains 18 pixels tall.
 
 Each widget has helpful mouseover detail, and optional reserved-screen-space mode keeps the strip out of ordinary UI. If an API is unavailable, ChalkBox leaves that metric unavailable rather than inventing a number.
 
@@ -66,10 +70,12 @@ The reminders can also consider your character's class and pet. They provide **a
 
 When enabled, Emota can occasionally perform native character emotes and idle reactions, influenced by class, race, rest areas and pets. Its automatic reactions are **opt-in** and configurable; there is a catalog to preview or disable individual emotes.
 
+The new **Emota Race Behavior** page has a race selector, shows signature emotes for existing racial profiles and offers **Off / Subtle / Default / Expressive** racial flavor. Other races are shown as clearly labeled **planned** profiles—not fake working features. Your character's actual race determines live emote behavior.
+
 ### Small quality-of-life protections
 
 - **QuietGuard:** unsolicited guild-invite and duel protections, with other social restrictions opt-in.
-- **Separate bag positioning:** if opening several individual bags pushes a profession bag off the screen, TrailBar settings include a **0–80 UI-point downward offset** (default 0). Combined bags remain in Blizzard's normal layout.
+- **Separate bag positioning:** a **vertical −120 to +120-point slider** with Blizzard's original location centered at **0**. Thumb up raises bags, down lowers them; Reset Bags restores stock. Combined bags remain in Blizzard's normal layout.
 - **Native controls:** the addon uses WoW's normal AddOns settings pages instead of requiring a second configuration app.
 
 ---
@@ -83,7 +89,7 @@ When enabled, Emota can occasionally perform native character emotes and idle re
 5. Try `/chalk prep test` for an on-screen reminder preview.
 6. Prefer Blizzard's original combat meter? Type `/chalk meter hide`, then use **ChalkBox: PRINT top 3 to PARTY** in the Blizzard meter's gear menu after combat.
 
-Useful commands: `/chalk loot status`, `/chalk loot scan`, `/chalk keep [item]`, `/chalk quests status`, `/chalk bar status`, `/chalk bags offset 30`, `/chalk meter native status`.
+Useful commands: `/chalk loot status`, `/chalk loot scan`, `/chalk keep [item]`, `/chalk quests status`, `/chalk bar edit on`, `/chalk bar opacity 0`, `/chalk bags offset -35`, `/chalk meter native status`.
 
 ## Designed for Forever — with honest limits
 
