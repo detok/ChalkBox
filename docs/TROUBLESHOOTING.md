@@ -2,6 +2,18 @@
 
 These steps are safe and require no SavedVariables deletion or client reset.
 
+## 2.0.1 — Discoveries button is visible, but the window or position isn't right
+
+Open Discoveries and use the **Area/Dungeon**, **Creature Source**, and **Sort By** dropdowns. Use search to narrow results. To move the **map button**, click and drag it to a comfortable location; ChalkBox saves that position per character. **Right-click to reset**, or click **Reset Map Button** under DropSense settings, or run `/chalk drops map reset`.
+
+If a dropdown appears underneath Blizzard's map or clips at a particular UI scale, send the exact Forever client build, UI scale and a real screenshot. The original standalone **/chalk drops map** remains available.
+
+**Missing item rate?** A percentage is only calculated from readable loot windows attributed to a **known specific creature**. Without that denominator, ChalkBox displays actual items/quantities instead of a fake zone-wide probability.
+
+## Updates button doesn't show a GitHub version
+
+WoW addon Lua cannot make HTTPS requests. `/chalk update` prints the *installed* version and the GitHub Releases link for your browser. The optional, default-off peer comparison can only tell whether a grouped ChalkBox user has a newer version; it **isn't a server check**. To get real automatic update downloads, use a compatible addon manager once ChalkBox has a verified listing.
+
 ## 2.0 — Discoveries button doesn't appear on the world map
 
 The 2.0 prerelease fixes a **Forever-specific late-loading map-frame and placement issue**. Try this sequence:

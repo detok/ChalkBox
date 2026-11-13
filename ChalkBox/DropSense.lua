@@ -449,6 +449,33 @@ function ChalkBox_DropMapData(mapID)
     end)
     return result
 end
+-- A read-only location index for the discoveries browser. Data comes
+-- entirely from this character's existing observation history.
+function ChalkBox_DropVisitedAreas(kind)
+    local areas=State().areas
+    local result={}
+    for key,area in pairs(areas) do
+        if type(area)=="table" and (not kind or area.kind==kind) then
+            result[#result+1]={
+                key=key,kind=area.kind,name=area.name or key,
+                mapID=area.mapID,entranceZoneID=area.entranceZoneID,
+                windows=area.windows or 0,items=Count(area.items or {})
+            }
+        end
+    end
+    table.sort(result,function(a,b)
+        if a.name==b.name then return a.key<b.key end
+        return a.name<b.name
+    end)
+    return result
+end
+function ChalkBox_DropAreaInfo(key)
+    local area=State().areas[key]
+    if type(area)~="table" then return end
+    return {key=key,kind=area.kind,name=area.name or key,
+        windows=area.windows or 0,items=Count(area.items or {}),
+        mapID=area.mapID,entranceZoneID=area.entranceZoneID}
+end
 function ChalkBox_DropAreaItems(key,sourceKey,search)
     local area=State().areas[key]
     if not area then return {} end
@@ -459,7 +486,7 @@ function ChalkBox_DropAreaItems(key,sourceKey,search)
     for id,counts in pairs(rows or {}) do
         local item=ChalkBox_DropRead(id,key,sourceKey)
         if item and (search=="" or item.name:lower():find(
-                search,1,true)) then
+                search,1,true) or id:find(search,1,true)) then
             result[#result+1]={
                 id=id,name=item.name,
                 quantity=counts.quantity or 0,
@@ -561,6 +588,11 @@ function ChalkBox_DropCommand(input)
         local chance=ChalkBox_DropCalculate(rate,tries)
         Note(chance and (("%.2f%% chance in %s independent attempts"):format(
             chance,tries)) or "Usage: /chalk drops chance <percent> <attempts>")
+    elseif cmd=="map" and args=="reset" then
+        local ok=type(ChalkBox_MapDiscoveriesResetButton)=="function"
+            and ChalkBox_MapDiscoveriesResetButton()
+        Note(ok and "Discoveries map button restored to its default position."
+            or "Open the world map and try again.")
     elseif cmd=="map" and args=="status" then
         local state=type(ChalkBox_MapDiscoveriesStatus)=="function"
             and ChalkBox_MapDiscoveriesStatus() or nil

@@ -14,7 +14,7 @@
 | Source | https://github.com/detok/ChalkBox |
 | Issues | https://github.com/detok/ChalkBox/issues |
 | Changelog | Use `docs/RELEASE_NOTES.md` for release 2.0.0 |
-| File to upload | `ChalkBox-2.0.0.zip` **from the GitHub Releases asset**, not Source code ZIP |
+| File to upload | `ChalkBox-2.0.1.zip` **from the GitHub Releases asset**, not Source code ZIP |
 | Release type | **Beta / prerelease** until real client QA passes |
 | Author | Detok Whitemaine |
 | Website | Leave blank unless a distinct verified project site exists |

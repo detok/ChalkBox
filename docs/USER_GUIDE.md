@@ -2,6 +2,14 @@
 
 Welcome! ChalkBox is a single addon; all sections live in **Esc → Options → AddOns → ChalkBox**. Type `/chalk` to open the main page.
 
+## New in 2.0.1 — Discoveries and Updates
+
+The Discoveries browser now has **three dropdown filters**: Area/Dungeon, Creature Source, and Sort. Use the search field for item names or IDs, or navigate between Outdoor and Dungeons. The interface shows item icons, collected quantities, number of sampled loot windows and **only when a known creature source is selected**, the frequency of that item across comparable readable windows. Rates aren't official server chances.
+
+The **Discoveries map button can be dragged**. Its position is saved per character and survives reloading. Right-click the button to reset it; alternatively visit **ChalkBox → DropSense → Reset Map Button** or type **/chalk drops map reset**. The old **/chalk drops map** command still opens Discoveries directly.
+
+**ChalkBox → Updates** displays the installed version from your TOC and a GitHub Releases URL. Select the URL and Ctrl+C to open it outside WoW. **/chalk update** also prints the address in chat. The client cannot contact GitHub over HTTPS, so there's no fabricated “latest version checked” status. Optionally enable **compare versions with group members** to detect a newer version among other ChalkBox players while grouped (off by default).
+
 ## 2.0 — What's new and what to test
 
 **This is a Forever-client prerelease for testing, not a claim that every layout has been confirmed in-game.**

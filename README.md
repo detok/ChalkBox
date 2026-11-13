@@ -8,19 +8,19 @@
 
 **Know what you have. Remember where you found it. Build better buttons. Get back to playing.**
 
-[![ChalkBox prerelease](https://img.shields.io/badge/release-2.0.0%20preview-DDAE61?style=flat-square)](https://github.com/detok/ChalkBox/releases/tag/v2.0.0)
+[![ChalkBox prerelease](https://img.shields.io/badge/release-2.0.1%20preview-DDAE61?style=flat-square)](https://github.com/detok/ChalkBox/releases/tag/v2.0.1)
 [![Lua tests & installable ZIP](https://github.com/detok/ChalkBox/actions/workflows/release.yml/badge.svg)](https://github.com/detok/ChalkBox/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-67C6B7?style=flat-square)](LICENSE)
 [![Client: Forever](https://img.shields.io/badge/client-WoW%20Forever-203342?style=flat-square)](#compatibility)
 
-### [⬇ DOWNLOAD CHALKBOX 2.0.0 — TEST BUILD](https://github.com/detok/ChalkBox/releases/download/v2.0.0/ChalkBox-2.0.0.zip)
+### [⬇ DOWNLOAD CHALKBOX 2.0.0 — TEST BUILD](https://github.com/detok/ChalkBox/releases/download/v2.0.0/ChalkBox-2.0.1.zip)
 
 [Install in a minute](#install-in-one-minute) · [Explore features](#the-toolkit) · [Quick commands](#quick-commands) · [Report a bug](https://github.com/detok/ChalkBox/issues/new/choose)
 
 </div>
 
 > [!IMPORTANT]
-> **ChalkBox 2.0.0 is a Forever-client testing prerelease.** Automated Lua tests and ZIP packaging are verified by GitHub Actions. The World Map Discoveries button was revised for Forever's load-on-demand map, but **its appearance in real-client layouts still needs testing**. If you don't see it, use **/chalk drops map** to open the same journal and **/chalk drops map status** for diagnostics. Please report what you find.
+> **ChalkBox 2.0.1 is a Forever-client testing prerelease.** Automated Lua tests and ZIP packaging are verified by GitHub Actions. The World Map Discoveries button was revised for Forever's load-on-demand map, but **its appearance in real-client layouts still needs testing**. If you don't see it, use **/chalk drops map** to open the same journal and **/chalk drops map status** for diagnostics. Please report what you find.
 
 ---
 
@@ -29,6 +29,14 @@
 ChalkBox makes the familiar WoW interface more informative without replacing it. It recognizes useful loot, builds your personal drop journal, remembers sessions, helps you prepare for camp, makes combat data easier to read, and now helps you **build real macros from your own spellbook**.
 
 Everything installs in **one ChalkBox folder**, with the supporting profession data already included. There are no mandatory companion addons, cloud logins, AI services, automatic selling, or hidden combat rotation engines.
+
+## New in 2.0.1 · Discoveries, redesigned
+
+The world-map **Discoveries** button now supports **drag-and-drop positioning**, and remembers its placement on your character. **Right-click to reset** or use **ChalkBox → DropSense → Reset Map Button** (also `/chalk drops map reset`).
+
+The Discoveries journal has a significantly more readable interface: searchable item names/IDs, real **Area/Dungeon**, **Creature Source**, and **Sort** dropdowns, item icons, clear collection and observed-window counts, and pagination. Outdoor zones and dungeons stay distinct. **Following map** shows the location you're actually viewing; selecting a different observed zone is explicit.
+
+**ChalkBox → Updates** shows your installed version and a selectable GitHub Releases link. Ordinary WoW addon Lua cannot call GitHub's HTTPS API. As an optional alternative, enable **group peer-version comparison** for a notification when another group member is running a newer ChalkBox version. This feature is **off by default**, never autoupdates files and doesn't claim to verify GitHub.
 
 ## The toolkit
 
@@ -94,7 +102,7 @@ CampSense distinguishes tent/rested-XP readiness from separate Camp Benefits buf
 
 ## Install in one minute
 
-1. Download the **ChalkBox-2.0.0.zip** asset from the [2.0 prerelease](https://github.com/detok/ChalkBox/releases/tag/v2.0.0). **Do not download GitHub's “Source code (zip)”** as the install.
+1. Download the **ChalkBox-2.0.1.zip** asset from the [2.0 prerelease](https://github.com/detok/ChalkBox/releases/tag/v2.0.1). **Do not download GitHub's “Source code (zip)”** as the install.
 2. Extract its single **ChalkBox** folder into your WoW Forever client's **Interface/AddOns** directory.
 3. Confirm this path exists: **Interface/AddOns/ChalkBox/ChalkBox.toc** (no nested second ChalkBox folder).
 4. Start or reload the game. Type **/chalk** to open the native settings.
@@ -119,6 +127,8 @@ The build includes both Forever TOC variants and all required bundled data. **Yo
 | `/chalk forge rescan` | Rescan learned spells |
 | `/chalk drops map` | Open Map Discoveries independently of its map button |
 | `/chalk drops map status` | Explain map button attachment and visibility |
+| `/chalk drops map reset` | Reset the map button position |
+| `/chalk update` | Show installed version and GitHub Releases address |
 | `/chalk drops map on` / `off` | Toggle the map button without deleting history |
 | `/chalk drops on` / `off` | Start or stop loot-window observations |
 | `/chalk drops chance 5 20` | Example: probability of at least one drop across 20 independent attempts if your supplied chance is 5% |
@@ -159,6 +169,6 @@ ChalkBox is a community project by **Detok Whitemaine**, distributed under the [
 
 **One addon. A better-informed adventure.**
 
-[Download 2.0.0 prerelease](https://github.com/detok/ChalkBox/releases/tag/v2.0.0) · [Report an issue](https://github.com/detok/ChalkBox/issues/new/choose)
+[Download 2.0.0 prerelease](https://github.com/detok/ChalkBox/releases/tag/v2.0.1) · [Report an issue](https://github.com/detok/ChalkBox/issues/new/choose)
 
 </div>

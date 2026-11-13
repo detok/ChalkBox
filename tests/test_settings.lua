@@ -304,7 +304,7 @@ assert(loadfile("ChalkBox_Settings.lua"))("ChalkBox")
 local loader=frames[#frames]
 assert(loader.event=="PLAYER_LOGIN","must register settings when the client is ready")
 loader.script.OnEvent(loader,"PLAYER_LOGIN")
-assert(#registered==18,"native pages include MacroForge and all original categories")
+assert(#registered==19,"native pages include MacroForge, Updates and all original categories")
 assert(categories.home.name=="ChalkBox")
 ChalkBox_OpenSettings()
 assert(opened[#opened]==101,"default /chalk must open native settings")

@@ -29,7 +29,8 @@ local function Frame(kind,name,parent)
     function f:HookScript(event,callback) self.scripts["Hook"..event]=callback end
     function f:CreateTexture()
         return {SetAllPoints=function() end,SetPoint=function() end,
-            SetHeight=function() end,SetColorTexture=function() end}
+            SetHeight=function() end,SetSize=function() end,
+            SetTexture=function() end,SetColorTexture=function() end}
     end
     function f:CreateFontString()
         return {SetPoint=function() end,SetWidth=function() end,

@@ -127,6 +127,7 @@ local function MakeHome()
         {"drops","DropSense","Automatic zone loot discoveries and calculator"},
         {"journal","Session Journal","Current and previous adventures"},
         {"forge","MacroForge","Spellbook-aware macro creation"},
+        {"updates","Updates","Installed version and release links"},
     }
     for index,entry in ipairs(items) do
         local row=math.floor((index-1)/2)
@@ -198,6 +199,62 @@ local function MakeTheme()
 end
 
 -- Never label a player sample as Blizzard's server drop rate.
+-- WoW addon Lua has no HTTPS API. Display the actual installed TOC
+-- version and a selectable GitHub Releases link, not a fake network check.
+-- Optional group-peer version notices use WoW addon messages, not GitHub.
+local function MakeUpdates()
+    local panel=Panel("Updates",
+        "Version awareness for ChalkBox. WoW cannot fetch GitHub from addon Lua.")
+    Label(panel,"INSTALLED VERSION","GameFontNormalLarge",28,-109,480)
+    local version=Label(panel,"","GameFontHighlight",28,-147,492)
+    local peer=Label(panel,"","GameFontHighlightSmall",28,-184,492)
+    Toggle(panel,"Compare versions with other ChalkBox group members (optional)",
+        nil,-227,
+        function()
+            local s=ChalkBox_UpdateStatus and ChalkBox_UpdateStatus()
+            return s and s.peerCheck==true
+        end,
+        function(on)
+            if ChalkBox_UpdateSetPeer then ChalkBox_UpdateSetPeer(on) end
+        end)
+    Label(panel,"GITHUB RELEASES","GameFontNormalLarge",28,-284,492)
+    Label(panel,"Select the link, press Ctrl+C, then open it in your browser.",
+        "GameFontHighlightSmall",28,-315,492)
+    local address=CreateFrame("EditBox",nil,panel,"InputBoxTemplate")
+    address:SetSize(460,24)
+    address:SetPoint("TOPLEFT",panel,"TOPLEFT",37,-340)
+    address:SetAutoFocus(false)
+    address:SetText("https://github.com/detok/ChalkBox/releases")
+    if address.SetScript then
+        address:SetScript("OnEscapePressed",function(self)
+            if self.ClearFocus then self:ClearFocus() end
+        end)
+    end
+    Button(panel,"Select Release Link",28,-385,217,function()
+        if address.SetText then
+            address:SetText("https://github.com/detok/ChalkBox/releases")
+        end
+        if address.SetFocus then address:SetFocus() end
+        if address.HighlightText then address:HighlightText() end
+    end)
+    Button(panel,"Print Update Status",278,-385,216,function()
+        if ChalkBox_UpdateCommand then ChalkBox_UpdateCommand() end
+    end)
+    panel:AddRefresh(function()
+        local s=ChalkBox_UpdateStatus and ChalkBox_UpdateStatus() or {}
+        version:SetText("ChalkBox "..(s.installed or "unknown")..
+            "  ·  Installed locally")
+        if s.newerSeen then
+            peer:SetText("Another player has version "..s.peerVersion..
+                ". See GitHub Releases.")
+        else
+            peer:SetText("Latest GitHub version unknown inside WoW."..
+                " Peer comparison is not a GitHub check.")
+        end
+    end)
+    return panel
+end
+
 local function MakeDrops()
     local panel=Panel("DropSense",
         "Every observed loot-window item is recorded locally. Map Discoveries never invents official rates.")
@@ -238,8 +295,10 @@ local function MakeDrops()
             ChalkBox_OpenMapDiscoveries()
         end
     end)
-    Button(panel,"Journal Status",270,-267,224,function()
-        if ChalkBox_DropCommand then ChalkBox_DropCommand("status") end
+    Button(panel,"Reset Map Button",270,-267,224,function()
+        if ChalkBox_MapDiscoveriesResetButton then
+            ChalkBox_MapDiscoveriesResetButton()
+        end
     end)
     Label(panel,"DROP CHANCE CALCULATOR","GameFontNormalLarge",28,-310,455)
     Label(panel,"Your reference %","GameFontHighlightSmall",28,-349,150)
@@ -1182,6 +1241,7 @@ local function Register()
     panels.drops = MakeDrops()
     panels.journal = MakeJournal()
     panels.forge = MakeForge()
+    panels.updates = MakeUpdates()
     panels.loot = MakeLoot()
     panels.loothighlight = MakeLootAppearance()
     panels.quests = MakeQuests()
@@ -1205,6 +1265,7 @@ local function Register()
                 {"drops", "DropSense"},
                 {"journal", "Session Journal"},
                 {"forge", "MacroForge"},
+                {"updates", "Updates"},
                 {"loot", "LootSense"},
                 {"loothighlight", "LootSense Appearance"},
                 {"quests", "QuestSense"},
@@ -1236,6 +1297,7 @@ local function Register()
             {"drops", "DropSense"},
             {"journal", "Session Journal"},
             {"forge", "MacroForge"},
+            {"updates", "Updates"},
             {"loot", "LootSense"},
                 {"loothighlight", "LootSense Appearance"},
             {"quests", "QuestSense"},
