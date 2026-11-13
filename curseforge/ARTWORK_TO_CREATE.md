@@ -35,7 +35,7 @@ Dimensions below are recommended **working canvases**, not assertions about Curs
 | P0 | `chalkbox-hero-1600x900.png` | 1600×900 landscape | Main headline “ChalkBox”, tagline, tasteful motif, empty clean area for real game screenshot insert later | GitHub README hero / CurseForge gallery |
 | P0 | `chalkbox-banner-1200x630.png` | 1200×630 landscape | Cropped marketing banner; product + very short value proposition | Social/OG thumbnail, README promotional image |
 | P1 | `chalkbox-feature-grid-1600x900.png` | 1600×900 landscape | Editorial overview of LootSense/TrailBar/QuestSense/CampSense/Combat Meter with short module labels | CurseForge gallery after screenshots available |
-| P1 | `chalkbox-trailbar-explainer-1600x900.png` | 1600×900 landscape | **Real screenshot** cropped to show level, XP rate, gold; arrows/callouts only outside native pixels | Product screenshots/gallery |
+| P1 | `chalkbox-trailbar-explainer-1600x900.png` | 1600×900 landscape | **Real screenshot** showing XP, bag free slots, gear durability, rested XP and gold (enabled metrics must actually fit); arrows/callouts only outside native pixels | Product screenshots/gallery |
 | P1 | `chalkbox-lootsense-example-1600x900.png` | 1600×900 landscape | **Real in-game tooltip**, captured showing known vs possible uses | Product screenshots/gallery |
 | P1 | `chalkbox-native-meter-print-1600x900.png` | 1600×900 landscape | **Real built-in damage meter menu**, with ChalkBox party print option visible and sensitive names hidden | Key differentiator screenshot |
 | P2 | `chalkbox-combat-meter-1600x900.png` | 1600×900 landscape | **Real ChalkBox compact meter**, class icons, modes and PRINT/RESET controls | Gallery |
