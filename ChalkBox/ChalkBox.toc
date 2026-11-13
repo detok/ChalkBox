@@ -1,0 +1,23 @@
+## Interface: 11509
+## Title: ChalkBox
+## Notes: Loot safety, camp buffs, quest help, XP tracking and character personality.
+## Author: Detok Whitemaine
+## Version: 1.5.1
+## SavedVariables: ChalkBoxDB
+## SavedVariablesPerCharacter: ChalkBoxZoneDB, ChalkBoxProfessionDB
+## IconTexture: Interface\AddOns\ChalkBox\assets\Icon
+## AddonCompartmentFunc: ChalkBox_OnAddonCompartmentClick
+
+Core.lua
+ProfessionSense.lua
+RecipeAdvisor.lua
+CampAura.lua
+ReminderToast.lua
+CampSense.lua
+LootSense.lua
+QuietGuard.lua
+PersonalityContext.lua
+Emota.lua
+QuestSense.lua
+TrailBar.lua
+ChalkBox_Settings.lua

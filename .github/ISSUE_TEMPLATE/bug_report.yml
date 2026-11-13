@@ -1,0 +1,69 @@
+name: Bug report
+description: Something isn't working correctly in ChalkBox or WoW Forever
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting this! Please don't include account passwords or private chat.
+        Try the [troubleshooting guide](https://github.com/detok/ChalkBox/blob/main/docs/TROUBLESHOOTING.md) first.
+  - type: input
+    id: addon
+    attributes:
+      label: ChalkBox version
+      placeholder: "1.5.1"
+    validations:
+      required: true
+  - type: dropdown
+    id: client
+    attributes:
+      label: Game client
+      options:
+        - WoW Forever / Camelot
+        - WoW Classic Era
+        - Other (please describe in details)
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: Game build / interface version
+      placeholder: "From login screen or /dump GetBuildInfo()"
+  - type: dropdown
+    id: module
+    attributes:
+      label: ChalkBox module
+      options:
+        - LootSense / ProfessionSense
+        - CampSense / Reminder Toast
+        - TrailBar
+        - QuietGuard
+        - Emota
+        - QuestSense
+        - Settings / Install / Other
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: How can another player observe the same problem?
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected versus actual behavior
+      description: Include exact tooltip lines and item/recipe links, if relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Lua errors or screenshots (optional)
+      description: Paste error text or drag images here. Remove identifying information.
+      render: text
