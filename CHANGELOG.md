@@ -2,6 +2,17 @@
 
 All notable changes to the public ChalkBox addon are documented here.
 
+## 1.11.0 — Automatic Map Discoveries
+
+- Replace manual 32-item DropSense watchlist as the primary data collector: **automatically journal every item in readable loot windows** when enabled. Fresh installs record automatically; existing explicit off preferences remain respected.
+- Persist bounded per-character item totals, outdoor zone associations, dungeon-specific discoveries, and known creature-source observations. Preserve prior 1.10.0 sampled counts as unsited legacy evidence, never retroactively guessed locations.
+- Report **source-specific loot-window appearance percentages only** when the window is attributable to a single identifiable creature. Mixed-source loot, unrelated creatures, unclear windows and non-creature sources have counts but no invented source odds. Never imply kill-level or official server rates.
+- Add optional **Discoveries** button to Blizzard's existing world map; open a movable journal following the selected map. Outdoor/Dungeon tabs, per-creature filters, pagination and instances associated by observed entry/exit; leave the native quest map untouched.
+- Native DropSense settings now have three independent switches (automatic recording, loot-window tooltip, map button) and retain the independent-attempt chance calculator.
+- Session Journal records known loot regions alongside XP, gold, quests, camping and repair observations; saves last 20 sessions.
+- Enforce limits on saved unique items, mapped areas, creature types and per-zone items; flag capacity reached instead of silently asserting complete coverage.
+- Extend Lua 5.1 tests for source separation, dungeon linkage, mixed loot, migration and native map integration.
+
 ## 1.10.0 — The Adventure Companion
 
 - Add global ChalkBox appearance controls: charcoal/midnight/slate/custom RGB, accent color and background-only opacity multiplier for the Bar, toast, meter and session window.

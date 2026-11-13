@@ -13,7 +13,7 @@
 [![MIT](https://img.shields.io/badge/license-MIT-67C6B7.svg)](LICENSE)
 [![Forever](https://img.shields.io/badge/WoW-Forever-203342.svg)](https://github.com/detok/ChalkBox)
 
-### [⬇ Download ChalkBox 1.10.0](https://github.com/detok/ChalkBox/releases/download/v1.10.0/ChalkBox-1.10.0.zip)
+### [⬇ Download ChalkBox 1.11.0](https://github.com/detok/ChalkBox/releases/download/v1.11.0/ChalkBox-1.11.0.zip)
 
 [**All GitHub Releases**](https://github.com/detok/ChalkBox/releases) · [**Install Guide**](#-install-in-one-minute) · [**Features**](#-what-chalkbox-does) · [**Help & Bugs**](https://github.com/detok/ChalkBox/issues)
 
@@ -126,13 +126,23 @@ The strip still supports **top / bottom / hidden**, 18px **Reserve screen space*
 
 If separate bags stack too high, **ChalkBox → The Bar** now has a proper **vertical position slider**: **Blizzard's original anchor is at the midpoint (0)**. Drag the thumb **down** to lower bags (+120 maximum), or **up** to lift bags (−120 minimum). **Reset Bags** returns to Blizzard's default instantly. Combined bags, slots and sorting remain untouched. Slash alternatives: `/chalk bags offset 40` (down), `/chalk bags offset -35` (up), `/chalk bags reset`.
 
+### New in 1.11.0 — Personal Loot Discoveries on your world map
+
+**DropSense now automatically records every readable item in native loot windows**—no manual 32-item watchlist. Discoveries are saved **per character**, by outdoor zone and by observed instance, with up to 5,000 distinct item IDs, bounded per-area storage, and no external data or downloads. On a fresh installation, sampling starts enabled. If you disabled sampling in 1.10.0, that preference remains off until you re-enable it under **ChalkBox → DropSense**.
+
+**Open your normal WoW world map** and click **Discoveries**, an optional small button next to the existing map controls. Browse items you actually saw in the selected outdoor zone, switch to **Dungeons** for separately recorded instances linked by an observed entrance/exit, and cycle known creature sources to see observed loot-window frequencies and sample sizes. The viewer follows changes to the *viewed map*, not just your current player location. It does not change Blizzard quest markers, zoom or map controls; the browser is a standalone movable window.
+
+**Accurate, conservative statistics:** zone summaries show quantities and readable loot windows, **not a fake zone-wide drop rate**. An observed percentage only appears for a specific identifiable creature type in an unambiguous single-source window. Multi-source AoE loot and unidentified sources still count toward your collected-item history but never create fabricated per-monster denominators. Completely unlootable/empty kills aren't visible to these APIs, so these are **observed loot-window appearance rates, never official drop chances or all-kill rates**.
+
+**Data safety:** existing DropSense v1 watches and counts are preserved as **older unsited observations** without inventing past zones or mob IDs. The Session Journal adds discovered loot regions to its saved session recap. History continues across logins; no auto looting or selling. Toggle map integration with **ChalkBox → DropSense → Show Discoveries button** or `/chalk drops map off`; `/chalk drops map` opens the browser directly.
+
 ### New in 1.10.0 — The Adventure Companion
 
 **One visual identity, more useful context, zero extra addons.** Global Appearance gives ChalkBox-owned windows a shared charcoal/midnight/slate/custom RGB background, gold/teal/neutral accents and background-strength control. The Bar, Adventure Prep toast, Combat Meter and Session Journal share that theme while retaining their local settings.
 
 **CampSense is more precise**: the compact toast recommends one actionable next step from readable Camp Benefits, tent eligibility, camp kits, wood/flint and Hunter pet happiness. It no longer nags you for Flint when usable kits are already in your bags. The previously missed "Camp Benefits absent" case now has a direct reminder. Unchanged alerts stay quiet by default; optional repeat is configurable.
 
-**DropSense — optional personal observations**: enable sampling and watch a specific item in **ChalkBox → DropSense** (`/chalk drops watch [item]`). It counts **readable opened loot windows**, whether that item appeared and how many units were seen. When enabled, hovering that item in a *native loot window* shows your observed hit frequency with sample size and a 95% uncertainty interval. This is **not** a per-creature or official Forever drop rate; unknown server chances are not guessed. The settings page includes a **chance-of-at-least-one-drop calculator** for a rate you trust, or use `/chalk drops chance 5 20`.
+**DropSense (original 1.10.0 workflow, superseded by automatic tracking in 1.11.0)**: enable sampling and watch a specific item in **ChalkBox → DropSense** (`/chalk drops watch [item]`). It counts **readable opened loot windows**, whether that item appeared and how many units were seen. When enabled, hovering that item in a *native loot window* shows your observed hit frequency with sample size and a 95% uncertainty interval. This is **not** a per-creature or official Forever drop rate; unknown server chances are not guessed. The settings page includes a **chance-of-at-least-one-drop calculator** for a rate you trust, or use `/chalk drops chance 5 20`.
 
 **Session Journal**: open `/chalk session` for a clean, standalone recap of this adventure; use `/chalk session last` to revisit the previous one. The journal keeps up to 20 past sessions per character, tracking actually observed XP, levels, net gold, quest completions, opted-in loot windows/items, camp notices and confirmed repair merchant quotes.
 
@@ -203,7 +213,7 @@ That's included too:
 
 ## 🚀 Install in one minute
 
-**Direct download:** [**ChalkBox 1.10.0 ZIP**](https://github.com/detok/ChalkBox/releases/download/v1.10.0/ChalkBox-1.10.0.zip)  
+**Direct download:** [**ChalkBox 1.11.0 ZIP**](https://github.com/detok/ChalkBox/releases/download/v1.11.0/ChalkBox-1.11.0.zip)  
 **Newer versions:** [**GitHub Releases**](https://github.com/detok/ChalkBox/releases)
 
 1. Download **`ChalkBox-<version>.zip`** from GitHub Releases — *not* the GitHub “Source code” archives.

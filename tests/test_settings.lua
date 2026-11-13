@@ -32,6 +32,24 @@ _G.ChalkBox_QuestStatus=function()
     return {enabled=ChalkBoxZoneDB.enabled,mode=ChalkBoxZoneDB.mode,
         limit=ChalkBoxZoneDB.limit,api=true,accepted=8,tracked=5,reason="ready"}
 end
+local dropPreferences={enabled=true,tooltip=true,mapButton=true,
+    watched=17,windows=54,areas=2}
+_G.ChalkBox_DropOptions=function() return dropPreferences end
+_G.ChalkBox_DropSetOption=function(key,on)
+    dropPreferences[key]=on
+    return true
+end
+_G.ChalkBox_OpenMapDiscoveries=function()
+    printed[#printed+1]="map discoveries"
+    return true
+end
+_G.ChalkBox_DropCommand=function(value)
+    printed[#printed+1]="drops "..value
+end
+_G.ChalkBox_DropCalculate=function(p,n)
+    p=tonumber(p);n=tonumber(n)
+    if p and n then return 100*(1-(1-p/100)^n) end
+end
 local defaults={rate=true,eta=true,time=true,gold=true,bags=true,
     gear=true,rested=true,latency=false,pet=true,bagvalue=false,repair=true}
 _G.ChalkBoxDB.barStats={}
@@ -304,6 +322,21 @@ local function FindCheckByParentTitle(title)
     end end
     return checks
 end
+local dropChecks=FindCheckByParentTitle("DropSense")
+assert(#dropChecks==3,
+    "DropSense now has automatic capture, tooltip and map button toggles")
+categories["DropSense"].panel:Show()
+assert(dropChecks[1].checked and dropChecks[3].checked,
+    "new DropSense automatic recording and map button are enabled by default")
+dropChecks[3]:Click(false)
+assert(dropPreferences.mapButton==false,"map button can be disabled independently")
+dropChecks[3]:Click(true)
+dropChecks[1]:Click(false)
+assert(dropPreferences.enabled==false,"all-item capture can be disabled")
+dropChecks[1]:Click(true)
+ControlIn("DropSense","Open Map Discoveries"):Click()
+assert(printed[#printed]=="map discoveries",
+    "native settings opens the map discovery browser")
 local checks=FindCheckByParentTitle("LootSense")
 assert(#checks==1,"loot page needs an actual toggle")
 categories["LootSense"].panel:Show()
