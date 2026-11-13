@@ -2,6 +2,16 @@
 
 All notable changes to the public ChalkBox addon are documented here.
 
+## 1.9.3 — Repair Learning
+
+- Upgrade The Bar's repair estimate from a last-merchant single-rate reference to a **persistent per-character learning model** using up to 32 unique actual repair quotes.
+- Distinguish real vendor quotes from **~ estimated** travel costs. Prefer exact equipment fingerprints when available, fall back to similar durability pools only, and robustly filter divergent samples.
+- Track the last confirmed prediction difference when the next distinct vendor quote arrives; show history size, estimate source and confidence in the repair tooltip.
+- Migrate existing 1.9.2 `repairReference` into an initial fallback rather than destroying previous calibration, until new quotes are learned.
+- Add `/chalk bar repair status` and `/chalk bar repair reset` to inspect or clear the local character model.
+- Avoid duplicate training data from polling, skip invalid/unknown or secret values, cap persistent storage and never repair automatically.
+- Add dedicated Lua regression coverage for learning, deduplication, similar vs mismatched gear, bounded persistence, legacy fallback, reset and the live stat integration.
+
 ## 1.9.2 — The Bar: repair pricing and contextual controls
 
 - Rename the user-facing **TrailBar** settings to **The Bar**, while preserving the existing `/chalk bar` commands and saved layout keys.

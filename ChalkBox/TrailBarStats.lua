@@ -51,6 +51,8 @@ end
 local function Gear()
     if type(GetInventoryItemDurability)~="function" then return end
     local current,max,totalItems,worst=0,0,0,nil
+    local fingerprintParts={}
+    local fingerprintComplete=type(GetInventoryItemID)=="function"
     -- The 1..19 paper-doll inventory slots. Only slots with durability count.
     for slot=1,19 do
         local durability,maximum=Call(GetInventoryItemDurability,slot)
@@ -59,6 +61,15 @@ local function Gear()
             current=current+durability
             max=max+maximum
             totalItems=totalItems+1
+            if fingerprintComplete then
+                local id=Call(GetInventoryItemID,"player",slot)
+                if PublicNumber(id) and id>0 and id<1e9 and id%1==0 then
+                    fingerprintParts[#fingerprintParts+1]=
+                        slot..":"..id..":"..math.floor(maximum)
+                else
+                    fingerprintComplete=false
+                end
+            end
             local percent=100*durability/maximum
             if not worst or percent<worst then worst=percent end
         end
@@ -66,7 +77,9 @@ local function Gear()
     if totalItems==0 or max<=0 then return end
     return {percent=math.floor(current*100/max+0.5),
         worst=math.floor(worst+0.5),items=totalItems,
-        current=current,max=max}
+        current=current,max=max,
+        fingerprint=fingerprintComplete and
+            table.concat(fingerprintParts,"|") or nil}
 end
 local function Rested(maxXP)
     if not PublicNumber(maxXP) or maxXP<=0 then return end
@@ -210,11 +223,9 @@ local function BagVendorValue()
         priced=priced,junkStacks=junkStacks,zeroStacks=zeroStacks}
 end
 
--- Exact repair bills are available only with a repair merchant open.
--- Away from a merchant, the only defensible numeric estimate comes from
--- a past observed bill scaled by currently missing equipped durability.
--- If no trustworthy reference exists, report unknown rather than inventing
--- a copper-per-point formula. The bill at a merchant includes damaged bag gear.
+-- Uses merchant-confirmed quotes as training examples. Learning is
+-- persisted by RepairLearning.lua in per-character SavedVariables, never
+-- inferred from item price tables or API guesses.
 local function RepairCost(gear)
     if not gear or not PublicNumber(gear.max) or
         not PublicNumber(gear.current) or gear.max<=0 or
@@ -230,38 +241,28 @@ local function RepairCost(gear)
         local amount=Call(GetRepairAllCost)
         if PublicNumber(amount) and amount<=1e11 then
             amount=math.floor(amount+0.5)
-            if missing>0 and amount>0 then
-                -- Keep the calibration character-specific, never account-wide.
-                if type(ChalkBoxZoneDB)~="table" then
-                    ChalkBoxZoneDB={}
-                end
-                ChalkBoxZoneDB.repairReference={
-                    rate=amount/missing,max=gear.max,
-                }
+            -- A real quote can include damage in carried gear, not only worn
+            -- gear. Every training sample is approximate for that reason.
+            if type(ChalkBox_RepairLearningObserve)=="function" and
+                missing>0 and amount>0 then
+                pcall(ChalkBox_RepairLearningObserve,gear,amount)
             end
+            local status=type(ChalkBox_RepairLearningStatus)=="function"
+                and ChalkBox_RepairLearningStatus() or nil
             return {state="exact",copper=amount,missing=missing,
-                max=gear.max}
+                max=gear.max,samples=status and status.samples or 0,
+                lastError=status and status.lastError}
         end
     end
-    local stored=type(ChalkBoxZoneDB)=="table" and
-        ChalkBoxZoneDB.repairReference or nil
-    if type(stored)~="table" or
-        not PublicNumber(stored.rate) or stored.rate<=0 or
-        not PublicNumber(stored.max) or stored.max<=0 or
-        stored.rate>1e10 then
-        return {state="unavailable",missing=missing,max=gear.max}
+    if type(ChalkBox_RepairLearningPredict)=="function" then
+        local ok,prediction=pcall(ChalkBox_RepairLearningPredict,gear)
+        if ok and type(prediction)=="table" then
+            prediction.missing=missing
+            prediction.max=gear.max
+            return prediction
+        end
     end
-    -- New equipment can have a very different repair rate. Never carry an
-    -- old rate across an obviously changed total durability pool.
-    if math.abs(gear.max-stored.max)>stored.max*0.15 then
-        return {state="needs-calibration",missing=missing,max=gear.max}
-    end
-    local estimate=missing*stored.rate
-    if not PublicNumber(estimate) or estimate>1e11 then
-        return {state="unavailable",missing=missing,max=gear.max}
-    end
-    return {state="estimate",copper=math.floor(estimate+0.5),
-        missing=missing,max=gear.max}
+    return {state="unavailable",missing=missing,max=gear.max}
 end
 
 function ChalkBox_BarReadStats(maxXP, includeBagValue, includeRepair)

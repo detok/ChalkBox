@@ -354,6 +354,11 @@ function ChalkBox_BarContextItems(key)
                     (StatEnabled(key) and "off" or "on"))
             end)
         end
+        if key=="repair" then
+            AddMenuEntry(result,"Repair learning status",function()
+                ChalkBox_BarCommand("repair status")
+            end)
+        end
         if key=="bagvalue" then
             AddMenuEntry(result,"Switch to "..
                 (ChalkBox_BarBagValueModeGet()=="junk" and "Total" or "Junk")..
@@ -515,17 +520,34 @@ local function CreateBar()
                 lines[#lines+1]="Exact repair-all quote at this merchant: "..
                     Coins(r.copper)
             elseif r.state=="estimate" then
-                lines[#lines+1]="Estimated repair cost: about "..Coins(r.copper)
-                lines[#lines+1]="Scaled from your last observed vendor quote."
+                lines[#lines+1]="Learned estimate: about "..Coins(r.copper)
+                if r.source=="same-gear" then
+                    lines[#lines+1]="Based on actual quotes for this equipment."
+                elseif r.source=="similar-gear" then
+                    lines[#lines+1]="Based on quotes from similar equipment."
+                else
+                    lines[#lines+1]="Using your previous 1.9.2 calibration."
+                end
+                lines[#lines+1]="Confidence: "..(r.confidence or "early")..
+                    ". Still approximate."
+            elseif r.state=="no-damage" then
+                lines[#lines+1]="No damage detected on equipped repairable gear."
             else
                 lines[#lines+1]="No reliable estimate yet. Visit a repair merchant"
-                lines[#lines+1]="with damaged equipment to calibrate the estimate."
+                lines[#lines+1]="with damaged equipment to teach the estimator."
+            end
+            lines[#lines+1]="Learned from "..tostring(r.samples or 0)..
+                " distinct merchant quote(s)."
+            if type(r.lastError)=="number" then
+                lines[#lines+1]="Last estimate vs actual vendor quote: "..
+                    tostring(r.lastError).."% difference."
             end
             lines[#lines+1]="Equipped durability lost: "..
                 (r.missing or "--").." / "..(r.max or "--").."."
             lines[#lines+1]="Estimates use equipped wear; vendor bills also"
             lines[#lines+1]="include damaged items in bags and may vary by discounts."
             lines[#lines+1]="No auto repair or payment is performed."
+            lines[#lines+1]="/chalk bar repair status | repair reset"
             return lines
         end},
         {"bags","Free bag slots",function()
@@ -969,7 +991,23 @@ function ChalkBox_BarCommand(message)
         else Note("Unknown TrailBar module.") end
     else
         local stat,choice=action:match("^stat%s+(%a+)%s+(%a+)$")
-    if action=="bagvalue junk" or action=="bagvalue total"
+    if action=="repair status" then
+        local status=type(ChalkBox_RepairLearningStatus)=="function"
+            and ChalkBox_RepairLearningStatus() or nil
+        if status then
+            Note("Repair learning: "..status.samples.." saved distinct quote(s), "..
+                "limit "..status.limit..
+                (status.lastError and
+                    (", last estimate error "..status.lastError.."%") or
+                    ", no accuracy comparison yet")..".")
+        else Note("Repair learning module unavailable.") end
+    elseif action=="repair reset" then
+        if type(ChalkBox_RepairLearningReset)=="function" then
+            ChalkBox_RepairLearningReset()
+            Refresh()
+            Note("Cleared this character's repair-learning history.")
+        else Note("Repair learning module unavailable.") end
+    elseif action=="bagvalue junk" or action=="bagvalue total"
         or action=="bagvalue toggle" then
         local mode=action:match("bagvalue%s+(%a+)")
         if mode=="toggle" then ChalkBox_BarBagValueModeToggle()
@@ -1034,7 +1072,7 @@ function ChalkBox_BarCommand(message)
         Note("Layout: /chalk bar edit on/off | layout reset | move <module> <left|center|right> [index]")
         Note("Text alignment: /chalk bar align <module> <left|center|right> | opacity 0-100")
         Note("Vendor value: /chalk bar stat bagvalue on | bagvalue junk|total|toggle")
-        Note("Repairs: /chalk bar stat repair on|off. Right-click any module for a menu.")
+        Note("Repairs: /chalk bar stat repair on|off | repair status|reset. Right-click a module for a menu.")
     end
     end
 end

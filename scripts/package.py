@@ -43,6 +43,7 @@ FILES = (
     "PersonalityContext.lua",
     "Emota.lua",
     "QuestSense.lua",
+    "RepairLearning.lua",
     "TrailBarStats.lua",
     "TrailBarLayout.lua",
     "TrailBar.lua",

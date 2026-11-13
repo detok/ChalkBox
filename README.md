@@ -13,7 +13,7 @@
 [![MIT](https://img.shields.io/badge/license-MIT-67C6B7.svg)](LICENSE)
 [![Forever](https://img.shields.io/badge/WoW-Forever-203342.svg)](https://github.com/detok/ChalkBox)
 
-### [⬇ Download ChalkBox 1.9.2](https://github.com/detok/ChalkBox/releases/download/v1.9.2/ChalkBox-1.9.2.zip)
+### [⬇ Download ChalkBox 1.9.3](https://github.com/detok/ChalkBox/releases/download/v1.9.3/ChalkBox-1.9.3.zip)
 
 [**All GitHub Releases**](https://github.com/detok/ChalkBox/releases) · [**Install Guide**](#-install-in-one-minute) · [**Features**](#-what-chalkbox-does) · [**Help & Bugs**](https://github.com/detok/ChalkBox/issues)
 
@@ -126,6 +126,16 @@ The strip still supports **top / bottom / hidden**, 18px **Reserve screen space*
 
 If separate bags stack too high, **ChalkBox → The Bar** now has a proper **vertical position slider**: **Blizzard's original anchor is at the midpoint (0)**. Drag the thumb **down** to lower bags (+120 maximum), or **up** to lift bags (−120 minimum). **Reset Bags** returns to Blizzard's default instantly. Combined bags, slots and sorting remain untouched. Slash alternatives: `/chalk bags offset 40` (down), `/chalk bags offset -35` (up), `/chalk bags reset`.
 
+### New in 1.9.3 — Repair Learning: a self-calibrating estimate
+
+The Bar now **learns from real merchant repair quotes** rather than replacing one rate with another. Each character retains up to **32 unique repair observations** and uses a robust average of relevant price-per-durability samples to make a better approximate prediction away from merchants. Exact gear matches are preferred; very different gear sets require another sample. Identical merchant quotes aren't repeatedly counted by the five-second update timer.
+
+- At a repair merchant: exact `Repair 2g` quote (when available), with an automatic nonduplicated training example.
+- On the road: **`Repair ~2g`**, marked approximate. Hover to see how many unique observations were saved, whether this gear matches learned samples, confidence stage, and how far off the last estimate was at a subsequent vendor visit.
+- Before any usable sample: `Repair --`. A 1.9.2 saved calibration remains usable as an initial fallback until the new history collects examples.
+- `/chalk bar repair status` shows learned quote count and most recent prediction error; `/chalk bar repair reset` clears this character's training history, including the legacy calibration.
+- No online account, external dataset, transaction, automatic repair or invented exact price. Merchant discounts, damaged items in bags and different gear still affect real costs.
+
 ### New in 1.9.2 — The Bar: repair estimates and right-click controls
 
 **TrailBar is now called The Bar** in menus and documentation. All your existing `/chalk bar` commands and saved per-character placements still work. The Bar gets a new **Repair** module (enabled by default):
@@ -181,7 +191,7 @@ That's included too:
 
 ## 🚀 Install in one minute
 
-**Direct download:** [**ChalkBox 1.9.2 ZIP**](https://github.com/detok/ChalkBox/releases/download/v1.9.2/ChalkBox-1.9.2.zip)  
+**Direct download:** [**ChalkBox 1.9.3 ZIP**](https://github.com/detok/ChalkBox/releases/download/v1.9.3/ChalkBox-1.9.3.zip)  
 **Newer versions:** [**GitHub Releases**](https://github.com/detok/ChalkBox/releases)
 
 1. Download **`ChalkBox-<version>.zip`** from GitHub Releases — *not* the GitHub “Source code” archives.

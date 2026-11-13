@@ -1,19 +1,23 @@
-# ChalkBox 1.9.2 — The Bar
+# ChalkBox 1.9.3 — Repair Learning for The Bar
 
-## Repair cost module
-- **Repair** appears in The Bar by default (and can be toggled under **The Bar Stats**).
-- With a repair merchant open, shows a verified **exact repair-all cost**, when exposed by the Forever API.
-- Elsewhere, shows a clearly marked **~ estimate**, scaled from a previous exact merchant quote and your currently missing equipped durability. Calibration is saved per character.
-- Without a usable observed quote, or when changed equipment makes extrapolation unreliable, shows **Repair --**. Never guesses a made-up repair price.
-- The hover detail explains exact vs approximate, worn item coverage, possible bag gear, and discounts. **No automatic repair or spending**.
+The Bar can now *learn from experience*. Rather than overwriting one calibration ratio, it records a bounded history of actual vendor repair quotes and uses these examples to estimate future costs.
 
-## Right-click menus for The Bar
-- Right-click individual modules outside Edit Mode: toggle their visibility, move them between sections, choose text alignment, adjust bar placement, edit/reset the layout, and open The Bar's native settings.
-- Right-click unused Bar background for all module visibility controls, including restoring hidden widgets.
-- Menus use Blizzard_Menu when present, with legacy EasyMenu fallback. Configuration controls are disabled in combat.
-- In Edit Mode the original right-click alignment cycle remains; Bag Value left-click still flips Junk vs Total.
+## How it learns
 
-## Naming and compatibility
-- TrailBar is now called **The Bar** in native UI and docs. Existing `/chalk bar` commands, old SavedVariables, existing on-disk Lua module names and layouts are **unchanged**.
-- All other 1.9.1 and 1.9.0 features are preserved.
-- Automated Lua 5.1 and installable ZIP validation; in-game look and menu testing is still recommended.
+- **At a repair-capable merchant**, when Forever exposes an exact repair-all quote, store one sample of quote (copper), equipped durability damage, number of repairable worn items, total maximum durability and optional equipped item IDs.
+- **Prevent duplicates** from the five-second bar refresh and repeated identical vendor quotes. Limit storage to **32 distinct valid observations per character**.
+- **Away from a merchant**, predict approximate copper cost from the samples that match the current equipment best, using a robust average of observed copper-per-durability rates. Favor the same identified gear, filter outliers and reject very dissimilar durability pools.
+- **Learn from its misses:** compare the previous prediction against subsequent real merchant quotes and save the most recent percent difference for the tooltip.
+- **Honest display:** exact quotes have no prefix; predictions remain prefixed with `~`. If no credible sample exists, display `Repair --`. An undamaged equipped set may show `Repair 0c` but gear inside bags is excluded from that statement.
+- **Legacy-safe:** an existing 1.9.2 per-character rate remains available as an initial fallback until a real new observation is available.
+
+## Controls
+
+- Hover The Bar's **Repair** stat for the number of observed quotes, prediction source, confidence stage, and last checked error (when available).
+- `/chalk bar repair status` — view this character's saved learning status.
+- `/chalk bar repair reset` — clear this character's training examples, prediction errors and the old calibration.
+- Existing right-click menu, move/hide controls and `/chalk bar stat repair on|off` work unchanged.
+
+**Limitations:** real vendor repair bills may include equipment stored in bags, vendor-specific discounts, guild repairs and unexpected gear changes. These differences cannot be inferred perfectly from equipped durability alone. Estimates are not guarantees; no addon ever repairs or pays automatically.
+
+The full Lua 5.1 tests and single-addon ZIP CI remain required. Live WoW Forever gameplay verification is still recommended.
