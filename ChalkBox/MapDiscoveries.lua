@@ -1,34 +1,72 @@
--- ChalkBox Map Discoveries: optional button on Blizzard's existing world map.
--- No replacement map, pins, external database or quest tracker alterations.
-local mapButton,panel
-local currentMap,mode,dungeonIndex,sourceIndex,page=nil,"outdoor",1,1,1
+-- ChalkBox Discoveries browser. WoW Forever's native WorldMapFrame is
+-- preserved; only a movable optional button and a standalone browser are added.
+-- No HTTP requests, map texture replacements or fabricated drop probabilities.
+local mapButton,panel,loader
+local currentMap=nil
+local mode="outdoor"
+local selectedArea=nil
+local followMap=true
+local selectedSource=nil
+local sortKey="quantity"
+local searchText=""
+local page=1
 local rows={}
-local title,subtitle,summary,footer
-local elapsed=0
+local controls={}
+local lastMap,elapsed=nil,0
+local attachedTo,retries=nil,0
+local menuFrame
+local PANEL_W,PANEL_H=660,616
+local PER_PAGE=7
+
 local function Public(v)
     return v~=nil and (type(issecretvalue)~="function" or not issecretvalue(v))
 end
 local function Call(fn,...)
     if type(fn)~="function" then return end
-    local ok,result=pcall(fn,...)
-    if ok and Public(result) then return result end
+    local ok,value=pcall(fn,...)
+    if ok and Public(value) then return value end
 end
-local function Color()
-    if not panel then return end
+local function Store()
+    if type(ChalkBoxZoneDB)~="table" then ChalkBoxZoneDB={} end
+    local saved=ChalkBoxZoneDB.mapDiscoveryUI
+    if type(saved)~="table" then
+        saved={};ChalkBoxZoneDB.mapDiscoveryUI=saved
+    end
+    return saved
+end
+local function ValidOffset(v)
+    return type(v)=="number" and v==v and v>-5000 and v<5000 and
+        (type(issecretvalue)~="function" or not issecretvalue(v))
+end
+local function Colors()
     local r,g,b,a=0.018,0.018,0.022,0.97
     if type(ChalkBox_ThemeBackground)=="function" then
         r,g,b,a=ChalkBox_ThemeBackground(0.97)
     end
-    if panel.back and panel.back.SetColorTexture then
-        panel.back:SetColorTexture(r,g,b,a)
+    return r,g,b,a
+end
+local function Accent()
+    if type(ChalkBox_ThemeAccent)=="function" then
+        return ChalkBox_ThemeAccent()
     end
-    if panel.stripe and panel.stripe.SetColorTexture then
-        if type(ChalkBox_ThemeAccent)=="function" then
-            panel.stripe:SetColorTexture(ChalkBox_ThemeAccent())
-        else panel.stripe:SetColorTexture(0.86,0.66,0.38,1) end
+    return 0.86,0.66,0.38
+end
+local function Tint()
+    if not panel then return end
+    local r,g,b,a=Colors()
+    if panel.back then panel.back:SetColorTexture(r,g,b,a) end
+    if panel.stripe then panel.stripe:SetColorTexture(Accent()) end
+    for i,row in ipairs(rows) do
+        if row.back then
+            row.back:SetColorTexture(
+                math.min(1,r*2+0.040),
+                math.min(1,g*2+0.044),
+                math.min(1,b*2+0.046),
+                i%2==0 and 0.54 or 0.74)
+        end
     end
 end
-function ChalkBox_MapDiscoveriesThemeRefresh() Color() end
+function ChalkBox_MapDiscoveriesThemeRefresh() Tint() end
 local function MapID()
     local world=WorldMapFrame
     local id
@@ -36,7 +74,7 @@ local function MapID()
         id=Call(world.GetMapID,world)
     end
     if (not id or type(id)~="number") and world and
-        type(world.ScrollContainer)=="table" and
+        world.ScrollContainer and
         type(world.ScrollContainer.GetMapID)=="function" then
         id=Call(world.ScrollContainer.GetMapID,world.ScrollContainer)
     end
@@ -45,12 +83,13 @@ local function MapID()
     end
     if type(id)=="number" and id>0 then return id end
 end
-local function Name(mapID)
-    local info=Call(C_Map and C_Map.GetMapInfo,mapID)
-    if type(info)=="table" and type(info.name)=="string" then
+local function MapName(id)
+    local info=Call(C_Map and C_Map.GetMapInfo,id)
+    if type(info)=="table" and Public(info.name) and
+        type(info.name)=="string" then
         return info.name
     end
-    return "Map "..tostring(mapID or "?")
+    return id and ("Map "..tostring(id)) or "Unknown map"
 end
 local function Watch()
     local opts=type(ChalkBox_DropOptions)=="function" and
@@ -61,7 +100,7 @@ local function Font(parent,style,x,y,width)
     local f=parent:CreateFontString(nil,"OVERLAY",style)
     f:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y)
     f:SetWidth(width)
-    f:SetJustifyH("LEFT")
+    if type(f.SetJustifyH)=="function" then f:SetJustifyH("LEFT") end
     return f
 end
 local function Button(parent,label,width,x,y,fn)
@@ -72,192 +111,456 @@ local function Button(parent,label,width,x,y,fn)
     b:SetScript("OnClick",fn)
     return b
 end
-local function Data()
-    if type(ChalkBox_DropMapData)~="function" then
-        return {zone=nil,dungeons={}}
+local function Areas(kind)
+    if type(ChalkBox_DropVisitedAreas)=="function" then
+        return ChalkBox_DropVisitedAreas(kind) or {}
     end
-    return ChalkBox_DropMapData(currentMap)
-end
-local function Selected()
-    local data=Data()
-    if mode=="outdoor" then
-        return data.zone and ("z:"..tostring(currentMap)),
-            data.zone,nil,data
-    end
-    local dungeons=data.dungeons
-    if #dungeons==0 then return nil,nil,nil,data end
-    if dungeonIndex>#dungeons then dungeonIndex=1 end
-    if dungeonIndex<1 then dungeonIndex=1 end
-    local selected=dungeons[dungeonIndex]
-    return selected.key,selected.area,selected,data
-end
-local function Refresh()
-    if not panel then return end
-    local key,area,dungeon,data=Selected()
-    title:SetText("DISCOVERIES  /  "..Name(currentMap))
-    local opts=ChalkBox_DropOptions and ChalkBox_DropOptions() or {}
-    if not area then
-        summary:SetText(mode=="outdoor" and
-            "No outdoor loot observed here yet." or
-            "No recorded dungeon is linked to this map.")
-        subtitle:SetText(mode=="outdoor" and
-            "Loot this zone to start a personal field guide." or
-            "Dungeons link here only after observed entry/exit.")
-        footer:SetText("Only personally observed loot is displayed.")
-        for _,row in ipairs(rows) do
-            row.title:SetText("")
-            row.detail:SetText("")
+    -- Older clients running mixed files should still open the journal.
+    local fallback={}
+    local id=MapID()
+    if kind=="outdoor" and id and
+        type(ChalkBox_DropArea)=="function" and ChalkBox_DropArea(id) then
+        fallback[1]={key="z:"..id,name=MapName(id),mapID=id}
+    elseif kind=="dungeon" and id and
+        type(ChalkBox_DropMapData)=="function" then
+        local data=ChalkBox_DropMapData(id)
+        for _,v in ipairs(data and data.dungeons or {}) do
+            fallback[#fallback+1]={key=v.key,name=v.name}
         end
-        if panel.dungeonButton then panel.dungeonButton:SetText("Next dungeon") end
-        if panel.sourceButton then panel.sourceButton:SetText("Next source") end
-        return
     end
-    local sources=type(ChalkBox_DropSources)=="function" and
-        ChalkBox_DropSources(key) or {}
-    local sourceKey=nil
-    if sourceIndex>1 and #sources>0 then
-        local selected=sources[sourceIndex-1]
-        if selected then sourceKey=selected.key
-        else sourceIndex=1 end
+    return fallback
+end
+local function DefaultArea()
+    if mode=="outdoor" then
+        local key=currentMap and ("z:"..currentMap) or nil
+        -- Following the viewed map must NEVER show the first unrelated zone.
+        if followMap and key then return key end
+        if key and type(ChalkBox_DropAreaInfo)=="function" and
+            ChalkBox_DropAreaInfo(key) then return key end
+        local items=Areas("outdoor")
+        return items[1] and items[1].key or nil
     end
-    local items=ChalkBox_DropAreaItems and
-        ChalkBox_DropAreaItems(key,sourceKey) or {}
-    local maxPages=math.max(1,math.ceil(#items/#rows))
-    if page>maxPages then page=maxPages end
-    subtitle:SetText(area.kind=="dungeon" and
-        ((dungeon and dungeon.name or area.name)..
-            " · separate instance history") or
-        ("Outdoor zone · "..tostring(area.windows or 0)..
-            " sampled loot windows"))
-    local label=sourceKey and sources[sourceIndex-1].name or "All sources"
-    summary:SetText(("%d discovered items  ·  %s"):format(#items,label))
-    local start=(page-1)*#rows
-    for i,row in ipairs(rows) do
-        local item=items[start+i]
-        if item then
-            row.title:SetText(item.name.."  x"..item.quantity)
-            if item.rate then
-                row.detail:SetText(("%d / %d observed windows · %.1f%%, not official"):format(
-                    item.windows,item.attempts,item.rate))
-            else
-                row.detail:SetText(("%d observed loot windows · no reliable source odds"):format(
-                    item.windows))
+    local list=Areas("dungeon")
+    for _,entry in ipairs(list) do
+        if currentMap and
+            (entry.entranceZoneID==currentMap or entry.mapID==currentMap) then
+            return entry.key
+        end
+    end
+    if followMap then return nil end
+    return list[1] and list[1].key or nil
+end
+local function EnsureSelection()
+    local list=Areas(mode)
+    local found=false
+    for _,v in ipairs(list) do
+        if v.key==selectedArea then found=true;break end
+    end
+    if not found then
+        if not (followMap and mode=="outdoor" and currentMap and
+            selectedArea=="z:"..currentMap) then
+            selectedArea=DefaultArea();selectedSource=nil;page=1
+        end
+    end
+    return list
+end
+local function Sources()
+    if not selectedArea or type(ChalkBox_DropSources)~="function" then
+        return {}
+    end
+    return ChalkBox_DropSources(selectedArea) or {}
+end
+local function Items()
+    if not selectedArea or type(ChalkBox_DropAreaItems)~="function" then
+        return {}
+    end
+    local items=ChalkBox_DropAreaItems(selectedArea,selectedSource,searchText)
+        or {}
+    table.sort(items,function(a,b)
+        if sortKey=="name" then
+            if a.name==b.name then return a.id<b.id end
+            return a.name<b.name
+        elseif sortKey=="appearances" then
+            if a.windows==b.windows then return a.name<b.name end
+            return a.windows>b.windows
+        elseif sortKey=="rate" then
+            local ar,br=a.rate or -1,b.rate or -1
+            if ar==br then return a.name<b.name end
+            return ar>br
+        end
+        if a.quantity==b.quantity then return a.name<b.name end
+        return a.quantity>b.quantity
+    end)
+    return items
+end
+-- MenuUtil is the modern client API. EasyMenu is a fallback. If neither is
+-- present, clicking cycles through options instead of breaking navigation.
+local function ShowMenu(owner,choices)
+    if type(InCombatLockdown)=="function" and InCombatLockdown() then
+        return false
+    end
+    if type(MenuUtil)=="table" and
+        type(MenuUtil.CreateContextMenu)=="function" then
+        local ok=pcall(MenuUtil.CreateContextMenu,owner,
+            function(_,root)
+                for _,entry in ipairs(choices) do
+                    if entry.title and type(root.CreateTitle)=="function" then
+                        root:CreateTitle(entry.text)
+                    elseif type(root.CreateButton)=="function" then
+                        root:CreateButton(entry.text,function() entry.action() end)
+                    end
+                end
+            end)
+        if ok then return true end
+    end
+    if type(EasyMenu)=="function" then
+        if not menuFrame then
+            menuFrame=CreateFrame("Frame",
+                "ChalkBoxDiscoveriesDropdown",UIParent,"UIDropDownMenuTemplate")
+        end
+        local list={}
+        for _,entry in ipairs(choices) do
+            list[#list+1]={text=entry.text,func=entry.action,
+                isTitle=entry.title==true,notCheckable=true}
+        end
+        local ok=pcall(EasyMenu,list,menuFrame,owner,0,-4,"MENU")
+        if ok then return true end
+    end
+    return false
+end
+local function Pick(index,options)
+    if #options==0 then return end
+    local candidate=options[index]
+    if candidate and candidate.action then candidate.action() end
+end
+local refresh
+local function AreaOptions()
+    local list={{text="CHOOSE "..(mode=="outdoor" and "OUTDOOR ZONE"
+        or "DUNGEON"),title=true}}
+    for _,entry in ipairs(Areas(mode)) do
+        local item=entry
+        local name=(entry.key==selectedArea and "✓ " or "")..
+            entry.name.." · "..tostring(entry.items or 0).." items"
+        list[#list+1]={text=name,action=function()
+            selectedArea=item.key
+            followMap=false;selectedSource=nil;page=1
+            refresh()
+        end}
+    end
+    if #list==1 then
+        list[2]={text="No observed locations yet",action=function() end}
+    end
+    return list
+end
+local function SourceOptions()
+    local list={
+        {text="CREATURE / SOURCE FILTER",title=true},
+        {text=(not selectedSource and "✓ " or "").."All observed sources",
+            action=function() selectedSource=nil;page=1;refresh() end}
+    }
+    for _,entry in ipairs(Sources()) do
+        local item=entry
+        list[#list+1]={text=(selectedSource==item.key and "✓ " or "")..
+            item.name.." · "..tostring(item.windows).." windows",
+            action=function()
+                selectedSource=item.key;page=1;refresh()
+            end}
+    end
+    return list
+end
+local sorting={
+    {key="quantity",name="Quantity"},
+    {key="appearances",name="Appearances"},
+    {key="name",name="Item name"},
+    {key="rate",name="Observed rate"},
+}
+local function SortOptions()
+    local list={{text="SORT ITEMS",title=true}}
+    for _,entry in ipairs(sorting) do
+        local item=entry
+        list[#list+1]={text=(sortKey==item.key and "✓ " or "")..
+            item.name,action=function() sortKey=item.key;page=1;refresh() end}
+    end
+    return list
+end
+function ChalkBox_DiscoveriesDropdownItems(kind)
+    if kind=="area" then return AreaOptions()
+    elseif kind=="source" then return SourceOptions()
+    elseif kind=="sort" then return SortOptions() end
+    return {}
+end
+local function Dropdown(parent,label,width,x,y,kind)
+    local b=Button(parent,label,width,x,y,function(self)
+        local options=ChalkBox_DiscoveriesDropdownItems(kind)
+        if not ShowMenu(self,options) then
+            local actionable={}
+            for _,entry in ipairs(options) do
+                if not entry.title then actionable[#actionable+1]=entry end
             end
-        else row.title:SetText("");row.detail:SetText("") end
+            if #actionable>0 then
+                local pointer=controls[kind.."Cycle"] or 0
+                pointer=pointer%#actionable+1
+                controls[kind.."Cycle"]=pointer
+                Pick(pointer,actionable)
+            end
+        end
+    end)
+    controls[kind]=b
+    return b
+end
+local function Row(parent,index)
+    local y=-276-(index-1)*39
+    local frame=CreateFrame("Frame",nil,parent)
+    frame:SetSize(PANEL_W-40,37)
+    frame:SetPoint("TOPLEFT",parent,"TOPLEFT",20,y)
+    local back=frame:CreateTexture(nil,"BACKGROUND")
+    back:SetAllPoints(frame)
+    local icon=frame:CreateTexture(nil,"ARTWORK")
+    icon:SetSize(28,28)
+    icon:SetPoint("LEFT",frame,"LEFT",7,0)
+    local name=Font(frame,"GameFontHighlight",46,-5,276)
+    local quantity=Font(frame,"GameFontNormal",328,-5,62)
+    local sampled=Font(frame,"GameFontHighlightSmall",401,-5,92)
+    local rate=Font(frame,"GameFontHighlight",511,-5,103)
+    local hint=Font(frame,"GameFontHighlightSmall",46,-22,495)
+    local r={frame=frame,back=back,icon=icon,name=name,qty=quantity,
+        samples=sampled,rate=rate,hint=hint}
+    if type(frame.EnableMouse)=="function" then frame:EnableMouse(true) end
+    frame:SetScript("OnEnter",function()
+        local item=r.item
+        if not item or not GameTooltip or
+            type(GameTooltip.SetHyperlink)~="function" then return end
+        GameTooltip:SetOwner(frame,"ANCHOR_RIGHT")
+        local ok=pcall(GameTooltip.SetHyperlink,GameTooltip,"item:"..item.id)
+        if ok then
+            GameTooltip:AddLine("ChalkBox · personal observation",
+                0.86,0.66,0.38)
+            if item.rate then
+                GameTooltip:AddLine(("%d in %d known-source windows (%.1f%%)"):format(
+                    item.windows,item.attempts,item.rate),0.7,0.9,0.8)
+            else
+                GameTooltip:AddLine("No comparable creature-specific odds.",
+                    0.75,0.75,0.8)
+            end
+            GameTooltip:Show()
+        end
+    end)
+    frame:SetScript("OnLeave",function()
+        if GameTooltip then GameTooltip:Hide() end
+    end)
+    return r
+end
+local function SetItemIcon(row,id)
+    local iconID
+    if type(C_Item)=="table" then
+        iconID=Call(C_Item.GetItemIconByID,tonumber(id))
     end
-    footer:SetText(("Page %d/%d · %d recorded dungeon(s)%s"):format(
-        page,maxPages,#data.dungeons,
-        opts.limitReached and " · journal storage limit reached" or ""))
-    if panel.dungeonButton then
-        panel.dungeonButton:SetText("Next dungeon ("..#data.dungeons..")")
+    if not iconID then iconID=Call(GetItemIcon,tonumber(id)) end
+    if row.icon and type(row.icon.SetTexture)=="function" then
+        row.icon:SetTexture(iconID or 134400)
     end
-    if panel.sourceButton then
-        panel.sourceButton:SetText("Source ("..#sources..")")
+end
+local function ClearRow(row)
+    row.item=nil
+    row.name:SetText("")
+    row.qty:SetText("")
+    row.samples:SetText("")
+    row.rate:SetText("")
+    row.hint:SetText("")
+    if row.icon and type(row.icon.SetTexture)=="function" then
+        row.icon:SetTexture(nil)
     end
+    if type(row.frame.Hide)=="function" then row.frame:Hide() end
+end
+refresh=function()
+    if not panel then return end
+    EnsureSelection()
+    local info=type(ChalkBox_DropAreaInfo)=="function" and
+        selectedArea and ChalkBox_DropAreaInfo(selectedArea) or nil
+    local all=Items()
+    local sources=Sources()
+    local maxPage=math.max(1,math.ceil(#all/PER_PAGE))
+    if page>maxPage then page=maxPage end
+    if page<1 then page=1 end
+    local zoneName=selectedArea and info and info.name or
+        (currentMap and MapName(currentMap)) or "Unexplored"
+    controls.title:SetText("DISCOVERIES")
+    controls.subtitle:SetText(
+        "YOUR PERSONAL LOOT ATLAS  ·  "..(mode=="outdoor" and
+            "OUTDOOR" or "DUNGEON"))
+    controls.area:SetText(
+        (zoneName:len()>25 and zoneName:sub(1,22).."..." or zoneName).."  ▾")
+    local sourceName="All sources"
+    for _,s in ipairs(sources) do
+        if s.key==selectedSource then sourceName=s.name;break end
+    end
+    if sourceName:len()>18 then sourceName=sourceName:sub(1,15).."..." end
+    controls.source:SetText(sourceName.."  ▾")
+    local sortName="Quantity"
+    for _,s in ipairs(sorting) do
+        if s.key==sortKey then sortName=s.name;break end
+    end
+    controls.sort:SetText(sortName.."  ▾")
+    controls.outdoor:SetText(mode=="outdoor" and "● Outdoor" or "Outdoor")
+    controls.dungeon:SetText(mode=="dungeon" and "● Dungeons" or "Dungeons")
+    controls.map:SetText(followMap and "Following map" or "Use map zone")
+    controls.count:SetText(("%d items  ·  %d loot windows  ·  %d sources"):format(
+        #all,info and info.windows or 0,#sources))
+    for i,row in ipairs(rows) do
+        local item=all[(page-1)*PER_PAGE+i]
+        if not item then ClearRow(row)
+        else
+            row.item=item
+            SetItemIcon(row,item.id)
+            row.name:SetText(item.name or ("Item #"..item.id))
+            row.qty:SetText("x"..tostring(item.quantity or 0))
+            row.samples:SetText(tostring(item.windows or 0).." windows")
+            row.rate:SetText(item.rate and
+                ("%.1f%%"):format(item.rate) or "—")
+            row.hint:SetText(item.rate and
+                ("Observed in %d of %d readable %s windows"):format(
+                    item.windows,item.attempts,sourceName)) or
+                "Collected here · rate requires one known creature source")
+            if type(row.frame.Show)=="function" then row.frame:Show() end
+        end
+    end
+    controls.page:SetText(("Page %d of %d"):format(page,maxPage))
+    local opts=type(ChalkBox_DropOptions)=="function" and
+        ChalkBox_DropOptions() or {}
+    if not info then
+        controls.empty:SetText("Nothing recorded for this location yet.\n"..
+            "Loot here with DropSense tracking enabled to build your journal.")
+    elseif #all==0 then
+        controls.empty:SetText("No items match your search or source filter.")
+    else controls.empty:SetText("") end
+    controls.footer:SetText(
+        "Rates are YOUR observed known-source loot windows, not official drop odds."..
+        (opts.limitReached and "  ·  Storage limit reached." or ""))
 end
 local function EnsurePanel()
     if panel or not UIParent then return end
     local f=CreateFrame("Frame","ChalkBoxMapDiscoveries",UIParent)
-    f:SetSize(466,477)
+    f:SetSize(PANEL_W,PANEL_H)
     f:SetPoint("CENTER",UIParent,"CENTER",0,0)
-    if f.SetFrameStrata then f:SetFrameStrata("DIALOG") end
-    if f.SetMovable then f:SetMovable(true) end
-    if f.SetClampedToScreen then f:SetClampedToScreen(true) end
-    if f.EnableMouse then f:EnableMouse(true) end
-    if f.RegisterForDrag then f:RegisterForDrag("LeftButton") end
+    if type(f.SetFrameStrata)=="function" then f:SetFrameStrata("DIALOG") end
+    if type(f.SetMovable)=="function" then f:SetMovable(true) end
+    if type(f.SetClampedToScreen)=="function" then
+        f:SetClampedToScreen(true)
+    end
+    if type(f.EnableMouse)=="function" then f:EnableMouse(true) end
+    if type(f.RegisterForDrag)=="function" then
+        f:RegisterForDrag("LeftButton")
+    end
     f:SetScript("OnDragStart",function(self)
-        if self.StartMoving and (type(InCombatLockdown)~="function" or
-            not InCombatLockdown()) then self:StartMoving() end
+        if type(InCombatLockdown)~="function" or not InCombatLockdown() then
+            if self.StartMoving then self:StartMoving() end
+        end
     end)
     f:SetScript("OnDragStop",function(self)
         if self.StopMovingOrSizing then self:StopMovingOrSizing() end
     end)
-    local back=f:CreateTexture(nil,"BACKGROUND")
-    back:SetAllPoints(f)
-    f.back=back
+    local bg=f:CreateTexture(nil,"BACKGROUND")
+    bg:SetAllPoints(f);f.back=bg
     local stripe=f:CreateTexture(nil,"ARTWORK")
     stripe:SetPoint("TOPLEFT",f,"TOPLEFT",0,0)
     stripe:SetPoint("TOPRIGHT",f,"TOPRIGHT",0,0)
-    stripe:SetHeight(3)
-    f.stripe=stripe
-    title=Font(f,"GameFontNormalLarge",20,-20,420)
-    subtitle=Font(f,"GameFontHighlightSmall",20,-53,423)
-    Button(f,"Outdoor",112,20,-82,function()
-        mode="outdoor";page=1;sourceIndex=1;Refresh()
+    stripe:SetHeight(3);f.stripe=stripe
+    controls.title=Font(f,"GameFontNormalHuge",22,-20,400)
+    controls.subtitle=Font(f,"GameFontHighlightSmall",22,-51,594)
+    Button(f,"Close",86,552,-20,function() f:Hide() end)
+    controls.outdoor=Button(f,"Outdoor",128,22,-83,function()
+        mode="outdoor";selectedArea=DefaultArea()
+        selectedSource=nil;page=1;refresh()
     end)
-    Button(f,"Dungeons",112,142,-82,function()
-        mode="dungeon";page=1;sourceIndex=1;Refresh()
+    controls.dungeon=Button(f,"Dungeons",128,160,-83,function()
+        mode="dungeon";selectedArea=DefaultArea()
+        selectedSource=nil;page=1;refresh()
     end)
-    Button(f,"Close",90,356,-82,function() f:Hide() end)
-    summary=Font(f,"GameFontNormal",21,-124,424)
-    for i=1,7 do
-        local top=-159-(i-1)*37
-        local a=Font(f,"GameFontHighlight",27,top,407)
-        local b=Font(f,"GameFontHighlightSmall",27,top-17,407)
-        rows[#rows+1]={title=a,detail=b}
+    controls.map=Button(f,"Following map",153,485,-83,function()
+        followMap=true;currentMap=MapID()
+        selectedArea=DefaultArea();selectedSource=nil;page=1;refresh()
+    end)
+    Font(f,"AREA / DUNGEON","GameFontNormal",22,-124,265)
+    Font(f,"CREATURE SOURCE","GameFontNormal",301,-124,212)
+    Font(f,"SORT BY","GameFontNormal",515,-124,116)
+    Dropdown(f,"Choose area",265,22,-144,"area")
+    Dropdown(f,"All sources",205,301,-144,"source")
+    Dropdown(f,"Quantity",123,515,-144,"sort")
+    Font(f,"SEARCH ITEMS","GameFontNormal",22,-195,137)
+    local input=CreateFrame("EditBox",nil,f,"InputBoxTemplate")
+    input:SetSize(382,24)
+    input:SetPoint("TOPLEFT",f,"TOPLEFT",151,-189)
+    if input.SetAutoFocus then input:SetAutoFocus(false) end
+    if input.SetScript then
+        input:SetScript("OnTextChanged",function(self)
+            local value=type(self.GetText)=="function" and
+                self:GetText() or ""
+            if type(value)~="string" then value="" end
+            searchText=value:sub(1,80)
+            page=1;refresh()
+        end)
+        input:SetScript("OnEscapePressed",function(self)
+            if self.ClearFocus then self:ClearFocus() end
+        end)
     end
-    f.sourceButton=Button(f,"Source (0)",131,20,-430,function()
-        local key=Selected()
-        local sources=key and ChalkBox_DropSources and
-            ChalkBox_DropSources(key) or {}
-        sourceIndex=sourceIndex+1
-        if sourceIndex>#sources+1 then sourceIndex=1 end
-        page=1;Refresh()
+    controls.search=input
+    Button(f,"Clear",91,545,-189,function()
+        if input.SetText then input:SetText("") end
+        searchText="";page=1;refresh()
     end)
-    f.dungeonButton=Button(f,"Next dungeon",132,159,-430,function()
-        local dungeons=Data().dungeons
-        if #dungeons>0 then
-            mode="dungeon"
-            dungeonIndex=dungeonIndex%#dungeons+1
-            sourceIndex=1;page=1;Refresh()
-        end
+    controls.count=Font(f,"GameFontHighlightSmall",22,-230,610)
+    Font(f,"ITEM", "GameFontNormal",70,-257,260)
+    Font(f,"COLLECTED", "GameFontNormal",348,-257,90)
+    Font(f,"APPEARED", "GameFontNormal",425,-257,88)
+    Font(f,"RATE*", "GameFontNormal",542,-257,70)
+    for i=1,PER_PAGE do rows[i]=Row(f,i) end
+    controls.empty=Font(f,"GameFontHighlight",37,-311,575)
+    Button(f,"◀ Previous",112,22,-558,function()
+        page=math.max(1,page-1);refresh()
     end)
-    Button(f,"<",41,304,-430,function()
-        page=math.max(1,page-1);Refresh()
+    controls.page=Font(f,"GameFontNormal",279,-564,137)
+    Button(f,"Next ▶",109,529,-558,function()
+        page=page+1;refresh()
     end)
-    Button(f,">",41,351,-430,function() page=page+1;Refresh() end)
-    footer=Font(f,"GameFontHighlightSmall",21,-466,426)
+    controls.footer=Font(f,"GameFontHighlightSmall",22,-593,612)
     panel=f
     f:Hide()
-    Color()
-    local lastMap=MapID()
+    Tint()
     f:SetScript("OnUpdate",function(self,dt)
-        if not self.IsShown or not self:IsShown() then return end
+        if type(self.IsShown)=="function" and not self:IsShown() then
+            return
+        end
         elapsed=elapsed+(type(dt)=="number" and dt or 0)
-        if elapsed<0.6 then return end
+        if elapsed<0.7 then return end
         elapsed=0
         local id=MapID()
         if id and id~=lastMap then
-            lastMap=id
-            currentMap=id;dungeonIndex=1;sourceIndex=1;page=1
-            Refresh()
+            lastMap=id;currentMap=id
+            if followMap then
+                selectedArea=DefaultArea()
+                selectedSource=nil;page=1;refresh()
+            end
         end
     end)
 end
 function ChalkBox_OpenMapDiscoveries()
-    -- A slash command/settings click can be the first access before the
-    -- map's load-on-demand frame exists; the journal still opens standalone.
     if type(ChalkBox_MapDiscoveriesEnsure)=="function" then
         ChalkBox_MapDiscoveriesEnsure()
     end
     EnsurePanel()
     if not panel then return false end
     local id=MapID()
-    if id and id~=currentMap then
-        currentMap=id;dungeonIndex=1;sourceIndex=1;page=1
+    if id then currentMap=id;lastMap=id end
+    if not selectedArea or followMap then
+        selectedArea=DefaultArea()
     end
-    if not currentMap then return false end
-    Color()
-    Refresh()
+    refresh()
+    Tint()
     panel:Show()
     return true
 end
--- Forever's WorldMapFrame can be loaded AFTER ChalkBox finishes loading.
--- Additionally Forever uses the modern map canvas, with its pin button
--- at the top LEFT; a static top-right coordinate can be obscured.
--- Discoveries remains independently accessible via /chalk drops map.
-local attachedTo
-local retries=0
+-- The new visibility fix in 2.0 is retained: Forever may load the map
+-- after ChalkBox's initial events. Attach once and stop temporary retries.
 local function MapContainer(world)
     if not world then return end
     if type(world.GetCanvasContainer)=="function" then
@@ -273,19 +576,72 @@ local function MapContainer(world)
     return world,"frame"
 end
 local function PositionButton()
-    if not mapButton then return end
-    local world=WorldMapFrame
-    if not world then return end
-    local container,kind=MapContainer(world)
+    if not mapButton or not WorldMapFrame then return end
+    local container,kind=MapContainer(WorldMapFrame)
     if not container then return end
     if type(mapButton.ClearAllPoints)=="function" then
         mapButton:ClearAllPoints()
     end
-    -- Anchor inside the visible canvas, away from the nav bar and map pin.
-    -- When the canvas API is unavailable, use the outer map as fallback.
-    mapButton:SetPoint("TOPLEFT",container,"TOPLEFT",
-        kind=="frame" and 18 or 8,kind=="frame" and -114 or -98)
+    local saved=Store()
+    local x,y=kind=="frame" and 18 or 8,kind=="frame" and -114 or -98
+    if ValidOffset(saved.buttonX) and ValidOffset(saved.buttonY) then
+        x,y=saved.buttonX,saved.buttonY
+    end
+    -- Saved positions stay within the visible map at smaller UI scales.
+    local w=Call(container.GetWidth,container)
+    local h=Call(container.GetHeight,container)
+    if type(w)=="number" and w>140 then
+        x=math.max(0,math.min(x,w-116))
+    end
+    if type(h)=="number" and h>90 then
+        y=math.max(-h+35,math.min(-10,y))
+    end
+    mapButton:SetPoint("TOPLEFT",container,"TOPLEFT",x,y)
     attachedTo=kind
+end
+local function SavePosition()
+    if not mapButton or not WorldMapFrame then return false end
+    local container=MapContainer(WorldMapFrame)
+    if not container or type(mapButton.GetLeft)~="function" or
+        type(mapButton.GetTop)~="function" or
+        type(container.GetLeft)~="function" or
+        type(container.GetTop)~="function" then return false end
+    local left,top=Call(mapButton.GetLeft,mapButton),
+        Call(mapButton.GetTop,mapButton)
+    local baseLeft,baseTop=Call(container.GetLeft,container),
+        Call(container.GetTop,container)
+    if not (ValidOffset(left) and ValidOffset(top) and
+        ValidOffset(baseLeft) and ValidOffset(baseTop)) then
+        return false
+    end
+    local saved=Store()
+    saved.buttonX=math.floor(left-baseLeft+0.5)
+    saved.buttonY=math.floor(top-baseTop+0.5)
+    PositionButton()
+    return true
+end
+function ChalkBox_MapDiscoveriesResetButton()
+    local saved=Store()
+    saved.buttonX=nil;saved.buttonY=nil
+    if mapButton then PositionButton() end
+    return true
+end
+function ChalkBox_MapDiscoveriesButtonPosition()
+    local saved=Store()
+    return {x=saved.buttonX,y=saved.buttonY,
+        custom=ValidOffset(saved.buttonX) and ValidOffset(saved.buttonY)}
+end
+local function OnButtonMenu(self)
+    local options={
+        {text="ChalkBox Discoveries",title=true},
+        {text="Open loot journal",action=function()
+            ChalkBox_OpenMapDiscoveries() end},
+        {text="Reset button position",action=function()
+            ChalkBox_MapDiscoveriesResetButton() end},
+    }
+    if not ShowMenu(self,options) then
+        ChalkBox_MapDiscoveriesResetButton()
+    end
 end
 local function InstallButton()
     if mapButton then return true end
@@ -295,37 +651,60 @@ local function InstallButton()
         "UIPanelButtonTemplate")
     if not b then return false end
     b:SetSize(116,25)
-    if type(b.SetFrameStrata)=="function" then
-        b:SetFrameStrata("HIGH")
-    end
+    if type(b.SetFrameStrata)=="function" then b:SetFrameStrata("HIGH") end
     if type(b.SetFrameLevel)=="function" and
         type(world.GetFrameLevel)=="function" then
         local level=Call(world.GetFrameLevel,world)
         if type(level)=="number" then b:SetFrameLevel(level+40) end
     end
-    b:SetText("Discoveries")
-    b:SetScript("OnClick",function()
-        ChalkBox_OpenMapDiscoveries()
-    end)
-    if type(b.SetScript)=="function" then
-        b:SetScript("OnEnter",function(self)
-            if GameTooltip then
-                GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
-                GameTooltip:SetText("ChalkBox Discoveries")
-                GameTooltip:AddLine("Browse your own outdoor and dungeon loot.",
-                    0.85,0.85,0.85,true)
-                GameTooltip:Show()
-            end
-        end)
-        b:SetScript("OnLeave",function()
-            if GameTooltip then GameTooltip:Hide() end
-        end)
+    if type(b.SetMovable)=="function" then b:SetMovable(true) end
+    if type(b.SetClampedToScreen)=="function" then
+        b:SetClampedToScreen(true)
     end
+    if type(b.RegisterForDrag)=="function" then
+        b:RegisterForDrag("LeftButton")
+    end
+    b:SetText("Discoveries")
+    b:SetScript("OnClick",function(self,button)
+        if button=="RightButton" then OnButtonMenu(self)
+        else ChalkBox_OpenMapDiscoveries() end
+    end)
+    if type(b.RegisterForClicks)=="function" then
+        b:RegisterForClicks("LeftButtonUp","RightButtonUp")
+    end
+    b:SetScript("OnDragStart",function(self)
+        if type(InCombatLockdown)=="function" and InCombatLockdown() then
+            return
+        end
+        self._chalkDragging=true
+        if type(self.StartMoving)=="function" then self:StartMoving() end
+    end)
+    b:SetScript("OnDragStop",function(self)
+        if type(self.StopMovingOrSizing)=="function" then
+            self:StopMovingOrSizing()
+        end
+        if self._chalkDragging then SavePosition() end
+        self._chalkDragging=false
+    end)
+    b:SetScript("OnEnter",function(self)
+        if GameTooltip then
+            GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
+            GameTooltip:SetText("ChalkBox · Discoveries")
+            GameTooltip:AddLine("Click: browse observed loot and dungeons.",
+                0.8,0.82,0.85,true)
+            GameTooltip:AddLine("Drag: reposition this button on the map.",
+                0.7,0.85,0.75,true)
+            GameTooltip:AddLine("Right-click: reset button position.",
+                0.75,0.75,0.8,true)
+            GameTooltip:Show()
+        end
+    end)
+    b:SetScript("OnLeave",function()
+        if GameTooltip then GameTooltip:Hide() end
+    end)
     mapButton=b
     PositionButton()
     if type(world.HookScript)=="function" then
-        -- OnShow is more reliable than the map update event on a
-        -- load-on-demand WorldMapFrame, including the very first open.
         world:HookScript("OnShow",function()
             PositionButton()
             ChalkBox_MapDiscoveriesRefresh()
@@ -347,25 +726,24 @@ function ChalkBox_MapDiscoveriesEnsure()
     return mapButton~=nil
 end
 function ChalkBox_MapDiscoveriesStatus()
-    local opts=type(ChalkBox_DropOptions)=="function"
-        and ChalkBox_DropOptions() or {}
+    local opt=type(ChalkBox_DropOptions)=="function" and
+        ChalkBox_DropOptions() or {}
     return {
         frame=WorldMapFrame~=nil,
         button=mapButton~=nil,
         shown=mapButton and type(mapButton.IsShown)=="function"
             and mapButton:IsShown() or false,
-        allowed=opts.mapButton~=false,
-        tracking=opts.enabled~=false,
-        areas=opts.areas or 0,
+        allowed=opt.mapButton~=false,
+        tracking=opt.enabled~=false,
+        areas=opt.areas or 0,
         anchor=attachedTo or "not attached",
         mapID=MapID(),
         retries=retries,
+        moved=ChalkBox_MapDiscoveriesButtonPosition().custom,
     }
 end
 function ChalkBox_MapDiscoveriesRefresh()
-    if not mapButton then
-        if not InstallButton() then return false end
-    end
+    if not mapButton and not InstallButton() then return false end
     if Watch() then mapButton:Show()
     else
         mapButton:Hide()
@@ -373,27 +751,22 @@ function ChalkBox_MapDiscoveriesRefresh()
     end
     return true
 end
-local loader=CreateFrame("Frame")
--- Do not rely on WORLD_MAP_UPDATE existing in this Forever build.
--- ADDON_LOADED also fires when Blizzard's map loads on demand.
-for _,e in ipairs({"PLAYER_LOGIN","PLAYER_ENTERING_WORLD",
+loader=CreateFrame("Frame")
+for _,name in ipairs({"PLAYER_LOGIN","PLAYER_ENTERING_WORLD",
     "ADDON_LOADED"}) do
-    loader:RegisterEvent(e)
+    loader:RegisterEvent(name)
 end
 loader:SetScript("OnEvent",function()
     ChalkBox_MapDiscoveriesEnsure()
 end)
--- A lightweight temporary retry handles clients with an already available
--- world frame that isn't initialized until the first time the map opens.
--- Stops entirely once the button attaches; no permanent map polling.
 local elapsedRetry=0
-loader:SetScript("OnUpdate",function(self,elapsed)
+loader:SetScript("OnUpdate",function(self,dt)
     if mapButton then
         self:SetScript("OnUpdate",nil)
         return
     end
-    if type(elapsed)~="number" then return end
-    elapsedRetry=elapsedRetry+elapsed
+    if type(dt)~="number" then return end
+    elapsedRetry=elapsedRetry+dt
     if elapsedRetry<0.75 then return end
     elapsedRetry=0
     retries=retries+1

@@ -10,11 +10,13 @@ Commands operate inside the **one ChalkBox addon**.
 | `/chalk forge status` | Current MacroForge scan/saved-build status |
 | `/chalk drops map` | Open Discoveries independent of map button |
 | `/chalk drops map status` | Diagnose map frame/button/visibility |
+| `/chalk drops map reset` | Return the dragged map button to its default location |
 | `/chalk drops map on` / `off` | Show/hide map button |
 | `/chalk drops on` / `off` | Start/stop personal loot-window recording |
 | `/chalk drops status` | Inspect tracked items, sampled windows and mapped zones |
 | `/chalk drops tooltip on` / `off` | Show/hide observed-loot notes in native loot-window tooltips |
 | `/chalk drops chance 5 20` | Example probability calculator for a **user-supplied** 5% independent chance across 20 tries |
+| `/chalk update` | Show locally installed ChalkBox version and a real GitHub Releases link |
 | `/chalk session` | View this session |
 | `/chalk session last` | View previous saved session |
 | `/chalk loot status` | LootSense, profession knowledge and read API status |

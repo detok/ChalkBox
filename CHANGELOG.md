@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.1 — Discoveries UX and honest update awareness (prerelease)
+
+- **Discoveries browser refresh:** wider, readable item rows with icons, collectible quantities, observed loot-window counts, conservative source-specific rates, and clearer empty states. Three true dropdowns for area/dungeon, creature source and sort; searchable item names/IDs; native menu API with graceful fallback.
+- **Movable Discoveries button:** drag anywhere within the world map; per-character saved position survives reopen/relog. Right-click, DropSense settings or `/chalk drops map reset` restores default. Retain the working 2.0 map loading/attach fix.
+- **Location correctness:** when following the map, an unrecorded zone no longer displays an unrelated zone's loot; unrelated dungeons aren't falsely linked to the viewed map.
+- **Updates settings:** read installed version from the TOC, provide a selectable, accurate GitHub Releases URL and `/chalk update` status. Optional party/raid peer version comparison (OFF by default, throttled) can flag newer versions observed on other players, but never pretends to request GitHub directly.
+- Preserve all existing saved loot and settings. Add regressions for menus, search, sorting, button position, map laziness and version notifications.
+
+
 ## 2.0.0 — The Quiet Adventure Companion (prerelease)
 
 - **Fix Forever's Map Discoveries entry point:** late WorldMapFrame load now gets a retry until it can attach; button anchors against the visible top-left map canvas and raises above its overlay. Refresh when map opens or changes. Remove fragile reliance on the optional WORLD_MAP_UPDATE event.

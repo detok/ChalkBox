@@ -41,6 +41,7 @@ FILES = (
     "CampSense.lua",
     "DropSense.lua",
     "MapDiscoveries.lua",
+    "UpdateCheck.lua",
     "MacroForge.lua",
     "MacroForgeUI.lua",
     "LootSense.lua",
