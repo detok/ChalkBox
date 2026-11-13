@@ -18,7 +18,7 @@ assert(ChalkBox_BarLayoutMove("gold","left",2),
 local result=ChalkBox_BarLayoutGet()
 assert(result.left[2]=="gold" and IsListed(result,"gold")==1,
     "moving gold into left must preserve one instance, at chosen index")
-assert(#result.right==2,"removed from original section")
+assert(#result.right==3,"moving gold leaves time, latency and bag value in the right section")
 assert(ChalkBox_BarLayoutMove("level","right",1),
     "even mandatory level can be placed in the right group")
 result=ChalkBox_BarLayoutGet()
