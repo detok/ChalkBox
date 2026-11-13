@@ -1,8 +1,14 @@
 # Troubleshooting
 
-## 2.0.4: Discoveries shows controls but not the panel, or bags hitch
+## 2.0.5: Discoveries panel has buttons but no headings, filters or text
 
-Install the **2.0.4 game addon ZIP** (not the media kit), confirm that you have a single `Interface/AddOns/ChalkBox` folder, then run `/reload`. Open the map and click **Discoveries**, or type `/chalk drops map`. The standalone journal should now have a full solid background and appear above the native Map & Quest Log. Bag highlight scans and optional resale-value calculations are now rate-limited.
+Version 2.0.5 repairs the text-heading initialization that could stop the standalone journal before finishing its controls. Update the entire ChalkBox addon folder and run `/reload`. Open Discoveries from the map or use `/chalk drops map`. Confirm that **AREA / DUNGEON**, **CREATURE SOURCE**, **SORT BY**, **SEARCH ITEMS**, and the item-table headers are visible. If any part is still missing, enable `/console scriptErrors 1` and capture the exact error and a screenshot. Avoid deleting SavedVariables.
+
+
+
+## 2.0.5: Discoveries shows controls but not the panel, or bags hitch
+
+Install the **2.0.5 game addon ZIP** (not the media kit), confirm that you have a single `Interface/AddOns/ChalkBox` folder, then run `/reload`. Open the map and click **Discoveries**, or type `/chalk drops map`. The standalone journal should now have a full solid background and appear above the native Map & Quest Log. Bag highlight scans and optional resale-value calculations are now rate-limited.
 
 If bag opening still hitches, try temporarily switching off the **The Bar → Modules → Bag Value** option, then the **LootSense → Appearance → reagent highlights** option, testing between changes. This isolates the scanner without erasing any data. Enable `/console scriptErrors 1` if a Lua error appears.
 

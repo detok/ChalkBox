@@ -134,6 +134,30 @@ local function Font(parent,style,x,y,width)
     f:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y)
     f:SetWidth(width)
     if type(f.SetJustifyH)=="function" then f:SetJustifyH("LEFT") end
+    -- Explicit contrast is required across Forever UI themes.
+    if type(f.SetTextColor)=="function" then
+        if style=="GameFontNormalHuge" or style=="GameFontNormal" then
+            f:SetTextColor(1.0,0.87,0.55,1)
+        elseif style=="GameFontHighlightSmall" then
+            f:SetTextColor(0.87,0.90,0.94,1)
+        else
+            f:SetTextColor(0.97,0.97,0.97,1)
+        end
+    end
+    if type(f.SetShadowColor)=="function" then
+        f:SetShadowColor(0,0,0,0.9)
+    end
+    if type(f.SetShadowOffset)=="function" then
+        f:SetShadowOffset(1,-1)
+    end
+    return f
+end
+-- A heading includes text; Font() only accepts a style and coordinates.
+-- Passing text into Font() as the style used to abort panel construction
+-- halfway through, leaving Close/Outdoor/Dungeons floating on screen.
+local function Heading(parent,label,style,x,y,width)
+    local f=Font(parent,style,x,y,width)
+    f:SetText(label)
     return f
 end
 local function Button(parent,label,width,x,y,fn)
@@ -540,13 +564,13 @@ local function EnsurePanel()
         followMap=true;currentMap=MapID()
         selectedArea=DefaultArea();selectedSource=nil;page=1;refresh()
     end)
-    Font(f,"AREA / DUNGEON","GameFontNormal",22,-124,265)
-    Font(f,"CREATURE SOURCE","GameFontNormal",301,-124,212)
-    Font(f,"SORT BY","GameFontNormal",515,-124,116)
+    Heading(f,"AREA / DUNGEON","GameFontNormal",22,-124,265)
+    Heading(f,"CREATURE SOURCE","GameFontNormal",301,-124,212)
+    Heading(f,"SORT BY","GameFontNormal",515,-124,116)
     Dropdown(f,"Choose area",265,22,-144,"area")
     Dropdown(f,"All sources",205,301,-144,"source")
     Dropdown(f,"Quantity",123,515,-144,"sort")
-    Font(f,"SEARCH ITEMS","GameFontNormal",22,-195,137)
+    Heading(f,"SEARCH ITEMS","GameFontNormal",22,-195,137)
     local input=CreateFrame("EditBox",nil,f,"InputBoxTemplate")
     input:SetSize(382,24)
     input:SetPoint("TOPLEFT",f,"TOPLEFT",151,-189)
@@ -569,10 +593,10 @@ local function EnsurePanel()
         searchText="";page=1;refresh()
     end)
     controls.count=Font(f,"GameFontHighlightSmall",22,-230,610)
-    Font(f,"ITEM", "GameFontNormal",70,-257,260)
-    Font(f,"COLLECTED", "GameFontNormal",348,-257,90)
-    Font(f,"APPEARED", "GameFontNormal",425,-257,88)
-    Font(f,"RATE*", "GameFontNormal",542,-257,70)
+    Heading(f,"ITEM", "GameFontNormal",70,-257,260)
+    Heading(f,"COLLECTED", "GameFontNormal",348,-257,90)
+    Heading(f,"APPEARED", "GameFontNormal",425,-257,88)
+    Heading(f,"RATE*", "GameFontNormal",542,-257,70)
     for i=1,PER_PAGE do rows[i]=Row(f,i) end
     controls.empty=Font(f,"GameFontHighlight",37,-311,575)
     Button(f,"◀ Previous",112,22,-558,function()

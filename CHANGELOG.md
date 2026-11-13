@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.5 — Discoveries journal initialization and legibility (prerelease)
+- Fix eight incorrectly constructed static text labels that could interrupt Discoveries window creation and leave floating buttons.
+- Give all journal font strings explicit contrast and subtle shadows.
+- Strengthen normal-map and lazy-loaded-map tests to reject invalid font templates, coordinates and incomplete windows.
+- Keep 2.0.4 bag refresh optimizations and all saved gameplay data unchanged.
+
+
 ## 2.0.4 — Discoveries window and bag responsiveness (prerelease)
 - Draw Discoveries above the native Map & Quest Log in a real Blizzard-style panel, preserving the journal's background and controls together.
 - Coalesce rapid bag marker scans and inventory-related TrailBar refreshes; cache vendor valuation for 750ms.

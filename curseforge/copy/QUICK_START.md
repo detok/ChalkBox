@@ -1,6 +1,6 @@
-# Install and first run — ChalkBox 2.0.4
+# Install and first run — ChalkBox 2.0.5
 
-1. Download **ChalkBox-2.0.4.zip** from https://github.com/detok/ChalkBox/releases/tag/v2.0.4.
+1. Download **ChalkBox-2.0.5.zip** from https://github.com/detok/ChalkBox/releases/tag/v2.0.5.
 2. Extract its single **ChalkBox** folder into your Forever client's **Interface/AddOns** directory. The correct file path ends in **ChalkBox/ChalkBox.toc**.
 3. Start the game and type **/chalk**. The main settings page is grouped by module, with related settings nested beneath each heading.
 4. Open **DropSense** to check recording preferences. Open the world map and click **Discoveries**, or type **/chalk drops map**. Search for an item and use the Area/Dungeon, Source and Sort dropdowns.
