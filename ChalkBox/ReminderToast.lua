@@ -89,8 +89,9 @@ local function Ensure()
     root:SetScript("OnDragStop",function(self)
         if self.StopMovingOrSizing then self:StopMovingOrSizing() end
         if DB().locked==true then return end
-        local x,y=self.GetCenter and self:GetCenter()
-        local cx,cy=UIParent.GetCenter and UIParent:GetCenter()
+        local x,y,cx,cy
+        if type(self.GetCenter)=="function" then x,y=self:GetCenter() end
+        if type(UIParent.GetCenter)=="function" then cx,cy=UIParent:GetCenter() end
         if type(x)=="number" and type(y)=="number"
             and type(cx)=="number" and type(cy)=="number" then
             local d=DB()
