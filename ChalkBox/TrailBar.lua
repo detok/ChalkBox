@@ -391,7 +391,13 @@ local function CreateBar()
         widget:SetScript("OnDragStop",function(self)
             if self.StopMovingOrSizing then self:StopMovingOrSizing() end
             if not editMode or (type(InCombatLockdown)=="function"
-                and InCombatLockdown()) then return end
+                and InCombatLockdown()) then
+                -- A drag cancelled by combat/lock must snap back to its last
+                -- valid saved anchor, never leave a floating ghost widget.
+                lastLayout=""
+                Reflow()
+                return
+            end
             local x
             if type(GetCursorPosition)=="function" and bar.GetEffectiveScale then
                 local cursor=GetCursorPosition()
