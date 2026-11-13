@@ -1,6 +1,6 @@
 -- ChalkBox RecipeAdvisor: our own safety-first item relevance logic.
--- Optional external source: LibProfessionDB-1.0 (Pmptasty, MIT).
--- This source contains NO third-party code or recipe data.
+-- Bundled LibProfessionDB-1.0 by Pimptasty (MIT), Forever-only core data.
+-- All rules below are ChalkBox's independent item-advice logic.
 local index,ready,lastCheck={},false,-1e8
 local stats={recipes=0,reagents=0,state="not installed"}
 local professions={
@@ -47,10 +47,33 @@ local function ReadReagent(reagents,consumer)
         if id and id>0 and count and count>0 then consumer(id,math.floor(count)) end
     end
 end
+local function DisplayName(record)
+    if Safe(record.recipe) and type(record.recipe)=="string" and record.recipe~="" then
+        return record.recipe
+    end
+    local spell=record.spellID
+    if type(GetSpellInfo)=="function" then
+        local ok,name=pcall(GetSpellInfo,spell)
+        if ok and Safe(name) and type(name)=="string" and name~="" then
+            record.recipe=name
+            return name
+        end
+    end
+    if C_Spell and type(C_Spell.GetSpellName)=="function" then
+        local ok,name=pcall(C_Spell.GetSpellName,spell)
+        if ok and Safe(name) and type(name)=="string" and name~="" then
+            record.recipe=name
+            return name
+        end
+    end
+    -- A valid recipe record without a localized name is still evidence of a
+    -- possible use. Mark the missing text honestly instead of hiding it.
+    return "recipe #"..tostring(spell).." (name unavailable)"
+end
+
 local function Register(profession,spellID,recipe)
     if type(recipe)~="table" then return end
-    local name=recipe.name
-    if not Safe(name) or type(name)~="string" or name=="" then return end
+    local name=Safe(recipe.name) and type(recipe.name)=="string" and recipe.name or nil
     if type(recipe.reagents)~="table" then return end
     local found=false
     ReadReagent(recipe.reagents,function(id,qty)
@@ -71,7 +94,7 @@ local function Load()
         lastCheck=now
     end
     local db=Library()
-    if not db then stats.state="not available";return false end
+    if not db then stats.state="not loaded";return false end
     if type(db.GetRecipes)~="function" then
         stats.state="unsupported API"
         return false
@@ -91,8 +114,7 @@ local function Load()
                         spellID=tonumber(record.spellID or record.spellId or record.id) or spellID
                     end
                     local recipe=type(record)=="table" and record or nil
-                    if (not recipe or not recipe.name) and spellID and
-                        type(db.GetRecipe)=="function" then
+                    if not recipe and spellID and type(db.GetRecipe)=="function" then
                         recipe=db:GetRecipe(profId,spellID)
                     end
                     if recipe and spellID then
@@ -111,9 +133,9 @@ local function Load()
     for _,record in ipairs(pending) do
         Register(record[1],record[2],record[3])
     end
-    ready=true
-    stats.state=stats.recipes>0 and "ready" or "empty data"
-    return stats.recipes>0
+    ready=stats.recipes>0
+    stats.state=ready and "bundled" or "empty data"
+    return ready
 end
 local function BagCount(itemID)
     local fn=type(GetItemCount)=="function" and GetItemCount
@@ -133,6 +155,11 @@ local function ChooseCandidate(itemID,known)
     local list=index[tonumber(itemID)] or {}
     local seen={}
     for _,r in ipairs(known) do seen[r.profession.."|"..r.recipe]=true end
+    -- Stable ordering keeps a tooltip from changing between hovers.
+    table.sort(list,function(a,b)
+        if a.profession~=b.profession then return a.profession<b.profession end
+        return a.spellID<b.spellID
+    end)
     local selected,also= nil,nil
     for _,r in ipairs(list) do
         if not seen[r.profession.."|"..r.recipe] then
@@ -163,12 +190,12 @@ function ChalkBox_RecipeAdvice(itemID,itemName)
     end
     local prospective,other,total=ChooseCandidate(itemID,known)
     if prospective then
-        return "POTENTIAL USE: "..prospective.recipe.." ("..
+        return "POTENTIAL USE: "..DisplayName(prospective).." ("..
             prospective.profession..", not confirmed learned)",0.84,0.88,0.48,
             {kind="future",total=total}
     end
     if other then
-        return "OTHER PROFESSION: "..other.recipe.." ("..
+        return "OTHER PROFESSION: "..DisplayName(other).." ("..
             other.profession.."; not your current craft)",0.69,0.77,0.83,
             {kind="other",total=total}
     end
