@@ -2,6 +2,19 @@
 
 These steps are safe and require no SavedVariables deletion or client reset.
 
+## QuestSense doesn't show any quests
+
+1. Make sure **QuestSense → Auto-track accepted quests** is enabled. Start with **Smart (recommended)**; **Nearby only** intentionally excludes quests without matching map or zone data.
+2. Close your **world map and quest log**, and exit combat. Editing watches while those windows are open can create taint or fail silently on Forever.
+3. Type `/chalk quests status`. You'll see accepted quests, eligible candidates, native watch count, ChalkBox-owned watch count and whether an API is missing or an update was deferred.
+4. Run `/chalk quests refresh` and look at `/chalk quests status` again. If a quest was just accepted, it should be picked up even when its map objectives aren't exposed.
+5. Check whether another UI addon has **hidden Blizzard's native tracker**. QuestSense manages native quest watches; it does not force a different quest-tracker window on-screen.
+6. If still broken, send the entire status output and your WoW Forever build number. That distinguishes a data-read problem, a blocked watch write, a watch limit, and a tracker-display problem.
+
+## Adventure Prep toast is in the wrong place
+
+Under **Adventure Prep → Toast Appearance**, uncheck Lock, click **Preview / Move (25s)**, drag the visible toast, then recheck Lock. Use the transparency slider (35–100%). **Reset to Top** restores the default. Locked toasts don't intercept mouse clicks; normal reminders last nine seconds.
+
 ## ChalkBox doesn't appear in the AddOns list
 
 Confirm your game directory contains:
