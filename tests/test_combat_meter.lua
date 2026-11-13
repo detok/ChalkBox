@@ -193,7 +193,7 @@ for _,f in ipairs(frames) do
 end
 assert(printButton and resetButton and lockButton and grip,
     "visible PRINT/RESET/LOCK buttons and resize grip must be directly accessible")
-local controls={Button("DPS"),Button("Fight"),printButton,resetButton,lockButton}
+local controls={Button("DPS  >"),Button("Fight  >"),printButton,resetButton,lockButton}
 for _,control in ipairs(controls) do
     assert(control and control.w<=60,
         "five compact controls must fit minimum-width meter window")
