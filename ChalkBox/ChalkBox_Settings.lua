@@ -371,7 +371,7 @@ local function MakeBar()
         if updating or type(value)~="number" then return end
         -- Vertical sliders put their maximum at the top. Negate to make the
         -- top move bags UP and bottom move bags DOWN, with Blizzard 0 centered.
-        local offset=math.floor(-value+(-value>=0 and 0.5 or -0.5))
+        local offset=math.floor(-value+0.5)
         if ChalkBox_BagOffsetSet then ChalkBox_BagOffsetSet(offset) end
         current:SetText((offset==0 and "0  —  Blizzard default") or
             ((offset>0 and "+" or "")..offset.." points  ("..
