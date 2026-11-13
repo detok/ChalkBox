@@ -1,51 +1,36 @@
-# CurseForge project creation — field-by-field copy
+# ChalkBox 2.0 — CurseForge project fields (ready to paste)
 
-**Use these values in the CurseForge author console.** Treat dropdown wording as live-site dependent; verify the fields presented by the author portal before submitting.
+**Status: listing copy prepared; a CurseForge project has not been submitted or approved.** 2.0.0 is a GitHub **prerelease/test build** until client QA confirms the map button and macro workflows.
 
-| Field | First-pass value | Note |
-| --- | --- | --- |
-| Game | World of Warcraft | Select WoW, not another game's mod class |
-| Class | Addons | Native WoW addon |
-| Project name | **ChalkBox** | Confirm name availability in the create form |
-| Summary | **WoW Forever utility addon with native loot insights, learned-recipe highlights, draggable XP dashboard, quests and DPS tools.** | One sentence, no unshipped claims |
-| Primary category | **Miscellaneous** | Appropriate for a general-purpose utility addon; select only if available |
-| Additional categories | **Tooltip**, **Quests & Leveling**, **Buffs & Debuffs**, **Bags & Inventory** | Up to four; confirm current CurseForge choices and relevance |
-| Game flavor | **Forever** | Verified as a CurseForge WoW flavor |
-| Game version | **1.60.1 (Forever)** | The currently listed Forever project version as of 2026-11-13; verify at upload |
-| Project license | **MIT License** | Matches repository `LICENSE` |
-| Project description | [PROJECT_DESCRIPTION.md](PROJECT_DESCRIPTION.md) | Paste in Markdown mode; preview once before saving |
-| Logo | **Original SVG ready** | `../artwork/chalkbox-project-icon-512.svg`; use the 512px PNG export from the branding pack, then verify portal requirements before upload |
-| File to upload | **ChalkBox-1.12.0.zip** (initial draft) | Pull the actual installable ZIP from current build/release; never the repository ZIP |
-| Release type | **Beta** until verified in client; **Release** when confident | A CurseForge Release file is needed for ordinary default app sync |
-| Source | https://github.com/detok/ChalkBox | Source link, **not** a third-party binary download |
-| Issues | https://github.com/detok/ChalkBox/issues | Support/bug reports |
-| Author credit | **Detok** | The repo author name; connect with the author account you own |
-| Comments | **Enable** if you plan to moderate them | Otherwise direct players to the GitHub Issues tracker |
-| Related projects | **None required** | Bundled LibProfessionDB and LibStub are already included |
-| Donations/social links | **Optional, not supplied** | Never invent a link or ask for payment to unlock features |
+| Field | Recommended value |
+| --- | --- |
+| Project name | **ChalkBox** |
+| Short summary | **An all-in-one WoW Forever companion: smarter loot, map discoveries, macro building, quests, The Bar, combat tools and adventure history.** |
+| Alternate shorter summary | **Your WoW Forever adventure toolkit—one addon, smarter loot, macros, quests, stats and map discoveries.** |
+| Game | World of Warcraft |
+| Flavor | **Forever** only; recheck the live upload form |
+| Category candidates | Map & Minimap; Inventory; Quests; Combat; Miscellaneous. Select only categories the live form permits and that fit. |
+| License | MIT (retain bundled dependency notices) |
+| Source | https://github.com/detok/ChalkBox |
+| Issues | https://github.com/detok/ChalkBox/issues |
+| Changelog | Use \`docs/RELEASE_NOTES.md\` for release 2.0.0 |
+| File to upload | \`ChalkBox-2.0.0.zip\` **from the GitHub Releases asset**, not Source code ZIP |
+| Release type | **Beta / prerelease** until real client QA passes |
+| Author | Detok Whitemaine |
+| Website | Leave blank unless a distinct verified project site exists |
+| CurseForge project URL | **Not created/verified. Never invent one.** |
 
-## Compatibility and file notes
+## Main launch image
 
-- The project ships **one installable folder** named `ChalkBox`.
-- The addon includes `ChalkBox.toc` (`Interface: 11509`) and `ChalkBox_Camelot.toc` (`Interface: 16001`). The Camelot-specific TOC documents the intended Forever flavor.
-- **Do not** tag other game flavors merely because a second TOC exists. Supported flavors need hands-on testing.
-- Current first-pass version is **1.12.0**, published as a **public prerelease** on GitHub. Refresh version numbers and changelog before your actual CurseForge upload.
-- The existing `ChalkBox/assets/Icon.tga` is the **in-game addon icon**, not a ready-to-upload CurseForge project avatar.
-- CurseForge allows project Markdown or its WYSIWYG editor. Use Markdown for easier maintenance; copy directly from `PROJECT_DESCRIPTION.md`.
-- Do not put a GitHub binary ZIP download link in the **public** CurseForge description. CurseForge policies disallow external file download links; use the Files tab instead.
+Use the original 512px ChalkBox box-and-spark icon and hero/banner artwork in \`curseforge/artwork/\` (SVG sources). Export an accepted PNG for the portal, verify its exact current size and file limits, and **never upload the illustrative feature grid as an in-game screenshot**.
 
-## Verify before submitting
+## Suggested project opening
 
-- [ ] Name availability and category list in the real project-creation form
-- [ ] Forever flavor and compatible version available in file upload
-- [ ] Correct license and third-party attribution
-- [ ] Use supplied PNG export for the completed hero/icon; verify accepted dimensions
-- [ ] No unsupported features in the final description
-- [ ] Confirm that the file you upload is the version you describe
+**Meet ChalkBox: the quiet adventure companion for World of Warcraft: Forever.** It remembers your loot discoveries, helps you build smarter macros, keeps the right information in The Bar, and adds the context you need without taking over Blizzard's UI.
 
-## Official references
+## Metadata the GitHub owner should update manually
 
-- [Creating and submitting a project](https://support.curseforge.com/support/solutions/articles/9000197241)
-- [Project submission guide](https://support.curseforge.com/support/solutions/articles/9000199552-project-submission-guide-and-tips)
-- [Moderation policies](https://support.curseforge.com/support/solutions/articles/9000197279-moderation-policies)
-- [Multi-TOC for WoW addons](https://support.curseforge.com/support/solutions/articles/9000209856)
+- **About → Description:** \`The quiet WoW Forever companion: MacroForge, Map Discoveries, LootSense, The Bar, quest, combat, camp and session tools.\`
+- **About → Website:** \`https://github.com/detok/ChalkBox/releases\`
+- **Topics:** \`world-of-warcraft\`, \`wow-forever\`, \`wow-addon\`, \`macro-builder\`, \`lua\`, \`map\`, \`quality-of-life\`, \`quest-tracker\`
+- **Settings → Social preview:** upload the original brand artwork PNG. GitHub README changes **do not** change this setting.

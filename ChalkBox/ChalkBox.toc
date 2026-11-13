@@ -1,8 +1,8 @@
 ## Interface: 11509
 ## Title: ChalkBox
-## Notes: Loot safety, camp buffs, quest help, XP tracking and character personality.
+## Notes: All-in-one Forever companion: loot discoveries, item insights, The Bar, quests, combat tools, camping, MacroForge and session history.
 ## Author: Detok Whitemaine
-## Version: 1.12.0
+## Version: 2.0.0
 ## SavedVariables: ChalkBoxDB
 ## SavedVariablesPerCharacter: ChalkBoxZoneDB, ChalkBoxProfessionDB
 ## IconTexture: Interface\AddOns\ChalkBox\assets\Icon

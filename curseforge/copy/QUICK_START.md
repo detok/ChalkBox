@@ -1,35 +1,26 @@
-# ChalkBox — install and quick start
+# Install and first five minutes — ChalkBox 2.0 prerelease
 
-## Installation from GitHub (always available)
+## Install
 
-1. Visit **https://github.com/detok/ChalkBox/releases** or the [GitHub Releases index](https://github.com/detok/ChalkBox/releases) and download **`ChalkBox-<version>.zip`** — **not** GitHub's “Source code” archive.
-2. Find your **World of Warcraft: Forever** installation using Battle.net's game menu → **Show in Explorer / Finder**, then open its `Interface/AddOns` directory.
-3. Extract the included **`ChalkBox`** folder directly into `Interface/AddOns`. Final path: `Interface/AddOns/ChalkBox/ChalkBox.toc`. The `ChalkBox_Camelot.toc` should be next to it.
-4. Enable ChalkBox on the character-select AddOns menu, enter the game, then type **`/chalk`** or **`/cb`**.
+1. Download the **ChalkBox-2.0.0.zip** release asset from https://github.com/detok/ChalkBox/releases/tag/v2.0.0 (not the GitHub "Source code" ZIP).
+2. Extract the **ChalkBox** folder to your Forever client's \`Interface/AddOns\` directory.
+3. Verify \`Interface/AddOns/ChalkBox/ChalkBox.toc\` exists, with **no extra nested folder**.
+4. Start/reload WoW Forever; type \`/chalk\` for options.
 
-**The CurseForge app is optional.** Once a CurseForge file is approved, it offers a second installation route. GitHub remains the direct download/source home.
+Everything is bundled, including the credited profession recipe library. No second addon needed.
 
-**Common nesting mistake:** `AddOns/ChalkBox/ChalkBox/ChalkBox.toc` is wrong.
+## First five minutes
 
-## Your first five minutes
+1. **Global Appearance:** choose your ChalkBox background/accent and opacity.
+2. **DropSense:** check that sampling is on. Open and loot a couple of different, readable sources.
+3. **Map Discoveries:** open your existing world map and look near its **upper-left canvas** for **Discoveries**. The exact position is a 2.0 test focus. If absent, type \`/chalk drops map\`. Then type \`/chalk drops map status\` and save the output for a bug report.
+4. **MacroForge:** type \`/chalk macro\`. Choose Engage or Burst, select spells from your learned spellbook and click **Select Text** to copy via Ctrl+C. Don't install a test macro without choosing that option deliberately.
+5. **Session Journal:** type \`/chalk session\`. This records future activity; it cannot fabricate records from before installation.
+6. **The Bar:** right-click any stat to show/hide or move it, or visit its native settings.
+7. **Adventure Prep:** type \`/chalk prep test\` to preview and position the compact toast.
 
-1. **Open settings** with `/chalk`; see the module categories.
-2. **Enable relevant crafting hints** by opening your Leatherworking/Cooking/etc. profession panel, waiting for recipes to load, and running `/chalk loot scan`. Hover a material to see why it matters.
-3. **Protect favorite items** with `/chalk keep [item]` (exact name or shift-clicked link).
-4. **Inspect TrailBar** for XP, bags, gear, rested XP and gold. Use **TrailBar Stats** for Balanced / Minimal / All; **TrailBar Appearance** to drag the modules and change the charcoal transparency. Use `/chalk bar status` if something overlays it.
-5. **Preview a reminder** with `/chalk prep test`; move it via Adventure Prep → Toast Appearance.
-6. **Inspect quest watches** with `/chalk quests status`; Smart mode is the default.
-7. **Pick a meter:** keep ChalkBox's compact window or `/chalk meter hide` and use the Blizzard native meter's **ChalkBox: PRINT top 3 to PARTY** gear-menu entry after combat (client permitting).
-8. **Adjust bags if needed:** with separate bags active, try `/chalk bags offset 30`, or reset to 0.
+## Report an issue usefully
 
-## Troubleshooting quick hits
+Include: **ChalkBox 2.0.0**, your Forever client build, exact command tried, whether \`/chalk drops map\` opened, the full \`/chalk drops map status\` output, your map layout (windowed/fullscreen) and any Lua error. Attach a real screenshot when possible.
 
-- **No LootSense hint?** Open a relevant crafting window, `/chalk loot scan`, then `/chalk loot status`. Unrelated items intentionally remain quiet.
-- **No party report?** Check group state, finish combat and inspect the local warning. Forever may still protect combat values.
-- **No quest watches?** Close the map/quest log, exit combat and use `/chalk quests status`.
-- **Bag conflict?** `/chalk bags reset` restores Blizzard anchor.
-- **Too many UI widgets?** Hide the extra combat window, disable a module in settings, or place TrailBar at bottom/off.
-
-## Keep preferences when updating
-
-Replacing the addon directory does **not** require deleting your game `WTF` SavedVariables. Use `/reload` after a code-only update; starting the game fresh is safest if a new addon was just installed.
+[Issue form](https://github.com/detok/ChalkBox/issues/new/choose) · [Full guide](../../docs/USER_GUIDE.md) · [2.0 release notes](../../docs/RELEASE_NOTES.md)

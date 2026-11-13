@@ -4,7 +4,6 @@ local mapButton,panel
 local currentMap,mode,dungeonIndex,sourceIndex,page=nil,"outdoor",1,1,1
 local rows={}
 local title,subtitle,summary,footer
-local lastShownMap
 local elapsed=0
 local function Public(v)
     return v~=nil and (type(issecretvalue)~="function" or not issecretvalue(v))
@@ -236,6 +235,11 @@ local function EnsurePanel()
     end)
 end
 function ChalkBox_OpenMapDiscoveries()
+    -- A slash command/settings click can be the first access before the
+    -- map's load-on-demand frame exists; the journal still opens standalone.
+    if type(ChalkBox_MapDiscoveriesEnsure)=="function" then
+        ChalkBox_MapDiscoveriesEnsure()
+    end
     EnsurePanel()
     if not panel then return false end
     local id=MapID()
@@ -248,39 +252,151 @@ function ChalkBox_OpenMapDiscoveries()
     panel:Show()
     return true
 end
-local function InstallButton()
-    if mapButton or not WorldMapFrame then return end
+-- Forever's WorldMapFrame can be loaded AFTER ChalkBox finishes loading.
+-- Additionally Forever uses the modern map canvas, with its pin button
+-- at the top LEFT; a static top-right coordinate can be obscured.
+-- Discoveries remains independently accessible via /chalk drops map.
+local attachedTo
+local retries=0
+local function MapContainer(world)
+    if not world then return end
+    if type(world.GetCanvasContainer)=="function" then
+        local candidate=Call(world.GetCanvasContainer,world)
+        if candidate and type(candidate.SetPoint)=="function" then
+            return candidate,"canvas"
+        end
+    end
+    if world.ScrollContainer and
+        type(world.ScrollContainer.SetPoint)=="function" then
+        return world.ScrollContainer,"scroll"
+    end
+    return world,"frame"
+end
+local function PositionButton()
+    if not mapButton then return end
     local world=WorldMapFrame
+    if not world then return end
+    local container,kind=MapContainer(world)
+    if not container then return end
+    if type(mapButton.ClearAllPoints)=="function" then
+        mapButton:ClearAllPoints()
+    end
+    -- Anchor inside the visible canvas, away from the nav bar and map pin.
+    -- When the canvas API is unavailable, use the outer map as fallback.
+    mapButton:SetPoint("TOPLEFT",container,"TOPLEFT",
+        kind=="frame" and 18 or 8,kind=="frame" and -114 or -98)
+    attachedTo=kind
+end
+local function InstallButton()
+    if mapButton then return true end
+    local world=WorldMapFrame
+    if not world then return false end
     local b=CreateFrame("Button","ChalkBoxMapDiscoveriesButton",world,
         "UIPanelButtonTemplate")
-    b:SetSize(112,24)
-    b:SetPoint("TOPRIGHT",world,"TOPRIGHT",-96,-38)
+    if not b then return false end
+    b:SetSize(116,25)
+    if type(b.SetFrameStrata)=="function" then
+        b:SetFrameStrata("HIGH")
+    end
+    if type(b.SetFrameLevel)=="function" and
+        type(world.GetFrameLevel)=="function" then
+        local level=Call(world.GetFrameLevel,world)
+        if type(level)=="number" then b:SetFrameLevel(level+40) end
+    end
     b:SetText("Discoveries")
     b:SetScript("OnClick",function()
         ChalkBox_OpenMapDiscoveries()
     end)
+    if type(b.SetScript)=="function" then
+        b:SetScript("OnEnter",function(self)
+            if GameTooltip then
+                GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
+                GameTooltip:SetText("ChalkBox Discoveries")
+                GameTooltip:AddLine("Browse your own outdoor and dungeon loot.",
+                    0.85,0.85,0.85,true)
+                GameTooltip:Show()
+            end
+        end)
+        b:SetScript("OnLeave",function()
+            if GameTooltip then GameTooltip:Hide() end
+        end)
+    end
     mapButton=b
+    PositionButton()
     if type(world.HookScript)=="function" then
+        -- OnShow is more reliable than the map update event on a
+        -- load-on-demand WorldMapFrame, including the very first open.
         world:HookScript("OnShow",function()
+            PositionButton()
+            ChalkBox_MapDiscoveriesRefresh()
+        end)
+    end
+    if type(hooksecurefunc)=="function" and
+        type(world.OnMapChanged)=="function" then
+        pcall(hooksecurefunc,world,"OnMapChanged",function()
+            PositionButton()
             ChalkBox_MapDiscoveriesRefresh()
         end)
     end
     ChalkBox_MapDiscoveriesRefresh()
+    return true
+end
+function ChalkBox_MapDiscoveriesEnsure()
+    if not mapButton then InstallButton() end
+    if mapButton then PositionButton() end
+    return mapButton~=nil
+end
+function ChalkBox_MapDiscoveriesStatus()
+    local opts=type(ChalkBox_DropOptions)=="function"
+        and ChalkBox_DropOptions() or {}
+    return {
+        frame=WorldMapFrame~=nil,
+        button=mapButton~=nil,
+        shown=mapButton and type(mapButton.IsShown)=="function"
+            and mapButton:IsShown() or false,
+        allowed=opts.mapButton~=false,
+        tracking=opts.enabled~=false,
+        areas=opts.areas or 0,
+        anchor=attachedTo or "not attached",
+        mapID=MapID(),
+        retries=retries,
+    }
 end
 function ChalkBox_MapDiscoveriesRefresh()
-    if not mapButton then InstallButton() end
-    if not mapButton then return end
+    if not mapButton then
+        if not InstallButton() then return false end
+    end
     if Watch() then mapButton:Show()
     else
         mapButton:Hide()
         if panel then panel:Hide() end
     end
+    return true
 end
 local loader=CreateFrame("Frame")
-for _,e in ipairs({"PLAYER_LOGIN","ADDON_LOADED","WORLD_MAP_UPDATE"}) do
+-- Do not rely on WORLD_MAP_UPDATE existing in this Forever build.
+-- ADDON_LOADED also fires when Blizzard's map loads on demand.
+for _,e in ipairs({"PLAYER_LOGIN","PLAYER_ENTERING_WORLD",
+    "ADDON_LOADED"}) do
     loader:RegisterEvent(e)
 end
 loader:SetScript("OnEvent",function()
-    InstallButton()
+    ChalkBox_MapDiscoveriesEnsure()
 end)
-InstallButton()
+-- A lightweight temporary retry handles clients with an already available
+-- world frame that isn't initialized until the first time the map opens.
+-- Stops entirely once the button attaches; no permanent map polling.
+local elapsedRetry=0
+loader:SetScript("OnUpdate",function(self,elapsed)
+    if mapButton then
+        self:SetScript("OnUpdate",nil)
+        return
+    end
+    if type(elapsed)~="number" then return end
+    elapsedRetry=elapsedRetry+elapsed
+    if elapsedRetry<0.75 then return end
+    elapsedRetry=0
+    retries=retries+1
+    if InstallButton() then self:SetScript("OnUpdate",nil) end
+end)
+ChalkBox_MapDiscoveriesEnsure()

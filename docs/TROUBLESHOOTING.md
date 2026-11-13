@@ -2,6 +2,28 @@
 
 These steps are safe and require no SavedVariables deletion or client reset.
 
+## 2.0 — Discoveries button doesn't appear on the world map
+
+The 2.0 prerelease fixes a **Forever-specific late-loading map-frame and placement issue**. Try this sequence:
+
+1. Open WoW's regular world map once. Look near the **upper-left map canvas**, below the native map pin controls.
+2. Open **Options → AddOns → ChalkBox → DropSense**. Ensure **Show Discoveries button on World Map** is checked. This toggle does not control whether loot sampling is recording.
+3. Type **/chalk drops map**. This opens the same **standalone Discoveries browser** even if the map button couldn't attach. The browser can use your current player zone when the map is not loaded.
+4. Type **/chalk drops map status**. Copy both status lines: whether \`WorldMapFrame\` exists, whether the button attached, whether it is shown, the saved toggle, the anchor type, the selected map ID and tracking status.
+5. If a map skin such as Leatrix Maps or Simple Map is running, try windowed and fullscreen map modes. Record **the names of your other map addons** rather than deleting all preferences.
+6. Include a **real screenshot** of the whole map and the status output with your Forever client build when [reporting an issue](https://github.com/detok/ChalkBox/issues/new/choose).
+
+**Map button invisible is different from an empty loot journal.** The journal only shows loot **recorded after zone-aware tracking was enabled**. Older records cannot gain invented locations. Type **/chalk drops status** to check recording and sampled area counts. The game cannot expose every kill or official server loot-table rate.
+
+## 2.0 — MacroForge shows no spells or generated macro won't work
+
+1. Type **/chalk macro**; if the window opens but your abilities are absent, open your native spellbook and click **Rescan** or use **/chalk forge rescan**.
+2. Check **/chalk forge status** for the current class and number of readable active spells.
+3. If you respecced, load a saved recipe and replace any explicitly flagged **unlearned spell**; MacroForge does not make old spell IDs magically castable.
+4. The native Blizzard macro engine won't cast multiple global-cooldown spells on one press. **/castsequence** advances on successful casts and can stall. Trinket slots 13/14 may be passive or cooling down.
+5. Click **Select Text**, press **Ctrl+C**, paste into the normal **/macro** interface. Only use **Install New** outside combat when you explicitly want a new character-specific macro; it won't overwrite an existing name.
+6. Report client build, chosen template, selected spells, generated macro, displayed warning/error and expected result. Do not share private macros containing secrets or personal account details.
+
 ## QuestSense doesn't show any quests
 
 1. Make sure **QuestSense → Auto-track accepted quests** is enabled. Start with **Smart (recommended)**; **Nearby only** intentionally excludes quests without matching map or zone data.
@@ -98,7 +120,7 @@ Enable **automatic character reactions** in Options → Emota. It is **opt-in**,
 ## Reporting a helpful bug
 
 Use the [bug report form](https://github.com/detok/ChalkBox/issues/new/choose). Include:
-- ChalkBox version (e.g. `1.5.1`)
+- ChalkBox version (e.g. `2.0.0`)
 - Game name, game client build and interface version
 - Which module, exact command or item link
 - Expected behavior vs actual behavior

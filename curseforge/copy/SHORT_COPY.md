@@ -1,48 +1,31 @@
-# ChalkBox short-form copy
+# ChalkBox 2.0 — short-form copy
 
-## Preferred project summary (one sentence)
+## Preferred one-liner
 
-A quieter WoW Forever companion with native item insights, learned-recipe highlights, a draggable adventure bar, quests and DPS tools.
+**Your WoW Forever adventure, better informed. One addon for loot discoveries, macros, progress, quests and quieter reminders.**
 
-## Alternate summaries
+## GitHub About text
 
-**More practical:** Keep useful loot, follow quests and monitor XP, free bag slots, gear durability and rested XP with a slim TrailBar, camping reminders and native combat tools.
+**The quiet WoW Forever companion: MacroForge, Map Discoveries, LootSense, The Bar, quest, combat, camp and session tools.**
 
-**Shorter:** Smart loot, XP, quests, camp reminders and DPS tools for WoW Forever—one addon, one settings menu.
+## CurseForge summary (short)
 
-**More personality:** Less clutter, more adventure: ChalkBox adds helpful loot advice, quiet reminders, native meter extras and character personality to WoW Forever.
+**A complete WoW Forever QoL toolkit: learn your loot, build macros, track progress, manage quests and revisit your adventures.**
 
-## Header and positioning
+## Alternative headlines
 
-**Product name:** ChalkBox
+- **One addon. Your whole adventure.**
+- **Less clutter. More context. Better buttons.**
+- **Remember the loot. Build the macro. Keep playing.**
 
-**Primary headline:** A quieter, smarter way to adventure.
+## 2.0 prerelease announcement
 
-**Subheadline:** Smart loot advice, XP tracking, quests, camps and combat tools for WoW Forever.
+**ChalkBox 2.0 is ready for your Forever client test!** The all-in-one addon now brings together the character-aware MacroForge wizard, automatic loot discoveries on the world map, LootSense/profession advice, the configurable Bar, repair learning, a persistent Session Journal, quests, camp reminders and combat tools. The map-button loading and positioning path has been revised, with **/chalk drops map** and **/chalk drops map status** available if Forever's UI still hides it. The game-client verification pass is still underway.
 
-**Supporting line:** One addon. One settings menu. No screen full of extra windows.
+## Social caption
 
-**Five short feature labels:** LOOTSENSE · TRAILBAR · QUESTSENSE · ADVENTURE PREP · COMBAT METER
+**What did *your* character discover?** ChalkBox remembers loot by zone and dungeon, helps turn learned spells into safe, copy-ready macros, and keeps your adventure stats where you want them. Built for **WoW Forever**. **One addon, no cloud, no fantasy drop rates.** 2.0 test build available on GitHub.
 
-**Footer phrase:** Built for the journey. Made for Forever.
+## Honest guardrails
 
-## Three-sentence pitch
-
-ChalkBox is a WoW Forever utility addon focused on the little things that make a session smoother. It helps you recognize useful loot, keep quest watches relevant, monitor XP and gold, remember camping needs, and manually share native combat reports. The tools use familiar WoW UI wherever possible, with options to hide features you don't need.
-
-## Promotional captions (for when real screenshots exist)
-
-- **Hero:** One addon for the moments between the big fights.
-- **TrailBar:** Arrange XP, bags, durability, rested XP and gold anywhere—all in 18 pixels.
-- **LootSense:** Native item insights and green bag outlines for truly learned recipes.
-- **Native meter:** Your Blizzard damage meter. One extra PARTY print option.
-- **QuestSense:** Smarter watch lists in the quest tracker you already know.
-- **Adventure Prep:** Camping and tent reminders without the constant nagging.
-- **Bag offset:** A small fix for large separate bags that stack too high.
-- **Settings:** Native menus, per-character layout editor, opacity and racial behavior controls.
-
-## Tone, terms and claims
-
-Use **“quiet,” “practical,” “native,” “contextual,” “optional,” “small”** instead of unsupported performance guarantees such as **“zero impact,” “100% accurate,” “AI-powered,” “the only addon you need,”** or **“official.”** Do not claim support for all clients, an automated junk seller, a quest arrow, equipment scoring, automatic chat posts or action-bar skinning.
-
-The brand name is **ChalkBox**, spelled exactly that way; module names are **LootSense, ProfessionSense, TrailBar, QuestSense, CampSense (Adventure Prep), Emota, QuietGuard, Combat Meter**.
+Do not claim official server drop rates, all-kills probabilities, automated combat, AI macro rotations, guaranteed native API compatibility, auto-selling, CurseForge acceptance or real-client screenshots that haven't been captured.

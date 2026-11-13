@@ -1,66 +1,42 @@
-# CurseForge publication checklist — ChalkBox
+# ChalkBox 2.0 — publication and test checklist
 
-**This is an author workflow, not proof of a completed CurseForge project.** GitHub is the **primary direct download, source and issue-tracking home**. CurseForge is an **additional discovery/distribution channel**.
+**Status: GitHub 2.0.0 prerelease, not a completed CurseForge launch.** This checklist is meant to prevent marketing from getting ahead of the real Forever client.
 
-## 1. Author-account preparation
+## A. Engineering gate
 
-- [ ] Sign in to the CurseForge author portal and verify your account/email
-- [ ] Confirm that a project named **ChalkBox** is available and that you can submit it as its owner
-- [ ] Review the [current project submission guide](https://support.curseforge.com/support/solutions/articles/9000199552-project-submission-guide-and-tips) and [moderation policies](https://support.curseforge.com/support/solutions/articles/9000197279-moderation-policies)
-- [ ] Select World of Warcraft → Addons → **Forever**, and the appropriate client version (initial plan: 1.60.1; recheck at submission)
+- [ ] Both Forever \`.toc\` files specify **2.0.0**, and \`scripts/package.py\` still bundles every required module.
+- [ ] **Lua tests and installable ZIP** checks pass on the merge commit.
+- [ ] Download \`ChalkBox-2.0.0.zip\` from a GitHub **release asset**, not “Source code (zip).”
+- [ ] Check one top-level \`ChalkBox/\` folder, included \`LICENSE\`, full recipe library and no unbundled addon dependency.
+- [ ] Verify existing SavedVariables persist across upgrade (DropSense, MacroForge, The Bar, repair history, sessions, KEEP).
 
-## 2. Form setup
+## B. 2.0 in-client smoke test — required before full release
 
-- [ ] Set **ChalkBox** as project title and fill the summary from [PROJECT_FIELDS.md](../copy/PROJECT_FIELDS.md)
-- [ ] Select only current, relevant categories; don't advertise as a Retail/Classic release
-- [ ] Choose MIT license and add the GitHub **source** and **issue tracker** links
-- [ ] Paste [PROJECT_DESCRIPTION.md](../copy/PROJECT_DESCRIPTION.md) into the description editor; check Markdown preview on desktop/mobile
-- [ ] Add genuine copyright/license notices and library attribution
-- [ ] Leave project website/social/Discord/donation fields blank unless you own those verified URLs
-- [ ] Provide required portal icon from art pass when available; don't submit a broken placeholder
-- [ ] Keep **third-party download URLs OUT of the CurseForge description**. The project Files tab should host its own downloadable file
+- [ ] Open WoW Forever, open the world map after a fresh login: **Discoveries** button visibly attaches near the upper-left map controls.
+- [ ] Switch map zones, expand/collapse, windowed/fullscreen layouts and UI scales; button stays clickable without hiding native quest pins.
+- [ ] If it doesn't appear, **/chalk drops map** opens standalone; **/chalk drops map status** explains map frame, attachment, visibility and toggle.
+- [ ] Loot different creature types, a mixed-source window and (if possible) a dungeon: recorded counts are credible, no fake universal percentage.
+- [ ] MacroForge lists genuinely learned spells and icons. Test opener, modifier and sequence previews, copy via Ctrl+C, optional explicit native macro creation, respec detection, save/reload.
+- [ ] Inspect The Bar's right-click menus, repair/vendor values and readability at narrow screen widths.
+- [ ] Camp toast preview, QuestSense native tracker, compact/native meter PRINT and Session Journal relog history.
+- [ ] Capture any error, full Forever build, 2.0.0 version and screenshots; resolve crashes/reproducible client breakage before recommending public installation.
 
-## 3. Verify code and build before uploading
+## C. GitHub presentation
 
-- [ ] Choose a tested ChalkBox version and refresh all versioned marketing copy
-- [ ] Verify both `.toc` versions and Forever-specific `ChalkBox_Camelot.toc`
-- [ ] Confirm GitHub Actions passed **Lua tests and installable ZIP**
-- [ ] Download the exact file from **https://github.com/detok/ChalkBox/releases** and verify filename, archive root and file contents
-- [ ] Ensure the ZIP has exactly one top-level `ChalkBox/` directory (no nested folder, GitHub repo metadata or `curseforge/`)
-- [ ] Confirm bundled `LibProfessionDB` MIT license and `ChalkBox/LICENSE` are inside the ZIP
-- [ ] Assign this file to **Forever / 1.60.1** (or the then-current Forever version) and choose **Beta** until native menu/offset game-client testing is complete
-- [ ] Enter version-appropriate release notes from [FILE_CHANGELOG_1.9.0.md](../copy/FILE_CHANGELOG_1.9.0.md)
+- [ ] README hero, versioned direct download, module catalog, caveats and issue links all resolve after merge.
+- [ ] GitHub owner updates **About** description, website and topics using [GITHUB_PRESENTATION](GITHUB_PRESENTATION.md).
+- [ ] GitHub owner uploads a branded social preview PNG separately (README alone cannot set it).
+- [ ] Add actual gameplay screenshots following [SCREENSHOT_PLAN](../artwork/SCREENSHOT_PLAN.md); do not reuse editorial illustrations as gameplay.
+- [ ] Keep the **2.0 prerelease** label until player-tested.
 
-## 4. Artwork and honesty gate
+## D. CurseForge author portal — only when ready
 
-- [ ] Create files identified in [ARTWORK_TO_CREATE.md](../ARTWORK_TO_CREATE.md)
-- [ ] Confirm accepted image dimensions and file-size limits in the **live portal**
-- [ ] Check logo legibility at thumbnail size
-- [ ] Supply **real in-game screenshots** for UI features in [SCREENSHOT_PLAN.md](../artwork/SCREENSHOT_PLAN.md)
-- [ ] Do not publish screenshots that misrepresent or invent an unverified function
-- [ ] Use a functional title, summary and instructions even if the portal gallery isn't ready
+- [ ] Sign in and verify author account; check [official submission guidance](https://support.curseforge.com/support/solutions/articles/9000199552-project-submission-guide-and-tips).
+- [ ] Confirm project title **ChalkBox** is available and that **Forever** is a supported target flavor in the current portal.
+- [ ] Choose truthful categories, MIT license, source, issue tracker, and text from [PROJECT_FIELDS](../copy/PROJECT_FIELDS.md) + [PROJECT_DESCRIPTION](../copy/PROJECT_DESCRIPTION.md).
+- [ ] Export the original logo SVG to PNG accepted by the live portal. Do not use fabricated gameplay screenshots.
+- [ ] Upload the tested ZIP only to the portal's Files area; follow moderation and version policies.
+- [ ] Until approved, never claim a CurseForge listing, download count, badge or project URL.
+- [ ] After approval, optionally add the *verified* CurseForge URL to GitHub while retaining GitHub Releases as the primary direct-download option.
 
-## 5. QA and submit
-
-- [ ] Run [QA_AND_POLICY.md](QA_AND_POLICY.md) checks
-- [ ] Review the final description for empty/broken images and links
-- [ ] Verify the client installs and loads the uploaded ZIP successfully
-- [ ] Submit the project for moderation
-- [ ] Record the actual project URL/project ID when supplied
-- [ ] Only after approval, add a small **optional CurseForge link** to GitHub's README
-- [ ] Leave **Download from GitHub Releases** as the main prominent action on GitHub
-
-## 6. After first approval
-
-- [ ] Monitor comments/issues and resolve genuine problems
-- [ ] Keep GitHub and CurseForge versions/changelogs synchronized as far as practical
-- [ ] Don't announce that a file was accepted until the portal marks it approved
-- [ ] Avoid making new GitHub source-only commits trigger fake version bumps: the release workflow already preserves existing version tags
-- [ ] Ensure users always have a working **GitHub Releases** download path, regardless of CurseForge listing state
-
-## Official help center references
-
-- https://support.curseforge.com/support/solutions/articles/9000197241
-- https://support.curseforge.com/support/solutions/articles/9000199552-project-submission-guide-and-tips
-- https://support.curseforge.com/support/solutions/articles/9000197279-moderation-policies
-- https://support.curseforge.com/support/solutions/articles/9000209856
+Historical v1.9 file change logs remain archival; use [current 2.0 release notes](../../docs/RELEASE_NOTES.md) for the prerelease.
