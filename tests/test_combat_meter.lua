@@ -155,6 +155,7 @@ for _,f in ipairs(frames) do
 end
 assert(printButton and lockButton and grip,
     "visible PRINT/LOCK buttons and resize grip must be directly accessible")
+assert(not Button("X"),"the unwanted meter close button must be gone")
 local sawBranding=false
 for _,f in ipairs(labels) do
     if f.text=="CHALKBOX" or f.text=="Gold stripe = you  |  Native Blizzard data" then

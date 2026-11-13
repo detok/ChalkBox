@@ -1,34 +1,44 @@
-# ChalkBox 1.7.1 — Camp Tent awareness + the customizable DPS meter
+# ChalkBox 1.8.0 — QuestSense rebuild + top-screen toast controls
 
-## CampSense now knows when your Camp Tent worked
+## QuestSense: rebuilt for WoW Forever
 
-**Camp Tent is not a persistent Camp Benefits aura.** Its purpose is to refill Rested XP to **5% of a level**, and it applies the **Boosted Rest** lockout debuff (spell **1229451**) for approximately an hour. These are *separate* from the other campfire stat buffs.
+The earlier QuestSense could silently do nothing because it depended on current-map quest POIs or exact zone heading matches. Forever sometimes exposes **accepted quests and objectives but no usable map pins**. We've rewritten QuestSense around the live **`C_QuestLog.GetNumQuestLogEntries` / `C_QuestLog.GetInfo`** accepted-quest list, with `C_QuestLog.AddQuestWatch` and `RemoveQuestWatch` applied to Blizzard's **native tracker** only when safe.
 
-- CampSense now scans your **harmful auras** for Boosted Rest, via modern `C_UnitAuras` or Classic `UnitDebuff`, instead of assuming missing Camp Benefits means the tent failed.
-- If Boosted Rest is active: **tent already used**, no false tent reminder.
-- If your stored Rested XP is already **at least 5% of a level**: another tent cannot increase it, so no reminder.
-- If Rested XP is lower, the lockout is absent and both APIs are readable: camp tent top-up *could* help.
-- If APIs are unavailable/protected: status **unknown**, never falsely report a failed tent.
-- The one-hour **Camp Benefits** stat aura remains a separate status. Its expiry can still be useful, but its absence alone is not evidence a tent needs using.
-- Fallback for unusual Forever clients: **Adventure Prep → Tent Used** or `/chalk prep tent done` acknowledges tent use for one hour *in the current session*. `/chalk prep tent clear` clears it; `/chalk prep tent status` explains the current status. Boosted Rest remains authoritative.
-- `/chalk prep` prints **both** separate statuses, and the native Adventure Prep settings page shows **Stat buffs / Tent XP** independently.
+**Three clear modes in Options → AddOns → ChalkBox → QuestSense:**
+- **Smart (recommended, default):** Prioritizes newly accepted and current-zone quests when client map data exists, then fills remaining auto-watch slots from your accepted log. Even when map APIs are missing, this mode *still tracks quests*.
+- **Nearby only:** Only tracks quests confirmed by an exact zone header or matching current-zone map POI. No unverified guesses.
+- **All accepted:** Fills watch slots in quest-log order, regardless of location.
 
-## The DPS meter, your way
+Pick how many **ChalkBox-managed watches** are allowed: **5, 10, 15, or 20** (default 10). This respects the game's native watch cap and never removes your manually tracked quests. If you untrack an auto-managed quest manually, it stays muted until you change zones or explicitly refresh.
 
-- **Removed CHALKBOX branding and the gold-marker/native-data footer** from the meter window. No filler labels at the bottom.
-- The compact header now contains only: **DPS ▸ | Fight ▸ | PRINT | LOCK | X**.
-- **LOCK / UNLOCK on the window itself** prevents accidental movement and resizing.
-- A real **Opacity slider on the window** (35–100%) plus one in **Options → AddOns → ChalkBox → Combat Meter**; opacity is saved.
-- A small **bottom-right resize grip** can resize the window horizontally and vertically. Width and number of visible rows (5–12) save across sessions; three preset sizes still exist in Settings.
-- **PRINT** outputs the currently selected fight ranking to *your own local chat*, with stat type and player totals. If Current is empty, it tries the last completed fight. The button **does not send messages to party/raid chat**.
-- Forever may hide meter names/totals as *secret* while in combat. PRINT refuses in-combat printing and fails safely if the data is still protected; it never guesses, leaks or performs Lua arithmetic on protected values.
-- `/chalk meter print` and `/chalk meter opacity 75` offer direct command alternatives.
-- The **Reset Data...** action remains separate, confirmation-required, and affects the Blizzard shared meter only when intentionally selected.
+**Safety and reliability:**
+- No dependency on quest map pins to function in default Smart mode.
+- Preserves manually watched quests, the selected/super-tracked quest, and any custom tracker you use.
+- Defers **all watch-list edits during combat, while World Map or Quest Log is open, and during dangerous instance contexts**. Tries again after the window closes or when it's safe.
+- Waits for quest-log data instead of wiping all watches if the log is briefly empty during login.
+- Reacts to quest acceptance, turn-ins, quest-log updates, watch changes, zone changes and combat ending.
+- Checks the actual watched quest IDs after every write rather than trusting the misleading `AddQuestWatch` return flag.
+- **Tracking Diagnostics** and `/chalk quests status` report the current mode, zone, accepted count, candidates, watch count, auto-managed count, API readiness, and why an update was deferred or rejected. Refresh button is now **Refresh Quests**.
+- Commands: `/chalk quests smart`, `zone`, `all`, `limit 5|10|15|20`, `on`, `off`, `refresh`, `status`.
 
-## Installation
+**What it does not do:** invent objectives, quest coordinates, or turn-in directions. This is a dependable watcher for accepted quests, not a replacement for Questie or a quest-location database.
 
-Download **ChalkBox-1.7.1.zip**, unzip its single `ChalkBox/` folder into `Interface/AddOns/`, and `/reload`. Existing SavedVariables, LootSense's **2,511 bundled Forever recipes**, TrailBar, Emota, QuestSense and QuietGuard remain.
+## Adventure Prep toast: position and transparency
 
-Test the meter by moving its header, dragging its bottom-right grip, adjusting Opacity and toggling LOCK. After a completed fight, click PRINT. For CampSense, type `/chalk prep` after resting at a tent and look for **Boosted Rest ACTIVE** even when **Camp Benefits** is missing.
+- **Top of screen by default**, below the top edge instead of centered over your character.
+- New native **Adventure Prep → Toast Appearance** settings page: **Lock/Unlock**, **Transparency 35–100%**, **Preview / Move (25s)**, and **Reset to Top**.
+- Locked by default: fully click-through, no lost mouse actions. When unlocked, click Preview and drag the visible toast anywhere; your position is saved in existing `ChalkBoxDB.camp.toastOptions`.
+- Relock in the options page when you're satisfied. Regular notices still last **nine seconds**, and the 25-second preview allows comfortable repositioning.
+- Existing on-screen reminder, actual Camp Benefits, Camp Tent rested-XP / Boosted Rest, toast cooldown and class/pet reminders are unchanged.
 
-**Public prerelease:** CI runs Lua 5.1 and deterministic ZIP tests with mocked combat/auras, not an actual Forever session. If your client returns different protected data, report your build and the exact error. Sources: [Boosted Rest](https://www.wowhead.com/forever/spell=1229451/boosted-rest) and [Blizzard meter API](https://warcraft.wiki.gg/wiki/API:C_DamageMeter.GetCombatSessionFromType).
+## Combat Meter
+
+Removed the unwanted **X close button**. The header now only has **DPS / Fight / PRINT / LOCK**. The window can still be shown/hidden in native Combat Meter settings or with `/chalk meter show|hide`; opacity, resizing, local fight printing and saved lock state remain.
+
+## Install
+
+Download **ChalkBox-1.8.0.zip**, replace the existing `Interface/AddOns/ChalkBox/` folder, then `/reload`. Everything—including the MIT-licensed 2,511 Forever recipes—is still in **one ZIP**. Existing SavedVariables and manually watched quests are preserved.
+
+First test **`/chalk quests status`**, then **`/chalk quests refresh`** with the map closed. Try accepting a quest and look for its entry in Blizzard's native tracker. For toast placement, go to **Adventure Prep → Toast Appearance**, unlock, preview, drag and lock.
+
+**Public prerelease:** Lua 5.1 automated regression and ZIP tests cover current/legacy/absent map APIs, native watch methods, tracker-mutation guards, saved toast placement/opacity and the no-X meter. A real WoW Forever session is still needed to verify the live UI, event timing and interaction with other quest-tracker addons. Report the exact diagnostic output and client build if something differs.

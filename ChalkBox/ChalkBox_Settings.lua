@@ -223,27 +223,39 @@ local function MakeLoot()
 end
 
 local function MakeQuests()
-    local panel = Panel("QuestSense", "Automatically updates Blizzard's own quest objective tracker. No replacement window.")
-    Toggle(panel, "Automatically track quests for my current zone",
-        "Changes watches on zone entry, quest acceptance and turn-ins.", -114,
-        function() local db=ZoneDB();return db and db.enabled == true end,
-        function(on)
-            if ChalkBox_QuestCommand then
-                ChalkBox_QuestCommand(on and "on" or "off")
-            end
-        end)
-    Label(panel, "How it works", "GameFontNormalLarge", 28, -207)
-    Label(panel, "Uses map quest objectives and exact quest-log zone headings. Quests " ..
-        "without sufficient zone data may not be automatically included.",
-        "GameFontHighlight", 28, -237, 485)
-    Label(panel, "Your manually tracked quests stay tracked. Untracking an auto-added quest " ..
-        "suppresses it until the next zone visit.",
-        "GameFontHighlightSmall", 28, -293, 480)
-    Button(panel, "Refresh Zone Quests", 27, -349, 190, function()
-        if ChalkBox_QuestCommand then ChalkBox_QuestCommand("refresh") end
-    end)
-    Button(panel, "Show Tracking Status", 228, -349, 190, function()
-        if ChalkBox_QuestCommand then ChalkBox_QuestCommand("status") end
+    local panel=Panel("QuestSense",
+        "WoW Forever C_QuestLog: track accepted quests without guessing map pins.")
+    local function Run(command)
+        if ChalkBox_QuestCommand then ChalkBox_QuestCommand(command) end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end
+    Toggle(panel,"Auto-track accepted quests",
+        "Smart mode prefers nearby and new quests, with a reliable fallback.",-111,
+        function() local d=ZoneDB();return d and d.enabled==true end,
+        function(on) Run(on and "on" or "off") end)
+    Label(panel,"Tracking mode","GameFontNormalLarge",28,-177,490)
+    Button(panel,"Smart (recommended)",27,-208,160,function() Run("smart") end)
+    Button(panel,"Nearby only",198,-208,145,function() Run("zone") end)
+    Button(panel,"All accepted",354,-208,145,function() Run("all") end)
+    Label(panel,"Smart prioritizes nearby/new quests, then fills open watch slots from your",
+        "GameFontHighlightSmall",28,-247,502)
+    Label(panel,"accepted quest log. Nearby-only requires a zone match; All uses log order.",
+        "GameFontHighlightSmall",28,-265,502)
+    Label(panel,"Auto-watch limit","GameFontNormalLarge",28,-302,210)
+    for i,n in ipairs({5,10,15,20}) do
+        Button(panel,tostring(n),195+(i-1)*75,-298,64,
+            function() Run("limit "..n) end)
+    end
+    Button(panel,"Refresh Quests",27,-348,198,function() Run("refresh") end)
+    Button(panel,"Tracking Diagnostics",234,-348,210,function() Run("status") end)
+    local info=Label(panel,"","GameFontHighlightSmall",28,-397,498)
+    panel:AddRefresh(function()
+        local st=ChalkBox_QuestStatus and ChalkBox_QuestStatus() or nil
+        if not st then info:SetText("QuestSense not loaded yet.");return end
+        info:SetText((st.api and "Forever APIs ready" or "Quest APIs unavailable")..
+            " | "..tostring(st.mode).." | limit "..tostring(st.limit)..
+            " | active "..tostring(st.accepted).." | tracked "..tostring(st.tracked)..
+            " | "..tostring(st.reason))
     end)
     return panel
 end
@@ -453,15 +465,18 @@ local function MakePrep()
             if panel.OnRefresh then panel.OnRefresh() end
         end)
     end
-    Button(panel,"Test Reminder",28,-390,126,function()
+    Button(panel,"Test",413,-347,103,function()
         if ChalkBox_CampTestToast then ChalkBox_CampTestToast() end
     end)
-    Button(panel,"Print Checklist",162,-390,130,function()
+    Button(panel,"Print Checklist",27,-390,146,function()
         if ChalkBox_CampChecklist then ChalkBox_CampChecklist() end
     end)
-    Button(panel,"Tent Used",299,-390,126,function()
+    Button(panel,"Tent Used",185,-390,136,function()
         if ChalkBox_CampCommand then ChalkBox_CampCommand("tent done") end
         if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    Button(panel,"Toast Appearance",332,-390,169,function()
+        Activate("toast")
     end)
     local summary=Label(panel,"","GameFontHighlightSmall",29,-421,495)
     panel:AddRefresh(function()
@@ -475,6 +490,57 @@ local function MakePrep()
         summary:SetText("Stat buffs: "..state.." | Tent XP: "..tent..
             " | General tips: "..tostring(status.interval).."m")
     end)
+    return panel
+end
+
+local function MakeToast()
+    local panel=Panel("Toast Appearance",
+        "Top-screen Adventure Prep alerts. Drag only when unlocked, then lock.")
+    local function Run(command)
+        if ChalkBox_ToastCommand then ChalkBox_ToastCommand(command) end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end
+    Toggle(panel,"Lock toast position (click-through when locked)",
+        "Unlock, preview the notice and drag it where you want.",-113,
+        function()
+            local st=ChalkBox_ToastStatus and ChalkBox_ToastStatus()
+            return st and st.locked==true
+        end,
+        function(on) Run(on and "lock" or "unlock") end)
+    Label(panel,"Transparency","GameFontNormalLarge",28,-194,155)
+    local slider=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
+    slider:SetSize(296,18)
+    slider:SetPoint("TOPLEFT",panel,"TOPLEFT",180,-190)
+    slider:SetMinMaxValues(35,100)
+    if slider.SetValueStep then slider:SetValueStep(5) end
+    local loading=false
+    slider:SetScript("OnValueChanged",function(_,value)
+        if not loading and type(value)=="number" then
+            Run("opacity "..math.floor(value+0.5))
+        end
+    end)
+    local info=Label(panel,"","GameFontHighlight",28,-246,480)
+    panel:AddRefresh(function()
+        local st=ChalkBox_ToastStatus and ChalkBox_ToastStatus()
+        loading=true
+        slider:SetValue(math.floor(((st and st.opacity) or 0.92)*100+0.5))
+        loading=false
+        info:SetText("Opacity "..math.floor(((st and st.opacity) or 0.92)*100+0.5)..
+            "% | "..((st and st.locked) and "LOCKED" or "UNLOCKED")..
+            " | "..(st and st.position or "top"))
+    end)
+    Button(panel,"Preview / Move (25s)",27,-302,222,function()
+        Run("preview")
+    end)
+    Button(panel,"Reset to Top",264,-302,202,function()
+        Run("reset")
+    end)
+    Label(panel,"1. Uncheck Lock. 2. Click Preview / Move. 3. Drag the toast.",
+        "GameFontHighlight",28,-362,500)
+    Label(panel,"4. Lock it again here. Position and transparency are saved.",
+        "GameFontHighlight",28,-388,500)
+    Label(panel,"Normal reminders fade after 9 seconds. Preview stays for 25.",
+        "GameFontHighlightSmall",28,-416,500)
     return panel
 end
 
@@ -544,6 +610,7 @@ local function Register()
     panels.catalog = MakeCatalog()
     panels.guard = MakeGuard()
     panels.prep = MakePrep()
+    panels.toast = MakeToast()
     panels.meter = MakeMeter()
     if Settings and type(Settings.RegisterCanvasLayoutCategory) == "function"
         and type(Settings.RegisterAddOnCategory) == "function" then
@@ -558,6 +625,7 @@ local function Register()
                 {"catalog", "Emote Catalog"},
                 {"guard", "QuietGuard"},
                 {"prep", "Adventure Prep"},
+                {"toast", "Toast Appearance"},
                 {"meter", "Combat Meter"},
             }) do
                 local sub = Settings.RegisterCanvasLayoutSubcategory(rootCategory,
@@ -580,6 +648,7 @@ local function Register()
             {"catalog", "Emote Catalog"},
             {"guard", "QuietGuard"},
             {"prep", "Adventure Prep"},
+                {"toast", "Toast Appearance"},
                 {"meter", "Combat Meter"},
         }) do
             local panel = panels[item[1]]

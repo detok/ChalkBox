@@ -28,7 +28,7 @@ ChalkBox helps you **avoid wasting useful items**, keep up with your camping buf
 | **CampSense** | Checks the **Camp Benefits** aura, reminds you when it is missing/expiring, and shows a small **center-screen toast**. Also tracks camp tools and class/pet preparedness. |
 | **TrailBar** | Slim 18px bar for XP/hour, time to level, gold and time, with real screen-space reservation. |
 | **Combat Meter** | Native Forever DPS/damage/healing leaderboards, current/last/overall fights, class-colored bars and simple draggable window. |
-| **QuestSense** | Helps manage native tracking for accepted quests in the area without replacing your quest log. |
+| **QuestSense** | Automatically tracks accepted quests via the Forever `C_QuestLog` API. Smart fallback works even when zone/map pins aren't available; preserves your manual watches. |
 | **QuietGuard** | Tries to decline unsolicited guild invites and duels; optional filters for other invitations. |
 | **Emota** | Occasional native emote personality with race/class flavor, resting-area context and hunter-pet awareness. |
 
@@ -54,6 +54,12 @@ The compact, unbranded header has **DPS / Fight / PRINT / LOCK / X** controls. C
 
 Use `/chalk meter` to toggle, `/chalk meter dps` for DPS, `/chalk meter overall` for overall, and `/chalk meter help` for every command. Reset asks for confirmation because it clears Blizzard's shared meter sessions too. Pet and guardian grouping remains whatever Blizzard supplies; ChalkBox does not invent its own numbers. See [user guide](docs/USER_GUIDE.md).
 
+### QuestSense: actually track your accepted quests
+
+QuestSense now **reads your actual accepted quest log**, not a map-pin database. In **Smart mode** (on by default) it prioritizes quests for your current zone or ones you just accepted, then uses your remaining auto-watch slots for other accepted quests. Want less clutter? Choose **Nearby only**; prefer original quest-log order? Choose **All accepted**.
+
+It updates Blizzard's *native* tracker, preserves manual watches, and waits to change watches until the world map and quest log are closed and you are out of combat. Open **Esc → Options → AddOns → ChalkBox → QuestSense** for mode, tracking limit, Refresh and Diagnostics. Type `/chalk quests status` to see actual quest/watch counts and why a scan was postponed.
+
 ### Camping reminders you can actually see
 
 Use **`/chalk prep test`** to preview the central reminder instantly. **`/chalk prep`** prints your available camp tools and known buff state. The addon checks for Forever's **Camp Benefits** aura and tries not to bother you while you are already receiving **Welcoming Campfire** benefits. The toast automatically fades after nine seconds; turn it off in **Adventure Prep** if you prefer chat-only reminders.
@@ -71,6 +77,8 @@ Use **`/chalk prep test`** to preview the central reminder instantly. **`/chalk 
 | `/chalk prep test` | Display a test toast |
 | `/chalk meter` | Show or hide the built-in native DPS meter |
 | `/chalk meter help` | List statistic, fight and layout controls |
+| `/chalk quests status` | Diagnose QuestSense accepted quests, watches and API readiness |
+| `/chalk quests smart` | Use accepted-quest tracking even when map POIs are missing |
 | `/chalk meter print` | Print the chosen fight ranking locally, after combat |
 | `/chalk prep tent status` | Check Boosted Rest, rested-XP and manual tent acknowledgment |
 | `/chalk guard` | See social invite protections |

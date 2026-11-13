@@ -40,7 +40,7 @@ Forever camping has special uses beyond classic's cooking fire. CampSense can id
 | Rested XP already at least **5% of a level** | Another Camp Tent refill won't help |
 | Tent APIs unavailable | Tent state unknown; manually use `/chalk prep tent done` if necessary |
 
-**Camp Tent is a one-time Rested XP top-up, not a continuing Camp Benefits buff.** Missing the latter never proves you didn't receive the tent refill. If Forever doesn't report the harmful Boosted Rest aura, click **Tent Used** in Adventure Prep to acknowledge it for one hour this session (`/chalk prep tent clear` removes that acknowledgment). On-screen notices use a small, nine-second toast that does not capture mouse input. Try `/chalk prep test`. In the **Adventure Prep** page, you can toggle the toast, supplies, buff checks and class reminders independently, or pick 20/45/90-minute general reminder spacing.
+**Camp Tent is a one-time Rested XP top-up, not a continuing Camp Benefits buff.** Missing the latter never proves you didn't receive the tent refill. If Forever doesn't report the harmful Boosted Rest aura, click **Tent Used** in Adventure Prep to acknowledge it for one hour this session (`/chalk prep tent clear` removes that acknowledgment). On-screen notices appear near the **top** and fade after nine seconds. Use **Adventure Prep → Toast Appearance** to unlock the frame, **Preview / Move (25s)** and drag it, set opacity (35–100%), and then relock it. Locked toasts are click-through, so they won't steal combat clicks. Try `/chalk prep test`. In the **Adventure Prep** page, you can toggle the toast, supplies, buff checks and class reminders independently, or pick 20/45/90-minute general reminder spacing.
 
 ## Combat Meter — DPS, damage and more
 
@@ -70,8 +70,20 @@ The default settings attempt to prevent **guild invite spam and duel requests**.
 
 The master automatic-emote option is **off until you enable it**. When enabled, it occasionally picks native emotes, avoids recent repeats, and checks safety conditions such as combat or movement. Race/class context includes a hunter/pet-aware option and gentler resting-area behavior. Each emote can be enabled/disabled from the **Emote Catalog**, and you can test one with `/chalk emota idle preview`.
 
-## QuestSense
+## QuestSense (Forever smart quest tracking)
 
-QuestSense can automatically follow accepted quests relevant to your current area using the game's native quest tracking. You can turn it off from Options or with `/chalk quests off`. It does not add quests, abandon quests, or complete anything for you.
+QuestSense now reads your **accepted quests** from WoW Forever's `C_QuestLog` API. It **does not** need Questie or a third-party quest database, and it doesn't replace your game quest log or built-in objective tracker.
 
-Need help? [Troubleshooting](TROUBLESHOOTING.md) or [report a bug](https://github.com/detok/ChalkBox/issues/new/choose).
+Choose one of three modes under **Esc → Options → AddOns → ChalkBox → QuestSense**:
+
+- **Smart** (default): rank accepted quests by new/current zone relevance where it exists, then use free watch slots on other accepted quests. This works even when Forever offers no readable map pins.
+- **Nearby only**: be selective; only add quests whose log header or quest POI matches the current zone.
+- **All accepted**: track in the order quests appear in your accepted quest log.
+
+Set a cap of **5, 10, 15 or 20** ChalkBox-managed quest watches. The default is 10. **Manually watched quests are never removed** by this cap, and untracking an auto-added quest yourself suppresses it for that zone visit. ChalkBox won't edit watches during combat, with the world map or quest log open, or while inside a dungeon/raid; it retries safely.
+
+Use **`/chalk quests status`** if you don't see results. It reports how many accepted quests were read, how many were eligible, how many are watched and how many ChalkBox itself added, with an explanation such as *world map open* or *quest log isn't ready*. Use `/chalk quests refresh` after closing the map.
+
+**Location limits:** Forever can expose quest objectives without readable target coordinates. QuestSense handles *which quests to watch*, not magical navigation or locations. It never invents destinations, auto-accepts quests, or completes them for you.
+
+

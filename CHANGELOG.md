@@ -2,6 +2,16 @@
 
 All notable changes to the public ChalkBox addon are documented here.
 
+## 1.8.0 — Forever QuestSense rebuilt, movable top toast, cleaner DPS meter
+
+- Replaced zone-POI-dependent QuestSense with a **C_QuestLog accepted-quest** watch manager that works even when Forever map pins aren't available.
+- Smart (default), Nearby only and All accepted tracking modes, with optional 5/10/15/20 auto-watch limits.
+- Respects manual watches/untracking, protects state while world map/quest log/combat is open, retries after unsafe periods, and surfaces useful diagnostics.
+- Moved Adventure Prep toast to screen top by default; new Toast Appearance native page provides position lock, 35–100% opacity, 25-second move preview and Reset to Top. Locked notices remain click-through.
+- Removed the DPS meter X button while preserving show/hide through settings and slash commands.
+- Added regression coverage for absent map APIs, map/combat deferrals, muted manual watches, GUI toast drag/alpha settings, and no-X meter control.
+- Kept the single ZIP and 2,511 bundled MIT Forever recipes.
+
 ## 1.7.1 — Boosted Rest Camp Tent detection and personalized DPS meter
 
 - Detect Camp Tent's **Boosted Rest (1229451) harmful debuff** and sufficient Rested XP independently of ordinary Camp Benefits; suppress false reminders and show separate status.

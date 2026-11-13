@@ -1,9 +1,12 @@
--- Smart Zone Tracking: Lua 5.1 unit regression, no live WoW client needed.
-local currentMap = 3
-local inCombat = false
-local events, pending = {}, {}
-local watches, changes = {[301]=true}, {}
-local logs = {
+-- Forever QuestSense 2: accepted quest watches work without map pins.
+-- Preserves manual watches; defers risky changes while map/quest log/combat is open.
+local currentMap=3
+local inCombat=false
+local mapShown=false
+local logShown=false
+local pending,tickers,changes={},{},{}
+local watches={[301]=true}
+local logs={
     {isHeader=true,title="Duskwood"},
     {questID=101,title="Night Watch"},
     {questID=102,title="Worgen in the Woods"},
@@ -13,114 +16,175 @@ local logs = {
     {questID=301,title="Personal Dungeon Quest"},
     {questID=401,title="Objective in Duskwood"},
 }
-local mapInfo = {
+local mapInfo={
     [1]={name="Duskwood",mapType=3,parentMapID=0},
     [2]={name="Redridge Mountains",mapType=3,parentMapID=0},
     [3]={name="Darkshire",mapType=5,parentMapID=1},
 }
-_G.ChalkBoxZoneDB = nil
-_G.C_Map = {
-    GetBestMapForUnit=function(unit) assert(unit=="player"); return currentMap end,
-    GetMapInfo=function(id) return mapInfo[id] end
+_G.ChalkBoxZoneDB=nil
+_G.C_Map={
+    GetBestMapForUnit=function(unit) assert(unit=="player");return currentMap end,
+    GetMapInfo=function(id) return mapInfo[id] end,
 }
-_G.C_QuestLog = {
+local frame
+_G.WorldMapFrame={
+    IsShown=function() return mapShown end,
+    HookScript=function(_,event,callback) assert(event=="OnHide");_G.closeMap=callback end,
+}
+_G.QuestLogFrame={
+    IsShown=function() return logShown end,
+    HookScript=function(_,event,callback) assert(event=="OnHide");_G.closeLog=callback end,
+}
+_G.C_QuestLog={
     GetNumQuestLogEntries=function() return #logs end,
     GetInfo=function(i) return logs[i] end,
-    GetLogIndexForQuestID=function(id)
-        for i,row in ipairs(logs) do if row.questID==id then return i end end
-    end,
     GetQuestsOnMap=function(id)
         if id==1 then return {{questID=101},{questID=401},{questID=999}} end
         if id==2 then return {{questID=201}} end
         return {}
     end,
     GetNumQuestWatches=function()
-        local n=0
-        for _ in pairs(watches) do n=n+1 end
+        local n=0;for _ in pairs(watches) do n=n+1 end
         return n
     end,
     GetQuestIDForQuestWatchIndex=function(index)
-        local a={}
-        for id in pairs(watches) do a[#a+1]=id end
+        local a={};for id in pairs(watches) do a[#a+1]=id end
         table.sort(a)
         return a[index]
     end,
     AddQuestWatch=function(id)
-        assert(id~=999,"never track an unaccepted quest")
+        assert(id~=999,"never watch a quest not accepted")
         watches[id]=true
         changes[#changes+1]="+"..id
-        return false -- 'wasWatched' is deliberately NOT a success flag
+        if frame then frame.fire(frame,"QUEST_WATCH_LIST_CHANGED") end
+        return false -- false is not proof that AddQuestWatch failed
     end,
     RemoveQuestWatch=function(id)
-        assert(id~=301,"do not remove a pre-existing manual watch")
+        assert(id~=301,"never remove user's manual watch")
         watches[id]=nil
         changes[#changes+1]="-"..id
+        if frame then frame.fire(frame,"QUEST_WATCH_LIST_CHANGED") end
         return true
     end,
 }
+_G.GetZoneText=function() return currentMap==2 and "Redridge Mountains" or "Darkshire" end
 _G.InCombatLockdown=function() return inCombat end
-_G.DEFAULT_CHAT_FRAME={AddMessage=function() end}
-_G.C_Timer={After=function(_,fn) pending[#pending+1]=fn end}
+_G.IsInInstance=function() return false,"none" end
+_G.Constants={QuestWatchConsts={MAX_QUEST_WATCHES=10}}
+local messages={}
+_G.DEFAULT_CHAT_FRAME={AddMessage=function(_,msg) messages[#messages+1]=msg end}
+_G.C_Timer={
+    After=function(delay,fn)
+        assert(delay>=0.3)
+        pending[#pending+1]=fn
+    end,
+    NewTicker=function(_,fn) tickers[#tickers+1]=fn end,
+}
 local function Flush()
-    for _=1,30 do
+    for i=1,40 do
         if #pending==0 then return end
-        local nextStep=table.remove(pending,1)
-        nextStep()
+        local fn=table.remove(pending,1);fn()
     end
-    error("Runaway quest update scheduling")
+    error("runaway scheduled quest update")
 end
-local frame
--- Capture the addon frame for event delivery.
 _G.CreateFrame=function()
-    local f={}
-    function f:RegisterEvent(event) f[event]=true end
-    function f:SetScript(_,handler) f.fire=handler end
+    local f={events={}}
+    function f:RegisterEvent(e) self.events[e]=true end
+    function f:SetScript(which,handler) self.fire=handler end
     frame=f
     return f
 end
 assert(loadfile("QuestSense.lua"))("ChalkBox")
-local function Fire(event,arg) assert(frame[event],event);frame.fire(frame,event,arg) end
+local function Fire(event,a,b)
+    assert(frame.events[event],"must register "..event)
+    frame.fire(frame,event,a,b)
+end
 Fire("ADDON_LOADED","ChalkBox")
-assert(ChalkBoxZoneDB.enabled==true,"user-requested automatic zone mode is on by default")
+assert(ChalkBoxZoneDB.enabled and ChalkBoxZoneDB.mode=="smart")
+Fire("PLAYER_LOGIN")
 Fire("PLAYER_ENTERING_WORLD")
 Flush()
-assert(watches[101] and watches[102] and watches[401],
-    "accepted zone/header and map POI quests should be tracked")
-assert(not watches[201] and not watches[999],"foreign and unaccepted quests remain untracked")
-assert(watches[301],"manual watches remain untouched")
-assert(ChalkBoxZoneDB.managed[101],"record ownership of actual watch even if API returned false")
-currentMap=2
-Fire("ZONE_CHANGED_NEW_AREA")
-Flush()
-assert(not watches[101] and not watches[102] and not watches[401],
-    "addon-managed out-of-zone watches must be removed")
-assert(watches[201] and watches[301],"new-zone quest watched; manual choice retained")
--- Untrack one of our automatic watches by hand: it should stay muted in this zone.
+assert(watches[101] and watches[102] and watches[201] and watches[401] and watches[301],
+    "smart mode must track accepted quests whether or not they have on-map POIs")
+assert(not watches[999],"a POI for an unaccepted quest must NEVER be tracked")
+assert(ChalkBoxZoneDB.managed[101] and not ChalkBoxZoneDB.managed[301],
+    "only automatic watches are owned by ChalkBox")
+local st=ChalkBox_QuestStatus()
+assert(st.api and st.accepted==5 and st.auto==4 and st.reason=="ready")
+assert(#tickers==1,"deferred watch edits can retry after map closes")
+-- Manual unwatch must be respected, even though the quest remains accepted.
 watches[201]=nil
 Fire("QUEST_WATCH_LIST_CHANGED")
 Flush()
-assert(not watches[201],"manual untrack must not immediately be reversed")
-currentMap=3
-Fire("ZONE_CHANGED_NEW_AREA")
-Flush()
+assert(not watches[201] and ChalkBoxZoneDB.muted[201],
+    "manual unwatch must not instantly be undone")
+-- Zone change allows previously muted quests to be reconsidered.
 currentMap=2
 Fire("ZONE_CHANGED_NEW_AREA")
 Flush()
-assert(watches[201],"a new zone visit should reset temporary suppression")
-ChalkBox_QuestCommand("off")
-assert(ChalkBoxZoneDB.enabled==false and not watches[201] and watches[301],
-    "turning off restores manual-only watches")
-ChalkBox_QuestCommand("on")
+assert(watches[201],"new zone visit resets muted auto watch")
+-- A strict zone mode remains available to avoid clutter for players who want it.
+ChalkBox_QuestCommand("zone")
 Flush()
-assert(watches[201] and watches[301],"turning on resumes auto tracking")
+assert(watches[201] and watches[301] and not watches[101] and not watches[102],
+    "nearby-only drops previous auto watches but preserves manual")
+assert(ChalkBoxZoneDB.mode=="zone")
+-- No tracker edits with the map open: wait for OnHide and then reconcile.
+mapShown=true
 currentMap=3
-inCombat=true
 Fire("ZONE_CHANGED_NEW_AREA")
 Flush()
-assert(watches[201],"defer tracker changes during combat")
+assert(watches[201] and not watches[101] and ChalkBox_QuestStatus().pending)
+mapShown=false
+closeMap()
+Flush()
+assert(not watches[201] and watches[101] and watches[102] and watches[401],
+    "map closing unlocks queued current-zone watch changes")
+-- Likewise, defer updates while the separate quest log is open.
+logShown=true
+currentMap=2
+Fire("ZONE_CHANGED_NEW_AREA")
+Flush()
+assert(watches[101] and not watches[201])
+logShown=false
+closeLog()
+Flush()
+assert(watches[201] and not watches[101])
+-- No map or POI support: smart mode must still do something useful.
+C_Map=nil
+C_QuestLog.GetQuestsOnMap=nil
+ChalkBox_QuestCommand("smart")
+Flush()
+assert(watches[101] and watches[102] and watches[201] and watches[401],
+    "smart mode uses accepted quest log even on clients missing all map-pin APIs")
+assert(watches[301],"manual remains untouched without map info")
+-- Combat gating.
+inCombat=true
+ChalkBox_QuestCommand("zone")
+Flush()
+assert(ChalkBox_QuestStatus().pending)
 inCombat=false
 Fire("PLAYER_REGEN_ENABLED")
 Flush()
-assert(watches[101] and not watches[201],"pending zone update executes when safe")
+assert(ChalkBox_QuestStatus().reason=="ready")
+-- No API: state reports the reason instead of silently appearing functional.
+local old=C_QuestLog.GetNumQuestWatches
+C_QuestLog.GetNumQuestWatches=nil
 ChalkBox_QuestCommand("status")
-print("PASS: map-only objective quests, quest-header fallback, zone switching, manual-watch preservation, manual removal, toggle, deferred combat update")
+assert(messages[#messages]:find("MISSING",1,true),
+    "diagnostics show missing Forever watch methods")
+C_QuestLog.GetNumQuestWatches=old
+ChalkBox_QuestCommand("all")
+Flush()
+ChalkBox_QuestCommand("limit 5")
+Flush()
+assert(ChalkBox_QuestStatus().limit==5)
+ChalkBox_QuestCommand("off")
+Flush()
+assert(not watches[101] and not watches[102] and not watches[201] and not watches[401],
+    "disabling removes only our auto watches")
+assert(watches[301],"turning off never deletes manual watches")
+ChalkBox_QuestCommand("on")
+Flush()
+assert(watches[101] and watches[301],"re-enabling works on the same session")
+print("PASS: Forever C_QuestLog accepted-quest fallback, strict-zone mode, watch diff, event gating, manual unwatch, API diagnostics, limit and reset")

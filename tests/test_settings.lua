@@ -3,8 +3,9 @@ local frames, widgets, printed = {}, {}, {}
 local registered, opened, categories = {}, {}, {}
 _G.UIParent={}
 _G.DEFAULT_CHAT_FRAME={AddMessage=function(_,str) printed[#printed+1]=str end}
-_G.ChalkBoxDB={lootAdvice=true,bar="top",barReserve=true,emota={auto=false,idleAuto=true,debug=false,idleVariety=false,contextual=true,jokeFrequency=50},guard={guild=true,duel=true,party=false,trade=false,channel=false},camp={enabled=true,toast=true,supplies=true,buffs=true,classCare=true,interval=45},meter={shown=true,locked=false,mode="dps",session="current",rows=8,scale=1,opacity=0.94},keep={["id:11"]="Test Trinket"}}
-_G.ChalkBoxZoneDB={enabled=true,managed={},muted={}}
+_G.ChalkBoxDB={lootAdvice=true,bar="top",barReserve=true,emota={auto=false,idleAuto=true,debug=false,idleVariety=false,contextual=true,jokeFrequency=50},guard={guild=true,duel=true,party=false,trade=false,channel=false},camp={enabled=true,toast=true,supplies=true,buffs=true,classCare=true,interval=45,
+    toastOptions={locked=true,opacity=0.92}},meter={shown=true,locked=false,mode="dps",session="current",rows=8,scale=1,opacity=0.94},keep={["id:11"]="Test Trinket"}}
+_G.ChalkBoxZoneDB={enabled=true,mode="smart",limit=10,managed={},muted={}}
 _G.SlashCmdList={CHALKBOX=function(command)
     if command:find("^keep ") then ChalkBoxDB.keep["name:new"] = "New Item" end
     if command:find("^forget ") then ChalkBoxDB.keep["name:new"] = nil end
@@ -19,7 +20,17 @@ _G.ChalkBox_RemoveKeepKey=function(key) ChalkBoxDB.keep[key]=nil end
 _G.ChalkBox_QuestCommand=function(value)
     if value=="on" then ChalkBoxZoneDB.enabled=true end
     if value=="off" then ChalkBoxZoneDB.enabled=false end
+    if value=="smart" or value=="zone" or value=="all" then
+        ChalkBoxZoneDB.mode=value
+    end
+    if value:match("^limit %d+$") then
+        ChalkBoxZoneDB.limit=tonumber(value:match("%d+"))
+    end
     printed[#printed+1]="quests "..value
+end
+_G.ChalkBox_QuestStatus=function()
+    return {enabled=ChalkBoxZoneDB.enabled,mode=ChalkBoxZoneDB.mode,
+        limit=ChalkBoxZoneDB.limit,api=true,accepted=8,tracked=5,reason="ready"}
 end
 _G.ChalkBox_BarCommand=function(value)
     if value=="top" or value=="bottom" or value=="off" then ChalkBoxDB.bar=value end
@@ -64,6 +75,19 @@ _G.ChalkBox_CampStatus=function()
 end
 _G.ChalkBox_CampChecklist=function() printed[#printed+1]="checklist" end
 _G.ChalkBox_CampTestToast=function() printed[#printed+1]="test toast";return true end
+_G.ChalkBox_ToastStatus=function()
+    local d=ChalkBoxDB.camp.toastOptions
+    return {locked=d.locked,opacity=d.opacity,position=d.position or "top"}
+end
+_G.ChalkBox_ToastCommand=function(command)
+    local d=ChalkBoxDB.camp.toastOptions
+    if command=="lock" then d.locked=true end
+    if command=="unlock" then d.locked=false end
+    if command=="reset" then d.position=nil;d.x=nil;d.y=nil end
+    local opacity=command:match("^opacity (%d+)$")
+    if opacity then d.opacity=tonumber(opacity)/100 end
+    printed[#printed+1]="toast "..command
+end
 _G.ChalkBox_MeterCommand=function(command)
     local meter=ChalkBoxDB.meter
     if command=="show" then meter.shown=true end
@@ -167,7 +191,7 @@ assert(loadfile("ChalkBox_Settings.lua"))("ChalkBox")
 local loader=frames[#frames]
 assert(loader.event=="PLAYER_LOGIN","must register settings when the client is ready")
 loader.script.OnEvent(loader,"PLAYER_LOGIN")
-assert(#registered==9,"one main options category and eight native subcategories")
+assert(#registered==10,"main options plus QuestSense/Toast Appearance and the original seven modules")
 assert(categories.home.name=="ChalkBox")
 ChalkBox_OpenSettings()
 assert(opened[#opened]==101,"default /chalk must open native settings")
@@ -207,8 +231,18 @@ local questCheck=FindCheckByParentTitle("QuestSense")[1]
 categories["QuestSense"].panel:Show()
 questCheck:Click(false)
 assert(ChalkBoxZoneDB.enabled==false,"quest menu must toggle existing tracking code")
-Control("Refresh Zone Quests"):Click()
-assert(printed[#printed]=="quests refresh","refresh should call existing function")
+Control("Refresh Quests"):Click()
+assert(printed[#printed]=="quests refresh","refresh calls the reworked scan")
+Control("Nearby only"):Click()
+assert(ChalkBoxZoneDB.mode=="zone","nearby-only is a selectable strict mode")
+Control("All accepted"):Click()
+assert(ChalkBoxZoneDB.mode=="all")
+Control("Smart (recommended)"):Click()
+assert(ChalkBoxZoneDB.mode=="smart")
+Control("15"):Click()
+assert(ChalkBoxZoneDB.limit==15,"autowatch limit can be selected from native options")
+Control("Tracking Diagnostics"):Click()
+assert(printed[#printed]=="quests status")
 local barChecks=FindCheckByParentTitle("TrailBar")
 assert(#barChecks==4)
 categories["TrailBar"].panel:Show()
@@ -280,13 +314,26 @@ prepChecks[4]:Click(false)
 assert(ChalkBoxDB.camp.supplies==false)
 Control("20m"):Click()
 assert(ChalkBoxDB.camp.interval==20)
-Control("Test Reminder"):Click()
+Control("Test"):Click()
 assert(printed[#printed]=="test toast","native options preview must show reminder")
 Control("Print Checklist"):Click()
 assert(printed[#printed]=="checklist")
 Control("Tent Used"):Click()
 assert(printed[#printed]=="camp tent done","manual tent acknowledgment is accessible from options")
 assert(categories["QuietGuard"].name=="QuietGuard" and categories["Adventure Prep"].name=="Adventure Prep")
+Control("Toast Appearance"):Click()
+assert(opened[#opened]==categories["Toast Appearance"].ID,
+    "Adventure Prep directly navigates to Toast Appearance native submenu")
+categories["Toast Appearance"].panel:Show()
+local toastChecks=FindCheckByParentTitle("Toast Appearance")
+assert(#toastChecks==1 and toastChecks[1].checked,
+    "toast lock default is on")
+toastChecks[1]:Click(false)
+assert(not ChalkBoxDB.camp.toastOptions.locked)
+Control("Preview / Move (25s)"):Click()
+assert(printed[#printed]=="toast preview")
+Control("Reset to Top"):Click()
+assert(printed[#printed]=="toast reset")
 local meterChecks=FindCheckByParentTitle("Combat Meter")
 assert(#meterChecks==2,"meter has show and lock controls")
 categories["Combat Meter"].panel:Show()
@@ -304,7 +351,7 @@ local sliders={}
 for _,frame in ipairs(frames) do
     if frame.kind=="Slider" then sliders[#sliders+1]=frame end
 end
-assert(#sliders==2,"native Emota and Combat Meter sliders present")
+assert(#sliders==3,"Emota, Combat Meter and Toast Appearance each have a slider")
 local meterSlider
 for _,frame in ipairs(sliders) do
     if frame.parent==categories["Combat Meter"].panel then meterSlider=frame end
@@ -313,8 +360,16 @@ assert(meterSlider,"native meter opacity slider belongs to Combat Meter page")
 meterSlider:SetValue(65)
 assert(ChalkBoxDB.meter.opacity==0.65,
     "native transparency slider updates persisted meter opacity")
+local toastSlider
+for _,frame in ipairs(sliders) do
+    if frame.parent==categories["Toast Appearance"].panel then toastSlider=frame end
+end
+assert(toastSlider and toastSlider.value==92)
+toastSlider:SetValue(70)
+assert(ChalkBoxDB.camp.toastOptions.opacity==0.7,
+    "Toast Appearance slider saves its own opacity, independently from the meter")
 Control("Reset Data..."):Click()
 assert(printed[#printed]=="meter reset","reset must request confirmation in the real module")
 Control("Show Window"):Click()
 assert(printed[#printed]=="meter show")
-print("PASS: native settings with eight subpages, combat meter controls, social protection, camp prep, TrailBar and Emota")
+print("PASS: native settings, QuestSense modes/limits, top Toast Appearance opacity/drag lock, meter controls, CampSense and Emota")
