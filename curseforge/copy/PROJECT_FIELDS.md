@@ -14,7 +14,7 @@
 | Game version | **1.60.1 (Forever)** | The currently listed Forever project version as of 2026-11-13; verify at upload |
 | Project license | **MIT License** | Matches repository `LICENSE` |
 | Project description | [PROJECT_DESCRIPTION.md](PROJECT_DESCRIPTION.md) | Paste in Markdown mode; preview once before saving |
-| Logo | **NOT YET CREATED** | See `../ARTWORK_TO_CREATE.md`, make and upload in the art pass |
+| Logo | **Original SVG ready** | `../artwork/chalkbox-project-icon-512.svg`; use the 512px PNG export from the branding pack, then verify portal requirements before upload |
 | File to upload | **ChalkBox-1.9.0.zip** (initial draft) | Pull the actual installable ZIP from current build/release; never the repository ZIP |
 | Release type | **Beta** until verified in client; **Release** when confident | A CurseForge Release file is needed for ordinary default app sync |
 | Source | https://github.com/detok/ChalkBox | Source link, **not** a third-party binary download |
@@ -39,7 +39,7 @@
 - [ ] Name availability and category list in the real project-creation form
 - [ ] Forever flavor and compatible version available in file upload
 - [ ] Correct license and third-party attribution
-- [ ] Hero/icon ready from next art pass
+- [ ] Use supplied PNG export for the completed hero/icon; verify accepted dimensions
 - [ ] No unsupported features in the final description
 - [ ] Confirm that the file you upload is the version you describe
 
