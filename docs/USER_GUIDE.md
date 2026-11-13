@@ -27,7 +27,7 @@ ChalkBox does not click vendor buttons or automate selling. Always review items 
 
 ## CampSense (Adventure Prep)
 
-Forever camping has special uses beyond classic's cooking fire. CampSense can identify common components such as **Simple Wood**, **Flint and Tinder**, and **Light Leather** (used in camp features). It also checks supported player auras:
+Forever camping has special uses beyond classic's cooking fire. CampSense can identify common components such as **Simple Wood**, **Flint and Tinder**, and **Light Leather** (used in camp features). It also checks supported player auras, **plus the separate Camp Tent rested-XP system**:
 
 | Aura reading | Behavior |
 | --- | --- |
@@ -36,8 +36,11 @@ Forever camping has special uses beyond classic's cooking fire. CampSense can id
 | **Camp Benefits** missing | Suggest camping |
 | **Welcoming Campfire** detected | Leaves you alone while you gather camping benefits |
 | Aura API unavailable/restricted | Reports unknown, rather than assuming missing |
+| **Boosted Rest** debuff (1229451) | The tent already credited you; no repeated tent reminder |
+| Rested XP already at least **5% of a level** | Another Camp Tent refill won't help |
+| Tent APIs unavailable | Tent state unknown; manually use `/chalk prep tent done` if necessary |
 
-On-screen notices use a small, nine-second toast that does not capture mouse input. Try `/chalk prep test`. In the **Adventure Prep** page, you can toggle the toast, supplies, buff checks and class reminders independently, or pick 20/45/90-minute general reminder spacing.
+**Camp Tent is a one-time Rested XP top-up, not a continuing Camp Benefits buff.** Missing the latter never proves you didn't receive the tent refill. If Forever doesn't report the harmful Boosted Rest aura, click **Tent Used** in Adventure Prep to acknowledge it for one hour this session (`/chalk prep tent clear` removes that acknowledgment). On-screen notices use a small, nine-second toast that does not capture mouse input. Try `/chalk prep test`. In the **Adventure Prep** page, you can toggle the toast, supplies, buff checks and class reminders independently, or pick 20/45/90-minute general reminder spacing.
 
 ## Combat Meter — DPS, damage and more
 
@@ -47,7 +50,9 @@ The built-in ChalkBox Combat Meter is a **small window** that uses WoW Forever's
 - Statistic: **DPS, Damage Done, HPS, Healing Done, Damage Taken, Interrupts**.
 - Scope: **Fight, Last, Overall**.
 
-**Move it:** drag the title bar. Lock it under `/chalk → Combat Meter` when you like its position. Show 5, 8 or 12 rows; choose 85, 100 or 115% size. Click **x** to hide; `/chalk meter` shows it again. `/chalk meter help` lists quick commands.
+**Move and resize:** drag the title bar, then use the bottom-right grip to resize width and height. Click **LOCK** directly on the meter to protect its position, or click **UNLOCK** to move it again. Change transparency with the on-window **Opacity** slider (35–100%), or the native `/chalk → Combat Meter` slider. Show 5, 8 or 12 rows and choose 85, 100 or 115% UI scale in settings. Click **X** to hide; `/chalk meter` shows it again.
+
+**Print a fight:** click **PRINT** after combat to display the selected DPS/damage/healing ranking in *your own local chat*. The mode and Fight/Last/Overall selection determine what prints. If Current is empty, ChalkBox attempts the last fight. Protected in-combat information isn't converted to Lua strings or broadcast; if unavailable, ChalkBox explains why instead. `/chalk meter print` does the same thing. `/chalk meter help` lists quick commands.
 
 **Reset is shared:** the Reset Data button confirms before calling Blizzard's reset API, because clearing sessions affects the built-in meter and other addons that use the same data. It does not run during combat.
 
