@@ -2,6 +2,15 @@
 
 All notable changes to the public ChalkBox addon are documented here.
 
+## 1.8.4 — Separate-bag position control
+
+- Add a default-off **0–80-point vertical offset** for Blizzard's individual bag windows (including profession bags), with a 30-point starting suggestion for bags clipping off the top.
+- Show an adjustable slider under native **ChalkBox → TrailBar** settings, plus `/chalk bags offset 30`, `/chalk bags reset`, and `/chalk bags status`.
+- Securely post-hook Blizzard's `UpdateContainerFrameAnchors()` so the whole open bag stack moves together, without replacing item slots, inventory or sorting.
+- Respect the original combined-bags position, never shift in combat, and reapply after combat rather than causing protected-frame errors.
+- Regression tests cover no stacking on repeated layout, saved slider behavior, slash commands, combat deferral and stock reset.
+- Preserve TrailBar's existing 18px display, DPS meter, QuestSense, LootSense and all other features.
+
 ## 1.8.3 — LootSense First Aid material accuracy
 
 - Prevent broad Cloth item-subclass guesses from being labeled as First Aid materials; First Aid now needs recipe evidence.
