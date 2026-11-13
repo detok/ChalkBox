@@ -11,7 +11,7 @@
 [![MIT](https://img.shields.io/badge/license-MIT-67C6B7.svg)](LICENSE)
 [![Forever](https://img.shields.io/badge/WoW-Forever-203342.svg)](https://github.com/detok/ChalkBox)
 
-### [⬇ Download ChalkBox 1.8.5](https://github.com/detok/ChalkBox/releases/download/v1.8.5/ChalkBox-1.8.5.zip)
+### [⬇ Download ChalkBox 1.8.6](https://github.com/detok/ChalkBox/releases/download/v1.8.6/ChalkBox-1.8.6.zip)
 
 [**All GitHub Releases**](https://github.com/detok/ChalkBox/releases) · [**Install Guide**](#-install-in-one-minute) · [**Features**](#-what-chalkbox-does) · [**Help & Bugs**](https://github.com/detok/ChalkBox/issues)
 
@@ -40,7 +40,7 @@ It adds **small, genuinely useful information** while keeping Blizzard's familia
 | :--- | :--- | :--- |
 | **📦 LootSense** | Contextual **KEEP**, **KNOWN RECIPE**, **POTENTIAL USE**, camping and profession hints | Understand *why* an item could matter before selling it |
 | **🧪 ProfessionSense** | Learned-recipe reagent scans, quantities where the client allows, 2,511 bundled Forever recipes | No separate crafting database download |
-| **📈 TrailBar** | A slim **18px** strip for level/XP, XP/hour, next-level ETA, session time and gold | Your important progress numbers without another big window |
+| **📈 TrailBar** | Adaptive **18px** strip for XP, gold, **free bag slots, gear durability, rested XP, latency and Hunter pet health** | All the stats you actually want—without another window |
 | **⚔️ Combat Meter** | Compact DPS/DMG/HPS/HEAL/TAKEN/INT, class icons, draggable window, PRINT/RESET | A readable optional meter using Blizzard's own data |
 | **💬 Blizzard meter PRINT** | A new **PRINT top 3 to PARTY** entry in Blizzard's existing damage-meter gear menu | Keep the **native** meter and still share a concise fight report |
 | **📜 QuestSense** | Smart / Nearby / All accepted-quest watch modes in the native tracker | Stay focused without inventing map pins or quest arrows |
@@ -77,19 +77,30 @@ ChalkBox tries to explain the difference on the item's tooltip:
 
 ChalkBox **never** sells, buys, deletes, trades or uses items for you.
 
-## 📈 TrailBar: tiny on purpose
+## 📈 TrailBar: more information, same 18 pixels
 
-The compact, configurable **18-pixel strip** sits at the top or bottom of your screen.
+**This is new in v1.8.6.** TrailBar now shows far more than XP and gold, yet stays the **same 18 pixels tall**. It's a customizable status dashboard—not a big floating window.
 
-| Display | Example purpose |
-| --- | --- |
-| **Level and XP %** | See progress at a glance |
-| **XP/hour** | Watch your session rate |
-| **Level ETA** | Rough time-to-level estimate when you've earned enough XP |
-| **Session time** | Know how long you've been adventuring |
-| **Gold + net change** | Track current gold and changes during the session |
+| Module | What you see | Mouseover detail | Default |
+| --- | --- | --- | --- |
+| **Level** | Level + XP % | Exact XP amounts | Always |
+| **XP rate** | XP/hour | Session earnings | On |
+| **To level** | ETA | Estimate methodology | On |
+| **Bags** | **12 free** (example) | Total bag slots, general vs. profession-only free slots | **On** |
+| **Gear** | **87%** (example) | Weighted equipped durability and lowest-condition item | **On** |
+| **Rested** | **42%** (example) | Bonus XP and percent of one level; separate from camp buffs | **On** |
+| **Pet** | **95%** or **Pet none** (Hunters) | Pet health when the client permits it; protected values show unavailable | On for Hunters |
+| **Latency** | World ping in ms | Home and world latency separately | Off |
+| **Session** | Time online | Session duration | On |
+| **Gold** | Current gold + net change | Net gold per hour | On |
 
-Hover for more detail. Turn on **Reserve screen space** (default) so the bar doesn't cover ordinary UI elements. Use `/chalk bar status` for layout diagnostics.
+### Layouts that fit
+
+In **Esc → Options → AddOns → ChalkBox → TrailBar Stats**, turn each module on or off. Or choose **Balanced** (recommended), **Minimal** (level, bag space, gold), or **All**. The bar automatically hides low-priority numbers when the screen is too narrow to fit them—**no overlapping labels** or overflowing off-screen. Widening your UI makes those enabled fields appear again. Hover items for useful detail.
+
+Try `/chalk bar stats` to inspect enabled vs. currently visible modules. `/chalk bar stats all` turns everything on; `/chalk bar stat latency on` enables the world ping field. A metric whose Forever API is unavailable stays hidden rather than making up a number.
+
+The strip still supports **top / bottom / hidden**, 18px **Reserve screen space** (default), and a tiny XP progress line. Use `/chalk bar status` for layout diagnostics.
 
 If separate bags stack too high, **ChalkBox → TrailBar** also has a **Separate bags: move down** slider. It starts at zero, only affects individually opened bags, and doesn't replace Blizzard's containers or inventory sorting. Try `/chalk bags offset 30`.
 
@@ -114,7 +125,7 @@ That's included too:
 - **PRINT** to PARTY after combat
 - **RESET** with confirmation; it clears *shared Blizzard session data*, not just ChalkBox
 
-**Client note:** the built-in gear-menu addition and separate-bag offset have passed Lua tests but still need real-world Forever-client confirmation. If your client blocks an action or secret value, ChalkBox reports that rather than guessing.
+**Client note:** the built-in gear-menu addition, separate-bag offset and newest TrailBar native-data widgets have Lua tests, but still need real-world Forever-client confirmation. If your client blocks an action or secret value, ChalkBox reports that rather than guessing.
 
 ## 📜 Quests, camping and a little personality
 
@@ -128,7 +139,7 @@ That's included too:
 
 ## 🚀 Install in one minute
 
-**Direct download:** [**ChalkBox 1.8.5 ZIP**](https://github.com/detok/ChalkBox/releases/download/v1.8.5/ChalkBox-1.8.5.zip)  
+**Direct download:** [**ChalkBox 1.8.6 ZIP**](https://github.com/detok/ChalkBox/releases/download/v1.8.6/ChalkBox-1.8.6.zip)  
 **Newer versions:** [**GitHub Releases**](https://github.com/detok/ChalkBox/releases)
 
 1. Download **`ChalkBox-<version>.zip`** from GitHub Releases — *not* the GitHub “Source code” archives.
@@ -173,6 +184,8 @@ Your settings live in WoW SavedVariables; you don't need to delete `WTF` when up
 | `/chalk loot scan` / `status` | Refresh or diagnose profession/recipe data |
 | `/chalk quests status` / `smart` | Inspect or change quest tracking |
 | `/chalk bar top` / `bottom` / `off` | Place or hide the status strip |
+| `/chalk bar stats all` / `balanced` / `minimal` | Set TrailBar information density |
+| `/chalk bar stat gear off` / `latency on` | Control individual widgets |
 | `/chalk bags offset 30` / `reset` | Reposition individual bag windows or restore default |
 | `/chalk meter hide` / `show` | Toggle the extra ChalkBox combat meter |
 | `/chalk meter print` | Manually report top-three compact-meter results to PARTY after combat |
