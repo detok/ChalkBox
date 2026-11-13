@@ -129,7 +129,8 @@ local function MakeHome()
         local col=(index-1)%2
         local x=28+col*258
         local y=-130-row*48
-        Button(panel,entry[2],x,y,228,function() Activate(entry[1]) end)
+        local pageKey=entry[1]
+        Button(panel,entry[2],x,y,228,function() Activate(pageKey) end)
         Label(panel,entry[3],"GameFontHighlightSmall",x+4,y-29,228)
     end
     Label(panel,"Also: Toast Appearance inside Adventure Prep. /chalk and /cb open this page.",
@@ -593,7 +594,8 @@ local function MakeRacePreferences()
                 local info=UIDropDownMenu_CreateInfo()
                 info.text=item.label..(item.implemented and "" or " (planned)")
                 info.checked=i==selectedIndex
-                info.func=function() Choose(i) end
+                local selection=i
+                info.func=function() Choose(selection) end
                 UIDropDownMenu_AddButton(info,level)
             end
         end)
@@ -613,10 +615,11 @@ local function MakeRacePreferences()
     for i,item in ipairs({
         {"off","Off"},{"subtle","Subtle"},{"default","Default"},{"expressive","Expressive"},
     }) do
+        local behaviorMode=item[1]
         Button(panel,item[2],27+(i-1)*128,-345,114,function()
             local target=list[selectedIndex]
             if target and ChalkBox_RaceBehaviorSet then
-                ChalkBox_RaceBehaviorSet(target.token,item[1])
+                ChalkBox_RaceBehaviorSet(target.token,behaviorMode)
             end
             if panel.OnRefresh then panel.OnRefresh() end
         end)
