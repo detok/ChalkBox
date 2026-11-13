@@ -10,7 +10,9 @@ ChalkBox/                 runtime folder; copied into Interface/AddOns
   ChalkBox_Camelot.toc    Forever/Camelot interface
   Core.lua                quest/vendor awareness
   ProfessionSense.lua     learned recipes and quantities from the client
-  RecipeAdvisor.lua       optional public API adapter for external recipe data
+  RecipeAdvisor.lua       evidence-based adapter over bundled Forever recipe data
+  Libs/LibStub/            public-domain LibStub loader
+  Libs/LibProfessionDB-1.0/ MIT LibProfessionDB + original license + Forever data
   CampAura.lua            Camp Benefits aura detection
   CampSense.lua           preparation reminders and material guidance
   ReminderToast.lua       compact onscreen notice
@@ -38,7 +40,7 @@ for test in tests/test_*.lua; do (cd ChalkBox && lua5.1 "../$test"); done
 python3 scripts/test_packages.py
 ```
 
-This creates exactly one `dist/ChalkBox-X.Y.Z.zip`. The ZIP root is `ChalkBox/`; it includes no test files, Python files, legacy standalone addons or third-party recipe database.
+This creates exactly one `dist/ChalkBox-X.Y.Z.zip`. The ZIP root is `ChalkBox/`; it includes no test files, Python files or legacy standalone addons. It **does include** the properly MIT-licensed Forever-only database and license notice.
 
 ## Change and release policy
 
@@ -54,7 +56,7 @@ This creates exactly one `dist/ChalkBox-X.Y.Z.zip`. The ZIP root is `ChalkBox/`;
 - Use safe API/feature detection and guard against secret values.
 - Quest and explicitly protected items always outrank general profession speculation.
 - Treat unavailable data as **unknown** rather than falsely concluding safety.
-- No arbitrary runtime internet requests, scraping or third-party source redistribution.
+- No arbitrary runtime internet requests or scraping. Third-party data must have a verified redistribution license, intact notices and a pinned upstream source.
 - Keep native Settings UI and the 18px TrailBar behavior intact unless intentionally changing them.
 - Make social and automatic emotes opt-in or clearly controllable.
 
