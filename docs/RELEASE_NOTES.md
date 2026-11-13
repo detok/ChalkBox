@@ -1,37 +1,35 @@
-# ChalkBox 1.6.0 — One-download Forever recipe intelligence
+# ChalkBox 1.6.1 — Forever learned-profession scan fix
 
-This is our first **truly self-contained** recipe-aware LootSense release. **There is only one install: ChalkBox-1.6.0.zip.** No other addons, setup tools, game web APIs or additional downloads are needed.
+This release fixes the problem where opening a profession window **didn't change LootSense's material tooltips**.
 
-## 2,511 Forever recipes, included
+## What was broken
 
-ChalkBox now embeds **LibProfessionDB 1.9.1's Forever-only recipe core (2,511 spells across ten professions)** and the public-domain **LibStub** loader. No Classic/TBC/Retail data trees or unrelated Ace3/LibVersionCheck features are bundled. The game reads the database locally; your tooltip works without an internet connection.
+- On Forever, the modern `C_TradeSkillUI` profession window may work even when classic `GetProfessions` and skill-list APIs do not report your professions. Our scanner rejected the modern data unless an older API first confirmed the profession.
+- We listened for `TRADE_SKILL_SHOW` but not `TRADE_SKILL_LIST_UPDATE` or `TRADE_SKILL_DATA_SOURCE_CHANGED`. Forever can load or switch its recipe list *after* the window opens.
+- Some game builds expose an incomplete modern `GetRecipeSchematic`. We didn't fall back to the alternative reagent API unless the schematic function was entirely missing.
+- Tooltip advice could fail if the item metadata cache hadn't finished loading, even when the tooltip's own link already identified the item.
 
-**Attribution and licenses:** the embedded library and its data are (c) 2026 **Pimptasty**, under MIT. The original license is packaged unchanged at `ChalkBox/Libs/LibProfessionDB-1.0/LICENSE`. LibStub is explicitly public domain. ChalkBox's own modules remain MIT (c) 2026 Detok. Source and verification details: [RECIPE_DATA.md](RECIPE_DATA.md). No scraping or copy of proprietary Wowhead files.
+## The fixes
 
-## Smarter, safer LootSense
+- Modern profession windows can now establish an observed profession without first satisfying classic API gates. Legacy support is preserved.
+- Added modern list/data-source update events and a 0.4-second deferred rescan to capture late-loading recipes.
+- Reads **learned** recipes only, including recipe names, reagent IDs and quantities; falls back to supported modern reagent getters when the schematic isn't usable.
+- Uses a valid item name/link to look up known and potential crafting uses even if `GetItemInfo` is temporarily empty.
+- Shows **which scanning method worked, the active profession, and learned recipe counts** through `/chalk loot status`.
+- `/chalk loot scan` reports the immediate result. Re-hover an item after scanning so its tooltip is redrawn.
+- All 2,511 Forever recipes remain bundled locally with the original **Pimptasty / LibProfessionDB MIT license** and no extra download.
+- No automatic selling, destroying, crafting or item use. Existing CampSense, TrailBar, Emota, QuestSense and QuietGuard are unchanged.
 
-- **Known recipe:** only when the character's actual learned profession list confirms it. Shows recipe name, profession and ingredient requirement (if available).
-- **Potential use:** a validated Forever catalog entry exists but it's **not confirmed learned**. Ingredients relevant to your own profession are prioritized.
-- **Other profession:** not a claim you personally need the material.
-- The game can resolve recipe names from spell IDs; if the spell is not available, it tries the crafted item name. A numeric fallback is honestly labeled instead of inventing a name.
-- An ingredient that you already have enough of says how much is in bags and how much one craft takes, rather than endlessly repeating a shortage indicator.
-- Quest and manually protected items take priority. Verified camp reagents and utilities remain supported.
-- Unknown does not mean **safe to sell**. No automated selling, destroying, item movement, crafting, auction searches or unsolicited chat.
+## Test in WoW Forever
 
-## All existing modules retained
+1. Install the single `ChalkBox-1.6.1.zip` and `/reload`. Your SavedVariables remain intact.
+2. Open a crafting profession (e.g. Leatherworking) until its recipe list finishes loading.
+3. Run **`/chalk loot status`** while the profession window is open. Check that it shows `LootSense advice: ON`, the profession name, a scan source such as `modern C_TradeSkillUI`, and a nonzero learned recipe count for professions with craftable recipes.
+4. Run **`/chalk loot scan`** if necessary. Move your cursor away and re-hover a reagent used in a recipe you know. The tooltip should say **KNOWN RECIPE** with a name and count where available, rather than only **POTENTIAL USE**.
+5. If the count is zero, report the exact output from `/chalk loot status` and your game build as a bug at https://github.com/detok/ChalkBox/issues.
 
-CampSense checks actual Camp Benefits and shows the nine-second onscreen reminder; TrailBar, QuietGuard, Emota, QuestSense and your existing settings all remain. The existing ChalkBox addon folder replaces the old one without changing your SavedVariables.
+## Automated verification
 
-## Install / confirm
+Lua 5.1 syntax, the complete existing suite, a new modern-only Forever profession test (empty initial list, delayed update, alternative reagent source, and profession switching), and cold-item-cache tooltip tests; deterministic single-ZIP packaging and original license hashes.
 
-1. Download **ChalkBox-1.6.0.zip** from this release, not GitHub's automatically generated source ZIP.
-2. Extract the `ChalkBox/` folder into your game client's `Interface/AddOns/`.
-3. Launch or `/reload`, then type **`/chalk loot status`**. The offline recipe catalog should say **bundled**, with roughly 2,511 indexed recipes.
-4. Open each profession window once to identify recipes your character actually knows. Type `/chalk loot scan` if needed.
-5. Hover a reagent such as Light Leather to see specific **potential** and **known** uses. Test CampSense with `/chalk prep test`.
-
-## Validation
-
-The automated release pipeline checks Lua 5.1 syntax, the entire ChalkBox suite, a live load of the **actual bundled 2,511-recipe dataset**, ZIP integrity, deterministic packaging and original MIT license/source checks.
-
-Still a **prerelease** until tested in a real WoW Forever game session, especially localized recipe-name lookups and UI restrictions. Please [report a problem](https://github.com/detok/ChalkBox/issues/new/choose) if a specific recipe or tooltip appears incorrectly.
+**Prerelease:** Tested against mocked API behavior and the real bundled recipe data. Verify these game-client interactions in a live Forever session.
