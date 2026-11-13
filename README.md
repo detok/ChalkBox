@@ -1,111 +1,256 @@
-# ChalkBox
+<div align="center">
 
-**A quieter, smarter adventuring companion for World of Warcraft Forever.**
+# ✦ ChalkBox
 
-[![Build](https://github.com/detok/ChalkBox/actions/workflows/release.yml/badge.svg)](https://github.com/detok/ChalkBox/actions/workflows/release.yml)
-[![Release](https://img.shields.io/github/v/release/detok/ChalkBox?include_prereleases&label=version)](https://github.com/detok/ChalkBox/releases)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+### A quieter, smarter way to adventure in **World of Warcraft: Forever**
 
-ChalkBox helps you **avoid wasting useful items**, keep up with your camping buffs, and spend less time watching UI clutter. It combines item advice, XP tracking, quest assistance and a little character personality in **one addon, one ZIP, one settings menu**.
+**Keep what matters. See what helps. Play without the clutter.**
 
-> **Status:** Public prerelease. Built primarily for **WoW Forever / Camelot**. We test Lua 5.1 behavior automatically, but game-specific behavior still needs community testing. Please [report problems](../../issues) with your client build and steps to reproduce.
+[![Version](https://img.shields.io/github/v/release/detok/ChalkBox?include_prereleases&label=ChalkBox&color=DDAE61)](https://github.com/detok/ChalkBox/releases)
+[![Tests and package](https://github.com/detok/ChalkBox/actions/workflows/release.yml/badge.svg)](https://github.com/detok/ChalkBox/actions/workflows/release.yml)
+[![MIT](https://img.shields.io/badge/license-MIT-67C6B7.svg)](LICENSE)
+[![Forever](https://img.shields.io/badge/WoW-Forever-203342.svg)](https://github.com/detok/ChalkBox)
 
-## Install in about a minute
+### [⬇ Download ChalkBox 1.8.5](https://github.com/detok/ChalkBox/releases/download/v1.8.5/ChalkBox-1.8.5.zip)
 
-1. Open **[GitHub Releases](https://github.com/detok/ChalkBox/releases)** and download the newest **`ChalkBox-<version>.zip`** (not *Source code*).
-2. Extract the ZIP into your WoW client's `Interface/AddOns` directory. The final path must be **`Interface/AddOns/ChalkBox/ChalkBox.toc`**.
-3. Enable **ChalkBox** on the character-selection AddOns screen. Launch the game or type `/reload` if you updated it.
-4. Type **`/chalk`** or open **Esc → Options → AddOns → ChalkBox**.
+[**All GitHub Releases**](https://github.com/detok/ChalkBox/releases) · [**Install Guide**](#-install-in-one-minute) · [**Features**](#-what-chalkbox-does) · [**Help & Bugs**](https://github.com/detok/ChalkBox/issues)
 
-**Only install the ChalkBox ZIP.** It includes the icon, both compatible `.toc` files, and all first-party modules. You do **not** need the old standalone Don't Sell That or EmotaSpeak addons.
+</div>
 
-## Why use ChalkBox?
+> [!IMPORTANT]
+> **GitHub is ChalkBox's primary download home.** You can install it directly from GitHub Releases, without a CurseForge account or application. A CurseForge listing is being prepared as an **additional** distribution option, not a replacement for GitHub.
 
-| Module | What it helps with |
+---
+
+## 🧭 What is ChalkBox?
+
+ChalkBox is a **single, self-contained WoW Forever utility addon** for the moments between the big fights: recognizing items worth checking before you sell, keeping quests visible, tracking progress, remembering camp benefits and sharing combat results with your party.
+
+It adds **small, genuinely useful information** while keeping Blizzard's familiar UI wherever possible. No second recipe addon, no online service, no random windows for every task.
+
+<div align="center">
+
+**ONE ADDON** · **ONE ZIP** · **ONE SETTINGS MENU**
+
+</div>
+
+## ✨ What ChalkBox does
+
+| Module | What you get | Why it matters |
+| :--- | :--- | :--- |
+| **📦 LootSense** | Contextual **KEEP**, **KNOWN RECIPE**, **POTENTIAL USE**, camping and profession hints | Understand *why* an item could matter before selling it |
+| **🧪 ProfessionSense** | Learned-recipe reagent scans, quantities where the client allows, 2,511 bundled Forever recipes | No separate crafting database download |
+| **📈 TrailBar** | A slim **18px** strip for level/XP, XP/hour, next-level ETA, session time and gold | Your important progress numbers without another big window |
+| **⚔️ Combat Meter** | Compact DPS/DMG/HPS/HEAL/TAKEN/INT, class icons, draggable window, PRINT/RESET | A readable optional meter using Blizzard's own data |
+| **💬 Blizzard meter PRINT** | A new **PRINT top 3 to PARTY** entry in Blizzard's existing damage-meter gear menu | Keep the **native** meter and still share a concise fight report |
+| **📜 QuestSense** | Smart / Nearby / All accepted-quest watch modes in the native tracker | Stay focused without inventing map pins or quest arrows |
+| **⛺ Adventure Prep** | Camping aura/tent awareness, optional movable top-screen toast, class/pet reminders | Useful reminders with less nagging |
+| **🛡️ QuietGuard** | Guild/duel invite protection; other restrictions optional | Less invite spam while keeping ordinary party play available |
+| **🎭 Emota** | Opt-in contextual idle emotes and emote catalog | A little personality when *you* want it |
+| **🎒 Bag position helper** | Optional 0–80-point downward offset for separate bags | Helps when large profession bags stack above the screen |
+
+Every module has native in-game options. **No automated item selling, no fabricated quest locations, no automatic PARTY combat spam.**
+
+---
+
+## 🖥️ See it in action
+
+**Authentic gameplay screenshots and polished banners are in production.** This first-pass README intentionally contains no mocked gameplay imagery.
+
+Artwork specification and game-capture shot list: [CurseForge / GitHub media plan](curseforge/ARTWORK_TO_CREATE.md) · [Screenshot checklist](curseforge/artwork/SCREENSHOT_PLAN.md).
+
+These screenshots will be added when we have verified captures of LootSense, TrailBar, Blizzard's meter gear-menu PRINT, QuestSense and the settings pages.
+
+## 📦 LootSense: a reason to keep it
+
+Some items belong to a quest. Some are ingredients in **recipes your character knows**. Some have real camp utility. And some have only a **potential recipe use** according to the bundled Forever catalog.
+
+ChalkBox tries to explain the difference on the item's tooltip:
+
+- **KEEP** — personal protected list or verified quest relevance
+- **KNOWN RECIPE** — an observed learned recipe uses this reagent
+- **POTENTIAL USE** — a recipe exists in the bundled catalog, but isn't verified as learned
+- **PROFESSION: possible** — cautious ingredient-family match; double-check the crafting UI
+- **No added line** — ChalkBox has no strong reason to annotate the item; **that does not mean safe to sell**
+
+**There are 2,511 Forever recipes included in the ZIP.** The optional hints and character-specific learned-recipe scanner are deliberately distinguished. Open your crafting profession window once and use `/chalk loot scan` if you want to refresh its knowledge.
+
+ChalkBox **never** sells, buys, deletes, trades or uses items for you.
+
+## 📈 TrailBar: tiny on purpose
+
+The compact, configurable **18-pixel strip** sits at the top or bottom of your screen.
+
+| Display | Example purpose |
 | --- | --- |
-| **LootSense** | Warns about quest items, player-protected items and materials used in **recipes your character knows**. Explains real camping uses; never auto-sells or deletes. |
-| **ProfessionSense** | Records relevant learned recipe ingredients when you open profession windows. Where the client provides them, keeps recipe names and quantities. |
-| **CampSense** | Checks the **Camp Benefits** aura, reminds you when it is missing/expiring, and shows a small **center-screen toast**. Also tracks camp tools and class/pet preparedness. |
-| **TrailBar** | Slim 18px bar for XP/hour, time to level, gold and time, with real screen-space reservation. |
-| **Combat Meter** | Native Forever DPS/damage/healing leaderboards, **genuine WoW class icons** beside names, current/last/overall fights, class-colored bars and a draggable window. |
-| **QuestSense** | Automatically tracks accepted quests via the Forever `C_QuestLog` API. Smart fallback works even when zone/map pins aren't available; preserves your manual watches. |
-| **QuietGuard** | Tries to decline unsolicited guild invites and duels; optional filters for other invitations. |
-| **Emota** | Occasional native emote personality with race/class flavor, resting-area context and hunter-pet awareness. |
+| **Level and XP %** | See progress at a glance |
+| **XP/hour** | Watch your session rate |
+| **Level ETA** | Rough time-to-level estimate when you've earned enough XP |
+| **Session time** | Know how long you've been adventuring |
+| **Gold + net change** | Track current gold and changes during the session |
 
-### LootSense: avoid selling something useful
+Hover for more detail. Turn on **Reserve screen space** (default) so the bar doesn't cover ordinary UI elements. Use `/chalk bar status` for layout diagnostics.
 
-An item can be important because it belongs to an active quest, is in your personal keep list, or is a reagent in a **learned recipe**. ChalkBox prefers those *proven* uses over generic speculation. Example, when supported by your character's profession scan and live inventory:
+If separate bags stack too high, **ChalkBox → TrailBar** also has a **Separate bags: move down** slider. It starts at zero, only affects individually opened bags, and doesn't replace Blizzard's containers or inventory sorting. Try `/chalk bags offset 30`.
 
-```text
-LootSense: KNOWN RECIPE: Camp Tent (Leatherworking) - 3/5 in bags
-```
+## ⚔️ Combat: your choice of meter
 
-Open a crafting profession window until the recipe list loads; ChalkBox detects both modern Forever updates and legacy profession windows. **`/chalk loot status`** now shows the active profession, which scanner worked, and the learned-recipe count. Use **`/chalk loot scan`** if needed, then re-hover the material for a refreshed tooltip. Hold **Shift** over an ingredient for more learned recipe uses, when detected.
+### Prefer Blizzard's built-in damage meter?
 
-**No additional download needed:** ChalkBox now **includes LibProfessionDB's 2,511 WoW Forever recipes** and its required LibStub support inside the one ZIP. The library is credited to **Pimptasty**, and the original MIT copyright/license is preserved. ChalkBox's own code decides item relevance. The bundled database tells us what recipes *exist*, not what your character knows. Your profession-window scan is still the only proof of learned recipes. See [recipe data and licensing](docs/RECIPE_DATA.md).
+Keep it. ChalkBox **v1.8.5** extends the native Forever damage meter's existing **gear menu** with **ChalkBox: PRINT top 3 to PARTY**. It follows the selected **native** meter statistic and fight (including saved sessions when available).
 
-**ChalkBox will never declare an unknown item safe to sell.** It doesn't automate selling, trading, deleting, purchasing or item use.
+It sends **one manual, after-combat PARTY message**, only when you are actually in a normal party and Forever exposes non-secret numbers. No automatic reporting, no raid or public-chat fallback. Combat-protected values are never formatted or leaked.
 
-### Built-in Combat Meter — no additional addon
+Use `/chalk meter hide` to hide the *extra* ChalkBox window while leaving the Blizzard integration enabled. Use `/chalk meter native status` to check the integration.
 
-Want to see how you're doing in a fight? ChalkBox includes a **lightweight, movable DPS meter** with **real WoW class emblems beside each player's name**. It reads Blizzard's own `C_DamageMeter` totals (Forever blocks direct combat-log parsing), displaying class-colored bars without doing unsafe calculations on protected combat values.
+### Prefer ChalkBox's compact window?
 
-The compact, unbranded header has **DPS / Fight / PRINT / RESET / LOCK** controls (no close X). Cycle stats (**DPS / DMG / HPS / HEAL / TAKEN / INT**) and sessions (**Fight / Last / Overall**). Click **PRINT** after combat to send a **single top-three summary to PARTY chat** when grouped; click **RESET** to confirm before clearing shared meter history; **LOCK** prevents moving or resizing it. Drag the header to move, the bottom-right corner to resize, or use the **opacity slider** below the bars (35–100%). You can change all of this under **Esc → Options → AddOns → ChalkBox → Combat Meter**. It is enabled by default and doesn't change Blizzard's built-in meter until you explicitly confirm RESET.
+That's included too:
 
-Use `/chalk meter` to toggle, `/chalk meter dps` for DPS, `/chalk meter overall` for overall, and `/chalk meter help` for every command. **Choose Class / Spec / Off** in the Combat Meter settings to control row icons; Spec uses Blizzard's native specialization artwork when available. RESET asks for confirmation because it clears Blizzard's shared meter sessions too. Party reporting never happens automatically and is blocked when totals remain protected. Pet and guardian grouping remains whatever Blizzard supplies; ChalkBox does not invent its own numbers. See [user guide](docs/USER_GUIDE.md).
+- Modes: **DPS / Damage / HPS / Healing / Damage Taken / Interrupts**
+- Scope: **Fight / Last / Overall**
+- Class-colored rows with genuine WoW class badges; optional spec art where available
+- Drag, resize, **LOCK**, opacity **35–100%**, 5/8/12 row layouts
+- **PRINT** to PARTY after combat
+- **RESET** with confirmation; it clears *shared Blizzard session data*, not just ChalkBox
 
-### QuestSense: actually track your accepted quests
+**Client note:** the built-in gear-menu addition and separate-bag offset have passed Lua tests but still need real-world Forever-client confirmation. If your client blocks an action or secret value, ChalkBox reports that rather than guessing.
 
-QuestSense now **reads your actual accepted quest log**, not a map-pin database. In **Smart mode** (on by default) it prioritizes quests for your current zone or ones you just accepted, then uses your remaining auto-watch slots for other accepted quests. Want less clutter? Choose **Nearby only**; prefer original quest-log order? Choose **All accepted**.
+## 📜 Quests, camping and a little personality
 
-It updates Blizzard's *native* tracker, preserves manual watches, and waits to change watches until the world map and quest log are closed and you are out of combat. Open **Esc → Options → AddOns → ChalkBox → QuestSense** for mode, tracking limit, Refresh and Diagnostics. Type `/chalk quests status` to see actual quest/watch counts and why a scan was postponed.
+**QuestSense** reads your real accepted quests and updates Blizzard's native tracker. Its **Smart** mode prioritizes current-zone and recently accepted quests then fills available watch slots. **Nearby only** and **All accepted** are also available. Manually watched quests are respected, and changes wait when the game is in a restricted state. This is **watch management**, not a Questie replacement or a route finder.
 
-### Camping reminders you can actually see
+**Adventure Prep** checks supported **Camp Benefits**, **Welcoming Campfire**, Camp Tent/rested-XP indicators and relevant supplies. Optional top-screen notifications fade automatically. You can move the toast, set its opacity and lock it to avoid stealing game clicks. Test it with `/chalk prep test`.
 
-Use **`/chalk prep test`** to preview the central reminder instantly. **`/chalk prep`** prints your available camp tools and known buff state. The addon checks for Forever's **Camp Benefits** aura and tries not to bother you while you are already receiving **Welcoming Campfire** benefits. The toast automatically fades after nine seconds; turn it off in **Adventure Prep** if you prefer chat-only reminders.
+**QuietGuard** helps against unwanted guild invitations and duels, with party/trade/channel filtering **off by default**. **Emota** offers optional randomized character emotes and an emote catalog; automatic idle behavior starts **disabled**.
 
-### Useful commands
+---
 
-| Command | Action |
+## 🚀 Install in one minute
+
+**Direct download:** [**ChalkBox 1.8.5 ZIP**](https://github.com/detok/ChalkBox/releases/download/v1.8.5/ChalkBox-1.8.5.zip)  
+**Newer versions:** [**GitHub Releases**](https://github.com/detok/ChalkBox/releases)
+
+1. Download **`ChalkBox-<version>.zip`** from GitHub Releases — *not* the GitHub “Source code” archives.
+2. In Battle.net, select **WoW Forever → Show in Explorer/Finder**. Open that installation's `Interface/AddOns` folder.
+3. Extract the included **ChalkBox** folder directly into **AddOns**. It should look like:
+
+   ```text
+   World of Warcraft/
+     _forever_/
+       Interface/
+         AddOns/
+           ChalkBox/
+             ChalkBox.toc
+             ChalkBox_Camelot.toc
+             Core.lua
+             ...other included addon files
+   ```
+
+4. Enable **ChalkBox** from the character-select AddOns screen, then log in. Type **`/chalk`** or **`/cb`**.
+
+> [!TIP]
+> If the addon doesn't appear, check for the common **double-folder** mistake: `AddOns/ChalkBox/ChalkBox/ChalkBox.toc`. The `.toc` must sit directly under `AddOns/ChalkBox/`.
+
+Your settings live in WoW SavedVariables; you don't need to delete `WTF` when updating.
+
+### First five minutes
+
+1. **`/chalk`** → explore the native addon settings.
+2. Open your crafting profession window, wait for the list, then **`/chalk loot scan`**; hover a useful reagent.
+3. **`/chalk prep test`** → preview the Adventure Prep toast.
+4. **`/chalk quests status`** → check accepted quests and watch state.
+5. Use Blizzard's damage meter or the optional ChalkBox one. Hide the latter with **`/chalk meter hide`**.
+
+[Full user guide](docs/USER_GUIDE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Release notes](docs/RELEASE_NOTES.md)
+
+## ⌨️ Commands
+
+| Command | What it does |
 | --- | --- |
-| `/chalk` or `/cb` | Open ChalkBox settings |
-| `/chalk loot status` | Check recipe/profession detection |
-| `/chalk loot scan` | Rescan currently available learned recipes |
-| `/chalk keep [item]` | Protect an item by name or shift-clicked link |
-| `/chalk forget [item]` | Remove a personal protection |
-| `/chalk prep` | Print camping and buff checklist |
-| `/chalk prep test` | Display a test toast |
-| `/chalk meter` | Show or hide the built-in native DPS meter |
-| `/chalk meter help` | List statistic, fight and layout controls |
-| `/chalk quests status` | Diagnose QuestSense accepted quests, watches and API readiness |
-| `/chalk quests smart` | Use accepted-quest tracking even when map POIs are missing |
-| `/chalk meter print` | Print the chosen fight ranking locally, after combat |
-| `/chalk prep tent status` | Check Boosted Rest, rested-XP and manual tent acknowledgment |
-| `/chalk guard` | See social invite protections |
-| `/chalk bar status` | Check TrailBar placement and reserved space |
-| `/chalk emota idle preview` | Test a random idle emote |
+| `/chalk` / `/cb` | Open all native settings |
+| `/chalk keep [item]` / `forget [item]` | Protect or unprotect a specific item |
+| `/chalk loot scan` / `status` | Refresh or diagnose profession/recipe data |
+| `/chalk quests status` / `smart` | Inspect or change quest tracking |
+| `/chalk bar top` / `bottom` / `off` | Place or hide the status strip |
+| `/chalk bags offset 30` / `reset` | Reposition individual bag windows or restore default |
+| `/chalk meter hide` / `show` | Toggle the extra ChalkBox combat meter |
+| `/chalk meter print` | Manually report top-three compact-meter results to PARTY after combat |
+| `/chalk meter native on` / `off` / `status` | Configure Blizzard's gear-menu PRINT feature |
+| `/chalk meter reset` | Confirm before resetting all shared damage-meter sessions |
+| `/chalk prep test` | Preview the reminder toast |
+| `/chalk emota idle preview` | Preview a random Emota reaction |
+| `/chalk help` | Command overview |
 
-More guidance: [User guide](docs/USER_GUIDE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Changelog](CHANGELOG.md).
+**More:** [Full command reference](curseforge/copy/COMMANDS.md).
 
-## For developers and contributors
+<details>
+<summary><strong>❓ FAQ and common questions</strong></summary>
 
-ChalkBox is pure Lua 5.1 plus a small Python packaging script. It's **not a runtime AI service**; the item advice is evidence-based, local and readable.
+**Do I need CurseForge?** No. GitHub Releases is a complete direct-download option, with the same installable addon.
+
+**Does ChalkBox automatically sell things?** No. Item advice is deliberately advisory.
+
+**Is it for WoW Classic or Retail?** The project is focused on **WoW Forever / Camelot**. Do not assume other WoW flavors are fully supported.
+
+**Does the native DPS print always work?** It can refuse reports while fighting, in raids/solo, or when data remains protected. That is by design.
+
+**Does it replace bags?** No. The separate-bag offset only changes a native layout anchor.
+
+**Can empty Action Bar 2 buttons disappear?** Yes via **Blizzard Edit Mode → Action Bar 2 → Always Show Buttons: off**. This is a **game feature**, not part of ChalkBox.
+
+**More questions:** [Complete FAQ](curseforge/copy/FAQ.md).
+
+</details>
+
+## 🛠️ Help, bugs and feedback
+
+ChalkBox is a **public prerelease**. Its Lua 5.1 tests and installable ZIP are validated automatically, but real Forever-client integrations can vary by build and client restrictions.
+
+If you find a bug, [**open a GitHub issue**](https://github.com/detok/ChalkBox/issues) with:
+
+- ChalkBox version and Forever build
+- Exact steps to reproduce
+- Expected versus actual behavior
+- Relevant Lua errors, tooltip/chat text or a screenshot with private details removed
+
+Issues: https://github.com/detok/ChalkBox/issues
+
+## 🔧 Developers and contributors
+
+This repository contains the **installable `ChalkBox/` addon**, Lua tests, a reproducible Python ZIP packager and an optional **`curseforge/` publishing kit**. The latter is **documentation and marketing only**; it is not distributed inside the game addon.
 
 ```bash
-# Syntax and all module regression tests (Lua 5.1 required):
+# Verify Lua 5.1 syntax and run all module tests
 find ChalkBox tests -name '*.lua' -print0 | xargs -0 luac5.1 -p
 for test in tests/test_*.lua; do (cd ChalkBox && lua5.1 "../$test"); done
 
-# Build and verify one reproducible installable ZIP:
+# Build/test the one installable ZIP
 python3 scripts/test_packages.py
 ```
 
-GitHub Actions runs these checks on pull requests, then publishes the single-addon ZIP when a new version reaches `main`. See [Contributing](CONTRIBUTING.md) and [Development](docs/DEVELOPMENT.md).
+GitHub Actions runs checks on pull requests and main, publishing `ChalkBox-<version>.zip` when a new version first reaches `main`. Subsequent documentation-only commits **preserve** the existing release rather than rewriting its tag.
 
-**Privacy:** ChalkBox stores settings and observed profession information in WoW SavedVariables, not on a web server. Its modules do not make external network requests.
+[Contributing](CONTRIBUTING.md) · [Development notes](docs/DEVELOPMENT.md) · [Recipe data provenance](docs/RECIPE_DATA.md) · [CurseForge publishing kit](curseforge/README.md) · [Changelog](CHANGELOG.md)
 
-## License and acknowledgements
+## ⚖️ Credits and license
 
-**MIT-licensed** — see [LICENSE](LICENSE). Created by **Detok**. Thanks to the WoW Forever community for testing and feedback. This release bundles the separately MIT-licensed **LibProfessionDB 1.9.1 by Pimptasty**, with its copyright notice intact, and the public-domain **LibStub**. More at [NOTICE](NOTICE.md).
+**ChalkBox by Detok** · [MIT licensed](LICENSE).
 
-If something looks wrong in your game, please [open a bug report](../../issues/new/choose). Include your WoW client build, ChalkBox version and the exact tooltip or message you saw.
+Includes separately MIT-licensed **LibProfessionDB 1.9.1 by Pimptasty** (2,511 Forever recipes) and the public-domain **LibStub** loader, with original copyright/licenses preserved in the installable ZIP.
+
+Full credits: [NOTICE.md](NOTICE.md).
+
+**Privacy:** ChalkBox stores options and profession observations locally using WoW SavedVariables. It does not require a separate account or external service.
+
+**Independent community addon. Not affiliated with Blizzard Entertainment or CurseForge.**
+
+<div align="center">
+
+---
+
+**ChalkBox** · *A quieter, smarter way to adventure.*
+
+[**⬇ Download**](https://github.com/detok/ChalkBox/releases) · [**💬 Report a bug**](https://github.com/detok/ChalkBox/issues) · [**📖 User guide**](docs/USER_GUIDE.md)
+
+</div>
