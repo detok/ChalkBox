@@ -3,7 +3,7 @@ local frames, widgets, printed = {}, {}, {}
 local registered, opened, categories = {}, {}, {}
 _G.UIParent={}
 _G.DEFAULT_CHAT_FRAME={AddMessage=function(_,str) printed[#printed+1]=str end}
-_G.ChalkBoxDB={lootAdvice=true,bar="top",barReserve=true,emota={auto=false,idleAuto=true,debug=false,idleVariety=false,contextual=true,jokeFrequency=50},guard={guild=true,duel=true,party=false,trade=false,channel=false},camp={enabled=true,toast=true,supplies=true,buffs=true,classCare=true,interval=45},meter={shown=true,locked=false,mode="dps",session="current",rows=8,scale=1},keep={["id:11"]="Test Trinket"}}
+_G.ChalkBoxDB={lootAdvice=true,bar="top",barReserve=true,emota={auto=false,idleAuto=true,debug=false,idleVariety=false,contextual=true,jokeFrequency=50},guard={guild=true,duel=true,party=false,trade=false,channel=false},camp={enabled=true,toast=true,supplies=true,buffs=true,classCare=true,interval=45},meter={shown=true,locked=false,mode="dps",session="current",rows=8,scale=1,opacity=0.94},keep={["id:11"]="Test Trinket"}}
 _G.ChalkBoxZoneDB={enabled=true,managed={},muted={}}
 _G.SlashCmdList={CHALKBOX=function(command)
     if command:find("^keep ") then ChalkBoxDB.keep["name:new"] = "New Item" end
@@ -74,6 +74,8 @@ _G.ChalkBox_MeterCommand=function(command)
     local scale=command:match("^scale (%d+)$")
     if rows then meter.rows=tonumber(rows) end
     if scale then meter.scale=tonumber(scale)/100 end
+    local opacity=command:match("^opacity (%d+)$")
+    if opacity then meter.opacity=tonumber(opacity)/100 end
     printed[#printed+1]="meter "..command
 end
 _G.ChalkBox_MeterStatus=function() return ChalkBoxDB.meter end
@@ -282,6 +284,8 @@ Control("Test Reminder"):Click()
 assert(printed[#printed]=="test toast","native options preview must show reminder")
 Control("Print Checklist"):Click()
 assert(printed[#printed]=="checklist")
+Control("Tent Used"):Click()
+assert(printed[#printed]=="camp tent done","manual tent acknowledgment is accessible from options")
 assert(categories["QuietGuard"].name=="QuietGuard" and categories["Adventure Prep"].name=="Adventure Prep")
 local meterChecks=FindCheckByParentTitle("Combat Meter")
 assert(#meterChecks==2,"meter has show and lock controls")
@@ -296,6 +300,14 @@ Control("5 rows"):Click()
 assert(ChalkBoxDB.meter.rows==5)
 Control("115%"):Click()
 assert(ChalkBoxDB.meter.scale==1.15)
+local sliders={}
+for _,frame in ipairs(frames) do
+    if frame.kind=="Slider" then sliders[#sliders+1]=frame end
+end
+assert(#sliders==2,"native Emota and Combat Meter sliders present")
+sliders[2]:SetValue(65)
+assert(ChalkBoxDB.meter.opacity==0.65,
+    "native transparency slider updates persisted meter opacity")
 Control("Reset Data..."):Click()
 assert(printed[#printed]=="meter reset","reset must request confirmation in the real module")
 Control("Show Window"):Click()
