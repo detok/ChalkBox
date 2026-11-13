@@ -181,7 +181,7 @@ local function ChooseCandidate(itemID,known)
     end)
     local selected,also= nil,nil
     for _,r in ipairs(list) do
-        if not seen[r.profession.."|"..r.recipe] then
+        if not (r.recipe and seen[r.profession.."|"..r.recipe]) then
             if type(ChalkBox_ProfessionHas)=="function" and
                 ChalkBox_ProfessionHas(r.profession) then
                 if not selected then selected=r end
