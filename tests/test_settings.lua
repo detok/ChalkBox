@@ -417,7 +417,7 @@ assert(#nativeRaceOptions==2 and nativeRaceOptions[1].text=="Dwarf",
     "race dropdown enumerates real and planned entries")
 nativeRaceOptions[2].func()
 Control("Off"):Click()
-assert(ChalkBoxDB.emota.raceModes.VoidElf==nil,
+assert((ChalkBoxDB.emota.raceModes or {}).VoidElf==nil,
     "planned dropdown choice cannot be configured as live")
 nativeRaceOptions[1].func()
 Control("Expressive"):Click()
@@ -425,7 +425,7 @@ assert(ChalkBoxDB.emota.raceModes.Dwarf=="expressive",
     "live racial intensity selection saves the chosen race")
 Control("Next race"):Click()
 Control("Off"):Click()
-assert(ChalkBoxDB.emota.raceModes.VoidElf==nil,
+assert((ChalkBoxDB.emota.raceModes or {}).VoidElf==nil,
     "placeholder race does not gain fabricated emote behavior")
 Control("My race"):Click()
 Control("Default"):Click()
