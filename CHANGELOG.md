@@ -2,6 +2,18 @@
 
 All notable changes to the public ChalkBox addon are documented here.
 
+## 1.12.0 — MacroForge
+
+- Add **MacroForge** under native ChalkBox settings and `/chalk macro`, with a dedicated, movable spellbook-driven macro builder (lazy loaded).
+- Use modern Forever `C_SpellBook` + `C_Spell` to read learned, active, non-passive spells and icons. Handle old global-API fallback gracefully. Invalidate scan on spellbook/talent change.
+- Five templates: Engage Target, Burst + Trinkets, Modifier Keys, Manual Sequence and Mouseover Utility. Localized learned spell choices; class-aware suggested defaults, including Hunter abilities and companion commands.
+- Generate explicit vanilla-style macros with trinket slot attempts, conditional modifiers, pet commands and manual sequences. No cooldown/proc autopilot or GCD bypass.
+- Validate known spells and **255-byte conservative limit**, explain trinket/sequence/targeting limitations, and reject invalid builds.
+- Save/load up to 16 character-specific *recipes*; respec invalidates stale spell selections instead of blindly reusing old text.
+- Select generated text to **Ctrl+C**, then paste into WoW's `/macro`. Optional native **Install New** on a user click, out of combat, checks duplicate names and never overwrites existing macros.
+- Add isolated Lua 5.1 tests for spellbook API/filtered talents, macro templates, slot warnings, modifiers, save/load, respec, byte limit, safe native install and lazy UI.
+- Single ChalkBox install, no new runtime dependencies. GitHub prerelease for in-client MacroForge acceptance testing before wider CurseForge promotion.
+
 ## 1.11.0 — Automatic Map Discoveries
 
 - Replace manual 32-item DropSense watchlist as the primary data collector: **automatically journal every item in readable loot windows** when enabled. Fresh installs record automatically; existing explicit off preferences remain respected.

@@ -57,7 +57,8 @@ end
 local function Notify()
     for _,name in ipairs({"ChalkBox_BarThemeRefresh",
         "ChalkBox_ToastThemeRefresh","ChalkBox_MeterThemeRefresh",
-        "ChalkBox_MapDiscoveriesThemeRefresh"}) do
+        "ChalkBox_MapDiscoveriesThemeRefresh",
+        "ChalkBox_MacroForgeThemeRefresh"}) do
         if type(_G[name])=="function" then pcall(_G[name]) end
     end
 end
