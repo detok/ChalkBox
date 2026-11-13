@@ -4,7 +4,7 @@ local registered, opened, categories = {}, {}, {}
 _G.UIParent={}
 _G.DEFAULT_CHAT_FRAME={AddMessage=function(_,str) printed[#printed+1]=str end}
 _G.ChalkBoxDB={lootAdvice=true,bar="top",barReserve=true,emota={auto=false,idleAuto=true,debug=false,idleVariety=false,contextual=true,jokeFrequency=50},guard={guild=true,duel=true,party=false,trade=false,channel=false},camp={enabled=true,toast=true,supplies=true,buffs=true,classCare=true,interval=45,
-    toastOptions={locked=true,opacity=0.92}},meter={shown=true,locked=false,mode="dps",session="current",rows=8,scale=1,opacity=0.94},keep={["id:11"]="Test Trinket"}}
+    toastOptions={locked=true,opacity=0.92}},meter={shown=true,locked=false,mode="dps",session="current",rows=8,scale=1,opacity=0.94,iconMode="class"},keep={["id:11"]="Test Trinket"}}
 _G.ChalkBoxZoneDB={enabled=true,mode="smart",limit=10,managed={},muted={}}
 _G.SlashCmdList={CHALKBOX=function(command)
     if command:find("^keep ") then ChalkBoxDB.keep["name:new"] = "New Item" end
@@ -100,6 +100,8 @@ _G.ChalkBox_MeterCommand=function(command)
     if scale then meter.scale=tonumber(scale)/100 end
     local opacity=command:match("^opacity (%d+)$")
     if opacity then meter.opacity=tonumber(opacity)/100 end
+    local mode=command:match("^icons (%a+)$")
+    if mode then meter.iconMode=mode end
     printed[#printed+1]="meter "..command
 end
 _G.ChalkBox_MeterStatus=function() return ChalkBoxDB.meter end
@@ -343,6 +345,13 @@ assert(not ChalkBoxDB.meter.shown,"show/hide toggle controls window")
 meterChecks[1]:Click(true)
 meterChecks[2]:Click(true)
 assert(ChalkBoxDB.meter.locked,"lock switch is active")
+assert(ChalkBoxDB.meter.iconMode=="class","WoW class badges are shown by default")
+Control("Spec"):Click()
+assert(ChalkBoxDB.meter.iconMode=="spec","users can prefer WoW specialization art")
+Control("Off"):Click()
+assert(ChalkBoxDB.meter.iconMode=="off","icons can be hidden to save space")
+Control("Class"):Click()
+assert(ChalkBoxDB.meter.iconMode=="class","easy one-click return to class icons")
 Control("5 rows"):Click()
 assert(ChalkBoxDB.meter.rows==5)
 Control("115%"):Click()
@@ -372,4 +381,4 @@ Control("Reset Data..."):Click()
 assert(printed[#printed]=="meter reset","reset must request confirmation in the real module")
 Control("Show Window"):Click()
 assert(printed[#printed]=="meter show")
-print("PASS: native settings, QuestSense modes/limits, top Toast Appearance opacity/drag lock, meter controls, CampSense and Emota")
+print("PASS: native settings, QuestSense, Toast Appearance, Combat Meter class/spec/off icon controls, CampSense and Emota")
