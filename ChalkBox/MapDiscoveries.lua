@@ -64,13 +64,31 @@ local function Accent()
     end
     return 0.86,0.66,0.38
 end
+-- Use a real texture as well as a backdrop. On some Forever builds
+-- SetColorTexture-only regions can fail to paint behind native map panes.
+local function Paint(texture,r,g,b,a)
+    if not texture then return end
+    if type(texture.SetTexture)=="function" and
+        type(texture.SetVertexColor)=="function" then
+        texture:SetTexture("Interface\\Buttons\\WHITE8X8")
+        texture:SetVertexColor(r,g,b,a)
+    elseif type(texture.SetColorTexture)=="function" then
+        texture:SetColorTexture(r,g,b,a)
+    end
+end
 local function Tint()
     if not panel then return end
     local r,g,b,a=Colors()
     local ar,ag,ab=Accent()
-    if panel.back then panel.back:SetColorTexture(r,g,b,a) end
-    if panel.edge then panel.edge:SetColorTexture(ar,ag,ab,0.82) end
-    if panel.stripe then panel.stripe:SetColorTexture(ar,ag,ab,1) end
+    Paint(panel.back,r,g,b,a)
+    Paint(panel.edge,ar,ag,ab,0.82)
+    Paint(panel.stripe,ar,ag,ab,1)
+    if type(panel.SetBackdropColor)=="function" then
+        panel:SetBackdropColor(r,g,b,a)
+    end
+    if type(panel.SetBackdropBorderColor)=="function" then
+        panel:SetBackdropBorderColor(ar,ag,ab,1)
+    end
     for i,row in ipairs(rows) do
         if row.back then
             row.back:SetColorTexture(
@@ -454,11 +472,31 @@ refresh=function()
 end
 local function EnsurePanel()
     if panel or not UIParent then return end
-    local f=CreateFrame("Frame","ChalkBoxMapDiscoveries",UIParent)
+    local template=type(BackdropTemplateMixin)=="table" and
+        "BackdropTemplate" or nil
+    local f=CreateFrame("Frame","ChalkBoxMapDiscoveries",UIParent,template)
     f:SetSize(PANEL_W,PANEL_H)
     f:SetPoint("CENTER",UIParent,"CENTER",0,0)
-    if type(f.SetFrameStrata)=="function" then f:SetFrameStrata("DIALOG") end
+    -- The native Map & Quest Log uses higher strata than ordinary DIALOG.
+    -- Put the *whole* journal (body + child controls) above it.
+    if type(f.SetFrameStrata)=="function" then
+        f:SetFrameStrata("FULLSCREEN_DIALOG")
+    end
+    if type(f.SetFrameLevel)=="function" then
+        local level=type(WorldMapFrame)=="table" and
+            Call(WorldMapFrame.GetFrameLevel,WorldMapFrame) or 0
+        if type(level)~="number" then level=0 end
+        f:SetFrameLevel(math.max(200,level+100))
+    end
     if type(f.SetToplevel)=="function" then f:SetToplevel(true) end
+    if type(f.SetBackdrop)=="function" then
+        f:SetBackdrop({
+            bgFile="Interface\\DialogFrame\\UI-DialogBox-Background",
+            edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border",
+            tile=true,tileSize=32,edgeSize=24,
+            insets={left=8,right=8,top=8,bottom=8},
+        })
+    end
     if type(f.SetMovable)=="function" then f:SetMovable(true) end
     if type(f.SetClampedToScreen)=="function" then
         f:SetClampedToScreen(true)
@@ -580,6 +618,13 @@ function ChalkBox_OpenMapDiscoveries()
     Tint()
     panel:Show()
     if type(panel.Raise)=="function" then panel:Raise() end
+    -- A map can be reopened after this frame was constructed.
+    if type(panel.SetFrameLevel)=="function" then
+        local level=WorldMapFrame and
+            Call(WorldMapFrame.GetFrameLevel,WorldMapFrame) or 0
+        if type(level)~="number" then level=0 end
+        panel:SetFrameLevel(math.max(200,level+100))
+    end
     return true
 end
 -- The new visibility fix in 2.0 is retained: Forever may load the map

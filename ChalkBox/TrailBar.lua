@@ -1082,6 +1082,19 @@ function ChalkBox_BarCommand(message)
     end
 end
 
+local inventoryQueued=false
+local function QueueInventoryRefresh()
+    if inventoryQueued or not session.started then return end
+    if C_Timer and type(C_Timer.After)=="function" then
+        inventoryQueued=true
+        C_Timer.After(0.25,function()
+            inventoryQueued=false
+            Refresh()
+        end)
+    else
+        Refresh()
+    end
+end
 local events = CreateFrame("Frame")
 events:RegisterEvent("ADDON_LOADED")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -1129,6 +1142,11 @@ events:SetScript("OnEvent", function(_, event, name)
         return
     elseif event=="UI_SCALE_CHANGED" or event=="DISPLAY_SIZE_CHANGED" then
         if bar then PlaceBar() end
+    elseif event=="BAG_UPDATE_DELAYED" or event=="GET_ITEM_INFO_RECEIVED"
+        or event=="ITEM_DATA_LOAD_RESULT" then
+        -- These events arrive in bursts while Blizzard builds container frames.
+        -- Refresh the bar once per burst instead of repeating bag valuation.
+        QueueInventoryRefresh()
     else
         if not session.started then return end
         Refresh()

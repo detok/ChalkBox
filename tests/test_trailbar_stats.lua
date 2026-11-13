@@ -72,6 +72,27 @@ valuation=ChalkBox_BarReadStats(playerMax,true).bagvalue
 assert(valuation.totalCopper==10379 and valuation.junkCopper==1304 and
     valuation.totalComplete and valuation.junkComplete,
     "newly cached item prices reconcile both complete valuation modes")
+-- Inventory value is costly; repeated HUD/event refreshes inside 750ms
+-- should read the already computed value rather than re-enumerating bags.
+local now=1000
+_G.GetTime=function() return now end
+local bagReads=0
+local previousGet=C_Container.GetContainerItemInfo
+C_Container.GetContainerItemInfo=function(...)
+    bagReads=bagReads+1
+    return previousGet(...)
+end
+ChalkBox_BarReadStats(playerMax,true)
+local firstReads=bagReads
+ChalkBox_BarReadStats(playerMax,true)
+ChalkBox_BarReadStats(playerMax,true)
+assert(bagReads==firstReads and firstReads>0,
+    "repeated bar draws reuse vendor prices within the short cache window")
+now=1001
+ChalkBox_BarReadStats(playerMax,true)
+assert(bagReads>firstReads,"inventory value is recalculated after expiry")
+_G.GetTime=nil
+C_Container.GetContainerItemInfo=previousGet
 prices[300]=nil
 prices[500]={quality=nil,price=75}
 -- Exact repair-all cost is available only with a repair merchant open;

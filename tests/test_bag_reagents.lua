@@ -100,4 +100,18 @@ assert(buttons[3].ChalkBoxReagentBorder
     "name-only learned recipes get outlines only when item info corroborates them")
 _G.C_Item=nil
 _G.ChalkBox_LearnedRecipeUses=original
-print("PASS: native learned-only bag markers, legacy name lookup, opacity, refresh and secret IDs")
+-- Repeated Blizzard bag redraw hooks must schedule just one pass, rather
+-- than rescan all items on every frame while bags are being opened.
+local pending={}
+C_Timer.After=function(delay,fn)
+    pending[#pending+1]={delay=delay,callback=fn}
+end
+hooks[1]();hooks[1]();hooks[1]()
+eventFrame.onEvent(eventFrame,"BAG_UPDATE_DELAYED")
+assert(#pending==1 and pending[1].delay>=0.18,
+    "rapid native bag updates are coalesced into a single delayed scan")
+pending[1].callback()
+hooks[1]()
+assert(#pending==2,"later bag changes still trigger an independent refresh")
+pending[2].callback()
+print("PASS: native learned-only bag markers, legacy name lookup, opacity, coalesced refresh and secret IDs")
