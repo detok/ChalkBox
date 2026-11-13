@@ -37,5 +37,6 @@ PersonalityContext.lua
 Emota.lua
 QuestSense.lua
 TrailBar.lua
+BagLayout.lua
 CombatMeter.lua
 ChalkBox_Settings.lua
