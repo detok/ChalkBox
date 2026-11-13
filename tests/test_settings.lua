@@ -236,7 +236,7 @@ emotaChecks[5]:Click(false)
 assert(ChalkBoxDB.emota.contextual==false,"race/class personality toggle works")
 local slider
 for _,frame in ipairs(frames) do
-    if frame.kind=="Slider" then slider=frame end
+    if frame.kind=="Slider" and frame.parent==categories["Emota"].panel then slider=frame end
 end
 assert(slider and slider.value==50,"slider must default to original joke cadence")
 slider:SetValue(100)
@@ -305,7 +305,12 @@ for _,frame in ipairs(frames) do
     if frame.kind=="Slider" then sliders[#sliders+1]=frame end
 end
 assert(#sliders==2,"native Emota and Combat Meter sliders present")
-sliders[2]:SetValue(65)
+local meterSlider
+for _,frame in ipairs(sliders) do
+    if frame.parent==categories["Combat Meter"].panel then meterSlider=frame end
+end
+assert(meterSlider,"native meter opacity slider belongs to Combat Meter page")
+meterSlider:SetValue(65)
 assert(ChalkBoxDB.meter.opacity==0.65,
     "native transparency slider updates persisted meter opacity")
 Control("Reset Data..."):Click()
