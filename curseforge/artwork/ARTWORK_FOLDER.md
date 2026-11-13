@@ -1,18 +1,16 @@
-# Artwork directory — branded assets are ready
+# ChalkBox artwork
 
-The six **editable vector originals** are now included here. They are promotional imagery, not gameplay screenshots.
+The six editable SVG designs in this folder are the source masters for ChalkBox branding. Nothing here changes the in-game interface.
 
-| Asset | Source file | Placement |
-| --- | --- | --- |
-| Project icon | `chalkbox-project-icon-512.svg` | CurseForge project avatar (export 512px PNG) |
-| Transparent wordmark | `chalkbox-wordmark.svg` | Logo lockup |
-| GitHub header | `chalkbox-github-header-1600x470.svg` | README introduction |
-| Full hero | `chalkbox-hero-1600x900.svg` | Promotional media |
-| Social banner | `chalkbox-banner-1200x630.svg` | Social/OG preview source |
-| Feature grid | `chalkbox-feature-grid-1600x900.svg` | Editorial feature illustration, NOT a client screenshot |
+| Original | Use |
+| --- | --- |
+| chalkbox-project-icon-512.svg | Project avatar (export 512px square PNG) |
+| chalkbox-wordmark.svg | ChalkBox name and logo |
+| chalkbox-banner-1200x630.svg | Social-preview banner |
+| chalkbox-github-header-1600x470.svg | GitHub README banner |
+| chalkbox-hero-1600x900.svg | Editorial promotional artwork |
+| chalkbox-feature-grid-1600x900.svg | Editorial feature overview, **not a screenshot** |
 
-**PNG exports** are included in the separate delivered ChalkBox branding ZIP. They can be regenerated from these SVG originals using a graphic editor or CairoSVG. No new runtime dependency is required; these files are not added to the in-game ZIP.
+The **ChalkBox-CurseForge-Media-2.0.2.zip** release asset contains all six originals, nine rendered PNGs (including smaller icon sizes), and the listing text. The folder **Artwork/PNG/Upload-Ready** contains the avatar and banners. **Editorial-Only** items should never be labeled as screenshots from the game.
 
-**Gameplay screenshots are still outstanding** and must be real, unmodified captures from WoW Forever. Follow [SCREENSHOT_PLAN.md](SCREENSHOT_PLAN.md); never fabricate UI or show MapSense as already shipped.
-
-See [brand philosophy and color rules](../../docs/BRANDING.md).
+The artwork is separate from ChalkBox-2.0.2.zip, the installable addon. See the [publishing kit](../launch-kit/START_HERE.md) for upload instructions and [screenshot plan](SCREENSHOT_PLAN.md) for genuine game captures.

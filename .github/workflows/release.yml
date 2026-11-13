@@ -18,7 +18,7 @@ jobs:
       - name: Install Lua 5.1
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y lua5.1
+          sudo apt-get install -y lua5.1 librsvg2-bin
       - name: Verify Lua 5.1 syntax and run every ChalkBox test
         run: |
           set -euo pipefail
@@ -29,6 +29,14 @@ jobs:
           done
       - name: Build and validate the single-addon ZIP
         run: python3 scripts/test_packages.py
+      - name: Render and verify CurseForge publishing kit
+        run: python3 scripts/test_curseforge_kit.py
+      - name: Upload CurseForge media ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: ChalkBox-CurseForge-media
+          path: dist/ChalkBox-CurseForge-Media-*.zip
+          if-no-files-found: error
       - name: Upload installable addon ZIP
         uses: actions/upload-artifact@v4
         with:
@@ -49,6 +57,7 @@ jobs:
             echo "$tag already exists: preserving the original release."
           else
             gh release create "$tag" "dist/ChalkBox-$version.zip" \
+              "dist/ChalkBox-CurseForge-Media-$version.zip" \
               --target "$GITHUB_SHA" \
               --title "ChalkBox $tag" \
               --notes-file docs/RELEASE_NOTES.md \

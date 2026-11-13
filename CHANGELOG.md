@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.0.2 — Settings and CurseForge preparation
+
+- Grouped native AddOns settings beneath their parent modules. The Bar now owns Modules and Appearance; LootSense owns Appearance; Adventure Prep owns Toast Appearance; Emota owns Race Behavior and Emote Catalog.
+- Reorganized the ChalkBox home page into three sections. Standardized the shared panel header, divider, and return-to-ChalkBox navigation.
+- The optional compact combat meter always starts closed on login. Manually showing it remains available by settings or slash command.
+- Updated README and CurseForge copy for the current complete module set, including Discoveries, MacroForge, repair learning, Session Journal, QuestSense, CampSense and updates.
+- Added a reproducible CurseForge media kit ZIP with six original SVGs, nine rendered PNGs and ready-to-use listing files, separate from the playable addon ZIP.
+- Preserved previous saved preferences and character history. Extended automated tests to cover the menu hierarchy, startup state and publishing assets.
+
+
 ## 2.0.1 — Discoveries UX and honest update awareness (prerelease)
 
 - **Discoveries browser refresh:** wider, readable item rows with icons, collectible quantities, observed loot-window counts, conservative source-specific rates, and clearer empty states. Three true dropdowns for area/dungeon, creature source and sort; searchable item names/IDs; native menu API with graceful fallback.

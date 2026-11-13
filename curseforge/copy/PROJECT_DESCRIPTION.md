@@ -1,65 +1,53 @@
-# ChalkBox — The Quiet Adventure Companion for WoW Forever
+# ChalkBox
 
-**One addon. Real information. Less busywork. More time adventuring.**
+**A handful of good ideas, all in one addon for WoW Forever.**
 
-ChalkBox is a modular collection of quality-of-life tools for **World of Warcraft: Forever**. It adds context to loot, remembers your discoveries, turns your spellbook into useful macros, helps you prepare for camp, and provides a compact dashboard—without replacing Blizzard's familiar interface.
+ChalkBox started as a way to get better information out of the game without adding a dozen separate windows. It now covers loot, professions, quests, combat, camping, macros and a little bit of character personality. You can turn each part on or off and arrange the pieces to suit your UI.
 
-The package includes everything it needs. **No secondary addons, cloud accounts or AI services are required.** Choose the features you want under **Options → AddOns → ChalkBox**.
+## Loot worth remembering
 
-## What makes ChalkBox different?
+**DropSense** keeps a personal record of items ChalkBox sees in loot windows. Open the world map and click **Discoveries** to browse what you've found in an outdoor zone or dungeon. The browser has item search, creature-source filtering, sorting and a readable list of your observations. You can drag the Discoveries map button to a better spot.
 
-### Map Discoveries + automatic DropSense
+Those percentages aren't official drop rates. They're the frequency with which an item appeared in **readable loot windows from an identified source**. ChalkBox doesn't see every kill, and it doesn't guess a percentage for mixed or unknown sources.
 
-ChalkBox records items it can read in your loot windows and builds a **personal field guide** over time. Open the existing world map and use the optional **Discoveries** button to browse outdoor loot, separately recorded dungeons and identifiable creature sources.
+**LootSense** helps you figure out why an item matters before you get rid of it. It recognizes your manually protected KEEP items, supported quest relevance, known profession ingredients and potential crafting uses. **ProfessionSense** can inspect recipes you've learned and use the bundled Forever recipe reference to add context. Neither system sells or destroys items.
 
-A percentage is **your own observed loot-window frequency** for a known creature source, never an official or all-kills drop rate. Uncertain, mixed-source or unavailable observations show collection counts without fabricated odds. Server loot tables are not exposed to the addon.
+## Better buttons with MacroForge
 
-**World map button missing?** Type **/chalk drops map** to open the browser directly. **/chalk drops map status** diagnoses whether it attached and is visible. The 2.0 map-position fix is being verified in the Forever client.
+MacroForge builds macros from spells currently in your character's spellbook. Choose an opener, a burst/trinket setup, modifier keys, a mouseover action or a manual cast sequence. The builder shows the exact macro text, flags missing abilities, and helps avoid overly long macros.
 
-### MacroForge — build macros from your actual spellbook
+Copy the result into WoW's macro editor, or explicitly create a new character macro outside combat. MacroForge won't overwrite an existing macro. It **doesn't run combat rotations, react to procs by itself or bypass the global cooldown**.
 
-MacroForge is a guided tool for building usable macros without memorizing macro syntax. Choose a purpose—**Engage, Burst + Trinkets, Modifier Keys, Manual Sequence, or Mouseover Utility**—and select abilities your character knows.
+## The Bar, combat and progress
 
-Generate copy-ready macro text, see the 255-byte safety limit, and read why a castsequence might stall or two GCD-locked spells won't execute in the same press. Save up to 16 build recipes per character. Optionally create a new character-specific WoW macro with an **explicit, out-of-combat click**; existing macro names aren't overwritten.
+**The Bar** is an optional 18-pixel strip for the information you want to see: level and XP, rate and ETA, bag space, gold, durability, rested XP, pet status and other selected stats. It has right-click layout controls and optional bag resale value.
 
-MacroForge **does not** automate rotations, detect procs for secure conditionals, or bypass WoW's GCD.
+At a repair merchant, ChalkBox can read an exact repair quote. Away from the merchant it uses past observed quotes to make an estimate; estimated costs are marked with a tilde.
 
-### LootSense + ProfessionSense — know why loot matters
+The optional **Combat Meter** displays DPS, damage, healing and other supported Blizzard combat figures. It starts **closed when you log in**. Open it when you want it, and use the manual PARTY report only when you choose. ChalkBox also has a separate manual PRINT action for Blizzard's native meter when available.
 
-- Prioritize items you marked **KEEP** and supported quest relevance.
-- Recognize reagents actually observed in **learned recipes**, distinct from **potential recipe uses** in the bundled catalog.
-- Add subtle, optional native bag highlights only when a learned recipe truly uses an ingredient.
-- Consult **2,511 included Forever recipes** without installing a second recipe database.
-- Flag practical camp supplies when the client can identify them.
+**Session Journal** records the current adventure and up to 20 previous sessions, including observed XP, quests, gold changes, sampled loot and other events. It doesn't invent past sessions or unsupported data.
 
-No misleading **safe-to-sell** guarantees. No automatic selling, buying, destroying or using items.
+## Smaller improvements
 
-### The Bar — your adventure at a glance
+- **QuestSense:** accepted-quest watch management within Blizzard's own tracker.
+- **Adventure Prep:** practical reminders for known camping supplies, tent/rested-XP status, buffs and supported class or pet care.
+- **Global Appearance:** a shared color palette and background controls for ChalkBox windows.
+- **Emota:** optional contextual character emotes.
+- **QuietGuard:** configurable invite filtering.
+- **Bag Position:** adjust the placement of the game's separate bag windows.
+- **Updates:** installed version and a link to GitHub Releases, plus optional comparison with other ChalkBox users in your group.
 
-A thin, customizable **18-pixel** status strip shows your level, XP rate/ETA, free bag space, gear durability, rested XP, optional Hunter pet/latency, session time, gold, optional Junk/Total **vendor resale value**, and learned repair estimate.
+## Settings and installation
 
-**Right-click a module** to hide or move it and open relevant settings. The Bar can follow the top or bottom of your screen and intelligently fits the space available.
+The options live under **Options → AddOns → ChalkBox**, or type **/chalk**. Modules have their own pages, with related controls nested underneath: for example **The Bar → Modules / Appearance**, **Adventure Prep → Toast Appearance**, and **Emota → Race Behavior / Emote Catalog**.
 
-Repair cost is exact only while a repair-capable merchant exposes the real bill. Elsewhere it displays a **~ estimate** learned from prior observed quotes; if unreliable, it shows an unavailable state rather than inventing a price.
+Install the **ChalkBox** folder in your Forever client's **Interface/AddOns** folder. Everything needed is included, including the profession recipe data. Keep your SavedVariables when upgrading.
 
-### Session Journal, combat and preparation
+## Compatibility
 
-- **Session Journal:** current and up to **20 previous adventures** with observed XP, levels, net gold, quests, sampled loot regions, camp prompts and repair quotes.
-- **Combat Meter:** compact DPS, damage, healing and interruptions view; manual PARTY result printing. You can instead keep Blizzard's native meter and use ChalkBox's separate **PRINT top 3 to PARTY** gear-menu entry when supported.
-- **QuestSense:** Smart/Nearby/All accepted-quest watch modes in Blizzard's native tracker.
-- **Adventure Prep:** smarter camping, tent/rested-XP and class/pet reminders, with a compact movable notification. It avoids repeating unchanged warnings by default.
-- **Global Appearance:** shared charcoal/midnight/slate/custom color and accent choices, with background opacity separate from text.
-- **QuietGuard, Emota and Bag Position:** optional invite filtering, contextual character personality and separate-bag adjustments.
+ChalkBox is developed for **WoW Forever**. Retail and Classic Era have not been tested. Some data depends on what the Forever client exposes. This 2.0.2 package is a **test build** while the new settings hierarchy and startup behavior are checked in-game.
 
-## Getting started
+Source and issue tracker: https://github.com/detok/ChalkBox
 
-1. Install the file from **Files** into your Forever **Interface/AddOns** folder, leaving one top-level **ChalkBox** directory.
-2. Open **/chalk** for settings.
-3. Try **/chalk macro** for MacroForge, **/chalk drops map** for Discoveries, or **/chalk session** for your adventure recap.
-4. Loot as you normally do; enable DropSense sampling if you previously switched it off.
-
-**ChalkBox 2.0.0 is a prerelease for client testing.** Lua regression tests and single-addon ZIP packaging run in GitHub CI; native Forever map layouts and some client-restricted APIs still need player testing. Please include your Forever build and an error or screenshot when reporting bugs.
-
-ChalkBox is independent community software. **Not affiliated with Blizzard Entertainment.** Distributed under MIT with retained third-party library notices.
-
-*Editorial illustrations are not in-game screenshots. Genuine client screenshots will follow real-client verification.*
+**Created and maintained by Detok Whitemaine.** MIT-licensed, with original third-party notices retained. Independent community software; not affiliated with Blizzard Entertainment.

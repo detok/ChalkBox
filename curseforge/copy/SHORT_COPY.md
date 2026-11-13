@@ -1,31 +1,31 @@
-# ChalkBox 2.0 — short-form copy
+# ChalkBox — short copy
 
-## Preferred one-liner
+**Short description**
 
-**Your WoW Forever adventure, better informed. One addon for loot discoveries, macros, progress, quests and quieter reminders.**
+A WoW Forever addon for loot discoveries, macros, quests, camping, combat stats and a customizable HUD.
 
-## GitHub About text
+**Alternate headline**
 
-**The quiet WoW Forever companion: MacroForge, Map Discoveries, LootSense, The Bar, quest, combat, camp and session tools.**
+Know what dropped. Build the macro. Keep playing.
 
-## CurseForge summary (short)
+**GitHub About**
 
-**A complete WoW Forever QoL toolkit: learn your loot, build macros, track progress, manage quests and revisit your adventures.**
+Quality-of-life tools for WoW Forever: MacroForge, DropSense, LootSense, The Bar, QuestSense, CampSense and session history.
 
-## Alternative headlines
+**Release announcement**
 
-- **One addon. Your whole adventure.**
-- **Less clutter. More context. Better buttons.**
-- **Remember the loot. Build the macro. Keep playing.**
+ChalkBox 2.0.2 is available for testing. Settings pages are now grouped under their modules, the optional DPS meter starts closed, and the CurseForge art and listing kit is ready. It includes the existing DropSense map browser, MacroForge, The Bar, session history and other ChalkBox tools.
 
-## 2.0 prerelease announcement
+**Screenshot captions (for actual in-game images only)**
 
-**ChalkBox 2.0 is ready for your Forever client test!** The all-in-one addon now brings together the character-aware MacroForge wizard, automatic loot discoveries on the world map, LootSense/profession advice, the configurable Bar, repair learning, a persistent Session Journal, quests, camp reminders and combat tools. The map-button loading and positioning path has been revised, with **/chalk drops map** and **/chalk drops map status** available if Forever's UI still hides it. The game-client verification pass is still underway.
+- Map Discoveries: Items observed during your own adventures, sorted by zone and source.
+- MacroForge: Choose learned abilities and build a macro you can edit or copy.
+- The Bar: Configure a compact row of the stats that matter to you.
+- Session Journal: Revisit recorded XP, quests, loot and gold changes.
+- Adventure Prep: Short reminders for supplies and supported camping buffs.
 
-## Social caption
+**Creator credit**
 
-**What did *your* character discover?** ChalkBox remembers loot by zone and dungeon, helps turn learned spells into safe, copy-ready macros, and keeps your adventure stats where you want them. Built for **WoW Forever**. **One addon, no cloud, no fantasy drop rates.** 2.0 test build available on GitHub.
+ChalkBox by Detok Whitemaine.
 
-## Honest guardrails
-
-Do not claim official server drop rates, all-kills probabilities, automated combat, AI macro rotations, guaranteed native API compatibility, auto-selling, CurseForge acceptance or real-client screenshots that haven't been captured.
+Don't label generated concept graphics as screenshots. The artwork folder has promotional images, but the game gallery should use actual Forever captures.
