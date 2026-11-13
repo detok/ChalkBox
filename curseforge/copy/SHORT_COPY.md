@@ -2,11 +2,11 @@
 
 ## Preferred project summary (one sentence)
 
-A quieter WoW Forever companion for smart loot hints, quest watches, camping, XP tracking and native DPS tools.
+A quieter WoW Forever companion with smart loot hints, an adaptive XP/bag/gear dashboard, quest watches, camping and native DPS tools.
 
 ## Alternate summaries
 
-**More practical:** Keep useful items, follow quests and track XP with a slim TrailBar, camping reminders and Blizzard-friendly combat tools for WoW Forever.
+**More practical:** Keep useful loot, follow quests and monitor XP, free bag slots, gear durability and rested XP with a slim TrailBar, camping reminders and native combat tools.
 
 **Shorter:** Smart loot, XP, quests, camp reminders and DPS tools for WoW Forever—one addon, one settings menu.
 
@@ -33,7 +33,7 @@ ChalkBox is a WoW Forever utility addon focused on the little things that make a
 ## Promotional captions (for when real screenshots exist)
 
 - **Hero:** One addon for the moments between the big fights.
-- **TrailBar:** XP/hour, time to level and gold—without losing screen space.
+- **TrailBar:** XP, free bag slots, gear durability, rested XP and gold—all in 18 pixels.
 - **LootSense:** A helpful reason to keep something; never a blind “safe to sell.”
 - **Native meter:** Your Blizzard damage meter. One extra PARTY print option.
 - **QuestSense:** Smarter watch lists in the quest tracker you already know.
@@ -43,6 +43,6 @@ ChalkBox is a WoW Forever utility addon focused on the little things that make a
 
 ## Tone, terms and claims
 
-Use **“quiet,” “practical,” “native,” “contextual,” “optional,” “small”** instead of unsupported performance guarantees such as **“zero impact,” “100% accurate,” “AI-powered,” “the only addon you need,”** or **“official.”** Do not claim support for all clients, an automated junk seller, a quest arrow, gear scoring, free bag-slot tracking or action-bar skinning.
+Use **“quiet,” “practical,” “native,” “contextual,” “optional,” “small”** instead of unsupported performance guarantees such as **“zero impact,” “100% accurate,” “AI-powered,” “the only addon you need,”** or **“official.”** Do not claim support for all clients, an automated junk seller, a quest arrow, equipment scoring, automatic chat posts or action-bar skinning.
 
 The brand name is **ChalkBox**, spelled exactly that way; module names are **LootSense, ProfessionSense, TrailBar, QuestSense, CampSense (Adventure Prep), Emota, QuietGuard, Combat Meter**.
