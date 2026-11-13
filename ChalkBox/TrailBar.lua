@@ -272,7 +272,8 @@ local function CreateBar()
             local a=latest.bags
             if not a then return {"Inventory slot data unavailable."} end
             return {a.free.." free of "..a.total.." equipped bag slots.",
-                a.general.." general free, "..a.special.." profession-specialized free.",
+                a.general.." general free, "..a.special.." profession-specialized free."..
+                ((a.unknown or 0)>0 and (" "..a.unknown.." unclassified free.") or ""),
                 "Specialty slots may only accept their matching items."}
         end},
         {"gear","Equipped item durability",function()
