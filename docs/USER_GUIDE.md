@@ -60,6 +60,14 @@ You can also type `/chalk meter icons class`, `/chalk meter icons spec`, or `/ch
 
 **Forever restriction:** ordinary combat-log data is inaccessible to addons. The C_DamageMeter data can be secret while fighting; ChalkBox displays these fields directly through game UI methods instead of trying to analyze/sort them. The game controls pet/source attribution and the meter may not be available on non-Forever clients. For deeper per-spell statistics, the game's own meter remains available.
 
+### Print directly from Blizzard's built-in damage meter
+
+**You do not need to use the ChalkBox meter window.** WoW Forever's own damage meter has a native settings/gear dropdown. With ChalkBox enabled, this menu gains **ChalkBox: PRINT top 3 to PARTY**.
+
+Set the Blizzard meter to your preferred DPS/damage/healing statistic and Current/Overall/saved fight. After combat, choose **ChalkBox: PRINT top 3 to PARTY** in that window's gear menu. It prints one brief PARTY message using that exact window selection, not the ChalkBox window's selection. No message is sent while solo, in a raid, in combat, in Edit Mode, or if the client still protects the numbers or names.
+
+To keep only Blizzard's meter, turn off **Show compact DPS meter window** under ChalkBox → Combat Meter or type `/chalk meter hide`. The built-in gear menu still works. Use `/chalk meter native off` to remove the extra gear-menu entry, `/chalk meter native on` to restore it, or `/chalk meter native status` to diagnose support. This feature relies on the Forever `MENU_DAMAGE_METER_WINDOW_SETTINGS` menu extension and will quietly do nothing when that API is missing.
+
 ## TrailBar
 
 A slim top/bottom strip shows adventuring metrics. Screen-space reservation is **on** by default. Move the strip in **TrailBar** options. Run `/chalk bar status` to check whether the reserved space was applied, or `/chalk bar reserve off` to disable it if another UI conflicts. Some custom frames or Blizzard Edit Mode layouts may ignore the parent inset.

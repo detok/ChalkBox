@@ -628,6 +628,7 @@ end
 local function Help()
     Chat("/chalk meter [show|hide|toggle|dps|damage|hps|healing|taken|interrupts]")
     Chat("/chalk meter [current|last|overall|print|lock|unlock|icons class/spec/off|rows 5/8/12|opacity 35-100|reset]")
+    Chat("Native Blizzard meter gear menu: ChalkBox PRINT. /chalk meter native on|off|status")
     Chat("PRINT sends a single top-three summary to PARTY after combat; RESET asks before clearing all Blizzard sessions.")
 end
 function ChalkBox_MeterCommand(input)
@@ -640,6 +641,12 @@ function ChalkBox_MeterCommand(input)
     elseif value=="reset" then ConfirmReset()
     elseif value=="reset confirm" then ResetNative()
     elseif value=="print" then PrintFight()
+    elseif value=="native on" or value=="native off" or value=="native status" then
+        if type(ChalkBox_NativeMeterCommand)=="function" then
+            ChalkBox_NativeMeterCommand(value:match("native%s+(%S+)"))
+        else
+            Chat("Native Blizzard meter integration is not loaded.")
+        end
     elseif value=="help" then Help()
     elseif value=="status" then
         local enabled=IsAvailable()

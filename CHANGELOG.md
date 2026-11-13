@@ -2,6 +2,16 @@
 
 All notable changes to the public ChalkBox addon are documented here.
 
+## 1.8.5 — Blizzard damage-meter PRINT integration
+
+- Add **ChalkBox: PRINT top 3 to PARTY** to the gear/settings menu of Blizzard Forever's built-in damage meter, using its supported `MENU_DAMAGE_METER_WINDOW_SETTINGS` extension point.
+- Report the selected **native window's** damage/DPS/healing/interrupt statistics and selected current, overall, or saved fight; fall back to the last fight if the current session is empty and the client supports that lookup.
+- Keep privacy and combat safeguards: manually initiated, never in combat or Edit Mode, never solo or in a raid, no handling secret combat values, no chat redirection and a three-second repeat guard.
+- Add `/chalk meter native on|off|status` to enable or disable the built-in gear-menu entry (enabled by default).
+- Keep ChalkBox's separate meter unchanged and optional: `/chalk meter hide` lets you use only the Blizzard meter while retaining the native-print integration.
+- Add Lua 5.1 coverage for native gear-menu extension, currently selected stat/session, historical fights, protected data, and chat restrictions.
+- Preserve LootSense, the separate-bag slider, Action Bar behavior and all other ChalkBox features.
+
 ## 1.8.4 — Separate-bag position control
 
 - Add a default-off **0–80-point vertical offset** for Blizzard's individual bag windows (including profession bags), with a 30-point starting suggestion for bags clipping off the top.
