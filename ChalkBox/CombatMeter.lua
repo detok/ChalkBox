@@ -20,7 +20,8 @@ local sessions={
 }
 local meterButton,sessionButton
 local function Safe(v)
-    return v~=nil and (type(issecretvalue)~="function" or not issecretvalue(v))
+    -- Inspect the secrecy of a value before asking Lua to evaluate it at all.
+    return (type(issecretvalue)~="function" or not issecretvalue(v)) and v~=nil
 end
 local function Chat(message)
     if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
