@@ -7,7 +7,7 @@
 | Game | World of Warcraft | Select WoW, not another game's mod class |
 | Class | Addons | Native WoW addon |
 | Project name | **ChalkBox** | Confirm name availability in the create form |
-| Summary | **A quieter WoW Forever companion for smart loot hints, quest watches, camping, XP tracking and native DPS tools.** | One sentence, no unshipped claims |
+| Summary | **A quieter WoW Forever companion with smart loot advice, an XP/bag/gear dashboard, quests, camping and native DPS tools.** | One sentence, no unshipped claims |
 | Primary category | **Miscellaneous** | Appropriate for a general-purpose utility addon; select only if available |
 | Additional categories | **Tooltip**, **Quests & Leveling**, **Buffs & Debuffs**, **Bags & Inventory** | Up to four; confirm current CurseForge choices and relevance |
 | Game flavor | **Forever** | Verified as a CurseForge WoW flavor |
@@ -15,7 +15,7 @@
 | Project license | **MIT License** | Matches repository `LICENSE` |
 | Project description | [PROJECT_DESCRIPTION.md](PROJECT_DESCRIPTION.md) | Paste in Markdown mode; preview once before saving |
 | Logo | **NOT YET CREATED** | See `../ARTWORK_TO_CREATE.md`, make and upload in the art pass |
-| File to upload | **ChalkBox-1.8.5.zip** (initial draft) | Pull the actual installable ZIP from current build/release; never the repository ZIP |
+| File to upload | **ChalkBox-1.8.6.zip** (initial draft) | Pull the actual installable ZIP from current build/release; never the repository ZIP |
 | Release type | **Beta** until verified in client; **Release** when confident | A CurseForge Release file is needed for ordinary default app sync |
 | Source | https://github.com/detok/ChalkBox | Source link, **not** a third-party binary download |
 | Issues | https://github.com/detok/ChalkBox/issues | Support/bug reports |
@@ -29,7 +29,7 @@
 - The project ships **one installable folder** named `ChalkBox`.
 - The addon includes `ChalkBox.toc` (`Interface: 11509`) and `ChalkBox_Camelot.toc` (`Interface: 16001`). The Camelot-specific TOC documents the intended Forever flavor.
 - **Do not** tag other game flavors merely because a second TOC exists. Supported flavors need hands-on testing.
-- Current first-pass version is **1.8.5**, published as a **public prerelease** on GitHub. Refresh version numbers and changelog before your actual CurseForge upload.
+- Current first-pass version is **1.8.6**, published as a **public prerelease** on GitHub. Refresh version numbers and changelog before your actual CurseForge upload.
 - The existing `ChalkBox/assets/Icon.tga` is the **in-game addon icon**, not a ready-to-upload CurseForge project avatar.
 - CurseForge allows project Markdown or its WYSIWYG editor. Use Markdown for easier maintenance; copy directly from `PROJECT_DESCRIPTION.md`.
 - Do not put a GitHub binary ZIP download link in the **public** CurseForge description. CurseForge policies disallow external file download links; use the Files tab instead.
