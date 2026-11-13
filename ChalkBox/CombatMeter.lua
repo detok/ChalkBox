@@ -202,6 +202,7 @@ local function MakeRow(i)
     rank:SetText(i..".")
     local classIcon=frame:CreateTexture(nil,"ARTWORK")
     classIcon:SetSize(18,18)
+    classIcon.isChalkBoxClassIcon=true
     classIcon:SetPoint("LEFT",frame,"LEFT",27,0)
     classIcon:SetTexture(UNKNOWN_ICON_TEXTURE)
     classIcon:SetTexCoord(0.08,0.92,0.08,0.92)
