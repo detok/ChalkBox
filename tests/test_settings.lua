@@ -38,6 +38,12 @@ _G.ChalkBox_BarCommand=function(value)
     if value=="reserve off" then ChalkBoxDB.barReserve=false end
     printed[#printed+1]="bar "..value
 end
+_G.ChalkBox_BagOffsetSet=function(value)
+    ChalkBoxDB.bagOffsetY=math.max(0,math.min(80,math.floor(value+0.5)))
+end
+_G.ChalkBox_BagStatus=function()
+    return {offset=ChalkBoxDB.bagOffsetY or 0}
+end
 _G.ChalkBox_EmotaCommand=function(value)
     if value=="auto on" then ChalkBoxDB.emota.auto=true end
     if value=="auto off" then ChalkBoxDB.emota.auto=false end
@@ -360,11 +366,19 @@ local sliders={}
 for _,frame in ipairs(frames) do
     if frame.kind=="Slider" then sliders[#sliders+1]=frame end
 end
-assert(#sliders==3,"Emota, Combat Meter and Toast Appearance each have a slider")
+assert(#sliders==4,"Emota, Combat Meter, Toast Appearance and TrailBar bags each have a slider")
 local meterSlider
 for _,frame in ipairs(sliders) do
     if frame.parent==categories["Combat Meter"].panel then meterSlider=frame end
 end
+local bagSlider
+for _,frame in ipairs(sliders) do
+    if frame.parent==categories["TrailBar"].panel then bagSlider=frame end
+end
+assert(bagSlider and bagSlider.value==0,"bag offset starts at Blizzard default")
+bagSlider:SetValue(30)
+assert(ChalkBoxDB.bagOffsetY==30,
+    "native TrailBar bag-offset slider persists a 30-point downward nudge")
 assert(meterSlider,"native meter opacity slider belongs to Combat Meter page")
 meterSlider:SetValue(65)
 assert(ChalkBoxDB.meter.opacity==0.65,

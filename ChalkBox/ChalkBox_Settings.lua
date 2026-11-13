@@ -281,9 +281,34 @@ local function MakeBar()
                 ChalkBox_BarCommand(on and "reserve on" or "reserve off")
             end
         end)
-    Button(panel,"Reset Session Stats",28,-391,190,function()
+    -- Optional, independent of the TrailBar position: leave Blizzard's
+    -- item slots and bag stacking intact; only lower the first bag anchor.
+    Label(panel,"Separate bags: move down","GameFontNormal",28,-356,197)
+    local bagSlider=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
+    bagSlider:SetSize(229,18)
+    bagSlider:SetPoint("TOPLEFT",panel,"TOPLEFT",226,-351)
+    bagSlider:SetMinMaxValues(0,80)
+    if bagSlider.SetValueStep then bagSlider:SetValueStep(5) end
+    local bagValue=Label(panel,"0 px","GameFontHighlightSmall",466,-357,59)
+    local settingBag=false
+    bagSlider:SetScript("OnValueChanged",function(_,value)
+        if settingBag or type(value)~="number" then return end
+        if ChalkBox_BagOffsetSet then ChalkBox_BagOffsetSet(value) end
+        bagValue:SetText(tostring(math.floor(value+0.5)).." px")
+    end)
+    panel:AddRefresh(function()
+        local status=ChalkBox_BagStatus and ChalkBox_BagStatus()
+        local offset=status and status.offset or 0
+        settingBag=true
+        bagSlider:SetValue(offset)
+        settingBag=false
+        bagValue:SetText(tostring(offset).." px")
+    end)
+    Label(panel,"Only separate bags; 0 = Blizzard default. Never moves bags in combat.",
+        "GameFontHighlightSmall",28,-376,495)
+    Button(panel,"Reset Session Stats",28,-410,190,function()
         if ChalkBox_BarCommand then ChalkBox_BarCommand("reset") end end)
-    Button(panel,"Check Screen Layout",232,-391,190,function()
+    Button(panel,"Check Screen Layout",232,-410,190,function()
         if ChalkBox_BarCommand then ChalkBox_BarCommand("status") end end)
     return panel
 end

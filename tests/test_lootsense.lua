@@ -41,6 +41,8 @@ _G.ChalkBox_RecipeAdvice=function(id,name)
 end
 local meterCommands={}
 _G.ChalkBox_MeterCommand=function(cmd) meterCommands[#meterCommands+1]=cmd end
+local bagCommands={}
+_G.ChalkBox_BagCommand=function(cmd) bagCommands[#bagCommands+1]=cmd end
 local messages = {}
 _G.DEFAULT_CHAT_FRAME={AddMessage=function(_, msg) messages[#messages+1]=msg end}
 local catalog = {
@@ -133,6 +135,10 @@ onTooltip(tip)
 assert(#tip.lines==1,"hover refresh must not duplicate advice")
 SlashCmdList.CHALKBOX("list")
 assert(messages[#messages]:find("Broken Fang",1,true),"list should show protected items")
+SlashCmdList.CHALKBOX("bags offset 30")
+SlashCmdList.CHALKBOX("bags reset")
+assert(#bagCommands==2 and bagCommands[1]=="offset 30" and bagCommands[2]=="reset",
+    "new bag commands must route to BagLayout without changing meter commands")
 SlashCmdList.CHALKBOX("meter")
 SlashCmdList.CHALKBOX("meter overall")
 SlashCmdList.CHALKBOX("dps show")

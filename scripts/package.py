@@ -43,6 +43,7 @@ FILES = (
     "Emota.lua",
     "QuestSense.lua",
     "TrailBar.lua",
+    "BagLayout.lua",
     "CombatMeter.lua",
     "ChalkBox_Settings.lua",
     "assets/Icon.tga",
