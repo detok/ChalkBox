@@ -5,6 +5,7 @@ local addonName=...
 local db
 local last={marked=0,visible=0,reason="not initialized"}
 local queued=false
+local learnedForRefresh
 local hooked={all=false,items=false}
 local stripColor={0.24,0.94,0.57}
 
@@ -98,7 +99,15 @@ local function UpdateButton(button)
     if not Public(shown) or not shown then ShowMarker(button,false);return end
     last.visible=last.visible+1
     local itemID=Enabled() and ItemID(button)
-    local mark=itemID and Learned(itemID) or false
+    local mark=false
+    if itemID then
+        -- A bag often contains several stacks of the same ingredient.
+        -- Read its learned-recipe evidence only once per batched pass.
+        if learnedForRefresh[itemID]==nil then
+            learnedForRefresh[itemID]=Learned(itemID)
+        end
+        mark=learnedForRefresh[itemID]
+    end
     ShowMarker(button,mark)
     if mark then last.marked=last.marked+1 end
 end
@@ -115,6 +124,7 @@ local function UpdateFrame(frame)
 end
 local function Refresh()
     last={visible=0,marked=0,reason="ready"}
+    learnedForRefresh={}
     if type(ContainerFrameUtil_EnumerateContainerFrames)=="function" then
         local ok=pcall(function()
             for _,frame in ContainerFrameUtil_EnumerateContainerFrames() do
@@ -149,10 +159,15 @@ function ChalkBox_BagHighlightStatus()
         marked=last.marked,visible=last.visible,reason=last.reason}
 end
 local function QueueRefresh()
+    if queued or not db then return end
     if type(C_Timer)=="table" and type(C_Timer.After)=="function" then
-        if queued then return end
         queued=true
-        C_Timer.After(0,function() queued=false;Refresh() end)
+        -- Blizzard can update individual bag slots many times per opening.
+        -- Coalesce them into one scan after the burst settles.
+        C_Timer.After(0.20,function()
+            queued=false
+            Refresh()
+        end)
     else Refresh() end
 end
 local function HookBagUpdates()
@@ -188,10 +203,5 @@ events:SetScript("OnEvent",function(_,event,name)
         return
     end
     HookBagUpdates()
-    if not db then return end
-    if type(C_Timer)=="table" and type(C_Timer.After)=="function" then
-        if queued then return end
-        queued=true
-        C_Timer.After(0.08,function() queued=false;Refresh() end)
-    else Refresh() end
+    QueueRefresh()
 end)

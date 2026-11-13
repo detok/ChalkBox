@@ -1,5 +1,13 @@
 # Troubleshooting
 
+## 2.0.4: Discoveries shows controls but not the panel, or bags hitch
+
+Install the **2.0.4 game addon ZIP** (not the media kit), confirm that you have a single `Interface/AddOns/ChalkBox` folder, then run `/reload`. Open the map and click **Discoveries**, or type `/chalk drops map`. The standalone journal should now have a full solid background and appear above the native Map & Quest Log. Bag highlight scans and optional resale-value calculations are now rate-limited.
+
+If bag opening still hitches, try temporarily switching off the **The Bar → Modules → Bag Value** option, then the **LootSense → Appearance → reagent highlights** option, testing between changes. This isolates the scanner without erasing any data. Enable `/console scriptErrors 1` if a Lua error appears.
+
+
+
 ## 2.0.3: Discoveries controls appear without a panel
 
 Discoveries now keeps its main background readable when **Global Appearance → background strength** is zero, and brings the journal to the front when opened. Update to 2.0.3, use `/reload`, and type `/chalk drops map`. If controls still behave oddly, enable `/console scriptErrors 1` and capture the Lua error.

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.4 — Discoveries window and bag responsiveness (prerelease)
+- Draw Discoveries above the native Map & Quest Log in a real Blizzard-style panel, preserving the journal's background and controls together.
+- Coalesce rapid bag marker scans and inventory-related TrailBar refreshes; cache vendor valuation for 750ms.
+- Keep all existing observations, settings, character state, layouts and module options unchanged.
+
+
 ## 2.0.3 — Discoveries panel visibility (prerelease)
 - Keep the standalone Discoveries panel legible even with transparent global appearance settings.
 - Add a visible frame edge, bring the journal forward when opened and guard theme failures.

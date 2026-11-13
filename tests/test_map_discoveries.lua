@@ -12,7 +12,11 @@ local function Frame(kind,name,parent)
     function f:ClearAllPoints() self.point=nil end
     function f:SetFrameStrata(n) self.strata=n end
     function f:SetFrameLevel(n) self.level=n end
-    function f:GetFrameLevel() return 12 end
+    function f:GetFrameLevel() return self.level or 12 end
+    function f:SetToplevel(value) self.toplevel=value end
+    function f:SetBackdrop(spec) self.backdrop=spec end
+    function f:SetBackdropColor(...) self.backdropColor={...} end
+    function f:SetBackdropBorderColor(...) self.backdropEdgeColor={...} end
     function f:SetMovable() self.movable=true end
     function f:SetClampedToScreen() end
     function f:EnableMouse() end
@@ -45,6 +49,7 @@ local function Frame(kind,name,parent)
         function t:SetHeight() end
         function t:SetSize() end
         function t:SetColorTexture(...) self.color={...} end
+        function t:SetVertexColor(...) self.color={...} end
         function t:SetTexture(value) self.texture=value end
         return t
     end
@@ -57,8 +62,11 @@ local function Frame(kind,name,parent)
     return f
 end
 _G.UIParent={}
+_G.BackdropTemplateMixin={}
 local viewed=1436
 _G.WorldMapFrame=Frame("Frame","WorldMapFrame",UIParent)
+WorldMapFrame:SetFrameLevel(45)
+WorldMapFrame:SetFrameStrata("FULLSCREEN_DIALOG")
 WorldMapFrame.GetMapID=function() return viewed end
 _G.CreateFrame=Frame
 _G.C_Map={
@@ -163,6 +171,15 @@ button.OnClick(button,"LeftButton")
 local journal=Find("ChalkBoxMapDiscoveries")
 assert(journal and journal:IsShown() and journal.w==660 and journal.h==616,
     "Discoveries journal opens at the expected size")
+assert(journal.strata=="FULLSCREEN_DIALOG" and journal.level>=200
+    and journal.toplevel==true,
+    "journal frame and all children must sit above the native map")
+assert(journal.backdrop and journal.backdrop.bgFile and
+    journal.backdrop.bgFile:find("DialogBox",1,true),
+    "panel has a real Blizzard-native backdrop")
+assert(journal.back and journal.back.texture==
+    "Interface\\Buttons\\WHITE8X8",
+    "panel paints a real texture, not only a color-only region")
 assert(journal.back and journal.back.color and journal.back.color[4]>=0.92,
     "transparent global theme must not hide the Discoveries panel")
 assert(journal.edge and journal.edge.color and journal.edge.color[4]>=0.8,

@@ -265,12 +265,30 @@ local function RepairCost(gear)
     return {state="unavailable",missing=missing,max=gear.max}
 end
 
+-- The complete vendor value scan is comparatively expensive. Combat
+-- events, bag redraws and item-cache notifications can fire many times within
+-- a fraction of a second. Keep a short-lived, nonpersistent result.
+local lastBagValue,lastBagValueAt,lastBagValueChecked
+local function ReadBagValue()
+    local now=Call(GetTime)
+    if PublicNumber(now) and lastBagValueChecked and lastBagValueAt
+        and now>=lastBagValueAt and now-lastBagValueAt<0.75 then
+        return lastBagValue
+    end
+    local value=BagVendorValue()
+    if PublicNumber(now) then
+        lastBagValue=value
+        lastBagValueAt=now
+        lastBagValueChecked=true
+    end
+    return value
+end
 function ChalkBox_BarReadStats(maxXP, includeBagValue, includeRepair)
     local gear=Gear()
     return {
         bags=Bags(),gear=gear,rested=Rested(maxXP),
         latency=Latency(),pet=Pet(),
-        bagvalue=includeBagValue==true and BagVendorValue() or nil,
+        bagvalue=includeBagValue==true and ReadBagValue() or nil,
         repair=includeRepair==true and RepairCost(gear) or nil,
     }
 end

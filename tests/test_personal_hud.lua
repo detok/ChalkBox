@@ -498,4 +498,20 @@ assert(ChalkBox_EmotaGetEnabled("SIT")==true and
     ChalkBox_EmotaGetEnabled("DANCE")==true,"new idle actions are available")
 math.random=originalRandom
 
-print("PASS: HUD stats, 18px root safe area, Emota randomized idle rotation, disables and frequency extremes")
+-- Blizzard sends clusters of item-cache events when several bags open.
+-- One HUD update should serve a burst without dropping the next update.
+local scheduled={}
+C_Timer.After=function(delay,fn)
+    scheduled[#scheduled+1]={delay=delay,callback=fn}
+end
+Fire("BAG_UPDATE_DELAYED")
+Fire("GET_ITEM_INFO_RECEIVED",123)
+Fire("ITEM_DATA_LOAD_RESULT",123)
+assert(#scheduled==1 and scheduled[1].delay>=0.2,
+    "inventory and item-cache bursts are coalesced")
+scheduled[1].callback()
+Fire("BAG_UPDATE_DELAYED")
+assert(#scheduled==2,"later inventory changes are still displayed")
+scheduled[2].callback()
+
+print("PASS: HUD stats, bag-event debounce, 18px root safe area, Emota idle rotation and frequency extremes")
