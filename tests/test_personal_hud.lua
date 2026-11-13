@@ -44,13 +44,15 @@ _G.UnitXP = function(unit) assert(unit=="player"); return playerXP end
 _G.UnitXPMax = function(unit) assert(unit=="player"); return xpMax end
 _G.UnitLevel = function(unit) assert(unit=="player"); return playerLevel end
 _G.GetMoney = function() return money end
-_G.ChalkBox_BarReadStats=function()
+_G.ChalkBox_BarReadStats=function(_,includeBagValue)
     return {
         bags={free=12,total=96,general=7,special=5},
         gear={percent=87,worst=76,items=9},
         rested={percent=42,xp=420},
         latency={home=21,world=63},
         pet={state="ready",percent=95},
+        bagvalue=includeBagValue and {totalCopper=182250,junkCopper=12525,
+            totalUnknown=0,junkUnknown=0,totalComplete=true,junkComplete=true} or nil,
     }
 end
 _G.IsInGroup = function() return false end
@@ -193,9 +195,32 @@ local function FindMetric(prefix)
     end
 end
 assert(FindText("Bags 12 free"),"free slots appear in the actual TrailBar widgets")
+assert(ChalkBoxDB.barStats.bagvalue==false,"vendor value defaults to optional")
+assert(ChalkBox_BarBagValueModeGet()=="total",
+    "total vendor value is the default mode")
+ChalkBox_BarCommand("stat bagvalue on")
+assert(ChalkBoxDB.barStats.bagvalue==true)
+assert(FindText("Value 18g"),"total shows vendor value for all bag items")
+
 assert(FindText("Gear 87%"),"durability appears in the actual TrailBar widgets")
 assert(FindText("Rest 42%"),"rested XP appears as a level percent")
 assert(FindText("Pet 95%"),"Hunter pet status is available when readable")
+local valueWidget=FindMetric("Value ")
+assert(valueWidget and valueWidget.scripts.OnMouseUp,
+    "Bag Value widget is directly clickable outside Edit Mode")
+valueWidget.scripts.OnMouseUp(valueWidget,"LeftButton")
+assert(ChalkBox_BarBagValueModeGet()=="junk" and
+    FindText("Junk 1g"),"click flips to grey-only resale price")
+valueWidget.scripts.OnMouseUp(valueWidget,"LeftButton")
+assert(ChalkBox_BarBagValueModeGet()=="total" and
+    FindText("Value 18g"),"second click restores total bag resale")
+ChalkBox_BarCommand("bagvalue junk")
+assert(ChalkBox_BarBagValueModeGet()=="junk",
+    "mode can also be configured by slash command")
+ChalkBox_BarCommand("bagvalue total")
+ChalkBox_BarCommand("stat bagvalue off")
+assert(not ChalkBoxDB.barStats.bagvalue,
+    "disabling the optional module doesn't change its mode preference")
 assert(FindMetric("Bags ").visible and FindMetric("Gear ").visible
     and FindMetric("Rest ").visible,
     "new priority widgets appear on a normal screen")

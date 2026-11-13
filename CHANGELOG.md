@@ -2,6 +2,15 @@
 
 All notable changes to the public ChalkBox addon are documented here.
 
+## 1.9.1 — TrailBar Vendor Value
+
+- Add an optional **Bag vendor value** TrailBar module with two one-click modes: **Junk** (poor/gray quality only) and **Total** (all equipped-bag contents).
+- Compute each stack at its actual vendor sell price in copper. Ignore bank/worn gear and never automate selling.
+- Left-click the module outside Edit Mode to flip modes, use the native **Value: Junk / Value: Total** settings button, or `/chalk bar bagvalue junk|total|toggle`. The selected view persists.
+- Hover for both precise resale totals. Uncached/secret item data are explicitly flagged as unresolved; `>=` indicates a verified lower bound, never a fake exact value.
+- Keep the original 18px bar and responsive layout, with no changed stat visibility on existing users until the new module is enabled. Expand saved per-character layout validation for the new stat.
+- Add Lua 5.1 coverage for stacked vendor pricing, gray-only filtering, uncached item information, opt-in behavior, switching and native controls.
+
 ## 1.9.0 — The Polish Update
 
 - Add drag/drop TrailBar Edit Mode: move/reorder every module between left/center/right sections, right-click text alignment, **per-character saved layout**, reset and in-combat safety; preserves the existing responsive 18px layout.

@@ -33,7 +33,7 @@ _G.ChalkBox_QuestStatus=function()
         limit=ChalkBoxZoneDB.limit,api=true,accepted=8,tracked=5,reason="ready"}
 end
 local defaults={rate=true,eta=true,time=true,gold=true,bags=true,
-    gear=true,rested=true,latency=false,pet=true}
+    gear=true,rested=true,latency=false,pet=true,bagvalue=false}
 _G.ChalkBoxDB.barStats={}
 for k,v in pairs(defaults) do ChalkBoxDB.barStats[k]=v end
 _G.ChalkBox_BarStatEnabled=function(key)
@@ -56,6 +56,14 @@ _G.ChalkBox_BarCommand=function(value)
         end
     end
     printed[#printed+1]="bar "..value
+end
+_G.ChalkBox_BarBagValueModeGet=function()
+    return ChalkBoxDB.barBagValueMode or "total"
+end
+_G.ChalkBox_BarBagValueModeToggle=function()
+    ChalkBoxDB.barBagValueMode=ChalkBox_BarBagValueModeGet()=="total"
+        and "junk" or "total"
+    return true
 end
 local editor=false
 _G.ChalkBox_BarAppearanceGet=function() return ChalkBoxDB.barBackgroundOpacity or 70 end
@@ -366,7 +374,7 @@ Control("Reset Layout"):Click()
 assert(printed[#printed]=="bar layout reset","reset layout button reaches controller")
 categories["TrailBar Stats"].panel:Show()
 local statsChecks=FindCheckByParentTitle("TrailBar Stats")
-assert(#statsChecks==9,"9 independent stats are accessible")
+assert(#statsChecks==10,"10 independent stats including bag resale are accessible")
 assert(statsChecks[1].checked==true and statsChecks[4].checked==false,
     "bag space is on by default and optional latency starts off")
 statsChecks[4]:Click(true)
@@ -374,6 +382,18 @@ assert(ChalkBoxDB.barStats.latency==true,
     "latency checkbox persists the new module preference")
 statsChecks[2]:Click(false)
 assert(ChalkBoxDB.barStats.gear==false,"gear checkbox disables the module")
+assert(not statsChecks[10].checked,
+    "new vendor value module starts optional")
+statsChecks[10]:Click(true)
+assert(ChalkBoxDB.barStats.bagvalue,
+    "new vendor total module can be enabled through native settings")
+assert(ChalkBox_BarBagValueModeGet()=="total")
+Control("Value: Total"):Click()
+assert(ChalkBox_BarBagValueModeGet()=="junk",
+    "vendor mode button switches to grey-only junk")
+Control("Value: Junk"):Click()
+assert(ChalkBox_BarBagValueModeGet()=="total",
+    "vendor mode button switches back to full bag resale")
 Control("Minimal"):Click()
 assert(ChalkBoxDB.barStats.bags and ChalkBoxDB.barStats.gold
     and not ChalkBoxDB.barStats.gear and not ChalkBoxDB.barStats.rate,

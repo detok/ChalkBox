@@ -411,10 +411,11 @@ local function MakeBarStats()
         {"eta","Time to level","Estimate from XP/hour"},
         {"time","Session timer","Since login or last bar reset"},
         {"gold","Gold and session net","Current money and net change"},
+        {"bagvalue","Bag vendor value","Click the stat or the mode button to flip"},
     }
     for index,item in ipairs(options) do
         local key,title,description=unpack(item)
-        Toggle(panel,title,nil,-111-(index-1)*29,
+        Toggle(panel,title,nil,-110-(index-1)*26,
             function()
                 if ChalkBox_BarStatEnabled then
                     return ChalkBox_BarStatEnabled(key)
@@ -428,9 +429,24 @@ local function MakeBarStats()
                 end
             end)
         -- Keep explanatory text on the right; don't shrink the hit target.
-        Label(panel,description,"GameFontHighlightSmall",
-            288,-117-(index-1)*29,225)
+        if key~="bagvalue" then
+            Label(panel,description,"GameFontHighlightSmall",
+                288,-116-(index-1)*26,225)
+        end
     end
+    local modeButton=Button(panel,"Value: Total",303,-343,199,function()
+        if ChalkBox_BarBagValueModeToggle then
+            ChalkBox_BarBagValueModeToggle()
+        elseif ChalkBox_BarCommand then
+            ChalkBox_BarCommand("bagvalue toggle")
+        end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    panel:AddRefresh(function()
+        local mode=ChalkBox_BarBagValueModeGet and
+            ChalkBox_BarBagValueModeGet() or "total"
+        modeButton:SetText("Value: "..(mode=="junk" and "Junk" or "Total"))
+    end)
     Label(panel,"Quick layouts","GameFontNormalLarge",28,-380)
     local function Choose(preset)
         if ChalkBox_BarCommand then ChalkBox_BarCommand("stats "..preset) end

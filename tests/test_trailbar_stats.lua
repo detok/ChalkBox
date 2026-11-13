@@ -28,8 +28,51 @@ _G.UnitClass=function() return "Hunter",hunter and "HUNTER" or "MAGE" end
 _G.UnitExists=function(u) assert(u=="pet");return hasPet end
 _G.UnitHealth=function(u) assert(u=="pet");return health end
 _G.UnitHealthMax=function(u) assert(u=="pet");return maxHealth end
+-- Vendor resale fixtures: grey junk, colored loot, zero-value items,
+-- an uncached reagent and an item with an unknown quality.
+local vendorItems={
+    [0]={[1]={stackCount=4,quality=0,itemID=100,hasNoValue=false},
+         [2]={stackCount=2,quality=3,itemID=200,hasNoValue=false}},
+    [1]={[1]={stackCount=3,quality=0,itemID=300,hasNoValue=false}},
+    [2]={[1]={stackCount=1,quality=1,itemID=400,hasNoValue=true}},
+    [3]={[1]={stackCount=1,itemID=500,hasNoValue=false}},
+}
+local prices={[100]={quality=0,price=251},
+    [200]={quality=3,price=4500},
+    [400]={quality=1,price=0},
+    [500]={quality=nil,price=75}}
+_G.C_Container.GetContainerItemInfo=function(bag,slot)
+    return vendorItems[bag] and vendorItems[bag][slot]
+end
+_G.C_Container.GetContainerItemID=function(bag,slot)
+    local item=vendorItems[bag] and vendorItems[bag][slot]
+    return item and item.itemID
+end
+_G.C_Item={GetItemInfo=function(id)
+    local value=prices[id]
+    if not value then return end -- uncached
+    return "Item "..id,"item:"..id,value.quality,nil,nil,nil,nil,nil,nil,nil,
+        value.price
+end}
 assert(loadfile("TrailBarStats.lua"))("ChalkBox")
 
+assert(ChalkBox_BarReadStats(playerMax).bagvalue==nil,
+    "default read must not scan bags for expensive vendor values")
+local valuation=ChalkBox_BarReadStats(playerMax,true).bagvalue
+assert(valuation and valuation.totalCopper==10079 and
+    valuation.junkCopper==1004,
+    "vendor value multiplies quantities and junk counts only grey-quality items")
+assert(valuation.totalUnknown==1 and valuation.junkUnknown==2 and
+    not valuation.totalComplete and not valuation.junkComplete,
+    "uncached vendor price and unknown quality cannot count as proven zero")
+prices[300]={quality=0,price=100}
+prices[500]={quality=2,price=75}
+valuation=ChalkBox_BarReadStats(playerMax,true).bagvalue
+assert(valuation.totalCopper==10379 and valuation.junkCopper==1304 and
+    valuation.totalComplete and valuation.junkComplete,
+    "newly cached item prices reconcile both complete valuation modes")
+prices[300]=nil
+prices[500]={quality=nil,price=75}
 local s=ChalkBox_BarReadStats(playerMax)
 assert(s.bags.free==10 and s.bags.total==52 and s.bags.general==8
     and s.bags.special==2 and s.bags.bags==5,
@@ -87,4 +130,4 @@ s=ChalkBox_BarReadStats(playerMax)
 assert(s.bags==nil and s.gear==nil and s.rested==nil
     and s.latency==nil and s.pet==nil,
     "missing Forever APIs must fail quietly and never claim 0")
-print("PASS: TrailBar Forever bag/free/special slots, weighted gear, rested XP, latency and safe Hunter state")
+print("PASS: TrailBar vendor junk/total stacks and unknown cache, bag slots, weighted gear, rested XP and safe Hunter state")
