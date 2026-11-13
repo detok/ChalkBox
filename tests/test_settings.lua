@@ -32,10 +32,29 @@ _G.ChalkBox_QuestStatus=function()
     return {enabled=ChalkBoxZoneDB.enabled,mode=ChalkBoxZoneDB.mode,
         limit=ChalkBoxZoneDB.limit,api=true,accepted=8,tracked=5,reason="ready"}
 end
+local defaults={rate=true,eta=true,time=true,gold=true,bags=true,
+    gear=true,rested=true,latency=false,pet=true}
+_G.ChalkBoxDB.barStats={}
+for k,v in pairs(defaults) do ChalkBoxDB.barStats[k]=v end
+_G.ChalkBox_BarStatEnabled=function(key)
+    return ChalkBoxDB.barStats[key]==true
+end
 _G.ChalkBox_BarCommand=function(value)
     if value=="top" or value=="bottom" or value=="off" then ChalkBoxDB.bar=value end
     if value=="reserve on" then ChalkBoxDB.barReserve=true end
     if value=="reserve off" then ChalkBoxDB.barReserve=false end
+    local stat,on=value:match("^stat (%a+) (%a+)$")
+    if stat and (on=="on" or on=="off") then
+        ChalkBoxDB.barStats[stat]=on=="on"
+    end
+    local profile=value:match("^stats (%a+)$")
+    if profile then
+        for key,default in pairs(defaults) do
+            ChalkBoxDB.barStats[key]=profile=="all" or
+                (profile=="minimal" and (key=="bags" or key=="gold")) or
+                (profile=="balanced" and default)
+        end
+    end
     printed[#printed+1]="bar "..value
 end
 _G.ChalkBox_BagOffsetSet=function(value)
@@ -199,7 +218,7 @@ assert(loadfile("ChalkBox_Settings.lua"))("ChalkBox")
 local loader=frames[#frames]
 assert(loader.event=="PLAYER_LOGIN","must register settings when the client is ready")
 loader.script.OnEvent(loader,"PLAYER_LOGIN")
-assert(#registered==10,"main options plus QuestSense/Toast Appearance and the original seven modules")
+assert(#registered==11,"main page plus the original modules and new TrailBar Stats")
 assert(categories.home.name=="ChalkBox")
 ChalkBox_OpenSettings()
 assert(opened[#opened]==101,"default /chalk must open native settings")
@@ -263,6 +282,29 @@ barChecks[4]:Click(true)
 assert(ChalkBoxDB.barReserve==true,"screen reservation can be re-enabled")
 Control("Reset Session Stats"):Click()
 assert(printed[#printed]=="bar reset")
+Control("Customize Bar Stats"):Click()
+assert(opened[#opened]==categories["TrailBar Stats"].ID,
+    "TrailBar should navigate directly to the new stats page")
+categories["TrailBar Stats"].panel:Show()
+local statsChecks=FindCheckByParentTitle("TrailBar Stats")
+assert(#statsChecks==9,"9 independent stats are accessible")
+assert(statsChecks[1].checked==true and statsChecks[4].checked==false,
+    "bag space is on by default and optional latency starts off")
+statsChecks[4]:Click(true)
+assert(ChalkBoxDB.barStats.latency==true,
+    "latency checkbox persists the new module preference")
+statsChecks[2]:Click(false)
+assert(ChalkBoxDB.barStats.gear==false,"gear checkbox disables the module")
+Control("Minimal"):Click()
+assert(ChalkBoxDB.barStats.bags and ChalkBoxDB.barStats.gold
+    and not ChalkBoxDB.barStats.gear and not ChalkBoxDB.barStats.rate,
+    "Minimal preset is functional")
+Control("All"):Click()
+assert(ChalkBoxDB.barStats.gear and ChalkBoxDB.barStats.latency,
+    "All preset enables optional modules")
+Control("Balanced"):Click()
+assert(ChalkBoxDB.barStats.gear and not ChalkBoxDB.barStats.latency,
+    "Balanced preset restores tested defaults")
 local emotaChecks=FindCheckByParentTitle("Emota")
 categories["Emota"].panel:Show()
 assert(#emotaChecks==5)
@@ -286,7 +328,7 @@ assert(ChalkBoxDB.emota.jokeFrequency==100,"joke frequency slider updates settin
 Control("Surprise Me"):Click()
 assert(printed[#printed]=="random idle","idle preview must be reachable in normal settings")
 Control("Catalog"):Click()
-assert(opened[#opened]==106,"catalog must be its own native settings page")
+assert(opened[#opened]==107,"catalog must be its own native settings page")
 local catalogChecks=FindCheckByParentTitle("Emote Catalog")
 assert(#catalogChecks==6,"catalog supports up to six paged emotes")
 categories["Emote Catalog"].panel:Show()
