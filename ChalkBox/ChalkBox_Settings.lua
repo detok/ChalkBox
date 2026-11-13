@@ -1152,10 +1152,7 @@ local function Register()
                 {"theme", "Global Appearance"},
                 {"drops", "DropSense"},
                 {"journal", "Session Journal"},
-                {"theme", "Global Appearance"},
-            {"drops", "DropSense"},
-            {"journal", "Session Journal"},
-            {"loot", "LootSense"},
+                {"loot", "LootSense"},
                 {"loothighlight", "LootSense Appearance"},
                 {"quests", "QuestSense"},
                 {"bar", "The Bar"},
@@ -1182,6 +1179,9 @@ local function Register()
     elseif type(InterfaceOptions_AddCategory) == "function" then
         InterfaceOptions_AddCategory(panels.home)
         for _, item in ipairs({
+            {"theme", "Global Appearance"},
+            {"drops", "DropSense"},
+            {"journal", "Session Journal"},
             {"loot", "LootSense"},
                 {"loothighlight", "LootSense Appearance"},
             {"quests", "QuestSense"},
