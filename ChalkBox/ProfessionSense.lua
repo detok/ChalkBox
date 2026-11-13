@@ -186,43 +186,104 @@ local function ReadLegacyCraft()
     end
 end
 
+local function OpenProfession(api)
+    if type(api.GetBaseProfessionInfo)~="function" then return end
+    local ok,base=pcall(api.GetBaseProfessionInfo)
+    if not ok or type(base)~="table" then return end
+    local profession=Normalize(base.professionName or base.name,
+        base.professionID or base.skillLineID)
+    if not profession and type(api.GetChildProfessionInfo)=="function" then
+        local childOK,child=pcall(api.GetChildProfessionInfo)
+        if childOK and type(child)=="table" then
+            profession=Normalize(child.professionName or child.name,
+                child.professionID or child.skillLineID)
+        end
+    end
+    return profession
+end
+
+local function RecipeName(info,spellID)
+    if Safe(info.name) and type(info.name)=="string" and info.name~="" then
+        return info.name
+    end
+    if type(GetSpellInfo)=="function" then
+        local ok,name=pcall(GetSpellInfo,spellID)
+        if ok and Safe(name) and type(name)=="string" then return name end
+    end
+    if C_Spell and type(C_Spell.GetSpellName)=="function" then
+        local ok,name=pcall(C_Spell.GetSpellName,spellID)
+        if ok and Safe(name) and type(name)=="string" then return name end
+    end
+end
+
 local function ReadModernTrade()
-    local api = C_TradeSkillUI
-    if not api or type(api.GetAllRecipeIDs) ~= "function"
-        or type(api.GetRecipeInfo) ~= "function" then return end
-    local base = type(api.GetBaseProfessionInfo) == "function" and api.GetBaseProfessionInfo()
-    local profession = base and Normalize(base.professionName,base.professionID)
-    if not profession or not available[profession] then return end
-    local recipes = api.GetAllRecipeIDs()
-    if type(recipes) ~= "table" then return end
-    for i=1,math.min(#recipes,1600) do
-        local id = recipes[i]
-        if Safe(id) and type(id) == "number" then
-            local info = api.GetRecipeInfo(id)
-            if type(info) == "table" and info.learned == true then
-                if type(api.GetRecipeSchematic) == "function" then
-                    local schematic = api.GetRecipeSchematic(id,false)
-                    if type(schematic) == "table" and type(schematic.reagentSlotSchematics) == "table" then
+    local api=C_TradeSkillUI
+    if type(api)~="table" or type(api.GetAllRecipeIDs)~="function"
+        or type(api.GetRecipeInfo)~="function" then return false end
+    local profession=OpenProfession(api)
+    if not profession then
+        scan.source="waiting for modern profession identity"
+        return false
+    end
+    local ok,recipes=pcall(api.GetAllRecipeIDs)
+    if not ok or type(recipes)~="table" or #recipes==0 then
+        scan.source="waiting for profession recipes"
+        return false
+    end
+    -- The actual active profession window is proof the player owns this
+    -- profession on builds where GetProfessions() is missing or incomplete.
+    available[profession]=true
+    seenWindow[profession]=true
+    scan.lastWindow=profession
+    local known=0
+    local before=scan.reagents
+    for i=1,math.min(#recipes,2500) do
+        local id=recipes[i]
+        if Safe(id) and type(id)=="number" then
+            local infoOK,info=pcall(api.GetRecipeInfo,id)
+            if infoOK and type(info)=="table"
+                and (info.learned==true or info.isLearned==true) then
+                known=known+1
+                local recipeName=RecipeName(info,id)
+                local added=false
+                if type(api.GetRecipeSchematic)=="function" then
+                    local schematicOK,schematic=pcall(api.GetRecipeSchematic,id,false)
+                    if schematicOK and type(schematic)=="table"
+                        and type(schematic.reagentSlotSchematics)=="table" then
                         for _,slot in ipairs(schematic.reagentSlotSchematics) do
-                            if type(slot) == "table" and type(slot.reagents) == "table" then
+                            if type(slot)=="table" and type(slot.reagents)=="table" then
                                 for _,reagent in ipairs(slot.reagents) do
-                                    if type(reagent) == "table" and Safe(reagent.itemID)
-                                        and type(reagent.itemID) == "number" then
-                                        AddReagent(profession,"item:"..reagent.itemID,nil,info.name,
-                                            slot.quantityRequired or reagent.quantityRequired)
+                                    if type(reagent)=="table" then
+                                        local itemID=reagent.itemID or reagent.itemId
+                                        local itemLink=reagent.itemLink
+                                        if not itemID and type(itemLink)=="string" then
+                                            itemID=tonumber(itemLink:match("item:(%d+)"))
+                                        end
+                                        if Safe(itemID) and tonumber(itemID) then
+                                            AddReagent(profession,tonumber(itemID),
+                                                reagent.name,recipeName,
+                                                slot.quantityRequired or reagent.quantityRequired)
+                                            added=true
+                                        end
                                     end
                                 end
                             end
                         end
                     end
-                elseif type(api.GetRecipeNumReagents) == "function"
-                    and type(api.GetRecipeReagentInfo) == "function" then
-                    local n = api.GetRecipeNumReagents(id)
-                    if Safe(n) and type(n) == "number" then
+                end
+                -- Some Forever builds have a partial or empty schematic API.
+                -- Use their older reagent-reader API instead of silently
+                -- recording zero materials for an otherwise known recipe.
+                if not added and type(api.GetRecipeNumReagents)=="function"
+                    and type(api.GetRecipeReagentInfo)=="function" then
+                    local numberOK,n=pcall(api.GetRecipeNumReagents,id)
+                    if numberOK and type(n)=="number" then
                         for j=1,math.min(n,25) do
-                            local reagent = api.GetRecipeReagentInfo(id,j)
-                            if type(reagent) == "table" then
-                                AddReagent(profession,reagent.itemLink,reagent.name,info.name,
+                            local reagentOK,reagent=pcall(api.GetRecipeReagentInfo,id,j)
+                            if reagentOK and type(reagent)=="table" then
+                                local itemID=reagent.itemID or reagent.itemId
+                                AddReagent(profession,itemID or reagent.itemLink,
+                                    reagent.name,recipeName,
                                     reagent.quantityRequired or reagent.quantity)
                             end
                         end
@@ -231,6 +292,10 @@ local function ReadModernTrade()
             end
         end
     end
+    scan.source="modern C_TradeSkillUI"
+    scan.recipes=known
+    scan.reagents=scan.reagents-before
+    return true
 end
 
 local function Refresh()
