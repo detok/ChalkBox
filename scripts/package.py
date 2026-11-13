@@ -40,6 +40,7 @@ FILES = (
     "SessionJournal.lua",
     "CampSense.lua",
     "DropSense.lua",
+    "MapDiscoveries.lua",
     "LootSense.lua",
     "BagReagents.lua",
     "QuietGuard.lua",

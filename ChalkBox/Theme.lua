@@ -56,7 +56,8 @@ function ChalkBox_ThemeAccent()
 end
 local function Notify()
     for _,name in ipairs({"ChalkBox_BarThemeRefresh",
-        "ChalkBox_ToastThemeRefresh","ChalkBox_MeterThemeRefresh"}) do
+        "ChalkBox_ToastThemeRefresh","ChalkBox_MeterThemeRefresh",
+        "ChalkBox_MapDiscoveriesThemeRefresh"}) do
         if type(_G[name])=="function" then pcall(_G[name]) end
     end
 end

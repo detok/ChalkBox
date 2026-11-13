@@ -39,6 +39,7 @@ local function NewSession()
     return {label=NowLabel(),seconds=0,xp=0,goldNet=0,levels=0,
         quests=0,lootWindows=0,lootItems=0,campPrompts=0,
         repairQuotes=0,repairLast=nil,startedMoney=nil,
+        areas={},
         lastMoney=nil,lastXP=nil,lastMaxXP=nil,topDrops={}}
 end
 local function Advance()
@@ -104,10 +105,22 @@ local function Begin()
     lastClock=Clock()
     ReadXP();ReadGold()
 end
-function ChalkBox_JournalNoteLoot(quantity,items)
+function ChalkBox_JournalNoteLoot(quantity,items,areaKey,areaName)
     if not current then return end
     if Num(quantity) then current.lootItems=(current.lootItems or 0)+quantity end
     current.lootWindows=(current.lootWindows or 0)+1
+    if type(areaKey)=="string" and #areaKey<=75 and
+        type(areaName)=="string" and #areaName<=96 then
+        current.areas=current.areas or {}
+        if current.areas[areaKey] or
+            (function() local n=0;for _ in pairs(current.areas) do n=n+1 end
+                return n<24 end)() then
+            local entry=current.areas[areaKey]
+            if not entry then entry={name=areaName,windows=0};
+                current.areas[areaKey]=entry end
+            entry.windows=math.min(1e7,(entry.windows or 0)+1)
+        end
+    end
     if type(items)=="table" then
         for id,count in pairs(items) do
             if type(id)=="string" and id:match("^%d+$") and
@@ -169,6 +182,23 @@ local function TopDrops(s)
     end
     return #result>0 and table.concat(result,"    ") or "No item drops recorded"
 end
+local function AreasLine(entry)
+    local order={}
+    for _,v in pairs(entry.areas or {}) do
+        if type(v)=="table" and type(v.name)=="string" then
+            order[#order+1]={name=v.name,n=v.windows or 0}
+        end
+    end
+    table.sort(order,function(a,b)
+        if a.n==b.n then return a.name<b.name end
+        return a.n>b.n
+    end)
+    local parts={}
+    for i=1,math.min(3,#order) do
+        parts[#parts+1]=order[i].name.." ("..order[i].n..")"
+    end
+    return #parts>0 and table.concat(parts," · ") or "No mapped loot observed"
+end
 local function Background()
     if not window then return end
     local r,g,b,a=0.018,0.018,0.022,0.96
@@ -209,6 +239,7 @@ local function Render()
         "Last repair quote     "..(entry.repairLast and
             Money(entry.repairLast) or "Not observed"),
         "Most observed items: "..TopDrops(entry),
+        "Loot regions: "..AreasLine(entry),
         "Only information ChalkBox actually observed is listed.",
     }
     for i,font in ipairs(textRows) do font:SetText(details[i] or "") end
@@ -217,7 +248,7 @@ function ChalkBox_OpenSessionJournal(which)
     if not window then
         if not UIParent or type(CreateFrame)~="function" then return false end
         local f=CreateFrame("Frame","ChalkBoxSessionJournal",UIParent)
-        f:SetSize(590,430)
+        f:SetSize(590,460)
         f:SetPoint("CENTER",UIParent,"CENTER",0,0)
         if f.SetFrameStrata then f:SetFrameStrata("DIALOG") end
         if f.SetMovable then f:SetMovable(true) end
@@ -244,7 +275,7 @@ function ChalkBox_OpenSessionJournal(which)
         end
         Font("GameFontNormalHuge",22,-17,500):SetText("CHALKBOX  /  ADVENTURE JOURNAL")
         f.head=Font("GameFontNormal",22,-61,500)
-        for i=1,11 do
+        for i=1,12 do
             textRows[i]=Font("GameFontHighlight",26,-91-(i-1)*26,540)
         end
         local function Button(label,x,fn)

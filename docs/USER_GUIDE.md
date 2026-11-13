@@ -34,11 +34,26 @@ Go to **ChalkBox → LootSense Appearance** to toggle subtle green reagent inset
 If no item glows, open a crafting window until the recipe list loads, use `/chalk loot scan`, and then **Refresh Bag Markers**. If the client doesn't expose its native bag buttons, there is no safe visual overlay to paint; tooltips still work.
 
 
+## New in 1.11.0 — Automatic drop discoveries on the world map
+
+You don't have to select items individually anymore. **ChalkBox records every item it can read in an opened loot window** while DropSense is on, storing its item quantity and the associated outdoor zone or dungeon when known. Tracking defaults to on for brand-new installations, but **your earlier off preference is preserved** when updating. Go to **ChalkBox → DropSense** for:
+- **Automatically record every item**: turn sampling on/off without deleting previous history.
+- **Show personal observations in loot-window tooltips**: only in native loot windows, not every inventory or merchant tooltip.
+- **Show Discoveries button on the World Map**: keeps the regular Blizzard map, quests and markers exactly as they are.
+
+Open the normal world map, choose a zone, then click **Discoveries**. A movable window lists items recorded in that area with quantities and windows observed. Switch to **Dungeons** for separately recorded instances linked to the zone through observed entry/exit, or switch **Source** to a particular observed creature type. As you move between maps in the main window, Discoveries follows the viewed map. Use page arrows when there are more items.
+
+**Accuracy:** a creature's observed percentage is the fraction of readable single-source loot windows from *that identified creature type* in which the item appeared. It is NOT an official drop chance, an all-kills estimate, or valid for another monster. Mixed AoE loot and uncertain source IDs receive counts only. Unlooted or empty encounters aren't observed, so this remains a conditional sample of readable loot windows. No fake monster rates, no external database.
+
+**Prior history:** 1.10.0 manually watched items and their quantities are retained as older unsited records, but they cannot appear under invented zones. One character's discovery data is independent from another's, with bounded on-disk counters. Capacity limits are shown under `/chalk drops status`. The Session Journal now shows up to three top regions where its session loot was sampled.
+
+**Commands:** `/chalk drops status`, `/chalk drops on|off`, `/chalk drops map`, `/chalk drops map on|off`, `/chalk drops tooltip on|off` and `/chalk drops chance 5 20`.
+
 ## New in 1.10.0 — Global Appearance and DropSense
 
 Open **ChalkBox → Global Appearance**. Choose Charcoal / Midnight / Slate / Custom and a Gold / Teal / Neutral accent. The global background-strength slider adjusts ChalkBox-owned backgrounds across The Bar, camp toasts, Combat Meter and Session Journal. Individual opacity controls still work, and Blizzard's UI is left alone. Custom RGB channel sliders set an exact background color.
 
-**DropSense is off until you enable it.** Go to **ChalkBox → DropSense**, turn on personal loot-window sampling, and watch an item ID or linked item. `/chalk drops on` and `/chalk drops watch [item]` work too. Observations survive logout; up to 32 item watches are supported. With loot-window tooltips enabled, hovering a watched item *in a loot window* shows hits across readably opened windows and a conservative 95% interval. ChalkBox does not count unseen kills, confirm which mob should drop an item, or know server-authoritative chances. Observations across mixed sources are **not** a specific mob's drop probability. The calculator computes `100 × [1-(1-p/100)^n]` for a **user-supplied** per-attempt percent and independent attempt count; it's not an inferred server rate. Use `/chalk drops chance 5 20` or the settings calculator.
+**Original 1.10.0 behavior (replaced in 1.11.0): DropSense was off until enabled.** Go to **ChalkBox → DropSense**, turn on personal loot-window sampling, and watch an item ID or linked item. `/chalk drops on` and `/chalk drops watch [item]` work too. Observations survive logout; up to 32 item watches are supported. With loot-window tooltips enabled, hovering a watched item *in a loot window* shows hits across readably opened windows and a conservative 95% interval. ChalkBox does not count unseen kills, confirm which mob should drop an item, or know server-authoritative chances. Observations across mixed sources are **not** a specific mob's drop probability. The calculator computes `100 × [1-(1-p/100)^n]` for a **user-supplied** per-attempt percent and independent attempt count; it's not an inferred server rate. Use `/chalk drops chance 5 20` or the settings calculator.
 
 **Session Journal**: `/chalk session` opens a separate recap window; `/chalk session last` opens the last saved one. It saves the current plus 20 previous adventures per character, showing observed XP, levels, net gold, quest completions, logged loot (only when DropSense is on), camp notices and confirmed repair quotes. It never guesses combat kills or retroactively imports old logins.
 

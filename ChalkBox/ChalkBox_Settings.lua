@@ -124,7 +124,7 @@ local function MakeHome()
         {"prep","Adventure Prep","Camp and class care reminders"},
         {"meter","Combat Meter","DPS, healing and party reports"},
         {"theme","Global Appearance","One color theme for ChalkBox panels"},
-        {"drops","DropSense","Personal drop counts and chance calculator"},
+        {"drops","DropSense","Automatic zone loot discoveries and calculator"},
         {"journal","Session Journal","Current and previous adventures"},
     }
     for index,entry in ipairs(items) do
@@ -201,67 +201,73 @@ end
 -- Never label a player sample as Blizzard's server drop rate.
 local function MakeDrops()
     local panel=Panel("DropSense",
-        "Optional personal sample journal. Counts opened loot windows, NOT kills or official odds.")
-    Toggle(panel,"Track items I choose (OFF by default)",nil,-106,
+        "Every observed loot-window item is recorded locally. Map Discoveries never invents official rates.")
+    Toggle(panel,"Automatically record every item (recommended)",nil,-105,
         function()
-            return ChalkBox_DropOptions and ChalkBox_DropOptions().enabled or false
+            local s=ChalkBox_DropOptions and ChalkBox_DropOptions()
+            return s and s.enabled==true
         end,
         function(on)
             if ChalkBox_DropSetOption then ChalkBox_DropSetOption("enabled",on) end
         end)
-    Toggle(panel,"Add observed odds to item tooltips in LOOT WINDOWS only",
-        nil,-154,
+    Toggle(panel,"Show personal observations in native loot-window tooltips",
+        nil,-146,
         function()
-            return ChalkBox_DropOptions and ChalkBox_DropOptions().tooltip or false
+            local s=ChalkBox_DropOptions and ChalkBox_DropOptions()
+            return s and s.tooltip==true
         end,
         function(on)
             if ChalkBox_DropSetOption then ChalkBox_DropSetOption("tooltip",on) end
         end)
-    Label(panel,"Watch an item ID or paste an item link:","GameFontNormal",
-        28,-203,500)
-    local item=CreateFrame("EditBox",nil,panel,"InputBoxTemplate")
-    item:SetSize(286,24);item:SetPoint("TOPLEFT",panel,"TOPLEFT",31,-222)
-    item:SetAutoFocus(false)
-    local function Watch(remove)
-        if not ChalkBox_DropWatch then return end
-        local val=item:GetText() or ""
-        if remove then
-            if ChalkBox_DropUnwatch then ChalkBox_DropUnwatch(val) end
-        else
-            ChalkBox_DropWatch(val,val:match("%[([^%]]+)%]"))
-        end
-        if panel.OnRefresh then panel.OnRefresh() end
-    end
-    Button(panel,"Watch",330,-223,85,function() Watch(false) end)
-    Button(panel,"Remove",419,-223,85,function() Watch(true) end)
-    local summary=Label(panel,"","GameFontHighlightSmall",28,-260,490)
+    Toggle(panel,"Show Discoveries button on the World Map",
+        nil,-187,
+        function()
+            local s=ChalkBox_DropOptions and ChalkBox_DropOptions()
+            return s and s.mapButton==true
+        end,
+        function(on)
+            if ChalkBox_DropSetOption then ChalkBox_DropSetOption("mapButton",on) end
+        end)
+    local status=Label(panel,"","GameFontHighlightSmall",28,-236,500)
     panel:AddRefresh(function()
         local s=ChalkBox_DropOptions and ChalkBox_DropOptions() or {}
-        summary:SetText((s.watched or 0).." watched items / "..
-            (s.windows or 0).." sampled loot windows. Forever rates unverified.")
+        status:SetText(("%d unique items · %d loot windows · %d mapped areas"):format(
+            s.watched or 0,s.windows or 0,s.areas or 0))
     end)
-    Label(panel,"DROP CHANCE CALCULATOR","GameFontNormalLarge",28,-292,455)
-    Label(panel,"Known chance %","GameFontHighlightSmall",28,-330,140)
+    Button(panel,"Open Map Discoveries",28,-267,224,function()
+        if ChalkBox_OpenMapDiscoveries then
+            ChalkBox_OpenMapDiscoveries()
+        end
+    end)
+    Button(panel,"Journal Status",270,-267,224,function()
+        if ChalkBox_DropCommand then ChalkBox_DropCommand("status") end
+    end)
+    Label(panel,"DROP CHANCE CALCULATOR","GameFontNormalLarge",28,-310,455)
+    Label(panel,"Your reference %","GameFontHighlightSmall",28,-349,150)
     local rate=CreateFrame("EditBox",nil,panel,"InputBoxTemplate")
-    rate:SetSize(86,24);rate:SetPoint("TOPLEFT",panel,"TOPLEFT",151,-322)
+    rate:SetSize(76,24)
+    rate:SetPoint("TOPLEFT",panel,"TOPLEFT",171,-341)
     rate:SetAutoFocus(false)
-    Label(panel,"Attempts","GameFontHighlightSmall",255,-330,75)
+    Label(panel,"Attempts","GameFontHighlightSmall",265,-349,67)
     local attempts=CreateFrame("EditBox",nil,panel,"InputBoxTemplate")
-    attempts:SetSize(69,24);attempts:SetPoint("TOPLEFT",panel,"TOPLEFT",336,-322)
+    attempts:SetSize(62,24)
+    attempts:SetPoint("TOPLEFT",panel,"TOPLEFT",334,-341)
     attempts:SetAutoFocus(false)
-    local feedback=Label(panel,"Use a rate you trust; ChalkBox has no verified server table.",
-        "GameFontHighlightSmall",28,-398,490)
-    Button(panel,"Calculate",412,-321,107,function()
+    local feedback=Label(panel,
+        "Rates are user-supplied; actual Forever drop probabilities are unknown.",
+        "GameFontHighlightSmall",28,-395,495)
+    Button(panel,"Calculate",411,-340,107,function()
         local result=ChalkBox_DropCalculate and
             ChalkBox_DropCalculate(rate:GetText(),attempts:GetText())
         feedback:SetText(result and
-            (("%.2f%% chance of at least one drop"):format(result)..
-            " in "..attempts:GetText().." independent attempts.") or
-            "Enter a rate 0–100 and a whole number of attempts.")
+            (("%.2f%% chance in %s independent tries"):format(
+                result,attempts:GetText())) or
+            "Enter a rate from 0 to 100 and a whole number of attempts.")
     end)
-    Button(panel,"Drop Journal Status",28,-359,210,function()
-        if ChalkBox_DropCommand then ChalkBox_DropCommand("status") end
-    end)
+    Label(panel,"Outdoor loot and dungeons remain separate. Percentages require",
+        "GameFontHighlightSmall",28,-416,495)
+    Label(panel,"a known creature source; mixed-source loot shows counts only.",
+        "GameFontHighlightSmall",28,-431,495)
     return panel
 end
 
