@@ -1,19 +1,15 @@
-# ChalkBox 2.0.4 — Discoveries layering and smoother bags
+# ChalkBox 2.0.5 — Discoveries journal text and layout
 
-## Discoveries journal
-The standalone window now draws over Blizzard's Map & Quest Log as one complete panel. Its native backdrop, solid textured background and border remain visible with the shared theme, and its controls remain on the same foreground layer. This targets the floating-button display reported in WoW Forever after 2.0.3.
+The Discoveries journal now finishes building all of its controls and text in WoW Forever. Eight section headings were being sent to a function using the wrong argument order, passing a heading as a font style and a style name as an x-coordinate. This could interrupt construction halfway through, leaving a frame with only the first few buttons visible.
 
-## Bag and HUD responsiveness
-- Combine rapid bag-item redraw hooks and inventory events into fewer learned-reagent highlight passes.
-- Avoid repeating learned-recipe searches for identical item stacks during a single bag pass.
-- Coalesce bag and item-cache event bursts on the TrailBar.
-- Cache optional full-bag vendor valuation briefly instead of rescanning it on every fast HUD event.
+- Corrected the heading call sites, with a dedicated function that assigns the label text, proper Blizzard font template and valid numeric coordinates.
+- Set explicit, readable text colors and subtle shadows for Discoveries text.
+- Added stricter Lua regression tests that fail on invalid font names, wrong coordinates, missing section labels, or a partially initialized journal.
+- Preserved the higher-layer journal background and bag performance improvements from 2.0.4.
+- No changes to stored loot discoveries, macro recipes, profile preferences or other saved data.
 
-No SavedVariables reset, no loss of loot history, and no change to existing settings or module behavior outside these fixes.
+**Testing:** Automated Lua 5.1 tests and addon packaging run in GitHub Actions. A final visual check in the actual WoW Forever client is still required. Open the world map, click Discoveries and confirm the entire journal—including headings, item rows, dropdowns and footer—is visible.
 
-## Testing and distribution
-GitHub Actions runs the Lua 5.1 regression suite plus addon/media package validation. Please verify opening separate and combined bags, map overlays, Discoveries search/filtering, and UI scale changes in the real WoW Forever client.
-
-Upload **ChalkBox-2.0.4.zip** as the game addon. The separate **ChalkBox-CurseForge-Media-2.0.4.zip** is for the listing's images and copy.
+The playable game download is **ChalkBox-2.0.5.zip**. **ChalkBox-CurseForge-Media-2.0.5.zip** is only for CurseForge listing art and documentation.
 
 Repository: https://github.com/detok/ChalkBox
