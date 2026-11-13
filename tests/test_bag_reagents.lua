@@ -83,4 +83,21 @@ idForSlot[2]="SECRET"
 ChalkBox_BagHighlightsRefresh()
 assert(not buttons[2].ChalkBoxReagentBorder[1].shown,
     "secret item IDs are never classified, formatted, or highlighted")
-print("PASS: native bag known-recipe markers, false-positive prevention, opacity, live refresh and secret IDs")
+-- Some legacy scans identify learned reagents only by localized item name.
+local original=ChalkBox_LearnedRecipeUses
+_G.C_Item={GetItemInfo=function(itemID)
+    return itemID==103 and "Legacy Cloth" or nil
+end}
+_G.ChalkBox_LearnedRecipeUses=function(itemID,name)
+    if itemID==103 and name=="Legacy Cloth" then
+        return {{recipe="Legacy Bandage",profession="First Aid"}}
+    end
+    return original(itemID,name)
+end
+ChalkBox_BagHighlightsRefresh()
+assert(buttons[3].ChalkBoxReagentBorder
+    and buttons[3].ChalkBoxReagentBorder[1].shown,
+    "name-only learned recipes get outlines only when item info corroborates them")
+_G.C_Item=nil
+_G.ChalkBox_LearnedRecipeUses=original
+print("PASS: native learned-only bag markers, legacy name lookup, opacity, refresh and secret IDs")
