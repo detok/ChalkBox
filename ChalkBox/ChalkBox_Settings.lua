@@ -126,6 +126,7 @@ local function MakeHome()
         {"theme","Global Appearance","One color theme for ChalkBox panels"},
         {"drops","DropSense","Automatic zone loot discoveries and calculator"},
         {"journal","Session Journal","Current and previous adventures"},
+        {"forge","MacroForge","Spellbook-aware macro creation"},
     }
     for index,entry in ipairs(items) do
         local row=math.floor((index-1)/2)
@@ -136,8 +137,6 @@ local function MakeHome()
         Button(panel,entry[2],x,y,228,function() Activate(pageKey) end)
         Label(panel,entry[3],"GameFontHighlightSmall",x+4,y-29,228)
     end
-    Label(panel,"/chalk opens options. All modules remain optional.",
-        "GameFontHighlightSmall",28,-439,505)
     return panel
 end
 
@@ -299,6 +298,52 @@ local function MakeJournal()
         "GameFontHighlightSmall",28,-328,500)
     Label(panel,"History is stored for this character and survives future logins.",
         "GameFontHighlightSmall",28,-355,500)
+    return panel
+end
+
+-- MacroForge lives quietly in AddOns options; the large spellbook builder
+-- opens only after a user asks for it. Never runs secure actions on its own.
+local function MakeForge()
+    local panel=Panel("MacroForge",
+        "Build, validate and save character-aware macros with the abilities you know.")
+    Label(panel,"YOUR SPELLBOOK, YOUR BUTTONS","GameFontNormalLarge",
+        27,-110,505)
+    Label(panel,"One purpose, one learned spell per press. Choose modifier",
+        "GameFontHighlightSmall",27,-145,497)
+    Label(panel,"branches or a deliberate /castsequence for repeat presses.",
+        "GameFontHighlightSmall",27,-165,497)
+    Button(panel,"Open MacroForge",28,-208,244,function()
+        if type(ChalkBox_OpenMacroForge)=="function" then
+            ChalkBox_OpenMacroForge()
+        else Note("MacroForge UI could not be loaded in this client.") end
+    end)
+    Button(panel,"Rescan Spellbook",287,-208,213,function()
+        if type(ChalkBox_ForgeScan)=="function" then
+            ChalkBox_ForgeScan(true)
+        end
+        if panel.OnRefresh then panel.OnRefresh() end
+        if type(ChalkBox_MacroForgeRefresh)=="function" then
+            ChalkBox_MacroForgeRefresh()
+        end
+    end)
+    local scan=Label(panel,"","GameFontHighlight",28,-254,500)
+    panel:AddRefresh(function()
+        local s=type(ChalkBox_ForgeStatus)=="function"
+            and ChalkBox_ForgeStatus() or nil
+        scan:SetText(s and (s.class.."  ·  "..s.spells..
+            " learned active spells  ·  "..s.saved.." saved builds") or
+            "Spellbook information unavailable.")
+    end)
+    Label(panel,"NO AUTOMATIC COMBAT OR HIDDEN MACRO CHANGES",
+        "GameFontNormal",27,-307,499)
+    Label(panel,"MacroForge cannot bypass GCDs, skip cooldowns,",
+        "GameFontHighlightSmall",27,-335,495)
+    Label(panel,"or execute a rotation from one click. All macro text is",
+        "GameFontHighlightSmall",27,-355,495)
+    Label(panel,"generated visibly and checked before copying.",
+        "GameFontHighlightSmall",27,-375,495)
+    Label(panel,"Copy with Ctrl+C, or explicitly create a NEW macro outside combat.",
+        "GameFontHighlightSmall",27,-415,505)
     return panel
 end
 
@@ -1136,6 +1181,7 @@ local function Register()
     panels.theme = MakeTheme()
     panels.drops = MakeDrops()
     panels.journal = MakeJournal()
+    panels.forge = MakeForge()
     panels.loot = MakeLoot()
     panels.loothighlight = MakeLootAppearance()
     panels.quests = MakeQuests()
@@ -1158,6 +1204,7 @@ local function Register()
                 {"theme", "Global Appearance"},
                 {"drops", "DropSense"},
                 {"journal", "Session Journal"},
+                {"forge", "MacroForge"},
                 {"loot", "LootSense"},
                 {"loothighlight", "LootSense Appearance"},
                 {"quests", "QuestSense"},
@@ -1188,6 +1235,7 @@ local function Register()
             {"theme", "Global Appearance"},
             {"drops", "DropSense"},
             {"journal", "Session Journal"},
+            {"forge", "MacroForge"},
             {"loot", "LootSense"},
                 {"loothighlight", "LootSense Appearance"},
             {"quests", "QuestSense"},

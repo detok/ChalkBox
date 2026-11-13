@@ -34,6 +34,21 @@ Go to **ChalkBox → LootSense Appearance** to toggle subtle green reagent inset
 If no item glows, open a crafting window until the recipe list loads, use `/chalk loot scan`, and then **Refresh Bag Markers**. If the client doesn't expose its native bag buttons, there is no safe visual overlay to paint; tooltips still work.
 
 
+## New in 1.12.0 — MacroForge
+
+Open **ChalkBox → MacroForge → Open MacroForge** or type `/chalk macro`. The wizard reads active spells *actually present in the character's spellbook*; no external AI, rotation addon or internet lookup is required.
+
+1. Choose **Engage Target**, **Burst + Trinkets**, **Modifier Keys**, **Manual Sequence**, or **Mouseover Utility**.
+2. Click **Main spell**, **Shift**, **Alt**, **Ctrl**, or a sequence step, then click a learned spell from the searchable spellbook list. All template starting values are suggestions and can be changed.
+3. Optionally enable **Pet attack**, **Auto Shot**, **Trinket 13/14**, or mouseover/friendly targeting. These are attempts—not a guarantee the selected on-use trinket, spell or global cooldown can activate.
+4. Check **READY TO COPY**, warnings and the **255-byte** macro length. **Select Text → Ctrl+C**, open WoW's `/macro`, and paste the generated text.
+5. Alternatively, click **Install New** outside combat to create a **new character-specific native macro**. This requires compatible macro APIs and available slots; the addon refuses duplicate names and will not edit existing macros.
+6. Use **Save** to retain up to 16 recipes per character; **Load** rechecks your available spells after respec/retraining. **Delete** requires two clicks and only deletes a MacroForge recipe, not an installed WoW macro.
+
+`/chalk forge rescan` refreshes the spellbook. `/chalk forge status` prints the readable learned spell and saved build counts.
+
+**Honest limitations:** a macro can't detect cooldown readiness, wait for a proc, cast multiple GCD-locked abilities on one keypress, or run a rotation without the player pressing the button. `/castsequence` can stall; you have to press again and may need to reset. Equipped trinket slots 13/14 may be passive, empty or unavailable. See [design and live-client acceptance checklist](MACROFORGE_DESIGN.md). No new addon installs.
+
 ## New in 1.11.0 — Automatic drop discoveries on the world map
 
 You don't have to select items individually anymore. **ChalkBox records every item it can read in an opened loot window** while DropSense is on, storing its item quantity and the associated outdoor zone or dungeon when known. Tracking defaults to on for brand-new installations, but **your earlier off preference is preserved** when updating. Go to **ChalkBox → DropSense** for:

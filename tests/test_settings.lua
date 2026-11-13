@@ -50,6 +50,17 @@ _G.ChalkBox_DropCalculate=function(p,n)
     p=tonumber(p);n=tonumber(n)
     if p and n then return 100*(1-(1-p/100)^n) end
 end
+local openedForge=0
+local forgeRescanned=0
+_G.ChalkBox_OpenMacroForge=function() openedForge=openedForge+1;return true end
+_G.ChalkBox_ForgeScan=function(force)
+    if force then forgeRescanned=forgeRescanned+1 end
+    return {{name="Hunter's Mark",id=1130}}
+end
+_G.ChalkBox_ForgeStatus=function()
+    return {class="HUNTER",spells=1,saved=2}
+end
+_G.ChalkBox_MacroForgeRefresh=function() end
 local defaults={rate=true,eta=true,time=true,gold=true,bags=true,
     gear=true,rested=true,latency=false,pet=true,bagvalue=false,repair=true}
 _G.ChalkBoxDB.barStats={}
@@ -293,7 +304,7 @@ assert(loadfile("ChalkBox_Settings.lua"))("ChalkBox")
 local loader=frames[#frames]
 assert(loader.event=="PLAYER_LOGIN","must register settings when the client is ready")
 loader.script.OnEvent(loader,"PLAYER_LOGIN")
-assert(#registered==17,"native pages include Global Appearance, DropSense, Session Journal and existing pages")
+assert(#registered==18,"native pages include MacroForge and all original categories")
 assert(categories.home.name=="ChalkBox")
 ChalkBox_OpenSettings()
 assert(opened[#opened]==101,"default /chalk must open native settings")
@@ -322,6 +333,13 @@ local function FindCheckByParentTitle(title)
     end end
     return checks
 end
+assert(categories["MacroForge"],"MacroForge is a native but unobtrusive settings category")
+ChalkBox_OpenSettings("forge")
+assert(opened[#opened]==categories["MacroForge"].ID)
+ControlIn("MacroForge","Open MacroForge"):Click()
+assert(openedForge==1,"standalone builder opens only on explicit settings click")
+ControlIn("MacroForge","Rescan Spellbook"):Click()
+assert(forgeRescanned==1,"explicit rescan refreshes available abilities")
 local dropChecks=FindCheckByParentTitle("DropSense")
 assert(#dropChecks==3,
     "DropSense now has automatic capture, tooltip and map button toggles")

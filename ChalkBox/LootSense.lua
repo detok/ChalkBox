@@ -268,6 +268,10 @@ SlashCmdList.CHALKBOX = function(input)
         if tonumber(learnedCount)==0 then
             Note("Open a crafting window, let its recipe list load, and /chalk loot scan. Then re-hover the item.")
         end
+    elseif command=="macro" or command=="macros" or command=="forge" then
+        if type(ChalkBox_ForgeCommand)=="function" then
+            ChalkBox_ForgeCommand(argument)
+        else Note("MacroForge unavailable in this client.") end
     elseif command=="drops" or command=="drop" then
         if type(ChalkBox_DropCommand)=="function" then
             ChalkBox_DropCommand(argument)
@@ -339,6 +343,7 @@ SlashCmdList.CHALKBOX = function(input)
         Note("Open settings: /chalk | /chalk settings. Commands: keep [item] | forget [item] | list | loot on/off|status|scan | bags | meter | quests | bar | emota | prep | guard | help")
         Note("LootSense shows quest protections and your character's possible/known profession uses. No automatic selling.")
         Note("New: /chalk drops status|watch [item]|chance <rate> <tries> | /chalk session | /chalk theme")
+        Note("New: /chalk macro opens MacroForge; /chalk forge rescan refreshes your spellbook.")
     end
 end
 

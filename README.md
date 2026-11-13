@@ -13,7 +13,7 @@
 [![MIT](https://img.shields.io/badge/license-MIT-67C6B7.svg)](LICENSE)
 [![Forever](https://img.shields.io/badge/WoW-Forever-203342.svg)](https://github.com/detok/ChalkBox)
 
-### [⬇ Download ChalkBox 1.11.0](https://github.com/detok/ChalkBox/releases/download/v1.11.0/ChalkBox-1.11.0.zip)
+### [⬇ Download ChalkBox 1.12.0](https://github.com/detok/ChalkBox/releases/download/v1.12.0/ChalkBox-1.12.0.zip)
 
 [**All GitHub Releases**](https://github.com/detok/ChalkBox/releases) · [**Install Guide**](#-install-in-one-minute) · [**Features**](#-what-chalkbox-does) · [**Help & Bugs**](https://github.com/detok/ChalkBox/issues)
 
@@ -126,6 +126,18 @@ The strip still supports **top / bottom / hidden**, 18px **Reserve screen space*
 
 If separate bags stack too high, **ChalkBox → The Bar** now has a proper **vertical position slider**: **Blizzard's original anchor is at the midpoint (0)**. Drag the thumb **down** to lower bags (+120 maximum), or **up** to lift bags (−120 minimum). **Reset Bags** returns to Blizzard's default instantly. Combined bags, slots and sorting remain untouched. Slash alternatives: `/chalk bags offset 40` (down), `/chalk bags offset -35` (up), `/chalk bags reset`.
 
+### New in 1.12.0 — MacroForge: your spellbook, your buttons
+
+**MacroForge is a real in-game macro wizard, not AI or a rotation bot.** Open **ChalkBox → MacroForge → Open MacroForge** (or `/chalk macro`) for a dedicated, movable builder. It reads your character's **learned active spellbook spells** and lets you pick a purpose: **Engage Target**, **Burst + Trinkets**, **Modifier Keys**, **Manual Sequence**, or **Mouseover Utility**.
+
+Browse abilities with their game-provided icons, choose the spell for the primary press and Shift/Alt/Ctrl or subsequent sequence presses, and enable explicit pet attack, Auto Shot, trinket 13/14 attempts and mouseover conditions. Templates propose relevant learned spells (including Hunter's Mark, Serpent Sting and Rapid Fire for a Hunter), but never silently add unlearned abilities.
+
+**Honest validation:** byte counter limits macros to 255 bytes; warnings explain why trinkets may fail, why a castsequence can stall, and why a single keypress cannot bypass the GCD or automatically choose cooldowns/procs. Respeccing marks previously saved, unlearned spell choices invalid until you select new ones.
+
+**Copy, save or install:** click **Select Text**, press **Ctrl+C**, and paste into WoW's native `/macro`. Save up to 16 named character-specific configurations. **Install New** is an optional, explicit out-of-combat action creating a *new* character-specific WoW macro; it refuses to overwrite an existing name. MacroForge never casts abilities for you or runs in combat. No new addon dependency.
+
+Full feature notes and client testing checklist: [MacroForge design](docs/MACROFORGE_DESIGN.md).
+
 ### New in 1.11.0 — Personal Loot Discoveries on your world map
 
 **DropSense now automatically records every readable item in native loot windows**—no manual 32-item watchlist. Discoveries are saved **per character**, by outdoor zone and by observed instance, with up to 5,000 distinct item IDs, bounded per-area storage, and no external data or downloads. On a fresh installation, sampling starts enabled. If you disabled sampling in 1.10.0, that preference remains off until you re-enable it under **ChalkBox → DropSense**.
@@ -213,7 +225,7 @@ That's included too:
 
 ## 🚀 Install in one minute
 
-**Direct download:** [**ChalkBox 1.11.0 ZIP**](https://github.com/detok/ChalkBox/releases/download/v1.11.0/ChalkBox-1.11.0.zip)  
+**Direct download:** [**ChalkBox 1.12.0 ZIP**](https://github.com/detok/ChalkBox/releases/download/v1.12.0/ChalkBox-1.12.0.zip)  
 **Newer versions:** [**GitHub Releases**](https://github.com/detok/ChalkBox/releases)
 
 1. Download **`ChalkBox-<version>.zip`** from GitHub Releases — *not* the GitHub “Source code” archives.
