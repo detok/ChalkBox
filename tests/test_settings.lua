@@ -3,7 +3,7 @@ local frames, widgets, printed = {}, {}, {}
 local registered, opened, categories = {}, {}, {}
 _G.UIParent={}
 _G.DEFAULT_CHAT_FRAME={AddMessage=function(_,str) printed[#printed+1]=str end}
-_G.ChalkBoxDB={lootAdvice=true,bar="top",barReserve=true,emota={auto=false,idleAuto=true,debug=false,idleVariety=false,contextual=true,jokeFrequency=50},guard={guild=true,duel=true,party=false,trade=false,channel=false},camp={enabled=true,toast=true,supplies=true,buffs=true,classCare=true,interval=45},keep={["id:11"]="Test Trinket"}}
+_G.ChalkBoxDB={lootAdvice=true,bar="top",barReserve=true,emota={auto=false,idleAuto=true,debug=false,idleVariety=false,contextual=true,jokeFrequency=50},guard={guild=true,duel=true,party=false,trade=false,channel=false},camp={enabled=true,toast=true,supplies=true,buffs=true,classCare=true,interval=45},meter={shown=true,locked=false,mode="dps",session="current",rows=8,scale=1},keep={["id:11"]="Test Trinket"}}
 _G.ChalkBoxZoneDB={enabled=true,managed={},muted={}}
 _G.SlashCmdList={CHALKBOX=function(command)
     if command:find("^keep ") then ChalkBoxDB.keep["name:new"] = "New Item" end
@@ -64,6 +64,19 @@ _G.ChalkBox_CampStatus=function()
 end
 _G.ChalkBox_CampChecklist=function() printed[#printed+1]="checklist" end
 _G.ChalkBox_CampTestToast=function() printed[#printed+1]="test toast";return true end
+_G.ChalkBox_MeterCommand=function(command)
+    local meter=ChalkBoxDB.meter
+    if command=="show" then meter.shown=true end
+    if command=="hide" then meter.shown=false end
+    if command=="lock" then meter.locked=true end
+    if command=="unlock" then meter.locked=false end
+    local rows=command:match("^rows (%d+)$")
+    local scale=command:match("^scale (%d+)$")
+    if rows then meter.rows=tonumber(rows) end
+    if scale then meter.scale=tonumber(scale)/100 end
+    printed[#printed+1]="meter "..command
+end
+_G.ChalkBox_MeterStatus=function() return ChalkBoxDB.meter end
 _G.ChalkBox_ProfessionSummary=function() return "Leatherworking",17 end
 _G.ChalkBox_ProfessionRefresh=function() printed[#printed+1]="profession refresh" end
 _G.ChalkBox_EmotaSetJokeFrequency=function(v) ChalkBoxDB.emota.jokeFrequency=math.floor(v+0.5) end
@@ -152,7 +165,7 @@ assert(loadfile("ChalkBox_Settings.lua"))("ChalkBox")
 local loader=frames[#frames]
 assert(loader.event=="PLAYER_LOGIN","must register settings when the client is ready")
 loader.script.OnEvent(loader,"PLAYER_LOGIN")
-assert(#registered==8,"one main options category and seven native subcategories")
+assert(#registered==9,"one main options category and eight native subcategories")
 assert(categories.home.name=="ChalkBox")
 ChalkBox_OpenSettings()
 assert(opened[#opened]==101,"default /chalk must open native settings")
@@ -270,4 +283,21 @@ assert(printed[#printed]=="test toast","native options preview must show reminde
 Control("Print Checklist"):Click()
 assert(printed[#printed]=="checklist")
 assert(categories["QuietGuard"].name=="QuietGuard" and categories["Adventure Prep"].name=="Adventure Prep")
-print("PASS: native settings, seven subpages, social protection, camp prep, screen reserve, race/class Emota and catalog")
+local meterChecks=FindCheckByParentTitle("Combat Meter")
+assert(#meterChecks==2,"meter has show and lock controls")
+categories["Combat Meter"].panel:Show()
+assert(meterChecks[1].checked and not meterChecks[2].checked)
+meterChecks[1]:Click(false)
+assert(not ChalkBoxDB.meter.shown,"show/hide toggle controls window")
+meterChecks[1]:Click(true)
+meterChecks[2]:Click(true)
+assert(ChalkBoxDB.meter.locked,"lock switch is active")
+Control("5 rows"):Click()
+assert(ChalkBoxDB.meter.rows==5)
+Control("115%"):Click()
+assert(ChalkBoxDB.meter.scale==1.15)
+Control("Reset Data..."):Click()
+assert(printed[#printed]=="meter reset","reset must request confirmation in the real module")
+Control("Show Window"):Click()
+assert(printed[#printed]=="meter show")
+print("PASS: native settings with eight subpages, combat meter controls, social protection, camp prep, TrailBar and Emota")

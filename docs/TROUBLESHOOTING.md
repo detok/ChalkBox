@@ -37,6 +37,17 @@ Do not leave an extra folder such as `ChalkBox-1.6.1/ChalkBox/` between `AddOns`
 
 A missing annotation doesn't mean an item is safe to sell. Keep important items manually with `/chalk keep [item]`.
 
+## Combat Meter is empty or not displaying
+
+1. Type **`/chalk meter show`** or use **Options → AddOns → ChalkBox → Combat Meter → Show compact DPS meter window**.
+2. Type **`/chalk meter status`**. It checks whether your client exposes Blizzard's native `C_DamageMeter`. This feature does **not** use the restricted combat log.
+3. Attack a target and let the built-in damage recording register a fight. Try the **DPS >** title button, or `/chalk meter dps`.
+4. Click **Fight >** to switch between current fight, last fight and overall data. If your current fight is empty, Last may contain the previous pull.
+5. If the game has its own meter visible, that is expected. ChalkBox does not disable it; use Blizzard's UI settings to hide the duplicate.
+6. If entries fail during combat but appear afterward, report your Forever client build and any Lua error. Combat values are protected and ChalkBox never calculates their contents in Lua.
+
+To return to its default position: **`/chalk meter position reset`**. A hidden window doesn't update and adds no permanent meter polling.
+
 ## TrailBar overlays other UI
 
 Run **`/chalk bar status`**. Try `/chalk bar reserve on`, change its top/bottom position, or `/chalk bar reserve off` if your custom UI needs the full viewport. Some addon or manually placed UI frames don't follow the screen reservation.

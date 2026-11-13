@@ -217,6 +217,12 @@ SlashCmdList.CHALKBOX = function(input)
         db.lootAdvice = (argument == "on")
         Note("Extra item advice: " .. (db.lootAdvice and "ON" or "OFF") ..
             ". Original quest warnings remain active.")
+    elseif command=="meter" or command=="dps" then
+        if type(ChalkBox_MeterCommand)=="function" then
+            ChalkBox_MeterCommand(argument)
+        else
+            Note("Combat Meter unavailable on this client.")
+        end
     elseif command == "quests" then
         if type(ChalkBox_QuestCommand) == "function" then
             ChalkBox_QuestCommand(argument)
@@ -257,7 +263,7 @@ SlashCmdList.CHALKBOX = function(input)
             Note("Personal protections (" .. #names .. "): " .. table.concat(names, ", "))
         end
     else
-        Note("Open settings: /chalk | /chalk settings. Commands: keep [item] | forget [item] | list | loot on/off|status|scan | quests | bar | emota | prep | guard | help")
+        Note("Open settings: /chalk | /chalk settings. Commands: keep [item] | forget [item] | list | loot on/off|status|scan | meter | quests | bar | emota | prep | guard | help")
         Note("LootSense shows quest protections and your character's possible/known profession uses. No automatic selling.")
     end
 end

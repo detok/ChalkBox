@@ -39,6 +39,20 @@ Forever camping has special uses beyond classic's cooking fire. CampSense can id
 
 On-screen notices use a small, nine-second toast that does not capture mouse input. Try `/chalk prep test`. In the **Adventure Prep** page, you can toggle the toast, supplies, buff checks and class reminders independently, or pick 20/45/90-minute general reminder spacing.
 
+## Combat Meter — DPS, damage and more
+
+The built-in ChalkBox Combat Meter is a **small window** that uses WoW Forever's native damage tracking. It's visible by default and does **not** need a second addon, internet access or a combat log.
+
+**At a glance:** each row shows a class-colored bar, the player name and a native damage/healing number. Your own row has a gold marker. The two title-bar buttons cycle:
+- Statistic: **DPS, Damage Done, HPS, Healing Done, Damage Taken, Interrupts**.
+- Scope: **Fight, Last, Overall**.
+
+**Move it:** drag the title bar. Lock it under `/chalk → Combat Meter` when you like its position. Show 5, 8 or 12 rows; choose 85, 100 or 115% size. Click **x** to hide; `/chalk meter` shows it again. `/chalk meter help` lists quick commands.
+
+**Reset is shared:** the Reset Data button confirms before calling Blizzard's reset API, because clearing sessions affects the built-in meter and other addons that use the same data. It does not run during combat.
+
+**Forever restriction:** ordinary combat-log data is inaccessible to addons. The C_DamageMeter data can be secret while fighting; ChalkBox displays these fields directly through game UI methods instead of trying to analyze/sort them. The game controls pet/source attribution and the meter may not be available on non-Forever clients. For deeper per-spell statistics, the game's own meter remains available.
+
 ## TrailBar
 
 A slim top/bottom strip shows adventuring metrics. Screen-space reservation is **on** by default. Move the strip in **TrailBar** options. Run `/chalk bar status` to check whether the reserved space was applied, or `/chalk bar reserve off` to disable it if another UI conflicts. Some custom frames or Blizzard Edit Mode layouts may ignore the parent inset.
