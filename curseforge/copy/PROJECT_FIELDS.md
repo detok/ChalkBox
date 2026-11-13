@@ -1,36 +1,37 @@
-# ChalkBox 2.0 — CurseForge project fields (ready to paste)
+# CurseForge project setup — ChalkBox
 
-**Status: listing copy prepared; a CurseForge project has not been submitted or approved.** 2.0.0 is a GitHub **prerelease/test build** until client QA confirms the map button and macro workflows.
+Use these values when creating the project. Check the current CurseForge upload form for supported game versions before submitting anything.
 
-| Field | Recommended value |
+| Field | Value |
 | --- | --- |
-| Project name | **ChalkBox** |
-| Short summary | **An all-in-one WoW Forever companion: smarter loot, map discoveries, macro building, quests, The Bar, combat tools and adventure history.** |
-| Alternate shorter summary | **Your WoW Forever adventure toolkit—one addon, smarter loot, macros, quests, stats and map discoveries.** |
+| Name | ChalkBox |
+| Author / byline | Detok Whitemaine |
+| Summary | A WoW Forever addon for loot discoveries, macros, quests, camping, combat stats and a customizable HUD. |
+| Alternate shorter summary | Loot, macros, quests and adventure tools for WoW Forever. |
 | Game | World of Warcraft |
-| Flavor | **Forever** only; recheck the live upload form |
-| Category candidates | Map & Minimap; Inventory; Quests; Combat; Miscellaneous. Select only categories the live form permits and that fit. |
-| License | MIT (retain bundled dependency notices) |
+| Game version | **Select only a client version you have tested.** WoW Forever may not be offered as a supported flavor. |
+| Categories | Choose relevant options offered by the portal (for example, Inventory, Map, Quests or Utility). |
+| License | MIT, with bundled library licenses preserved |
 | Source | https://github.com/detok/ChalkBox |
 | Issues | https://github.com/detok/ChalkBox/issues |
-| Changelog | Use `docs/RELEASE_NOTES.md` for release 2.0.0 |
-| File to upload | `ChalkBox-2.0.1.zip` **from the GitHub Releases asset**, not Source code ZIP |
-| Release type | **Beta / prerelease** until real client QA passes |
-| Author | Detok Whitemaine |
-| Website | Leave blank unless a distinct verified project site exists |
-| CurseForge project URL | **Not created/verified. Never invent one.** |
+| Description | PROJECT_DESCRIPTION.md |
+| File changelog | FILE_CHANGELOG_2.0.2.md |
+| File upload | **ChalkBox-2.0.2.zip** from GitHub Releases |
+| Project avatar | **Artwork/PNG/Upload-Ready/Project-Icon-512.png** from the separate media kit |
+| Release type | Beta/test until current-client acceptance tests are complete |
 
-## Main launch image
+**Do not upload** the CurseForge media ZIP as the game file. It contains listing text and images, not a loadable addon directory.
 
-Use the original 512px ChalkBox box-and-spark icon and hero/banner artwork in `curseforge/artwork/` (SVG sources). Export an accepted PNG for the portal, verify its exact current size and file limits, and **never upload the illustrative feature grid as an in-game screenshot**.
+**The avatar is a 512×512 original design.** The media kit also includes SVG masters and promotional PNGs. Editorial concept images are not gameplay screenshots.
 
-## Suggested project opening
+## GitHub metadata
 
-**Meet ChalkBox: the quiet adventure companion for World of Warcraft: Forever.** It remembers your loot discoveries, helps you build smarter macros, keeps the right information in The Bar, and adds the context you need without taking over Blizzard's UI.
+Recommended About description:
 
-## Metadata the GitHub owner should update manually
+> Quality-of-life tools for WoW Forever: MacroForge, DropSense, LootSense, The Bar, QuestSense, CampSense and session history.
 
-- **About → Description:** `The quiet WoW Forever companion: MacroForge, Map Discoveries, LootSense, The Bar, quest, combat, camp and session tools.`
-- **About → Website:** `https://github.com/detok/ChalkBox/releases`
-- **Topics:** `world-of-warcraft`, `wow-forever`, `wow-addon`, `macro-builder`, `lua`, `map`, `quality-of-life`, `quest-tracker`
-- **Settings → Social preview:** upload the original brand artwork PNG. GitHub README changes **do not** change this setting.
+Website: https://github.com/detok/ChalkBox/releases
+
+Suggested topics: world-of-warcraft, wow-addon, wow-forever, lua, macro-builder, quality-of-life.
+
+**Project and CurseForge listing URLs:** only add a link after the destination actually exists and is approved.

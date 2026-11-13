@@ -1,40 +1,34 @@
-# ChalkBox 2.0 — command reference
-
-Commands operate inside the **one ChalkBox addon**.
+# ChalkBox commands — 2.0.2
 
 | Command | Action |
 | --- | --- |
-| `/chalk`, `/cb` | Open ChalkBox settings |
-| `/chalk macro` | Open MacroForge wizard |
-| `/chalk forge rescan` | Refresh learned spellbook abilities |
-| `/chalk forge status` | Current MacroForge scan/saved-build status |
-| `/chalk drops map` | Open Discoveries independent of map button |
-| `/chalk drops map status` | Diagnose map frame/button/visibility |
-| `/chalk drops map reset` | Return the dragged map button to its default location |
-| `/chalk drops map on` / `off` | Show/hide map button |
-| `/chalk drops on` / `off` | Start/stop personal loot-window recording |
-| `/chalk drops status` | Inspect tracked items, sampled windows and mapped zones |
-| `/chalk drops tooltip on` / `off` | Show/hide observed-loot notes in native loot-window tooltips |
-| `/chalk drops chance 5 20` | Example probability calculator for a **user-supplied** 5% independent chance across 20 tries |
-| `/chalk update` | Show locally installed ChalkBox version and a real GitHub Releases link |
-| `/chalk session` | View this session |
-| `/chalk session last` | View previous saved session |
-| `/chalk loot status` | LootSense, profession knowledge and read API status |
-| `/chalk loot scan` | Refresh learned-recipe knowledge after opening a crafting window |
-| `/chalk keep [item]` / `forget [item]` | Add/remove a personal KEEP protection |
-| `/chalk bar status` | Inspect The Bar |
-| `/chalk bar stat bagvalue on` | Enable bag vendor resale module |
-| `/chalk bar bagvalue junk` / `total` | Flip gray-junk vs all equipped bag contents |
-| `/chalk bar stat repair on` / `off` | Repair module visibility |
-| `/chalk bar repair status` | Inspect repair learning samples |
-| `/chalk bar repair reset` | Clear **this character's** learned repair sample history |
-| `/chalk quests status` | Show QuestSense status |
-| `/chalk quests refresh` | Queue native quest-watch refresh |
-| `/chalk prep` | Inspect camp state |
-| `/chalk prep test` | Preview the camp reminder toast |
-| `/chalk meter status` | Inspect meter availability |
-| `/chalk meter print` | Manually print a supported combat summary to normal PARTY chat |
-| `/chalk theme` | Global Appearance settings |
-| `/chalk help` | In-game help |
+| /chalk or /cb | Open the main settings menu |
+| /chalk macro | Open MacroForge |
+| /chalk forge rescan | Refresh your learned spells |
+| /chalk drops map | Open the Discoveries window |
+| /chalk drops map reset | Reset the draggable world-map button |
+| /chalk drops map status | Show map button and attachment diagnostics |
+| /chalk drops status | Check personal loot recording |
+| /chalk drops on or off | Turn loot-window sampling on or off |
+| /chalk drops chance 5 20 | Calculate a 5% supplied chance across 20 independent tries |
+| /chalk session | Current Session Journal |
+| /chalk session last | Previous saved session |
+| /chalk loot status | LootSense and profession status |
+| /chalk keep [item] | Protect an item from generic sale suggestions |
+| /chalk forget [item] | Remove a personal KEEP protection |
+| /chalk bar status | Check The Bar |
+| /chalk bar stat bagvalue on | Enable bag resale value |
+| /chalk bar stat repair on | Enable repair cost display |
+| /chalk bar repair status | Inspect repair learning |
+| /chalk quests status | Check QuestSense |
+| /chalk prep | Check camping reminders |
+| /chalk prep test | Preview the reminder toast |
+| /chalk meter show | Open the optional combat meter |
+| /chalk meter hide | Hide the optional meter |
+| /chalk meter print | Manually send a supported post-fight summary to PARTY |
+| /chalk theme | Open Global Appearance |
+| /chalk update | Installed version and GitHub Releases link |
 
-**Note:** DropSense uses observed *loot windows*, not every kill. Server drop tables and exact per-mob loot chances are not exposed. MacroForge only designs macros: it does not automate rotations or bypass GCDs.
+Options → AddOns → ChalkBox provides the same controls without memorizing commands. Module-specific pages are nested in the native sidebar.
+
+DropSense percentages are observed loot-window frequencies, not official drop chances. MacroForge creates macros but doesn't automate combat.

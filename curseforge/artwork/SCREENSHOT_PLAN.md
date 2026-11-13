@@ -1,29 +1,19 @@
-# ChalkBox 2.0 — real Forever screenshot shot list
+# ChalkBox — screenshot checklist
 
-**No screenshot in this folder should be fabricated or presented as already verified in-game.** Existing `.svg` logo, banner, hero and feature grid are **editorial brand illustrations** only.
+These should be captured from **a real WoW Forever session** after installing the current test build. Existing SVG banners and the feature-grid artwork are illustrations, not screenshots.
 
-## Must-capture screenshots for a 2.0 launch
-
-| Priority | Capture | What it should truthfully show |
+| Priority | Screenshot | What to show |
 | --- | --- | --- |
-| P0 | **Discoveries on the world map** | Actual Forever world map with visible upper-left Discoveries button (verify after 2.0 fix). Keep the native quest markers visible. |
-| P0 | **Outdoor loot journal** | Populated Discoveries panel showing an area *personally sampled*; realistic source/counter captions. |
-| P0 | **MacroForge** | Spellbook-aware wizard with current learned abilities, selectable roles, generated text and meaningful warnings. No "one-click kill" claim. |
-| P1 | **LootSense + bag reagents** | Genuine item tooltip and learned-recipe ingredient inset; distinct possible-use language. |
-| P1 | **The Bar** | A clean in-client 18px bar with vendor/repair examples; optionally open a genuine right-click module menu. |
-| P1 | **Session Journal** | Saved player sessions and real regional loot summaries, with character/private data redacted if needed. |
-| P1 | **CampSense toast** | New compact reminder with actual camp state or a clearly labeled manual Preview / Move. |
-| P1 | **Global Appearance** | Native theme settings and the same panel in two visibly different supported palettes. |
-| P2 | **Compact combat meter / native PRINT** | Real client after a fight, no fictional numbers or automated reports. |
-| P2 | **QuestSense** | Native tracker with accepted quests; no invented waypoints or arrows. |
-| P2 | **DropSense dungeon tab** | Dungeon observations separated from outdoors *after actually testing a recorded dungeon*. |
+| High | **Settings navigation** | ChalkBox home page and an expanded parent module such as The Bar → Modules / Appearance |
+| High | **Map Discoveries** | Native map with the Discoveries button and readable loot list with area/source dropdowns |
+| High | **MacroForge** | Learned spells, generated macro preview and validation |
+| High | **The Bar** | Real 18px strip, with a right-click module menu if possible |
+| High | **LootSense** | Real item tooltip or learned-recipe bag highlight |
+| Medium | **Session Journal** | Legitimately recorded current or past session |
+| Medium | **CampSense** | Compact toast (label it as a preview when manually triggered) |
+| Medium | **Combat Meter** | Explicitly opened compact meter after a fight |
+| Medium | **Global Appearance** | Current color/opacity options and a themed module |
 
-## Capture rules
+Keep private chats, account data and names other than intentionally credited characters out of the captures. Crop for readability without inventing UI elements or numerical results.
 
-1. Only take screenshots in the **actual WoW Forever client** with the installed ChalkBox prerelease.
-2. Verify each shown feature works before uploading. Remove developer test fixtures/overlays.
-3. Avoid visible account details, private chat, identifying information or private combat logs.
-4. Capture in a readable window size (16:9 preferred). Crop unwanted desktop/browser edges, but **do not edit in nonexistent game data**.
-5. Use descriptive names e.g. `01-map-discoveries-forever.png`, `02-macroforge-spellbook.png`, `03-lootsense-item-insight.png`.
-6. Maintain captions: "observed drop frequency" ≠ server drop chance; "generated macro" ≠ a combat bot; "preview toast" ≠ an automatic in-combat event.
-7. When the gallery is ready, add screenshot links to README and the CurseForge listing. Until then the branded `chalkbox-feature-grid-1600x900.svg` remains an **illustration, not a screenshot**.
+The **ChalkBox-CurseForge-Media-2.0.2.zip** contains the separate original artwork and PNG exports. Upload the project icon as the avatar, not as an in-game screenshot. Retain a clear illustration label for the hero and feature-grid imagery.

@@ -1,5 +1,16 @@
 # Troubleshooting
 
+## 2.0.2: Settings navigation or Combat Meter
+
+**Nested pages:** Open Options → AddOns → ChalkBox. Select a module (for example, The Bar), then select its nested Modules or Appearance page. The home page has shortcuts to the primary modules. Saved options have not been reset or renamed.
+
+**DPS meter starts closed:** This is intentional. Use /chalk meter show or the Combat Meter settings page to open it. Hiding it doesn't reset Blizzard's recorded sessions.
+
+**Settings page won't open:** Try /chalk, then the parent page. Some Forever Settings builds do not automatically expand the parent when a nested page is opened directly; ChalkBox now opens its parent first.
+
+**CurseForge file confusion:** The playable file is ChalkBox-2.0.2.zip. ChalkBox-CurseForge-Media-2.0.2.zip contains artwork and listing copy; it is not an installable addon.
+
+
 These steps are safe and require no SavedVariables deletion or client reset.
 
 ## 2.0.1 — Discoveries button is visible, but the window or position isn't right

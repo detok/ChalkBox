@@ -7,6 +7,38 @@ local categories = {}
 local panels = {}
 local registered = false
 
+-- One navigation tree drives both modern Settings and Classic fallback.
+-- Existing keys stay stable so slash shortcuts and saved preferences work.
+local navigation = {
+    {key="loot", title="LootSense", children={
+        {key="loothighlight", title="Appearance"}}},
+    {key="drops", title="DropSense"},
+    {key="quests", title="QuestSense"},
+    {key="journal", title="Session Journal"},
+    {key="bar", title="The Bar", children={
+        {key="barstats", title="Modules"},
+        {key="barappearance", title="Appearance"}}},
+    {key="meter", title="Combat Meter"},
+    {key="forge", title="MacroForge"},
+    {key="prep", title="Adventure Prep", children={
+        {key="toast", title="Toast Appearance"}}},
+    {key="theme", title="Global Appearance"},
+    {key="emota", title="Emota", children={
+        {key="races", title="Race Behavior"},
+        {key="catalog", title="Emote Catalog"}}},
+    {key="guard", title="QuietGuard"},
+    {key="updates", title="Updates"},
+}
+local parentPage = {}
+local pageTitle = {}
+for _,entry in ipairs(navigation) do
+    pageTitle[entry.key]=entry.title
+    for _,child in ipairs(entry.children or {}) do
+        parentPage[child.key]=entry.key
+        pageTitle[child.key]=child.title
+    end
+end
+
 local function DB()
     return _G.ChalkBoxDB
 end
@@ -33,15 +65,19 @@ local function Panel(titleText, subtitle)
     panel:SetSize(560, 450)
     panel.name = titleText
     panel:Hide()
-    Label(panel, titleText, "GameFontNormalHuge", 24, -22, 500)
+    Label(panel, titleText, "GameFontNormalHuge", 24, -22, 395)
     Label(panel, subtitle, "GameFontHighlightSmall", 24, -59, 505)
     local line = panel:CreateTexture(nil, "ARTWORK")
     line:SetPoint("TOPLEFT", panel, "TOPLEFT", 24, -86)
     line:SetSize(495, 1)
-    line:SetColorTexture(0.74, 0.56, 0.31, 0.68)
     local callbacks = {}
     local function Refresh()
-        for _, callback in ipairs(callbacks) do callback() end
+        local r,g,b=0.74,0.56,0.31
+        if type(ChalkBox_ThemeAccent)=="function" then
+            r,g,b=ChalkBox_ThemeAccent()
+        end
+        line:SetColorTexture(r,g,b,0.65)
+        for _,callback in ipairs(callbacks) do callback() end
     end
     function panel:AddRefresh(callback)
         callbacks[#callbacks+1] = callback
@@ -50,6 +86,17 @@ local function Panel(titleText, subtitle)
     panel.OnCommit = function() end
     panel.OnDefault = function() end
     panel:SetScript("OnShow", Refresh)
+    if titleText ~= title then
+        local back=CreateFrame("Button",nil,panel,"UIPanelButtonTemplate")
+        back:SetSize(98,22)
+        back:SetPoint("TOPRIGHT",panel,"TOPRIGHT",-31,-21)
+        back:SetText("ChalkBox")
+        back:SetScript("OnClick",function()
+            if type(ChalkBox_OpenSettings)=="function" then
+                ChalkBox_OpenSettings("home")
+            end
+        end)
+    end
     return panel
 end
 
@@ -84,6 +131,15 @@ end
 local function Activate(key)
     local category = categories[key] or rootCategory
     if category and Settings and type(Settings.OpenToCategory) == "function" then
+        -- Some Forever builds don't expand a collapsed ancestor when opened
+        -- directly to a nested page. Open its module before selecting the page.
+        local parentKey=parentPage[key]
+        local parentCategory=parentKey and categories[parentKey]
+        if parentCategory then
+            local pid=parentCategory.GetID and parentCategory:GetID()
+                or parentCategory.ID
+            pcall(Settings.OpenToCategory,pid or parentCategory)
+        end
         local identifier = category.GetID and category:GetID() or category.ID
         Settings.OpenToCategory(identifier or category)
     elseif InterfaceOptionsFrame_OpenToCategory then
@@ -108,35 +164,32 @@ end
 
 local function MakeHome()
     local panel=Panel(title,
-        "Small, configurable tools for WoW Forever. Everything stays within native AddOns Options.")
-    Label(panel,"ADVENTURE TOOLS","GameFontNormalLarge",28,-103,390)
-    local items={
-        {"loot","LootSense","Item insights and personal keep list"},
-        {"loothighlight","LootSense Appearance","Verified reagent highlighting"},
-        {"quests","QuestSense","Native accepted-quest watches"},
-        {"bar","The Bar","Bar position and bag correction"},
-        {"barstats","The Bar Stats","Stats, toggles and presets"},
-        {"barappearance","The Bar Appearance","Drag layout and opacity"},
-        {"emota","Emota","Automatic emote personality"},
-        {"races","Emota Race Behavior","Racial flavor and live presets"},
-        {"catalog","Emote Catalog","Emotes and individual permissions"},
-        {"guard","QuietGuard","Invitation controls"},
-        {"prep","Adventure Prep","Camp and class care reminders"},
-        {"meter","Combat Meter","DPS, healing and party reports"},
-        {"theme","Global Appearance","One color theme for ChalkBox panels"},
-        {"drops","DropSense","Automatic zone loot discoveries and calculator"},
-        {"journal","Session Journal","Current and previous adventures"},
-        {"forge","MacroForge","Spellbook-aware macro creation"},
-        {"updates","Updates","Installed version and release links"},
+        "Choose a module. Related controls are nested under its heading in the sidebar.")
+    local groups={
+        {title="DISCOVER & TRACK",
+            keys={"loot","drops","quests","journal"}},
+        {title="COMBAT & HUD",
+            keys={"bar","meter","forge","prep"}},
+        {title="PERSONALIZE & MANAGE",
+            keys={"theme","emota","guard","updates"}},
     }
-    for index,entry in ipairs(items) do
-        local row=math.floor((index-1)/2)
-        local col=(index-1)%2
-        local x=28+col*258
-        local y=-123-row*40
-        local pageKey=entry[1]
-        Button(panel,entry[2],x,y,228,function() Activate(pageKey) end)
-        Label(panel,entry[3],"GameFontHighlightSmall",x+4,y-29,228)
+    local pageByKey={}
+    for _,entry in ipairs(navigation) do pageByKey[entry.key]=entry end
+    for groupIndex,group in ipairs(groups) do
+        local headingY=-108-(groupIndex-1)*112
+        Label(panel,group.title,"GameFontNormalLarge",28,headingY,475)
+        local divider=panel:CreateTexture(nil,"ARTWORK")
+        divider:SetPoint("TOPLEFT",panel,"TOPLEFT",28,headingY-23)
+        divider:SetSize(484,1)
+        divider:SetColorTexture(0.35,0.40,0.43,0.45)
+        for i,key in ipairs(group.keys) do
+            local entry=pageByKey[key]
+            local x=28+((i-1)%2)*253
+            local y=headingY-31-math.floor((i-1)/2)*36
+            Button(panel,entry.title,x,y,232,function()
+                Activate(key)
+            end)
+        end
     end
     return panel
 end
@@ -1259,64 +1312,40 @@ local function Register()
         and type(Settings.RegisterAddOnCategory) == "function" then
         rootCategory = Settings.RegisterCanvasLayoutCategory(panels.home, title)
         Settings.RegisterAddOnCategory(rootCategory)
-        if type(Settings.RegisterCanvasLayoutSubcategory) == "function" then
-            for _, item in ipairs({
-                {"theme", "Global Appearance"},
-                {"drops", "DropSense"},
-                {"journal", "Session Journal"},
-                {"forge", "MacroForge"},
-                {"updates", "Updates"},
-                {"loot", "LootSense"},
-                {"loothighlight", "LootSense Appearance"},
-                {"quests", "QuestSense"},
-                {"bar", "The Bar"},
-                {"barstats", "The Bar Stats"},
-                {"barappearance", "The Bar Appearance"},
-                {"emota", "Emota"},
-                {"races", "Emota Race Behavior"},
-                {"catalog", "Emote Catalog"},
-                {"guard", "QuietGuard"},
-                {"prep", "Adventure Prep"},
-                {"toast", "Toast Appearance"},
-                {"meter", "Combat Meter"},
-            }) do
-                local sub = Settings.RegisterCanvasLayoutSubcategory(rootCategory,
-                    panels[item[1]], item[2])
-                if sub then
-                    categories[item[1]] = sub
+        if type(Settings.RegisterCanvasLayoutSubcategory)=="function" then
+            for _,entry in ipairs(navigation) do
+                local category=Settings.RegisterCanvasLayoutSubcategory(
+                    rootCategory,panels[entry.key],entry.title)
+                if category then
+                    categories[entry.key]=category
+                    for _,child in ipairs(entry.children or {}) do
+                        -- Each module owns its own Appearance / Modules pages.
+                        -- A missing nested API is rare; the home shortcuts
+                        -- continue to expose every page.
+                        local ok,sub=pcall(
+                            Settings.RegisterCanvasLayoutSubcategory,
+                            category,panels[child.key],child.title)
+                        if ok and sub then categories[child.key]=sub end
+                    end
                 end
             end
         end
-        -- Older builds without canvas subcategory support still expose all pages
-        -- by using the home navigation, and the Classic fallback below.
-        registered = true
-    elseif type(InterfaceOptions_AddCategory) == "function" then
+        registered=true
+    elseif type(InterfaceOptions_AddCategory)=="function" then
         InterfaceOptions_AddCategory(panels.home)
-        for _, item in ipairs({
-            {"theme", "Global Appearance"},
-            {"drops", "DropSense"},
-            {"journal", "Session Journal"},
-            {"forge", "MacroForge"},
-            {"updates", "Updates"},
-            {"loot", "LootSense"},
-                {"loothighlight", "LootSense Appearance"},
-            {"quests", "QuestSense"},
-            {"bar", "The Bar"},
-                {"barstats", "The Bar Stats"},
-                {"barappearance", "The Bar Appearance"},
-            {"emota", "Emota"},
-                {"races", "Emota Race Behavior"},
-            {"catalog", "Emote Catalog"},
-            {"guard", "QuietGuard"},
-            {"prep", "Adventure Prep"},
-                {"toast", "Toast Appearance"},
-                {"meter", "Combat Meter"},
-        }) do
-            local panel = panels[item[1]]
-            panel.parent = title
+        for _,entry in ipairs(navigation) do
+            local panel=panels[entry.key]
+            panel.parent=title
             InterfaceOptions_AddCategory(panel)
+            for _,child in ipairs(entry.children or {}) do
+                local subPanel=panels[child.key]
+                -- Use the module panel's unique name to avoid collisions
+                -- between unrelated pages both called Appearance.
+                subPanel.parent=panel.name
+                InterfaceOptions_AddCategory(subPanel)
+            end
         end
-        registered = true
+        registered=true
     else
         Note("No supported Blizzard AddOns settings API was available.")
     end

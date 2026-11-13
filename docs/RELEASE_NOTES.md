@@ -1,28 +1,39 @@
-# ChalkBox 2.0.1 — Discoveries refresh + Updates (prerelease)
+# ChalkBox 2.0.2 — settings and release cleanup
 
-This is a focused 2.0 quality-of-life build. You confirmed that the 2.0 map button **now appears in WoW Forever**, so this release improves how the loot browser feels and adds trustworthy update awareness.
+This update is about presentation and predictable behavior. The existing modules and saved data are unchanged.
 
-## Map Discoveries — easier to read and navigate
+## Settings
 
-- Rebuilt the cramped Discoveries browser into a larger 660×616 themed window with item icons, alternating rows, readable quantity and sampled-window columns, pagination and a clear distinction between collection counts and observed creature-source rates.
-- Replaced repeated **Next dungeon / Next source** clicks with real **Area/Dungeon**, **Creature Source**, and **Sort By** dropdown menus. Modern Forever menu API is preferred, with legacy and cycling fallbacks.
-- Search item names and IDs in the current selection. Sort by quantity, item name, times appeared or source-specific observed frequency.
-- **Outdoor** and **Dungeons** remain separate. Use the **Following map** control to return to the zone displayed by Blizzard's native map, or explicitly browse past recorded locations.
-- A zone with no observations shows an honest empty state, never another area's items.
-- The map button is now **draggable** and its position is remembered per character. Right-click to reset, click **Reset Map Button** under ChalkBox → DropSense, or type `/chalk drops map reset`.
-- Retains the real-client-proven 2.0 fix for Forever's late-loading world map and the independent `/chalk drops map` backup.
+The native AddOns settings are now grouped by module instead of displaying 18 unrelated pages in one long list.
 
-## Updates — an honest checker, not a fake GitHub ping
+- **The Bar** → Modules, Appearance
+- **LootSense** → Appearance
+- **Adventure Prep** → Toast Appearance
+- **Emota** → Race Behavior, Emote Catalog
+- Other tools retain their own module pages.
 
-WoW addon Lua **cannot make direct GitHub HTTPS requests**. The new **ChalkBox → Updates** settings page shows the actual installed addon's TOC version and gives you a selectable link to `https://github.com/detok/ChalkBox/releases` for Ctrl+C into a browser. `/chalk update` prints the installed version, any newer version previously encountered among other ChalkBox players and the release link.
+The ChalkBox home page is divided into **Discover & Track**, **Combat & HUD**, and **Personalize & Manage**. Each settings page now shares a consistent heading, accent divider and navigation back to the main ChalkBox page.
 
-Optional **compare versions with group members** uses a small, throttled WoW addon message, only when enabled (OFF by default). If another player has a higher semantic version, ChalkBox can notify you; it **does not establish the latest GitHub release** and **does not install or download anything**. CurseForge can manage updates externally once the project is listed.
+This is a navigation change, not a settings reset. Existing module flags, saved layouts, DropSense history, macro recipes and character preferences remain in place.
 
-## Compatibility
+## Combat Meter
 
-- One installable ChalkBox ZIP; both TOCs 2.0.1.
-- No change to DropSense observation history, per-character saves, MacroForge, The Bar, loot protection, quest tracking, CampSense, or combat tools.
-- Lua 5.1 regression tests exercise menu navigation, searched/source-specific rows, map button drag persistence and reset, the late-loading frame and update awareness logic.
-- **Real WoW Forever client verification** is still needed for dropdown positioning, item icons and button drag at your UI scale.
+The optional compact meter now starts **hidden at login**, even if it was open when you logged out. Open it from the Combat Meter page or with **/chalk meter show**. It still supports DPS, damage, healing, interrupts, layout and opacity controls, and a manual party report.
 
-[Source](https://github.com/detok/ChalkBox) · [Report a bug](https://github.com/detok/ChalkBox/issues/new/choose)
+## CurseForge preparation
+
+The GitHub description, publishing copy, install guide, command reference, FAQs, release notes, submission checklist and screenshot plan have been updated for the full current feature set.
+
+A separate **ChalkBox-CurseForge-Media-2.0.2.zip** is attached to the GitHub release. It contains all six original vector branding designs, nine PNG exports, the current CurseForge description and related files, and a concise publishing checklist. The 512px project icon meets CurseForge's minimum square PNG size. Promotional illustrations are labeled as such, not passed off as gameplay screenshots.
+
+**Upload ChalkBox-2.0.2.zip as the game addon.** The CurseForge media kit is for project setup and artwork only.
+
+## Testing
+
+- Full Lua 5.1 module tests, including native settings hierarchy and hidden-meter startup.
+- ZIP content, load order and reproducibility checks.
+- Separate media-kit artwork, PNG signature and listing-content checks.
+
+**In-client verification is still required** for nested Settings navigation and real frame positioning before promoting this as a fully tested public release.
+
+Repository: https://github.com/detok/ChalkBox

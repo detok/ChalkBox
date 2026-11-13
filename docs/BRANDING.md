@@ -41,13 +41,13 @@ Typography: a substantial readable serif for display wordmark, straightforward s
 | [Social banner](../curseforge/artwork/chalkbox-banner-1200x630.svg) | 1200×630 | Social/OG image source |
 | [Feature overview](../curseforge/artwork/chalkbox-feature-grid-1600x900.svg) | 1600×900 | Editorial feature overview |
 
-SVG originals are text-based, editable and independent of any font download. Export a flat PNG using Inkscape, Illustrator, Figma, browser screenshot, or `cairosvg`. The separate delivery ZIP also includes PNG exports at the named sizes, plus 64/128/256 icon reductions and a 1280×640 social preview.
+SVG originals are text-based, editable and independent of any font download. Export a flat PNG using Inkscape, Illustrator, Figma, browser screenshot, or `cairosvg`. The versioned CurseForge media ZIP includes PNG exports at their SVG canvas sizes, plus 64/128/256 project-icon reductions. The existing social banner is 1200×630.
 
 ## Rules for publishing
 
 - **Do not portray generated panels or map graphics as live Forever screenshots.** Actual in-game screenshots still need to be captured from ChalkBox running in Forever.
 - In particular, **MapSense / seamless maps are proposals, not shipped features**. Don't show them as already implemented.
-- The brand art is not an official Blizzard logo or endorsement.
+- The brand artwork is independent of Blizzard trademarks and isn't an official logo or endorsement.
 - Keep `curseforge/artwork/` outside the packaged `ChalkBox-<version>.zip`: branding is marketing collateral, not addon code.
 - For CurseForge use the exported PNG artwork and check its live upload requirements. The listing and screenshots have **not** been uploaded.
 - Do not overwrite the addon icon `ChalkBox/assets/Icon.tga` until the new identity has been tested in the client.

@@ -127,11 +127,13 @@ end
 assert(event and event.events.DAMAGE_METER_CURRENT_SESSION_UPDATED)
 assert(event.events.DAMAGE_METER_COMBAT_SESSION_UPDATED and event.events.DAMAGE_METER_RESET)
 event.script.OnEvent(event,"ADDON_LOADED","ChalkBox")
-assert(ChalkBoxDB.meter.shown==true and ChalkBoxDB.meter.mode=="dps")
+assert(ChalkBoxDB.meter.shown==false and ChalkBoxDB.meter.mode=="dps",
+    "optional meter defaults off")
 event.script.OnEvent(event,"PLAYER_LOGIN")
 local window
 for _,f in ipairs(frames) do if f.name=="ChalkBoxCombatMeterFrame" then window=f end end
-assert(window and window.shown and window.w==326 and window.h==266)
+assert(window and not window.shown and window.w==326 and window.h==266,
+    "meter starts hidden at login")
 assert(window.resizable==true and window.alpha==0.94,
     "window resizable by default, with saved opacity")
 local function Flush()
@@ -140,7 +142,10 @@ local function Flush()
     for _,fn in ipairs(todo) do fn() end
 end
 Flush()
-assert(lastMeterType==1 and lastSession==1,"defaults to current DPS")
+assert(callCount==0,"a hidden meter must not fetch combat data at startup")
+ChalkBox_MeterCommand("show")
+Flush()
+assert(lastMeterType==1 and lastSession==1,"manual show defaults to current DPS")
 local bars,labels={},{}
 for _,f in ipairs(frames) do
     if f.kind=="StatusBar" then bars[#bars+1]=f end
@@ -359,5 +364,8 @@ assert(chat[#chat]:find("unavailable",1,true),"native API absence is explicit")
 ChalkBox_MeterCommand("dps")
 Flush()
 assert(window.shown)
+event.script.OnEvent(event,"PLAYER_LOGIN")
+assert(not window.shown and ChalkBoxDB.meter.shown==false,
+    "previously open meter starts closed on a fresh login")
 C_DamageMeter=api
 print("PASS: compact PARTY report modern+legacy chat APIs, secret/solo/raid guards, rate limit, visible confirmed RESET, icons, draggable meter and all sessions")

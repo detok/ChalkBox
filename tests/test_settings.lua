@@ -291,11 +291,19 @@ _G.Settings={
         assert(category==categories.home)
     end,
     RegisterCanvasLayoutSubcategory=function(parent,panel,name)
-        assert(parent==categories.home)
-        local cat={panel=panel,name=name,ID=(#registered+101)}
+        assert(parent==categories.home or parent.parent==categories.home,
+            "only ChalkBox module pages may own second-level settings")
+        local cat={panel=panel,name=name,parent=parent,ID=(#registered+101)}
         function cat:GetID() return self.ID end
         registered[#registered+1]=cat
         categories[name]=cat
+        if parent~=categories.home then
+            local alias=parent.name.." "..name
+            -- Compatibility aliases for the existing settings regression.
+            if alias=="The Bar Modules" then alias="The Bar Stats" end
+            if alias=="Emota Emote Catalog" then alias="Emote Catalog" end
+            categories[alias]=cat
+        end
         return cat
     end,
     OpenToCategory=function(id) opened[#opened+1]=id end,
@@ -306,6 +314,18 @@ assert(loader.event=="PLAYER_LOGIN","must register settings when the client is r
 loader.script.OnEvent(loader,"PLAYER_LOGIN")
 assert(#registered==19,"native pages include MacroForge, Updates and all original categories")
 assert(categories.home.name=="ChalkBox")
+assert(categories["The Bar"].parent==categories.home
+    and categories["The Bar Appearance"].parent==categories["The Bar"]
+    and categories["The Bar Stats"].parent==categories["The Bar"],
+    "Bar appearance and modules are nested under The Bar")
+assert(categories["LootSense Appearance"].parent==categories["LootSense"]
+    and categories["Toast Appearance"].parent==categories["Adventure Prep"]
+    and categories["Emota Race Behavior"].parent==categories["Emota"],
+    "nested module pages share their parent's native settings hierarchy")
+assert(categories["Global Appearance"].parent==categories.home
+    and categories["Updates"].parent==categories.home,
+    "standalone modules remain accessible directly below ChalkBox")
+
 ChalkBox_OpenSettings()
 assert(opened[#opened]==101,"default /chalk must open native settings")
 ChalkBox_OpenSettings("loot")
@@ -374,7 +394,7 @@ assert(ChalkBoxDB.keep["name:new"],"Keep Item must call original protection logi
 categories["LootSense"].panel:Show()
 ControlIn("LootSense","Remove"):Click() -- sorts by key; first is id:11
 assert(ChalkBoxDB.keep["id:11"]==nil,"Remove must use the exact protected key")
-Control("LootSense Appearance"):Click()
+ChalkBox_OpenSettings("loothighlight")
 assert(opened[#opened]==categories["LootSense Appearance"].ID)
 categories["LootSense Appearance"].panel:Show()
 local lootCheck=FindCheckByParentTitle("LootSense Appearance")

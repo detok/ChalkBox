@@ -1,4 +1,4 @@
--- ChalkBox CombatMeter 1.7: compact, native-data combat scoreboard for Forever.
+-- Optional compact meter. Blizzard's native combat data remains authoritative.
 -- No COMBAT_LOG_EVENT_UNFILTERED, GUID parsing, pet attribution guesses, or
 -- calculations on secret combat data. Use Blizzard's C_DamageMeter directly.
 local addonName=...
@@ -32,7 +32,7 @@ local function Settings()
     if type(ChalkBoxDB)~="table" then ChalkBoxDB={} end
     local value=ChalkBoxDB.meter
     if type(value)~="table" then value={};ChalkBoxDB.meter=value end
-    if value.shown==nil then value.shown=true end
+    if value.shown==nil then value.shown=false end
     if value.locked==nil then value.locked=false end
     if value.mode==nil then value.mode="dps" end
     if value.session==nil then value.session="current" end
@@ -748,8 +748,12 @@ event:SetScript("OnEvent",function(_,name,loaded)
         db=Settings()
     elseif name=="PLAYER_LOGIN" then
         db=db or Settings()
+        -- The compact meter is a tool, not a startup HUD. Always begin
+        -- hidden, even if it was open when this character last logged out.
+        -- Showing it again is an explicit settings, slash or UI action.
+        db.shown=false
         CreateWindow()
-        QueueRefresh()
+        if window then window:Hide() end
     elseif db and db.shown then
         QueueRefresh()
     end
