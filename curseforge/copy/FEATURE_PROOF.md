@@ -1,22 +1,23 @@
 # Feature-claim audit — verify before publishing
 
-**Baseline:** ChalkBox v1.8.6, prepared against the GitHub release source as of November 13, 2026. “Implemented” means code is present and automated tests exercise it where appropriate, **not** a guarantee of identical behavior in every Forever client.
+**Baseline:** ChalkBox v1.9.0, prepared against the GitHub release source as of November 13, 2026. “Implemented” means code is present and automated tests exercise it where appropriate, **not** a guarantee of identical behavior in every Forever client.
 
 | Feature | Code and source | Responsible public claim | Boundary |
 | --- | --- | --- | --- |
-| LootSense | `ChalkBox/LootSense.lua`, `ProfessionSense.lua`, `RecipeAdvisor.lua` | Contextual protection, crafting, camping and quest item hints | Client item and learned-recipe data can be incomplete |
+| LootSense | `ChalkBox/LootSense.lua`, `ProfessionSense.lua`, `RecipeAdvisor.lua` | Native-styled multi-line Item Insight tooltip with verified vs potential item advice | Actual client tooltip render should still be checked in-game |
 | Local recipe catalog | `ChalkBox/Libs/LibProfessionDB-1.0/`, `docs/RECIPE_DATA.md` | 2,511 bundled Forever recipes | Catalog existence does not prove that a character learned the recipe |
 | Keep list | `LootSense.lua`, `ChalkBox_Settings.lua` | Protect items using names or links | Does not auto-sell, move, use or delete items |
-| TrailBar | `TrailBar.lua`, `TrailBarStats.lua`, `ChalkBox_Settings.lua` | 18px strip: level/XP, XP/hour, level ETA, time, gold, **free bag slots, weighted gear durability, rested XP, world latency and Hunter pet health** | Layout hides lower-priority fields on narrow screens; unavailable or secret API readings never guessed. Real-client test pending |
+| TrailBar | `TrailBar.lua`, `TrailBarStats.lua`, `TrailBarLayout.lua`, `ChalkBox_Settings.lua` | 18px rich stats + per-character three-zone edit/order, right-click alignment and charcoal opacity 0–100% | Layout hides low-priority fields when necessary; real-client drag/render tests pending |
 | Screen reservation | `TrailBar.lua` | Optional UI space reservation | Some custom UIs may not respond to UI-parent insets |
 | ChalkBox combat meter | `CombatMeter.lua` | Move/lock/resize/opacity, class/spec icons, DPS, damage, HPS, healing, taken, interrupts | Uses Forever's own `C_DamageMeter`; secret data is restricted |
 | Compact meter PARTY report | `CombatMeter.lua` | User-initiated top-three PARTY report after combat | No report solo/in raid or with secret data |
 | Blizzard native meter PRINT | `NativeMeterPrint.lua` | Adds PARTY print to native gear menu | Automated tests pass; **in-game Forever check still required** |
 | QuestSense | `QuestSense.lua` | Smart/Nearby/All accepted watches on Blizzard quest tracker | No directions, route, quest arrow, auto-accept or quest completion |
 | CampSense | `CampAura.lua`, `CampSense.lua`, `ReminderToast.lua` | Camp Benefits/tent state hints, movable top-screen toast | Client may not expose exact auras |
-| Emota | `Emota.lua`, `PersonalityContext.lua` | Optional randomized native emotes | Auto-emote master defaults OFF |
+| Emota | `Emota.lua`, `PersonalityContext.lua` | Optional native emotes + selectable/weighted racial flavor and honestly marked placeholders | Automatic master defaults OFF; placeholder races have no custom behavior |
 | QuietGuard | `QuietGuard.lua` | Guild/duel invite protections and opt-in other filters | Native preference APIs may vary |
-| Bag nudge | `BagLayout.lua`, `ChalkBox_Settings.lua` | Separate bag vertical-offset slider, 0–80 points; default 0 | Lua tests passed; in-client layout/third-party mover interaction to verify |
+| Bag nudge | `BagLayout.lua`, `ChalkBox_Settings.lua` | Signed vertical −120..+120 slider, original Blizzard anchor at center 0 | Lua tests passed; real-client control orientation/movement should be verified |
+| Known recipe highlights | `BagReagents.lua`, `ProfessionSense.lua` | Subtle green inset on true learned-recipe ingredients in Blizzard's native bag slots | No offline-only or potential-use false positives; Blizzard bag frame visibility varies |
 | Installation | `scripts/package.py`, `scripts/test_packages.py` | One installable ZIP containing ChalkBox and credited libraries | CurseForge project media should NOT be added to ZIP |
 
 ## Never claim these features yet
@@ -35,7 +36,7 @@
 - [ ] Profession scan works using `/chalk loot scan`
 - [ ] Blizzard meter gear menu has **ChalkBox: PRINT top 3 to PARTY** after a real party fight
 - [ ] Blocking behavior works during combat, solo and when client restricts data
-- [ ] Separate bags remain onscreen with offset 0 vs 30; combined bags unchanged
+- [ ] Separate bags remain onscreen with signed offset -35 / 0 / +40; combined bags unchanged
 - [ ] `/chalk quests status` correctly explains tracking and respects manual watches
 - [ ] `/chalk prep test` shows toast, dragging/locking works
 - [ ] Confirm no unrelated Lua errors with normal UI addons installed
