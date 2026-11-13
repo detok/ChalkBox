@@ -187,6 +187,15 @@ _G.ChalkBox_EmotaSetEnabled=function(token,v)
 end
 _G.ChalkBox_EmotaTest=function(token) printed[#printed+1]="try "..token end
 
+local raceDropdown
+local nativeRaceOptions={}
+_G.UIDropDownMenu_Initialize=function(menu,cb) menu.BuildOptions=cb;raceDropdown=menu end
+_G.UIDropDownMenu_CreateInfo=function() return {} end
+_G.UIDropDownMenu_AddButton=function(info,level)
+    nativeRaceOptions[#nativeRaceOptions+1]=info
+end
+_G.UIDropDownMenu_SetWidth=function(menu,value) menu.dropWidth=value end
+_G.UIDropDownMenu_SetText=function(menu,value) menu.dropLabel=value end
 _G.CreateFrame=function(kind,name,parent)
     local f={kind=kind,name=name,parent=parent,shown=true,script={}}
     function f:SetSize(w,h) self.w=w;self.h=h end
@@ -401,6 +410,16 @@ Control("Races"):Click()
 assert(opened[#opened]==categories["Emota Race Behavior"].ID,
     "Emota links directly to new race behavior editor")
 categories["Emota Race Behavior"].panel:Show()
+assert(raceDropdown and raceDropdown.BuildOptions,
+    "Blizzard-supported native race dropdown actually initializes")
+raceDropdown.BuildOptions(raceDropdown,1)
+assert(#nativeRaceOptions==2 and nativeRaceOptions[1].text=="Dwarf",
+    "race dropdown enumerates real and planned entries")
+nativeRaceOptions[2].func()
+Control("Off"):Click()
+assert(ChalkBoxDB.emota.raceModes.VoidElf==nil,
+    "planned dropdown choice cannot be configured as live")
+nativeRaceOptions[1].func()
 Control("Expressive"):Click()
 assert(ChalkBoxDB.emota.raceModes.Dwarf=="expressive",
     "live racial intensity selection saves the chosen race")
