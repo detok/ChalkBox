@@ -126,74 +126,210 @@ local function Hint(widget, label, details)
     end)
 end
 
+-- Visible metrics are configurable, and the 18px bar automatically drops
+-- lower-priority metrics at narrow widths. It NEVER overlaps or changes height.
+local statDefaults={
+    rate=true,eta=true,time=true,gold=true,
+    bags=true,gear=true,rested=true,latency=false,pet=true,
+}
+local specs={
+    level={width=98,group="left"},
+    rate={width=104,group="left"},
+    bags={width=90,group="left"},
+    gear={width=82,group="left"},
+    eta={width=128,group="center"},
+    rested={width=92,group="center"},
+    pet={width=81,group="center"},
+    time={width=85,group="right"},
+    latency={width=86,group="right"},
+    gold={width=182,group="right"},
+}
+local groups={
+    left={"level","rate","bags","gear"},
+    center={"eta","rested","pet"},
+    right={"time","latency","gold"},
+}
+local dropPriority={"latency","time","pet","eta","rate","rested","gear","bags","gold"}
+local displayed={}
+local latest={}
+local lastLayout=""
+local function ConfigureStats()
+    if not db then return end
+    if type(db.barStats)~="table" then db.barStats={} end
+    for key,enabled in pairs(statDefaults) do
+        if type(db.barStats[key])~="boolean" then db.barStats[key]=enabled end
+    end
+end
+local function StatEnabled(key)
+    if key=="level" then return true end
+    if not db then return statDefaults[key]~=false end
+    local values=db.barStats
+    if type(values)=="table" and type(values[key])=="boolean" then
+        return values[key]
+    end
+    return statDefaults[key]==true
+end
+function ChalkBox_BarStatEnabled(key)
+    return specs[key]~=nil and StatEnabled(key) or false
+end
+
+local function Reflow()
+    if not bar then return end
+    local width=bar:GetWidth()
+    if not Public(width) or type(width)~="number" or width<=0 then return end
+    local chosen={}
+    for key in pairs(specs) do
+        chosen[key]=StatEnabled(key) and (key=="level" or
+            key=="rate" or key=="eta" or key=="time" or key=="gold" or latest[key]~=nil)
+    end
+    local function Measure(group)
+        local total,count=0,0
+        for _,key in ipairs(groups[group]) do
+            if chosen[key] then total=total+specs[key].width+ (count>0 and 7 or 0);count=count+1 end
+        end
+        return total,count
+    end
+    local function Need()
+        local l,lc=Measure("left")
+        local c,cc=Measure("center")
+        local r,rc=Measure("right")
+        return l+c+r+24+(lc>0 and cc>0 and 10 or 0)
+            +(rc>0 and (lc>0 or cc>0) and 10 or 0),l,c,r
+    end
+    local needed=Need()
+    for _,key in ipairs(dropPriority) do
+        if needed<=width then break end
+        if chosen[key] then chosen[key]=false;needed=Need() end
+    end
+    -- At very low resolutions keep level first rather than overlap elements.
+    if needed>width then
+        for key in pairs(chosen) do chosen[key]=(key=="level") end
+    end
+    local signature=math.floor(width+0.5)..":"
+    for _,group in ipairs({"left","center","right"}) do
+        for _,key in ipairs(groups[group]) do
+            if chosen[key] then signature=signature..key.."," end
+        end
+    end
+    if signature==lastLayout then return end
+    lastLayout=signature
+    displayed={}
+    for key,widget in pairs(widgets) do
+        if chosen[key] then widget:Show();displayed[key]=true
+        else widget:Hide() end
+    end
+    local _,leftWidth,centerWidth,rightWidth=Need()
+    local function Arrange(group,start)
+        local x=start
+        for _,key in ipairs(groups[group]) do
+            if chosen[key] then
+                local widget=widgets[key]
+                widget:ClearAllPoints()
+                if group=="left" then
+                    widget:SetPoint("LEFT",bar,"LEFT",x,0)
+                elseif group=="center" then
+                    widget:SetPoint("CENTER",bar,"LEFT",x+specs[key].width/2,0)
+                else
+                    widget:SetPoint("RIGHT",bar,"RIGHT",
+                        x+specs[key].width-width,0)
+                end
+                x=x+specs[key].width+7
+            end
+        end
+    end
+    Arrange("left",12)
+    local rightStart=width-12-rightWidth
+    local centerStart=math.max(12+leftWidth+(leftWidth>0 and 10 or 0),
+        math.min((width-centerWidth)/2,
+            rightStart-centerWidth-(rightWidth>0 and 10 or 0)))
+    Arrange("center",centerStart)
+    Arrange("right",rightStart)
+end
+
 local function CreateBar()
     if bar or not UIParent then return end
-    bar = CreateFrame("Frame", "ChalkBoxInfoBar", UIParent)
+    bar=CreateFrame("Frame","ChalkBoxInfoBar",UIParent)
     bar:SetHeight(18)
     bar:SetFrameStrata("LOW")
-    local background = bar:CreateTexture(nil, "BACKGROUND")
+    local background=bar:CreateTexture(nil,"BACKGROUND")
     background:SetAllPoints(bar)
-    background:SetColorTexture(0.06, 0.08, 0.12, 0.70)
-    local progress = bar:CreateTexture(nil, "ARTWORK")
-    progress:SetPoint("BOTTOMLEFT", bar, "BOTTOMLEFT", 0, 0)
+    background:SetColorTexture(0.06,0.08,0.12,0.70)
+    local progress=bar:CreateTexture(nil,"ARTWORK")
+    progress:SetPoint("BOTTOMLEFT",bar,"BOTTOMLEFT",0,0)
     progress:SetHeight(1)
-    progress:SetColorTexture(0.19, 0.64, 0.93, 0.85)
-    bar.xpProgress = progress
-
-    -- Layout is anchored in three independent groups, not absolute pixels.
-    -- The measured width determines which optional elements disappear.
-    local blocks = {
-        {"level", "LEFT", "LEFT", 12, 120, "LEFT", "Level & XP", function()
-            return {"XP: " .. tostring(session.xp or "--") .. " / " .. tostring(session.maxXP or "--"),
-                "Level: " .. tostring(session.level or "--")}
+    progress:SetColorTexture(0.19,0.64,0.93,0.85)
+    bar.xpProgress=progress
+    local blocks={
+        {"level","Level & XP",function()
+            return {"XP: "..tostring(session.xp or "--").." / "..tostring(session.maxXP or "--"),
+                "Level: "..tostring(session.level or "--")}
         end},
-        {"rate", "LEFT", "LEFT", 140, 120, "LEFT", "Session XP per hour", function()
-            return {"XP gained this session: " .. Number(session.xpGained),
-                "Average since login or last reset (including idle time)."}
+        {"rate","Session XP per hour",function()
+            return {"XP gained this session: "..Number(session.xpGained),
+                "Average XP/hour includes idle time since login or reset."}
         end},
-        {"eta", "CENTER", "CENTER", -85, 165, "CENTER", "Time to next level", function()
+        {"bags","Free bag slots",function()
+            local a=latest.bags
+            if not a then return {"Inventory slot data unavailable."} end
+            return {a.free.." free of "..a.total.." equipped bag slots.",
+                a.general.." general free, "..a.special.." profession-specialized free.",
+                "Specialty slots may only accept their matching items."}
+        end},
+        {"gear","Equipped item durability",function()
+            local a=latest.gear
+            if not a then return {"Durability unavailable."} end
+            return {"Weighted condition: "..a.percent.."% across "..a.items.." repairable items.",
+                "Lowest equipped item: "..a.worst.."%.",
+                "Only equipment with durability contributes."}
+        end},
+        {"eta","Time to next level",function()
             return {"Estimated from XP/hour; requires earned session XP.",
                 "Use /chalk bar reset to start a fresh session."}
         end},
-        {"time", "CENTER", "CENTER", 105, 110, "CENTER", "Session time", function()
-            return {"Online time since login or reset."}
+        {"rested","Rested experience",function()
+            local a=latest.rested
+            if not a then return {"Rested XP data unavailable."} end
+            return {Number(a.xp).." bonus XP, "..a.percent.."% of one level.",
+                "Rested XP is separate from the Camp Benefits aura."}
         end},
-        {"gold", "RIGHT", "RIGHT", -12, 235, "RIGHT", "Gold & net earnings", function()
+        {"pet","Hunter pet status",function()
+            local a=latest.pet
+            if not a then return {"Hunter pet data unavailable."} end
+            if a.state=="none" then return {"No active pet."} end
+            if a.state=="protected" or a.state=="unknown" then
+                return {"Pet health protected or unavailable in this client."}
+            end
+            return {"Active pet health: "..a.percent.."%."}
+        end},
+        {"time","Session time",function()
+            return {"Online time since login or last session reset."}
+        end},
+        {"latency","Home / world latency",function()
+            local a=latest.latency
+            if not a then return {"Latency API unavailable."} end
+            return {"Home: "..a.home.." ms", "World: "..a.world.." ms",
+                "Current network latency is not your frame rate."}
+        end},
+        {"gold","Gold & net earnings",function()
             local _,_,perHour=GetRates()
-            return {"Net gold/hour: " .. Money(perHour,true),
+            return {"Net gold/hour: "..Money(perHour,true),
                 "Current gold and net change since login or reset.",
                 "Spending can make net gold negative; not gross loot value."}
         end},
     }
-    for _,spec in ipairs(blocks) do
-        local key,point,relative,offset,width,justify,name,details = unpack(spec)
+    for _,item in ipairs(blocks) do
+        local key,name,details=unpack(item)
         local widget=CreateFrame("Frame",nil,bar)
-        widget:SetPoint(point,bar,relative,offset,0)
-        widget:SetSize(width,16)
+        widget:SetSize(specs[key].width,16)
         local font=widget:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
         font:SetAllPoints(widget)
-        font:SetJustifyH(justify)
+        font:SetJustifyH(key=="gold" and "RIGHT" or
+            (specs[key].group=="center" and "CENTER" or "LEFT"))
         widget.text=font
         widgets[key]=widget
         Hint(widget,name,details)
     end
-    bar:SetScript("OnSizeChanged", function(self)
-        local width=self:GetWidth()
-        if not Public(width) or type(width)~="number" then return end
-        if widgets.time then
-            if width>=1070 then widgets.time:Show() else widgets.time:Hide() end
-        end
-        if widgets.eta then
-            if width>=780 then widgets.eta:Show() else widgets.eta:Hide() end
-        end
-        if widgets.rate then
-            if width>=640 then widgets.rate:Show() else widgets.rate:Hide() end
-        end
-        if widgets.gold then
-            if width>=410 then widgets.gold:Show() else widgets.gold:Hide() end
-        end
-    end)
-
+    bar:SetScript("OnSizeChanged",function() Reflow() end)
 end
 
 -- A Titan-style screen reservation, not a whitelist of named UI frames.
@@ -358,32 +494,77 @@ local function Refresh()
     if not db or not bar then return end
     CaptureXP()
     CaptureMoney()
-    local xpPerHour, eta, goldPerHour, elapsed = GetRates()
-    local xpText = "Level --"
+    local xpPerHour,eta,goldPerHour,elapsed=GetRates()
+    local stats={}
+    if type(ChalkBox_BarReadStats)=="function" then
+        local ok,value=pcall(ChalkBox_BarReadStats,session.maxXP)
+        if ok and type(value)=="table" then stats=value end
+    end
+    latest=stats
     if session.level then
-        if session.maxXP and session.maxXP > 0 then
-            xpText = ("Lv %d  %.1f%%"):format(session.level, 100 * session.xp / session.maxXP)
+        if session.maxXP and session.maxXP>0 then
+            widgets.level.text:SetText(("Lv %d  %.1f%%"):format(
+                session.level,100*session.xp/session.maxXP))
         else
-            xpText = ("Lv %d  MAX"):format(session.level)
+            widgets.level.text:SetText(("Lv %d  MAX"):format(session.level))
+        end
+    else
+        widgets.level.text:SetText("Level --")
+    end
+    widgets.rate.text:SetText("XP/h "..Number(xpPerHour))
+    widgets.eta.text:SetText("To level "..
+        (session.maxXP and session.maxXP>0 and Duration(eta) or "--"))
+    widgets.gold.text:SetText("Gold "..Money(session.money).." (net "..
+        Money(session.money and session.goldStart and session.money-session.goldStart
+            or nil,true)..")")
+    widgets.time.text:SetText("Time "..Duration(elapsed))
+    widgets.bags.text:SetText(stats.bags and
+        ("Bags "..stats.bags.free.." free") or "Bags --")
+    widgets.gear.text:SetText(stats.gear and
+        ("Gear "..stats.gear.percent.."%") or "Gear --")
+    widgets.rested.text:SetText(stats.rested and
+        ("Rest "..stats.rested.percent.."%") or "Rest --")
+    widgets.latency.text:SetText(stats.latency and
+        ("World "..stats.latency.world.."ms") or "World --")
+    local pet=stats.pet
+    widgets.pet.text:SetText(pet and (pet.state=="ready" and
+        ("Pet "..pet.percent.."%") or (pet.state=="none" and "Pet none" or "Pet --"))
+        or "Pet --")
+    local highlights={
+        gear=stats.gear and stats.gear.worst and stats.gear.worst<=25,
+        bags=stats.bags and stats.bags.general and stats.bags.general<=2,
+        pet=pet and pet.state=="ready" and pet.percent<=30,
+        latency=stats.latency and stats.latency.world>=250,
+    }
+    for key,warning in pairs(highlights) do
+        local font=widgets[key] and widgets[key].text
+        if font and type(font.SetTextColor)=="function" then
+            if warning then font:SetTextColor(1,0.47,0.34)
+            else font:SetTextColor(0.95,0.91,0.80) end
         end
     end
-    widgets.level.text:SetText(xpText)
-    widgets.rate.text:SetText("XP/h " .. Number(xpPerHour))
-    widgets.eta.text:SetText("To level " .. (session.maxXP and session.maxXP > 0 and Duration(eta) or "--"))
-    widgets.gold.text:SetText("Gold " .. Money(session.money) .. " (net " ..
-        Money(session.money and session.goldStart and session.money - session.goldStart or nil, true) .. ")")
-    widgets.time.text:SetText("Time " .. Duration(elapsed))
-    if session.maxXP and session.maxXP > 0 and bar.xpProgress then
-        local width = bar:GetWidth()
-        if Public(width) and type(width) == "number" then
-            bar.xpProgress:SetWidth(math.max(0.1, width * math.min(1, session.xp / session.maxXP)))
+    Reflow()
+    if session.maxXP and session.maxXP>0 and bar.xpProgress then
+        local width=bar:GetWidth()
+        if Public(width) and type(width)=="number" then
+            bar.xpProgress:SetWidth(math.max(0.1,width*math.min(
+                1,session.xp/session.maxXP)))
             bar.xpProgress:Show()
         end
-    elseif bar.xpProgress then
-        bar.xpProgress:Hide()
+    elseif bar.xpProgress then bar.xpProgress:Hide() end
+end
+
+function ChalkBox_BarStatus()
+    local chosen={}
+    for _,group in ipairs({"left","center","right"}) do
+        for _,key in ipairs(groups[group]) do
+            if StatEnabled(key) then chosen[#chosen+1]=key end
+        end
     end
-    -- The tooltip is the detail layer, while the bar stays uncluttered.
-    -- Keep detailed net gold/hour in the tooltip instead of widening the bar.
+    local visible={}
+    for key in pairs(displayed) do visible[#visible+1]=key end
+    table.sort(visible)
+    return {enabled=chosen,visible=visible,options=db and db.barStats}
 end
 
 local function Note(message)
@@ -395,7 +576,33 @@ end
 function ChalkBox_BarCommand(message)
     if not db then return end
     local action = string.lower((message or ""):match("^%s*(.-)%s*$") or "")
-    if action == "reserve on" or action == "reserve off"
+    local stat,choice=action:match("^stat%s+(%a+)%s+(on|off)$")
+    -- Lua patterns have no alternation; parse the setting and validate below.
+    if not stat then stat,choice=action:match("^stat%s+(%a+)%s+(%a+)$") end
+    if stat and specs[stat] and stat~="level"
+        and (choice=="on" or choice=="off") then
+        ConfigureStats()
+        db.barStats[stat]=(choice=="on")
+        Refresh()
+        Note("TrailBar "..stat.." "..string.upper(choice)..
+            ". Narrow displays may hide low-priority modules.")
+    elseif action=="stats balanced" or action=="stats all"
+        or action=="stats minimal" then
+        ConfigureStats()
+        local profile=action:match("stats%s+(%a+)")
+        for key,default in pairs(statDefaults) do
+            if profile=="all" then db.barStats[key]=true
+            elseif profile=="minimal" then
+                db.barStats[key]=(key=="gold" or key=="bags")
+            else db.barStats[key]=default end
+        end
+        Refresh()
+        Note("TrailBar preset: "..profile..".")
+    elseif action=="stats" then
+        local state=ChalkBox_BarStatus()
+        Note("TrailBar enabled: "..table.concat(state.enabled,", ")..
+            ". Visible at current width: "..table.concat(state.visible,", ")..".")
+    elseif action == "reserve on" or action == "reserve off"
         or action == "dock on" or action == "dock off" then
         db.barReserve=(action=="reserve on" or action=="dock on")
         PlaceBar()
@@ -425,7 +632,9 @@ function ChalkBox_BarCommand(message)
             ", XP/hr=" .. Number(xpPerHour) .. ", ETA=" .. Duration(eta) ..
             ", net gold/hr=" .. Money(goldPerHour, true))
     else
-        Note("TrailBar: /chalk bar top | bottom | off | reserve on/off | reset | status")
+        Note("TrailBar: /chalk bar top|bottom|off | reserve on/off | reset | status")
+        Note("Stats: /chalk bar stat bags|gear|rested|latency|pet|rate|eta|time|gold on/off")
+        Note("Presets: /chalk bar stats all|balanced|minimal | stats")
     end
 end
 
@@ -435,6 +644,11 @@ events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events:RegisterEvent("PLAYER_XP_UPDATE")
 events:RegisterEvent("PLAYER_LEVEL_UP")
 events:RegisterEvent("PLAYER_MONEY")
+for _,event in ipairs({
+    "BAG_UPDATE_DELAYED","PLAYER_EQUIPMENT_CHANGED","UPDATE_INVENTORY_DURABILITY",
+    "UPDATE_EXHAUSTION","PLAYER_UPDATE_RESTING","UNIT_PET","UNIT_HEALTH",
+    "UNIT_MAXHEALTH",
+}) do events:RegisterEvent(event) end
 events:RegisterEvent("PLAYER_REGEN_ENABLED")
 events:RegisterEvent("UI_SCALE_CHANGED")
 events:RegisterEvent("DISPLAY_SIZE_CHANGED")
@@ -448,6 +662,7 @@ events:SetScript("OnEvent", function(_, event, name)
         -- The previous frame-whitelist docking was ineffective. This setting
         -- uses a real UIParent safe-area inset and defaults ON for all users.
         if db.barReserve==nil then db.barReserve=true end
+        ConfigureStats()
     elseif event == "PLAYER_ENTERING_WORLD" then
         if not session.started then ResetSession() end
         CreateBar()
