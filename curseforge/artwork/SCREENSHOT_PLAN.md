@@ -17,7 +17,7 @@ This is the shot list for the second pass and the source of truth for *what the 
 | Priority | Screenshot | Set up in WoW Forever | What must be visible |
 | --- | --- | --- | --- |
 | **1** | **LootSense tooltip** | Open Leatherworking/Cooking, run `/chalk loot scan`, hover a reagent in a learned recipe | Real item link/tooltip with **KNOWN RECIPE** correctly shown |
-| **1** | **TrailBar** | Enable bar top, gather a little session XP and gold | Readable 18px strip at screen edge; some native gameplay in background |
+| **1** | **TrailBar** | Enable bar top, gather a little session XP and gold | Readable 18px strip showing **Bags**, **Gear**, **Rest** and XP/gold on a screen wide enough to fit, some native gameplay in background |
 | **1** | **Blizzard meter PRINT** | Use Blizzard's meter after a genuine **party** fight, open its gear menu | **ChalkBox: PRINT top 3 to PARTY** option inside the real native menu; screenshot is usable only if the integration actually appears |
 | **2** | **Compact ChalkBox meter** | Enable ChalkBox Combat Meter, select DPS and Last Fight, optionally class icons | Real class-icon rows, player names obscured as needed, header controls |
 | **2** | **QuestSense** | Open ChalkBox QuestSense settings with an accepted quest list and native tracker nearby | Mode/limit/status evidence, no fake quest pointers |
