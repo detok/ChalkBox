@@ -542,7 +542,7 @@ local sliders={}
 for _,frame in ipairs(frames) do
     if frame.kind=="Slider" then sliders[#sliders+1]=frame end
 end
-assert(#sliders==6,"four existing sliders plus bag highlight and TrailBar appearance opacity")
+assert(#sliders==10,"six existing sliders plus four global appearance controls")
 local appearanceSlider,highlightSlider
 for _,frame in ipairs(sliders) do
     if frame.parent==categories["The Bar Appearance"].panel then
