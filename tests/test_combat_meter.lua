@@ -2,6 +2,7 @@
 -- setters, not Lua comparisons/math/formatting/persistent SavedVariables.
 local frames,queued,chat,callCount,resetCount={}, {}, {}, 0,0
 local locked=false
+local protected=true
 local function Secret(v)
     return setmetatable({secret=true,raw=v},{
         __lt=function() error("secret value compared by Lua!") end,
@@ -36,6 +37,14 @@ _G.C_DamageMeter={
     GetCombatSessionFromType=function(session,typeId)
         callCount=callCount+1
         _G.lastSession=session;_G.lastMeterType=typeId
+        if not protected then
+            return {maxAmount=900,combatSources={
+                {name="Detok",classFilename="HUNTER",isLocalPlayer=true,
+                    amountPerSecond=555,totalAmount=4400},
+                {name="Other Player",classFilename="WARRIOR",isLocalPlayer=false,
+                    amountPerSecond=240,totalAmount=2200}
+            }}
+        end
         return {maxAmount=maxValue,combatSources={
             {name=secretName,classFilename="HUNTER",isLocalPlayer=true,
                 amountPerSecond=rawValue,totalAmount=Secret(4400)},
@@ -53,6 +62,12 @@ local function Widget(kind,name,parent)
     function w:SetWidth(x) self.w=x end
     function w:SetHeight(y) self.h=y end
     function w:SetScale(x) self.scale=x end
+    function w:SetAlpha(x) self.alpha=x end
+    function w:SetResizable(x) self.resizable=x end
+    function w:SetResizeBounds(...) self.bounds={...} end
+    function w:GetWidth() return self.w end
+    function w:GetHeight() return self.h end
+    function w:StartSizing(which) self.sizing=which end
     function w:ClearAllPoints() self.anchors={} end
     function w:SetPoint(...) self.anchors=self.anchors or {};self.anchors[#self.anchors+1]={...} end
     function w:SetAllPoints() end
@@ -74,7 +89,12 @@ local function Widget(kind,name,parent)
     function w:SetStatusBarColor(...) self.barColor={...} end
     function w:SetStatusBarTexture(...) self.texture={...} end
     function w:SetMinMaxValues(a,b) self.min,self.max=a,b end
-    function w:SetValue(v) self.value=v end
+    function w:SetValue(v)
+        self.value=v
+        if self.kind=="Slider" and self.script.OnValueChanged then
+            self.script.OnValueChanged(self,v)
+        end
+    end
     function w:SetText(v) self.text=v end
     function w:SetFormattedText(fmt,v)
         self.nativeFormat=fmt
@@ -97,7 +117,9 @@ assert(ChalkBoxDB.meter.shown==true and ChalkBoxDB.meter.mode=="dps")
 event.script.OnEvent(event,"PLAYER_LOGIN")
 local window
 for _,f in ipairs(frames) do if f.name=="ChalkBoxCombatMeterFrame" then window=f end end
-assert(window and window.shown and window.w==326 and window.h==272)
+assert(window and window.shown and window.w==326 and window.h==266)
+assert(window.resizable==true and window.alpha==0.94,
+    "window resizable by default, with saved opacity")
 local function Flush()
     local todo=queued
     queued={}
@@ -120,6 +142,36 @@ for _,f in ipairs(labels) do
 end
 assert(formatted and named,"secret DPS and name go directly to native UI setters")
 assert(ChalkBox_MeterStatus().rows==8)
+local function Button(caption)
+    for _,f in ipairs(frames) do
+        if f.kind=="Button" and f.caption==caption then return f end
+    end
+end
+local printButton=Button("PRINT")
+local lockButton=Button("LOCK")
+local grip
+for _,f in ipairs(frames) do
+    if f.isChalkBoxResizeGrip then grip=f end
+end
+assert(printButton and lockButton and grip,
+    "visible PRINT/LOCK buttons and resize grip must be directly accessible")
+local sawBranding=false
+for _,f in ipairs(labels) do
+    if f.text=="CHALKBOX" or f.text=="Gold stripe = you  |  Native Blizzard data" then
+        sawBranding=true
+    end
+end
+assert(not sawBranding,"no branding or noisy footer inside compact meter")
+local slider
+for _,f in ipairs(frames) do
+    if f.kind=="Slider" then slider=f end
+end
+assert(slider and slider.value==94,"opacity slider shown on the meter window")
+slider:SetValue(75)
+assert(ChalkBoxDB.meter.opacity==0.75 and window.alpha==0.75,
+    "on-window transparency slider changes visibility and saves preference")
+ChalkBox_MeterCommand("opacity 60")
+assert(window.alpha==0.60,"slash opacity setting uses same state")
 ChalkBox_MeterCommand("healing")
 Flush()
 assert(lastMeterType==2,"can switch damage/healing modes")
@@ -130,13 +182,23 @@ ChalkBox_MeterCommand("overall")
 Flush()
 assert(lastSession==0,"can review overall group session")
 ChalkBox_MeterCommand("rows 5")
-assert(window.h==197,"user can shrink meter to five rows")
+assert(window.h==191,"user can shrink meter to five rows")
 ChalkBox_MeterCommand("scale 115")
 assert(window.scale==1.15,"user can enlarge readable UI")
 ChalkBox_MeterCommand("lock")
-assert(ChalkBoxDB.meter.locked)
-ChalkBox_MeterCommand("unlock")
-assert(not ChalkBoxDB.meter.locked)
+assert(ChalkBoxDB.meter.locked and lockButton.caption=="UNLOCK")
+grip.script.OnMouseDown(grip,"LeftButton")
+assert(not window.sizing,"lock prevents resizing")
+lockButton.script.OnClick(lockButton)
+assert(not ChalkBoxDB.meter.locked and lockButton.caption=="LOCK",
+    "on-window lock button toggles back without visiting options")
+window:SetSize(422,66+10*25)
+grip.script.OnMouseDown(grip,"LeftButton")
+assert(window.sizing=="BOTTOMRIGHT","grip starts live window resize")
+grip.script.OnMouseUp(grip)
+assert(ChalkBoxDB.meter.width==422 and ChalkBoxDB.meter.rows==10,
+    "dragged width/height turn into saved width and visible row count")
+assert(window.w==422 and window.h==316,"resized meter keeps dimensions")
 ChalkBox_MeterCommand("hide")
 Flush()
 local old=callCount
@@ -155,6 +217,24 @@ assert(StaticPopupDialogs.CHALKBOX_METER_RESET.OnAccept()==false and resetCount=
 locked=false
 assert(StaticPopupDialogs.CHALKBOX_METER_RESET.OnAccept()==true and resetCount==1,
     "user-confirmed action resets Blizzard's shared sessions")
+-- Printing is intentionally local only, never party chat and never secret.
+locked=true
+local oldChat=#chat
+printButton.script.OnClick(printButton)
+assert(#chat==oldChat+1 and chat[#chat]:find("Finish combat",1,true),
+    "print button refuses protected in-combat totals")
+locked=false
+oldChat=#chat
+printButton.script.OnClick(printButton)
+assert(#chat==oldChat+1 and chat[#chat]:find("protected",1,true),
+    "protected data also refused when client still masks results after combat")
+protected=false
+oldChat=#chat
+printButton.script.OnClick(printButton)
+assert(#chat==oldChat+3 and chat[oldChat+1]:find("HEAL",1,true)
+    and chat[oldChat+2]:find("Detok",1,true),
+    "one-click print writes a header and both ranked results to LOCAL chat")
+assert(resetCount==1,"printing must never reset shared combat sessions")
 local api=C_DamageMeter
 C_DamageMeter=nil
 ChalkBox_MeterCommand("status")
@@ -163,4 +243,4 @@ ChalkBox_MeterCommand("dps")
 Flush()
 assert(window.shown)
 C_DamageMeter=api
-print("PASS: secure Blizzard combat meter, direct secret-value setters, current/last/overall, modes, resize, hide, confirm reset, and missing API fallback")
+print("PASS: meter print guarded, no branding, draggable resize/lock/opacity, protected-value UI setters, modes, settings and shared reset confirmation")

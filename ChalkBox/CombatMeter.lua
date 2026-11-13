@@ -2,7 +2,7 @@
 -- No COMBAT_LOG_EVENT_UNFILTERED, GUID parsing, pet attribution guesses, or
 -- calculations on secret combat data. Use Blizzard's C_DamageMeter directly.
 local addonName=...
-local db,window,header,notice
+local db,window,header,notice,opacitySlider,lockButton,resizeHandle
 local rows={}
 local refreshQueued=false
 local modes={
@@ -38,6 +38,8 @@ local function Settings()
     if value.session==nil then value.session="current" end
     if value.rows~=5 and value.rows~=8 and value.rows~=12 then value.rows=8 end
     if value.scale~=0.85 and value.scale~=1 and value.scale~=1.15 then value.scale=1 end
+    if type(value.width)~="number" or value.width<300 or value.width>600 then value.width=326 end
+    if type(value.opacity)~="number" or value.opacity<0.35 or value.opacity>1 then value.opacity=0.94 end
     return value
 end
 local function Find(list,key)
@@ -80,10 +82,23 @@ end
 local function Note(text)
     if notice then notice:SetText(text or "") end
 end
+local function Clamp(v,low,high)
+    return math.min(high,math.max(low,v))
+end
+local function ApplyOpacity()
+    if window and db and window.SetAlpha then window:SetAlpha(db.opacity) end
+end
+local function ApplyLocked()
+    if lockButton and db then
+        lockButton:SetText(db.locked and "UNLOCK" or "LOCK")
+    end
+end
 local function ApplyLayout()
     if not window or not db then return end
     window:SetScale(db.scale)
-    window:SetSize(326,72+db.rows*25)
+    window:SetSize(db.width,66+db.rows*25)
+    ApplyOpacity()
+    ApplyLocked()
     if window.ClearAllPoints then window:ClearAllPoints() end
     if db.position=="custom" and type(db.x)=="number" and type(db.y)=="number" then
         window:SetPoint("CENTER",UIParent,"CENTER",db.x,db.y)
@@ -94,11 +109,20 @@ local function ApplyLayout()
         if i<=db.rows then row:Show() else row:Hide() end
     end
 end
+local function SaveResizedWindow()
+    if not window or not db or db.locked then return end
+    if type(window.GetWidth)~="function" or type(window.GetHeight)~="function" then return end
+    local width,height=window:GetWidth(),window:GetHeight()
+    if type(width)~="number" or type(height)~="number" then return end
+    db.width=Clamp(math.floor(width+0.5),300,600)
+    db.rows=Clamp(math.floor((height-66)/25+0.5),5,12)
+    ApplyLayout()
+end
 local function MakeRow(i)
     local frame=CreateFrame("Frame",nil,window)
     frame:SetHeight(23)
-    frame:SetPoint("TOPLEFT",window,"TOPLEFT",11,-41-(i-1)*25)
-    frame:SetPoint("TOPRIGHT",window,"TOPRIGHT",-11,-41-(i-1)*25)
+    frame:SetPoint("TOPLEFT",window,"TOPLEFT",11,-39-(i-1)*25)
+    frame:SetPoint("TOPRIGHT",window,"TOPRIGHT",-11,-39-(i-1)*25)
     local bg=frame:CreateTexture(nil,"BACKGROUND")
     bg:SetAllPoints(frame)
     bg:SetColorTexture(0.095,0.14,0.19,i%2==0 and 0.78 or 0.64)
@@ -234,7 +258,7 @@ local function Refresh()
     if visible==0 then
         Note("No fight data yet. Attack something!")
     else
-        Note("Gold stripe = you  |  Native Blizzard data")
+        Note("")
     end
 end
 local function QueueRefresh()
@@ -290,16 +314,87 @@ local function MakeButton(parent,title,width,offset,action)
     local text=Font(button,"GameFontHighlightSmall",0.96,0.90,0.75)
     text:SetAllPoints(button)
     if text.SetJustifyH then text:SetJustifyH("CENTER") end
-    function button:SetText(v) text:SetText(v) end
+    function button:SetText(v)
+        self.caption=v
+        text:SetText(v)
+    end
     button:SetText(title)
     button:SetScript("OnClick",action)
     return button
 end
+-- Print is an explicit LOCAL-chat snapshot, not a party broadcast.
+-- Never read/process the protected fields during combat.
+local function PrintFight()
+    if type(InCombatLockdown)=="function" and InCombatLockdown() then
+        Chat("Finish combat before printing the fight; live totals are protected.")
+        return false
+    end
+    local available,reason=IsAvailable()
+    if not available then Chat(reason);return false end
+    local mode=Choice()
+    local session=Session()
+    local modeID=EnumValue("DamageMeterType",mode.enum,
+        ({Dps=1,DamageDone=0,Hps=3,HealingDone=2,DamageTaken=7,Interrupts=5})[mode.enum])
+    local requested=EnumValue("DamageMeterSessionType",session.enum,
+        ({Current=1,Expired=2,Overall=0})[session.enum])
+    local function Fetch(sessionID)
+        local ok,record=pcall(C_DamageMeter.GetCombatSessionFromType,sessionID,modeID)
+        if not ok or not Safe(record) or type(record)~="table" then return end
+        local sources=record.combatSources
+        if not Safe(sources) or type(sources)~="table" then return end
+        return sources
+    end
+    local sources=Fetch(requested)
+    local title=session.label
+    if (not sources or #sources==0) and db.session=="current" then
+        sources=Fetch(EnumValue("DamageMeterSessionType","Expired",2))
+        title="Last"
+    end
+    if not sources or #sources==0 then
+        Chat("No completed fight data to print yet.")
+        return false
+    end
+    -- Scan first. If ANY selected number/name is protected, do not print a
+    -- misleading, incomplete ranking or try a forbidden Lua conversion.
+    local entries={}
+    for i=1,math.min(#sources,db.rows) do
+        local source=sources[i]
+        if not Safe(source) or type(source)~="table" then
+            Chat("The fight contains protected data. Try again after combat.")
+            return false
+        end
+        local name=source.name
+        local amount=mode.perSecond and source.amountPerSecond or source.totalAmount
+        if not Safe(name) or type(name)~="string" or
+            not Safe(amount) or type(amount)~="number" then
+            Chat("Some fight values are still protected. Try again after combat.")
+            return false
+        end
+        entries[#entries+1]={name=name,amount=amount}
+    end
+    Chat(mode.label.." | "..title.." | "..#entries.." players (local chat)")
+    for i,entry in ipairs(entries) do
+        Chat(string.format("%d. %s - %.0f",i,entry.name,entry.amount))
+    end
+    return true
+end
+function ChalkBox_MeterPrintFight()
+    if not db then db=Settings() end
+    return PrintFight()
+end
+
 local function CreateWindow()
     if window or not UIParent then return end
     window=CreateFrame("Frame","ChalkBoxCombatMeterFrame",UIParent)
     window:SetFrameStrata("MEDIUM")
     window:SetMovable(true)
+    if window.SetResizable then window:SetResizable(true) end
+    if window.SetResizeBounds then
+        window:SetResizeBounds(300,66+5*25,600,66+12*25)
+    elseif window.SetMinResize and window.SetMaxResize then
+        window:SetMinResize(300,66+5*25)
+        window:SetMaxResize(600,66+12*25)
+    end
     if window.SetClampedToScreen then window:SetClampedToScreen(true) end
     window:EnableMouse(true)
     local bg=window:CreateTexture(nil,"BACKGROUND")
@@ -308,8 +403,9 @@ local function CreateWindow()
     local accent=window:CreateTexture(nil,"ARTWORK")
     accent:SetPoint("TOPLEFT",window,"TOPLEFT",0,0)
     accent:SetPoint("TOPRIGHT",window,"TOPRIGHT",0,0)
-    accent:SetHeight(3)
+    accent:SetHeight(2)
     accent:SetColorTexture(0.96,0.67,0.27,1)
+
     header=CreateFrame("Frame",nil,window)
     header:SetPoint("TOPLEFT",window,"TOPLEFT",4,-4)
     header:SetPoint("TOPRIGHT",window,"TOPRIGHT",-4,-4)
@@ -330,23 +426,70 @@ local function CreateWindow()
             db.position="custom"
         end
     end)
-    local logo=Font(header,"GameFontNormal",0.96,0.74,0.34)
-    logo:SetPoint("LEFT",header,"LEFT",9,0)
-    logo:SetWidth(94)
-    logo:SetText("CHALKBOX")
-    meterButton=MakeButton(header,"DPS",67,-113,function() Next(modes,"mode",SetMode) end)
-    sessionButton=MakeButton(header,"Fight",74,-35,function() Next(sessions,"session",SetSession) end)
-    local close=MakeButton(header,"x",24,-7,function() SetShown(false) end)
-    local footer=Font(window,"GameFontHighlightSmall",0.53,0.66,0.72)
-    footer:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",13,11)
-    footer:SetPoint("BOTTOMRIGHT",window,"BOTTOMRIGHT",-12,11)
-    if footer.SetJustifyH then footer:SetJustifyH("CENTER") end
-    notice=footer
+    -- Zero branding/footer noise. Every button does something useful.
+    meterButton=MakeButton(header,"DPS",59,-249,function()
+        Next(modes,"mode",SetMode)
+    end)
+    sessionButton=MakeButton(header,"Fight",70,-176,function()
+        Next(sessions,"session",SetSession)
+    end)
+    MakeButton(header,"PRINT",61,-109,function() PrintFight() end)
+    lockButton=MakeButton(header,"LOCK",60,-42,function()
+        db.locked=not db.locked
+        ApplyLocked()
+    end)
+    MakeButton(header,"X",24,-5,function() SetShown(false) end)
+
+    notice=Font(window,"GameFontHighlightSmall",0.62,0.70,0.77)
+    notice:SetPoint("TOPLEFT",window,"TOPLEFT",28,-67)
+    notice:SetPoint("TOPRIGHT",window,"TOPRIGHT",-20,-67)
+    if notice.SetJustifyH then notice:SetJustifyH("CENTER") end
+    notice:SetText("")
+
     for i=1,12 do rows[i]=MakeRow(i) end
+
+    local opacityLabel=Font(window,"GameFontHighlightSmall",0.65,0.76,0.85)
+    opacityLabel:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",12,8)
+    opacityLabel:SetText("Opacity")
+    opacitySlider=CreateFrame("Slider",nil,window,"OptionsSliderTemplate")
+    opacitySlider:SetSize(120,12)
+    opacitySlider:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",65,8)
+    opacitySlider:SetMinMaxValues(35,100)
+    if opacitySlider.SetValueStep then opacitySlider:SetValueStep(5) end
+    opacitySlider:SetScript("OnValueChanged",function(_,amount)
+        if db and type(amount)=="number" then
+            db.opacity=Clamp(math.floor(amount+0.5),35,100)/100
+            ApplyOpacity()
+        end
+    end)
+    opacitySlider:SetValue(math.floor(db.opacity*100+0.5))
+
+    resizeHandle=CreateFrame("Button",nil,window)
+    resizeHandle.isChalkBoxResizeGrip=true
+    resizeHandle:SetSize(20,20)
+    resizeHandle:SetPoint("BOTTOMRIGHT",window,"BOTTOMRIGHT",-2,2)
+    resizeHandle:EnableMouse(true)
+    for i=1,3 do
+        local stripe=resizeHandle:CreateTexture(nil,"OVERLAY")
+        stripe:SetSize(2+i*3,1)
+        stripe:SetPoint("BOTTOMRIGHT",resizeHandle,"BOTTOMRIGHT",-2,-2-i*4)
+        stripe:SetColorTexture(0.75,0.77,0.79,0.78)
+    end
+    resizeHandle:SetScript("OnMouseDown",function(_,button)
+        if button=="LeftButton" and not db.locked and window.StartSizing then
+            window:StartSizing("BOTTOMRIGHT")
+        end
+    end)
+    resizeHandle:SetScript("OnMouseUp",function()
+        window:StopMovingOrSizing()
+        SaveResizedWindow()
+    end)
+
     ApplyLayout()
     UpdateButtons()
     if db.shown then window:Show() else window:Hide() end
 end
+
 local function ResetNative()
     if type(InCombatLockdown)=="function" and InCombatLockdown() then
         Chat("Cannot reset damage data during combat.")
@@ -378,8 +521,8 @@ local function ConfirmReset()
 end
 local function Help()
     Chat("/chalk meter [show|hide|toggle|dps|damage|hps|healing|taken|interrupts]")
-    Chat("/chalk meter [current|last|overall|lock|unlock|rows 5/8/12|scale 85/100/115|reset]")
-    Chat("Drag the heading to move. Mode and Fight controls cycle views. Reset also clears Blizzard's meter.")
+    Chat("/chalk meter [current|last|overall|print|lock|unlock|rows 5/8/12|opacity 35-100|reset]")
+    Chat("Drag the heading to move, bottom-right grip to resize; PRINT sends a local chat summary after combat.")
 end
 function ChalkBox_MeterCommand(input)
     if not db then db=Settings() end
@@ -390,15 +533,19 @@ function ChalkBox_MeterCommand(input)
     elseif value=="hide" or value=="off" then SetShown(false)
     elseif value=="reset" then ConfirmReset()
     elseif value=="reset confirm" then ResetNative()
+    elseif value=="print" then PrintFight()
     elseif value=="help" then Help()
     elseif value=="status" then
         local enabled=IsAvailable()
         Chat("Native API: "..(enabled and "available" or "unavailable")..
             " | "..db.mode.." | "..db.session..
-            " | "..db.rows.." rows | "..(db.shown and "shown" or "hidden"))
+            " | "..db.rows.." rows | "..math.floor(db.opacity*100)..
+            "% opacity | "..(db.locked and "locked" or "unlocked")..
+            " | "..(db.shown and "shown" or "hidden"))
     elseif value=="lock" or value=="unlock" then
         db.locked=value=="lock"
-        Chat(db.locked and "Window locked." or "Drag header to move the window.")
+        ApplyLocked()
+        Chat(db.locked and "Meter locked in place." or "Meter unlocked: drag the header or resize grip.")
     elseif value=="position reset" then
         db.position=nil;db.x=nil;db.y=nil
         ApplyLayout()
@@ -409,7 +556,12 @@ function ChalkBox_MeterCommand(input)
     else
         local n=value:match("^rows (%d+)$")
         local scale=value:match("^scale (%d+)$")
-        if n and (tonumber(n)==5 or tonumber(n)==8 or tonumber(n)==12) then
+        local opacity=value:match("^opacity (%d+)$")
+        if opacity and tonumber(opacity)>=35 and tonumber(opacity)<=100 then
+            db.opacity=math.floor(tonumber(opacity)+0.5)/100
+            if opacitySlider then opacitySlider:SetValue(db.opacity*100) end
+            ApplyOpacity()
+        elseif n and (tonumber(n)==5 or tonumber(n)==8 or tonumber(n)==12) then
             db.rows=tonumber(n)
             ApplyLayout();QueueRefresh()
         elseif scale and (tonumber(scale)==85 or tonumber(scale)==100 or tonumber(scale)==115) then
@@ -422,7 +574,8 @@ function ChalkBox_MeterStatus()
     if not db then db=Settings() end
     local enabled=IsAvailable()
     return {shown=db.shown,locked=db.locked,mode=db.mode,session=db.session,
-        rows=db.rows,scale=db.scale,available=enabled}
+        rows=db.rows,scale=db.scale,opacity=db.opacity,width=db.width,
+        available=enabled}
 end
 local event=CreateFrame("Frame")
 event:RegisterEvent("ADDON_LOADED")

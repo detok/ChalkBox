@@ -50,7 +50,7 @@ Open a crafting profession window until the recipe list loads; ChalkBox detects 
 
 Want to see how you're doing in a fight? ChalkBox now includes a **lightweight, movable DPS meter**. It reads Blizzard's own `C_DamageMeter` totals (Forever blocks direct combat-log parsing), displaying class-colored bars without doing unsafe calculations on protected combat values.
 
-**Two easy buttons** on the title bar cycle the statistic (**DPS / DMG / HPS / HEAL / TAKEN / INT**) and session (**Fight / Last / Overall**). Your row gets a gold marker. Drag the header, hide with **x**, or open **Esc → Options → AddOns → ChalkBox → Combat Meter** to lock, resize or show the window. It is enabled by default and doesn't change Blizzard's built-in meter.
+The compact, unbranded header has **DPS / Fight / PRINT / LOCK / X** controls. Cycle stats (**DPS / DMG / HPS / HEAL / TAKEN / INT**) and sessions (**Fight / Last / Overall**), click **PRINT** after a battle for a *local-chat* ranking, and **LOCK** to prevent moving or resizing it. Drag the header to move, the bottom-right corner to resize, or use the **opacity slider** below the bars (35–100%). You can change all of this under **Esc → Options → AddOns → ChalkBox → Combat Meter**. It is enabled by default and doesn't change Blizzard's built-in meter.
 
 Use `/chalk meter` to toggle, `/chalk meter dps` for DPS, `/chalk meter overall` for overall, and `/chalk meter help` for every command. Reset asks for confirmation because it clears Blizzard's shared meter sessions too. Pet and guardian grouping remains whatever Blizzard supplies; ChalkBox does not invent its own numbers. See [user guide](docs/USER_GUIDE.md).
 
@@ -71,6 +71,8 @@ Use **`/chalk prep test`** to preview the central reminder instantly. **`/chalk 
 | `/chalk prep test` | Display a test toast |
 | `/chalk meter` | Show or hide the built-in native DPS meter |
 | `/chalk meter help` | List statistic, fight and layout controls |
+| `/chalk meter print` | Print the chosen fight ranking locally, after combat |
+| `/chalk prep tent status` | Check Boosted Rest, rested-XP and manual tent acknowledgment |
 | `/chalk guard` | See social invite protections |
 | `/chalk bar status` | Check TrailBar placement and reserved space |
 | `/chalk emota idle preview` | Test a random idle emote |

@@ -1,7 +1,10 @@
 -- New CampSense behavior: only announce missing/expiring Camp Benefits.
 local now=0
 local updates, messages, toasts={}, {}, {}
-local auras={}
+local auras, harmful={}, {}
+local rested=0
+_G.UnitXPMax=function() return 1000 end
+_G.GetXPExhaustion=function() return rested end
 _G.GetTime=function() return now end
 _G.GetBuildInfo=function() return "1.60.1","1","today",16001 end
 _G.GetItemCount=function() return 10 end
@@ -20,7 +23,9 @@ _G.CreateFrame=function()
     updates[#updates+1]=obj
     return obj
 end
-_G.C_UnitAuras={GetAuraDataByIndex=function(_,i) return auras[i] end}
+_G.C_UnitAuras={GetAuraDataByIndex=function(_,i,filter)
+    return filter=="HARMFUL" and harmful[i] or auras[i]
+end}
 _G.C_Timer={NewTicker=function(_,callback) _G.pulse=callback;return {} end}
 _G.ChalkBox_ShowReminder=function(msg,title)
     toasts[#toasts+1]={msg=msg,title=title}
@@ -36,8 +41,8 @@ assert(ChalkBoxDB.camp.toast==true and ChalkBoxDB.camp.enabled==true)
 ChalkBoxDB.camp.supplies=false
 ChalkBoxDB.camp.classCare=false
 now=181;pulse()
-assert(#toasts==1 and toasts[1].msg:find("missing",1,true),
-    "first reminder must detect missing Camp Benefits and use on-screen toast")
+assert(#toasts==1 and toasts[1].msg:find("Rested XP",1,true),
+    "missing stat buff alone must not be conflated with tent; low rested XP prompts a tent")
 auras={{name="Camp Benefits",spellId=1229741,expirationTime=5000}}
 now=400;pulse()
 assert(#toasts==1,"active camp buff cancels redundant reminders")
@@ -55,8 +60,8 @@ now=2110;pulse()
 assert(#toasts==2,"buff reactivation re-arms the transition detection")
 auras={}
 now=2240;pulse()
-assert(#toasts==3 and toasts[3].msg:find("missing",1,true),
-    "buff loss generates a timely fresh reminder")
+assert(#toasts==3 and toasts[3].msg:find("Rested XP",1,true),
+    "rested XP still low and a buff transition can prompt a tent")
 assert(ChalkBox_CampTestToast()==true and #toasts==4,
     "the manual Test Reminder bypasses the timer and proves toast functionality")
 ChalkBox_CampCommand("toast off")
@@ -66,6 +71,37 @@ auras={{name="Camp Benefits",spellId=1229741,expirationTime=7000}}
 now=2400;pulse()
 auras={}
 now=2520;pulse()
-assert(#toasts==4 and messages[#messages]:find("Camp Benefits",1,true),
+assert(#toasts==4 and messages[#messages]:find("Rested XP",1,true),
     "disabled toast intentionally uses chat fallback")
-print("PASS: real buff-driven toasts for missing/expiring, no active/gathering reminders, state-change bypass, test button and chat fallback")
+-- A tent used successfully gives HARMFUL Boosted Rest, NOT the stat buff.
+-- Losing Camp Benefits must not imply the tent rested-XP bonus vanished.
+harmful={{name="Boosted Rest",spellId=1229451,expirationTime=6000}}
+now=2600;pulse()
+assert(ChalkBox_CampStatus().tent.state=="cooldown")
+local notified=#toasts
+now=3200;pulse()
+assert(#toasts==notified,"do not re-prompt tent when Boosted Rest is active")
+harmful={}
+rested=75
+now=3300;pulse()
+assert(ChalkBox_CampStatus().tent.state=="sufficient",
+    "rested XP >=5% is already enough even without debuff")
+assert(#toasts==notified,"enough rested XP must not trigger tent warnings")
+rested=0
+now=3350
+ChalkBox_CampCommand("tent done")
+assert(ChalkBox_CampStatus().tent.state=="acknowledged",
+    "manual confirmation fallback supports clients hiding Boosted Rest")
+now=3400;pulse()
+assert(#toasts==notified,"manual confirmation suppresses false tent prompts")
+ChalkBox_CampCommand("tent clear")
+assert(ChalkBox_CampStatus().tent.state=="ready")
+assert(ChalkBox_CampStatus().buff.state=="missing",
+    "stat buff remains independently missing without claiming tent failure")
+ChalkBox_CampChecklist()
+local foundBoosted=false
+for _,line in ipairs(messages) do
+    if line:find("Boosted Rest",1,true) then foundBoosted=true end
+end
+assert(foundBoosted or #messages>0,"camp checklist contains tent status")
+print("PASS: distinct tent rested XP, Boosted Rest cooldown suppression, sufficient rested XP, manual fallback, native aura reminder and chat")

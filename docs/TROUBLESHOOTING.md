@@ -48,6 +48,20 @@ A missing annotation doesn't mean an item is safe to sell. Keep important items 
 
 To return to its default position: **`/chalk meter position reset`**. A hidden window doesn't update and adds no permanent meter polling.
 
+## My Camp Tent worked but ChalkBox still says no Camp Benefits
+
+This is normal: the **Camp Tent** tops up **Rested XP**, while **Camp Benefits** represents separate stat buffs. Run **`/chalk prep`** to see two different results: **Camp Benefits** (stat buffs) and **Camp Tent** (Boosted Rest lockout or rested-XP threshold). Boosted Rest is a **harmful debuff**, spell **1229451**, lasting about an hour. If it is active, ChalkBox should not prompt you to use a tent again.
+
+If your client hides the debuff or rested-XP API, ChalkBox reports tent state **unknown**. Click **Tent Used** in Adventure Prep or type `/chalk prep tent done` to acknowledge tent use for one hour in this session; `/chalk prep tent clear` reverses it.
+
+## Combat Meter will not print my fight
+
+- The **PRINT** button posts *locally to your own chat*, never automatically to party/raid.
+- Try clicking it **after combat**, not mid-fight; combat totals may be protected.
+- If **Fight** is empty, try **Last** in the window. The Print command also tries Last when current session has no data.
+- `/chalk meter status` verifies the native meter is available.
+- If the client still considers values secret, ChalkBox refuses to print and shows a message rather than attempting to bypass protection.
+
 ## TrailBar overlays other UI
 
 Run **`/chalk bar status`**. Try `/chalk bar reserve on`, change its top/bottom position, or `/chalk bar reserve off` if your custom UI needs the full viewport. Some addon or manually placed UI frames don't follow the screen reservation.

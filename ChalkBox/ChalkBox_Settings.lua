@@ -453,13 +453,17 @@ local function MakePrep()
             if panel.OnRefresh then panel.OnRefresh() end
         end)
     end
-    Button(panel,"Test Reminder",28,-396,140,function()
+    Button(panel,"Test Reminder",28,-390,126,function()
         if ChalkBox_CampTestToast then ChalkBox_CampTestToast() end
     end)
-    Button(panel,"Print Checklist",181,-396,139,function()
+    Button(panel,"Print Checklist",162,-390,130,function()
         if ChalkBox_CampChecklist then ChalkBox_CampChecklist() end
     end)
-    local summary=Label(panel,"","GameFontHighlightSmall",331,-392,168)
+    Button(panel,"Tent Used",299,-390,126,function()
+        if ChalkBox_CampCommand then ChalkBox_CampCommand("tent done") end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    local summary=Label(panel,"","GameFontHighlightSmall",29,-421,495)
     panel:AddRefresh(function()
         local status=ChalkBox_CampStatus and ChalkBox_CampStatus() or nil
         if not status then
@@ -467,7 +471,9 @@ local function MakePrep()
             return
         end
         local state=status.buff and status.buff.state or "unknown"
-        summary:SetText("Buff: "..state.." | "..tostring(status.interval).."m")
+        local tent=status.tent and status.tent.state or "unknown"
+        summary:SetText("Stat buffs: "..state.." | Tent XP: "..tent..
+            " | General tips: "..tostring(status.interval).."m")
     end)
     return panel
 end
@@ -492,21 +498,39 @@ local function MakeMeter()
             return status and status.locked==true
         end,
         function(on) Run(on and "lock" or "unlock") end)
-    Label(panel,"Rows visible","GameFontNormalLarge",30,-232,340)
+    Label(panel,"Rows visible","GameFontNormalLarge",30,-224,340)
     for i,n in ipairs({5,8,12}) do
-        Button(panel,tostring(n).." rows",27+(i-1)*138,-256,120,
+        Button(panel,tostring(n).." rows",27+(i-1)*138,-247,120,
             function() Run("rows "..n) end)
     end
-    Label(panel,"Window size","GameFontNormalLarge",30,-305,340)
+    Label(panel,"Window size","GameFontNormalLarge",30,-284,340)
     for i,n in ipairs({85,100,115}) do
-        Button(panel,tostring(n).."%",27+(i-1)*138,-331,120,
+        Button(panel,tostring(n).."%",27+(i-1)*138,-305,120,
             function() Run("scale "..n) end)
     end
-    Button(panel,"Show Window",27,-386,133,function() Run("show") end)
-    Button(panel,"Reset Position",172,-386,145,function() Run("position reset") end)
-    Button(panel,"Reset Data...",328,-386,140,function() Run("reset") end)
-    Label(panel,"Tip: click DPS or Fight in the meter heading to switch views.",
-        "GameFontHighlightSmall",29,-417,495)
+    Label(panel,"Transparency","GameFontNormalLarge",30,-355,132)
+    local opacity=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
+    opacity:SetSize(244,17)
+    opacity:SetPoint("TOPLEFT",panel,"TOPLEFT",170,-351)
+    opacity:SetMinMaxValues(35,100)
+    if opacity.SetValueStep then opacity:SetValueStep(5) end
+    local loading=false
+    opacity:SetScript("OnValueChanged",function(_,value)
+        if not loading and type(value)=="number" then
+            Run("opacity "..math.floor(value+0.5))
+        end
+    end)
+    panel:AddRefresh(function()
+        local status=ChalkBox_MeterStatus and ChalkBox_MeterStatus()
+        loading=true
+        opacity:SetValue(math.floor(((status and status.opacity) or 0.94)*100+0.5))
+        loading=false
+    end)
+    Button(panel,"Show Window",27,-396,133,function() Run("show") end)
+    Button(panel,"Reset Position",172,-396,145,function() Run("position reset") end)
+    Button(panel,"Reset Data...",328,-396,140,function() Run("reset") end)
+    Label(panel,"PRINT in the meter sends a LOCAL fight summary; drag the corner to resize.",
+        "GameFontHighlightSmall",28,-428,495)
     return panel
 end
 
