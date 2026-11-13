@@ -40,6 +40,9 @@ local function Settings()
     if value.scale~=0.85 and value.scale~=1 and value.scale~=1.15 then value.scale=1 end
     if type(value.width)~="number" or value.width<300 or value.width>600 then value.width=326 end
     if type(value.opacity)~="number" or value.opacity<0.35 or value.opacity>1 then value.opacity=0.94 end
+    if value.iconMode~="off" and value.iconMode~="class" and value.iconMode~="spec" then
+        value.iconMode="class"
+    end
     return value
 end
 local function Find(list,key)
@@ -118,6 +121,59 @@ local function SaveResizedWindow()
     db.rows=Clamp(math.floor((height-66)/25+0.5),5,12)
     ApplyLayout()
 end
+-- WoW's original nine class badges are stored together in the client UI
+-- texture atlas. Coordinates match Blizzard's CLASS_ICON_TCOORDS; keep this
+-- fallback because the global table isn't present in every Forever build.
+-- Texture files and numeric specIconID values come from the CLIENT itself.
+local CLASS_ICON_TEXTURE="Interface\\Glues\\CharacterCreate\\UI-CharacterCreate-Classes"
+local UNKNOWN_ICON_TEXTURE="Interface\\Icons\\INV_Misc_QuestionMark"
+local CLASS_ICON_FALLBACK={
+    WARRIOR={0,0.25,0,0.25},
+    MAGE={0.25,0.49609375,0,0.25},
+    ROGUE={0.49609375,0.7421875,0,0.25},
+    DRUID={0.7421875,0.98828125,0,0.25},
+    HUNTER={0,0.25,0.25,0.5},
+    SHAMAN={0.25,0.49609375,0.25,0.5},
+    PRIEST={0.49609375,0.7421875,0.25,0.5},
+    WARLOCK={0.7421875,0.98828125,0.25,0.5},
+    PALADIN={0,0.25,0.5,0.75},
+}
+local function DisplayClassIcon(row,source)
+    local icon=row.classIcon
+    if db.iconMode=="off" then
+        icon:Hide()
+        return
+    end
+    local specID=source.specIconID
+    if db.iconMode=="spec" and Safe(specID) and
+        type(specID)=="number" and specID>0 then
+        icon:SetTexture(specID)
+        icon:SetTexCoord(0.08,0.92,0.08,0.92)
+        icon:Show()
+        return
+    end
+    local class=Safe(source.classFilename) and source.classFilename or nil
+    local coords=type(class)=="string" and
+        ((type(CLASS_ICON_TCOORDS)=="table" and CLASS_ICON_TCOORDS[class]) or
+            CLASS_ICON_FALLBACK[class]) or nil
+    if coords and type(coords)=="table" then
+        icon:SetTexture(CLASS_ICON_TEXTURE)
+        icon:SetTexCoord(coords[1],coords[2],coords[3],coords[4])
+    else
+        -- Never identify a pet/unknown source as a player class.
+        icon:SetTexture(UNKNOWN_ICON_TEXTURE)
+        icon:SetTexCoord(0.08,0.92,0.08,0.92)
+    end
+    icon:Show()
+end
+local function ArrangeRowName(row)
+    if not db then return end
+    local off=db.iconMode=="off"
+    if row.playerName.ClearAllPoints then row.playerName:ClearAllPoints() end
+    row.playerName:SetPoint("LEFT",row.frame,"LEFT",off and 27 or 49,0)
+    row.playerName:SetWidth(off and 142 or 120)
+    if off then row.classIcon:Hide() end
+end
 local function MakeRow(i)
     local frame=CreateFrame("Frame",nil,window)
     frame:SetHeight(23)
@@ -144,9 +200,15 @@ local function MakeRow(i)
     rank:SetWidth(18)
     if rank.SetJustifyH then rank:SetJustifyH("LEFT") end
     rank:SetText(i..".")
+    local classIcon=frame:CreateTexture(nil,"ARTWORK")
+    classIcon:SetSize(18,18)
+    classIcon.isChalkBoxClassIcon=true
+    classIcon:SetPoint("LEFT",frame,"LEFT",27,0)
+    classIcon:SetTexture(UNKNOWN_ICON_TEXTURE)
+    classIcon:SetTexCoord(0.08,0.92,0.08,0.92)
     local name=Font(frame,"GameFontHighlightSmall",0.98,0.98,0.99)
-    name:SetPoint("LEFT",frame,"LEFT",27,0)
-    name:SetWidth(142)
+    name:SetPoint("LEFT",frame,"LEFT",49,0)
+    name:SetWidth(120)
     if name.SetJustifyH then name:SetJustifyH("LEFT") end
     local value=Font(frame,"GameFontHighlightSmall",1,0.94,0.77)
     value:SetPoint("RIGHT",frame,"RIGHT",-7,0)
@@ -154,7 +216,10 @@ local function MakeRow(i)
     if value.SetJustifyH then value:SetJustifyH("RIGHT") end
     frame.bar=bar
     frame.marker=marker
+    frame.classIcon=classIcon
     frame.playerName=name
+    frame.frame=frame
+    ArrangeRowName(frame)
     frame.value=value
     return frame
 end
@@ -162,6 +227,7 @@ local function ResetDisplay(message)
     for _,row in ipairs(rows) do
         row.playerName:SetText("")
         row.value:SetText("")
+        row.classIcon:Hide()
         row.marker:Hide()
         row.bar:SetMinMaxValues(0,1)
         row.bar:SetValue(0)
@@ -181,6 +247,7 @@ local function DisplayValue(font,value)
     end
 end
 local function DrawRow(row,source,maxValue,perSecond)
+    DisplayClassIcon(row,source)
     local displayName=source.name
     if type(issecretvalue)=="function" and issecretvalue(displayName) then
         row.playerName:SetText(displayName)
@@ -250,6 +317,7 @@ local function Refresh()
         else
             rows[i].playerName:SetText("")
             rows[i].value:SetText("")
+            rows[i].classIcon:Hide()
             rows[i].marker:Hide()
             rows[i].bar:SetMinMaxValues(0,1)
             rows[i].bar:SetValue(0)
@@ -520,7 +588,7 @@ local function ConfirmReset()
 end
 local function Help()
     Chat("/chalk meter [show|hide|toggle|dps|damage|hps|healing|taken|interrupts]")
-    Chat("/chalk meter [current|last|overall|print|lock|unlock|rows 5/8/12|opacity 35-100|reset]")
+    Chat("/chalk meter [current|last|overall|print|lock|unlock|icons class/spec/off|rows 5/8/12|opacity 35-100|reset]")
     Chat("Drag the heading to move, bottom-right grip to resize; PRINT sends a local chat summary after combat.")
 end
 function ChalkBox_MeterCommand(input)
@@ -538,9 +606,13 @@ function ChalkBox_MeterCommand(input)
         local enabled=IsAvailable()
         Chat("Native API: "..(enabled and "available" or "unavailable")..
             " | "..db.mode.." | "..db.session..
-            " | "..db.rows.." rows | "..math.floor(db.opacity*100)..
+            " | "..db.rows.." rows | "..db.iconMode.." icons | "..math.floor(db.opacity*100)..
             "% opacity | "..(db.locked and "locked" or "unlocked")..
             " | "..(db.shown and "shown" or "hidden"))
+    elseif value=="icons class" or value=="icons spec" or value=="icons off" then
+        db.iconMode=value:match("icons (%w+)")
+        for _,row in ipairs(rows) do ArrangeRowName(row) end
+        QueueRefresh()
     elseif value=="lock" or value=="unlock" then
         db.locked=value=="lock"
         ApplyLocked()
@@ -574,6 +646,7 @@ function ChalkBox_MeterStatus()
     local enabled=IsAvailable()
     return {shown=db.shown,locked=db.locked,mode=db.mode,session=db.session,
         rows=db.rows,scale=db.scale,opacity=db.opacity,width=db.width,
+        iconMode=db.iconMode,
         available=enabled}
 end
 local event=CreateFrame("Frame")

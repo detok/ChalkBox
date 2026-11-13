@@ -27,7 +27,7 @@ ChalkBox helps you **avoid wasting useful items**, keep up with your camping buf
 | **ProfessionSense** | Records relevant learned recipe ingredients when you open profession windows. Where the client provides them, keeps recipe names and quantities. |
 | **CampSense** | Checks the **Camp Benefits** aura, reminds you when it is missing/expiring, and shows a small **center-screen toast**. Also tracks camp tools and class/pet preparedness. |
 | **TrailBar** | Slim 18px bar for XP/hour, time to level, gold and time, with real screen-space reservation. |
-| **Combat Meter** | Native Forever DPS/damage/healing leaderboards, current/last/overall fights, class-colored bars and simple draggable window. |
+| **Combat Meter** | Native Forever DPS/damage/healing leaderboards, **genuine WoW class icons** beside names, current/last/overall fights, class-colored bars and a draggable window. |
 | **QuestSense** | Automatically tracks accepted quests via the Forever `C_QuestLog` API. Smart fallback works even when zone/map pins aren't available; preserves your manual watches. |
 | **QuietGuard** | Tries to decline unsolicited guild invites and duels; optional filters for other invitations. |
 | **Emota** | Occasional native emote personality with race/class flavor, resting-area context and hunter-pet awareness. |
@@ -48,11 +48,11 @@ Open a crafting profession window until the recipe list loads; ChalkBox detects 
 
 ### Built-in Combat Meter — no additional addon
 
-Want to see how you're doing in a fight? ChalkBox now includes a **lightweight, movable DPS meter**. It reads Blizzard's own `C_DamageMeter` totals (Forever blocks direct combat-log parsing), displaying class-colored bars without doing unsafe calculations on protected combat values.
+Want to see how you're doing in a fight? ChalkBox includes a **lightweight, movable DPS meter** with **real WoW class emblems beside each player's name**. It reads Blizzard's own `C_DamageMeter` totals (Forever blocks direct combat-log parsing), displaying class-colored bars without doing unsafe calculations on protected combat values.
 
 The compact, unbranded header has **DPS / Fight / PRINT / LOCK / X** controls. Cycle stats (**DPS / DMG / HPS / HEAL / TAKEN / INT**) and sessions (**Fight / Last / Overall**), click **PRINT** after a battle for a *local-chat* ranking, and **LOCK** to prevent moving or resizing it. Drag the header to move, the bottom-right corner to resize, or use the **opacity slider** below the bars (35–100%). You can change all of this under **Esc → Options → AddOns → ChalkBox → Combat Meter**. It is enabled by default and doesn't change Blizzard's built-in meter.
 
-Use `/chalk meter` to toggle, `/chalk meter dps` for DPS, `/chalk meter overall` for overall, and `/chalk meter help` for every command. Reset asks for confirmation because it clears Blizzard's shared meter sessions too. Pet and guardian grouping remains whatever Blizzard supplies; ChalkBox does not invent its own numbers. See [user guide](docs/USER_GUIDE.md).
+Use `/chalk meter` to toggle, `/chalk meter dps` for DPS, `/chalk meter overall` for overall, and `/chalk meter help` for every command. **Choose Class / Spec / Off** in the Combat Meter settings to control row icons; Spec uses Blizzard's native specialization artwork when available. Reset asks for confirmation because it clears Blizzard's shared meter sessions too. Pet and guardian grouping remains whatever Blizzard supplies; ChalkBox does not invent its own numbers. See [user guide](docs/USER_GUIDE.md).
 
 ### QuestSense: actually track your accepted quests
 

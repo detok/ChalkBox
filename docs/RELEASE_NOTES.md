@@ -1,44 +1,37 @@
-# ChalkBox 1.8.0 — QuestSense rebuild + top-screen toast controls
+# ChalkBox 1.8.1 — Real WoW class icons in the DPS meter
 
-## QuestSense: rebuilt for WoW Forever
+It is now easier to tell which player is which at a glance. Every ranked player has a compact **18 × 18 World of Warcraft icon** directly between their rank and name.
 
-The earlier QuestSense could silently do nothing because it depended on current-map quest POIs or exact zone heading matches. Forever sometimes exposes **accepted quests and objectives but no usable map pins**. We've rewritten QuestSense around the live **`C_QuestLog.GetNumQuestLogEntries` / `C_QuestLog.GetInfo`** accepted-quest list, with `C_QuestLog.AddQuestWatch` and `RemoveQuestWatch` applied to Blizzard's **native tracker** only when safe.
+## Real in-game art, no other download
 
-**Three clear modes in Options → AddOns → ChalkBox → QuestSense:**
-- **Smart (recommended, default):** Prioritizes newly accepted and current-zone quests when client map data exists, then fills remaining auto-watch slots from your accepted log. Even when map APIs are missing, this mode *still tracks quests*.
-- **Nearby only:** Only tracks quests confirmed by an exact zone header or matching current-zone map POI. No unverified guesses.
-- **All accepted:** Fills watch slots in quest-log order, regardless of location.
+- Default **Class** mode uses the client’s original class emblems, including **Hunter, Warrior, Mage, Rogue, Druid, Shaman, Priest, Warlock, and Paladin**.
+- The correct emblem is selected from Blizzard's own `classFilename` supplied in the `C_DamageMeter` result. No guesswork from player names or GUID parsing.
+- Optional **Spec** mode uses the supplied native `specIconID` (the same kind of numeric WoW icon identifier that the macro picker uses) when present. If missing, it falls back to the player's class emblem.
+- An unclassified source, such as a pet or an unidentified NPC, shows the neutral WoW question-mark icon, **not** an invented class.
+- **Off** hides emblems and expands the available name space.
+- Icons update when rankings change and clear when a row empties; the entire window still supports resizing, opacity, locking, printing, current/last/overall sessions, and six statistic modes.
 
-Pick how many **ChalkBox-managed watches** are allowed: **5, 10, 15, or 20** (default 10). This respects the game's native watch cap and never removes your manually tracked quests. If you untrack an auto-managed quest manually, it stays muted until you change zones or explicitly refresh.
+## How to change icon style
 
-**Safety and reliability:**
-- No dependency on quest map pins to function in default Smart mode.
-- Preserves manually watched quests, the selected/super-tracked quest, and any custom tracker you use.
-- Defers **all watch-list edits during combat, while World Map or Quest Log is open, and during dangerous instance contexts**. Tries again after the window closes or when it's safe.
-- Waits for quest-log data instead of wiping all watches if the log is briefly empty during login.
-- Reacts to quest acceptance, turn-ins, quest-log updates, watch changes, zone changes and combat ending.
-- Checks the actual watched quest IDs after every write rather than trusting the misleading `AddQuestWatch` return flag.
-- **Tracking Diagnostics** and `/chalk quests status` report the current mode, zone, accepted count, candidates, watch count, auto-managed count, API readiness, and why an update was deferred or rejected. Refresh button is now **Refresh Quests**.
-- Commands: `/chalk quests smart`, `zone`, `all`, `limit 5|10|15|20`, `on`, `off`, `refresh`, `status`.
+Open **Esc → Options → AddOns → ChalkBox → Combat Meter** and choose **Class**, **Spec**, or **Off** in the icon row.
 
-**What it does not do:** invent objectives, quest coordinates, or turn-in directions. This is a dependable watcher for accepted quests, not a replacement for Questie or a quest-location database.
+Alternatively, use:
+- `/chalk meter icons class` — recognizable class emblems (default).
+- `/chalk meter icons spec` — specialization art where Blizzard supplies it; class fallback.
+- `/chalk meter icons off` — hide the emblems.
 
-## Adventure Prep toast: position and transparency
+The choice is stored in your existing ChalkBox settings and survives reload.
 
-- **Top of screen by default**, below the top edge instead of centered over your character.
-- New native **Adventure Prep → Toast Appearance** settings page: **Lock/Unlock**, **Transparency 35–100%**, **Preview / Move (25s)**, and **Reset to Top**.
-- Locked by default: fully click-through, no lost mouse actions. When unlocked, click Preview and drag the visible toast anywhere; your position is saved in existing `ChalkBoxDB.camp.toastOptions`.
-- Relock in the options page when you're satisfied. Regular notices still last **nine seconds**, and the 25-second preview allows comfortable repositioning.
-- Existing on-screen reminder, actual Camp Benefits, Camp Tent rested-XP / Boosted Rest, toast cooldown and class/pet reminders are unchanged.
+## Technical and compatibility details
 
-## Combat Meter
+Blizzard's damage meter reports `classFilename` and optional `specIconID` as **NeverSecret** fields. ChalkBox only reads those identifiers and passes native texture/file IDs to UI texture methods. Protected player names and damage numbers remain protected and are never parsed or reformatted by the icons feature.
 
-Removed the unwanted **X close button**. The header now only has **DPS / Fight / PRINT / LOCK**. The window can still be shown/hidden in native Combat Meter settings or with `/chalk meter show|hide`; opacity, resizing, local fight printing and saved lock state remain.
+Classic class icons use the original WoW `Interface\\Glues\\CharacterCreate\\UI-CharacterCreate-Classes` texture sheet, with Blizzard-defined tile coordinates (and a matching first-party fallback if `CLASS_ICON_TCOORDS` isn't exposed). No web requests, scraped artwork, downloaded asset packs, or additional addon dependencies.
 
-## Install
+All existing QuestSense, CampSense, LootSense (including 2,511 bundled recipes), Toast Appearance, Emota, TrailBar and QuietGuard code remains functional and unchanged by this release.
 
-Download **ChalkBox-1.8.0.zip**, replace the existing `Interface/AddOns/ChalkBox/` folder, then `/reload`. Everything—including the MIT-licensed 2,511 Forever recipes—is still in **one ZIP**. Existing SavedVariables and manually watched quests are preserved.
+## Install and test
 
-First test **`/chalk quests status`**, then **`/chalk quests refresh`** with the map closed. Try accepting a quest and look for its entry in Blizzard's native tracker. For toast placement, go to **Adventure Prep → Toast Appearance**, unlock, preview, drag and lock.
+Replace your existing `Interface/AddOns/ChalkBox/` folder with the single **ChalkBox-1.8.1.zip**, then `/reload`. Group with a different class or switch to **Last** after a fight; class icons should match the players without interfering with DPS totals.
 
-**Public prerelease:** Lua 5.1 automated regression and ZIP tests cover current/legacy/absent map APIs, native watch methods, tracker-mutation guards, saved toast placement/opacity and the no-X meter. A real WoW Forever session is still needed to verify the live UI, event timing and interaction with other quest-tracker addons. Report the exact diagnostic output and client build if something differs.
+This release remains a **public prerelease** until real WoW Forever in-game visual verification. The Lua 5.1 test suite checks actual Hunter/Warrior atlas coordinates, the unknown fallback, optional specialization icon file IDs, clean empty rows, style switching, saved settings, and the unchanged native secret-value protections.

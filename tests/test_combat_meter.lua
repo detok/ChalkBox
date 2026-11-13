@@ -46,10 +46,12 @@ _G.C_DamageMeter={
             }}
         end
         return {maxAmount=maxValue,combatSources={
-            {name=secretName,classFilename="HUNTER",isLocalPlayer=true,
+            {name=secretName,classFilename="HUNTER",specIconID=135774,isLocalPlayer=true,
                 amountPerSecond=rawValue,totalAmount=Secret(4400)},
             {name="Other Player",classFilename="WARRIOR",isLocalPlayer=false,
-                amountPerSecond=240,totalAmount=2200}
+                amountPerSecond=240,totalAmount=2200},
+            {name="Unknown Summon",classFilename=nil,isLocalPlayer=false,
+                amountPerSecond=75,totalAmount=170}
         }}
     end,
     ResetAllCombatSessions=function() resetCount=resetCount+1 end
@@ -85,6 +87,8 @@ local function Widget(kind,name,parent)
     function w:CreateTexture() return Widget("Texture",nil,self) end
     function w:CreateFontString() return Widget("FontString",nil,self) end
     function w:SetColorTexture(...) self.color={...} end
+    function w:SetTexture(v) self.texturePath=v end
+    function w:SetTexCoord(...) self.texCoords={...} end
     function w:SetTextColor(...) self.fontColor={...} end
     function w:SetStatusBarColor(...) self.barColor={...} end
     function w:SetStatusBarTexture(...) self.texture={...} end
@@ -141,6 +145,29 @@ for _,f in ipairs(labels) do
     if f.text==secretName then named=true end
 end
 assert(formatted and named,"secret DPS and name go directly to native UI setters")
+local icons={}
+for _,f in ipairs(frames) do
+    if f.isChalkBoxClassIcon then icons[#icons+1]=f end
+end
+local classSheet="Interface\\Glues\\CharacterCreate\\UI-CharacterCreate-Classes"
+assert(#icons==12 and ChalkBox_MeterStatus().iconMode=="class",
+    "twelve reusable icon slots and recognizable CLASS defaults")
+assert(icons[1].shown and icons[1].texturePath==classSheet
+    and icons[1].texCoords[1]==0 and icons[1].texCoords[3]==0.25,
+    "hunter emblem uses Blizzard class atlas at correct tile coordinates")
+assert(icons[2].shown and icons[2].texturePath==classSheet
+    and icons[2].texCoords[1]==0 and icons[2].texCoords[3]==0,
+    "warrior class icon has separate correct tile coordinates")
+assert(icons[3].shown and icons[3].texturePath==
+    "Interface\\Icons\\INV_Misc_QuestionMark",
+    "unknown/pet sources never get mislabeled as a player class")
+assert(not icons[4].shown,"empty result rows must not retain stale icons")
+local name1
+for _,f in ipairs(labels) do
+    if f.text==secretName then name1=f end
+end
+assert(name1 and name1.anchors and name1.anchors[#name1.anchors][4]==49,
+    "player name is aligned after icon, without covering damage amounts")
 assert(ChalkBox_MeterStatus().rows==8)
 local function Button(caption)
     for _,f in ipairs(frames) do
@@ -173,6 +200,25 @@ assert(ChalkBoxDB.meter.opacity==0.75 and window.alpha==0.75,
     "on-window transparency slider changes visibility and saves preference")
 ChalkBox_MeterCommand("opacity 60")
 assert(window.alpha==0.60,"slash opacity setting uses same state")
+ChalkBox_MeterCommand("icons spec")
+Flush()
+assert(ChalkBox_MeterStatus().iconMode=="spec"
+    and icons[1].texturePath==135774
+    and icons[1].texCoords[1]==0.08,
+    "native specialization fileID should render like an existing macro icon")
+assert(icons[2].texturePath==classSheet,
+    "missing spec icon falls back to the correct class emblem")
+ChalkBox_MeterCommand("icons off")
+Flush()
+assert(not icons[1].shown and not icons[2].shown and not icons[3].shown,
+    "icon mode off removes all emblems and reclaims the name space")
+assert(name1.anchors[#name1.anchors][4]==27,
+    "hiding icons repositions player names to the old layout")
+ChalkBox_MeterCommand("icons class")
+Flush()
+assert(icons[1].shown and icons[1].texturePath==classSheet
+    and name1.anchors[#name1.anchors][4]==49,
+    "switching back to class mode restores proper emblem and spacing")
 ChalkBox_MeterCommand("healing")
 Flush()
 assert(lastMeterType==2,"can switch damage/healing modes")
