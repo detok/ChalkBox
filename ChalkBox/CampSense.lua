@@ -2,7 +2,7 @@
 -- Reminds rather than casts spells or consumes items. Forever-only camping
 -- recipes are explicit exceptions to profession-recipe cache guessing.
 local addonName=...
-local db,entryTime,lastNotice,lastCampState= nil,nil,-1e8,nil
+local db,entryTime,lastNotice,lastCampState,lastTentState= nil,nil,-1e8,nil,nil
 local tentAcknowledgedUntil=nil
 local frame=CreateFrame("Frame")
 local ticker
@@ -145,11 +145,11 @@ local function MeaningfulHint(buffs,tent)
     -- A tent grants a rested-XP refill, independently of the regular camp
     -- stat buff. The absence of Camp Benefits NEVER proves the tent failed.
     if buffs.state=="gathering" then return nil end
-    if db.buffs~=false and tent.state=="ready" then
-        return "Rested XP is below 5% of a level. A Camp Tent can top it up. Sit by a tent at a campfire for about a minute."
-    end
     if db.buffs~=false and buffs.state=="expiring" then
         return CampBuffHint(buffs)
+    end
+    if db.buffs~=false and tent.state=="ready" then
+        return "Rested XP is below 5% of a level. A Camp Tent can top it up. Sit by a tent at a campfire for about a minute."
     end
     -- Do not nag a tent user because the separate Camp Benefits stat aura
     -- is absent. If the tent signal is unavailable, never invent a failure.
@@ -176,12 +176,15 @@ local function Pulse()
     if now-entryTime<180 then return end
     local current=CampStatus()
     local tent=TentStatus()
-    local stateKey=current.state..":"..tent.state
-    local changed=stateKey~=lastCampState
-    lastCampState=stateKey
+    local changedBuff=current.state~=lastCampState
+    local changedTent=tent.state~=lastTentState
+    lastCampState=current.state
+    lastTentState=tent.state
     local interval=math.max(20,math.min(120,tonumber(db.interval) or 45))
-    local urgent=changed and
-        (tent.state=="ready" or current.state=="expiring") and db.buffs~=false
+    local urgent=db.buffs~=false and (
+        (changedBuff and current.state=="expiring") or
+        (changedTent and tent.state=="ready") or
+        (changedBuff and current.state=="missing" and tent.state=="ready"))
     -- Camp buff state changes deserve a prompt as soon as they are observed,
     -- independent of generic supplies/class reminder cadence.
     if now-lastNotice<interval*60 and not urgent then return end
@@ -270,6 +273,7 @@ function ChalkBox_CampCommand(msg)
             if Safe(now) and type(now)=="number" then
                 tentAcknowledgedUntil=now+3600
                 lastCampState=nil
+                lastTentState=nil
                 Note("Tent manually marked complete for 1 hour this session. Boosted Rest is still checked automatically.")
             else
                 Note("Unable to mark tent without a safe game clock.")
@@ -277,6 +281,7 @@ function ChalkBox_CampCommand(msg)
         elseif value=="clear" then
             tentAcknowledgedUntil=nil
             lastCampState=nil
+            lastTentState=nil
             Note("Manual tent confirmation cleared.")
         else
             local tent=TentStatus()
