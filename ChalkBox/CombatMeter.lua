@@ -2,7 +2,7 @@
 -- No COMBAT_LOG_EVENT_UNFILTERED, GUID parsing, pet attribution guesses, or
 -- calculations on secret combat data. Use Blizzard's C_DamageMeter directly.
 local addonName=...
-local db,window,header,notice
+local db,window,header,notice,opacitySlider,lockButton,resizeHandle
 local rows={}
 local refreshQueued=false
 local modes={
@@ -38,6 +38,8 @@ local function Settings()
     if value.session==nil then value.session="current" end
     if value.rows~=5 and value.rows~=8 and value.rows~=12 then value.rows=8 end
     if value.scale~=0.85 and value.scale~=1 and value.scale~=1.15 then value.scale=1 end
+    if type(value.width)~="number" or value.width<300 or value.width>600 then value.width=326 end
+    if type(value.opacity)~="number" or value.opacity<0.35 or value.opacity>1 then value.opacity=0.94 end
     return value
 end
 local function Find(list,key)
@@ -80,10 +82,23 @@ end
 local function Note(text)
     if notice then notice:SetText(text or "") end
 end
+local function Clamp(v,low,high)
+    return math.min(high,math.max(low,v))
+end
+local function ApplyOpacity()
+    if window and db and window.SetAlpha then window:SetAlpha(db.opacity) end
+end
+local function ApplyLocked()
+    if lockButton and db then
+        lockButton:SetText(db.locked and "UNLOCK" or "LOCK")
+    end
+end
 local function ApplyLayout()
     if not window or not db then return end
     window:SetScale(db.scale)
-    window:SetSize(326,72+db.rows*25)
+    window:SetSize(db.width,66+db.rows*25)
+    ApplyOpacity()
+    ApplyLocked()
     if window.ClearAllPoints then window:ClearAllPoints() end
     if db.position=="custom" and type(db.x)=="number" and type(db.y)=="number" then
         window:SetPoint("CENTER",UIParent,"CENTER",db.x,db.y)
@@ -94,11 +109,20 @@ local function ApplyLayout()
         if i<=db.rows then row:Show() else row:Hide() end
     end
 end
+local function SaveResizedWindow()
+    if not window or not db or db.locked then return end
+    if type(window.GetWidth)~="function" or type(window.GetHeight)~="function" then return end
+    local width,height=window:GetWidth(),window:GetHeight()
+    if type(width)~="number" or type(height)~="number" then return end
+    db.width=Clamp(math.floor(width+0.5),300,600)
+    db.rows=Clamp(math.floor((height-66)/25+0.5),5,12)
+    ApplyLayout()
+end
 local function MakeRow(i)
     local frame=CreateFrame("Frame",nil,window)
     frame:SetHeight(23)
-    frame:SetPoint("TOPLEFT",window,"TOPLEFT",11,-41-(i-1)*25)
-    frame:SetPoint("TOPRIGHT",window,"TOPRIGHT",-11,-41-(i-1)*25)
+    frame:SetPoint("TOPLEFT",window,"TOPLEFT",11,-39-(i-1)*25)
+    frame:SetPoint("TOPRIGHT",window,"TOPRIGHT",-11,-39-(i-1)*25)
     local bg=frame:CreateTexture(nil,"BACKGROUND")
     bg:SetAllPoints(frame)
     bg:SetColorTexture(0.095,0.14,0.19,i%2==0 and 0.78 or 0.64)
@@ -234,7 +258,7 @@ local function Refresh()
     if visible==0 then
         Note("No fight data yet. Attack something!")
     else
-        Note("Gold stripe = you  |  Native Blizzard data")
+        Note("")
     end
 end
 local function QueueRefresh()
