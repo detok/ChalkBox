@@ -2,7 +2,7 @@
 ## Title: ChalkBox
 ## Notes: Loot safety, camp buffs, quest help, XP tracking and character personality.
 ## Author: Detok Whitemaine
-## Version: 1.9.3
+## Version: 1.10.0
 ## SavedVariables: ChalkBoxDB
 ## SavedVariablesPerCharacter: ChalkBoxZoneDB, ChalkBoxProfessionDB
 ## IconTexture: Interface\AddOns\ChalkBox\assets\Icon
@@ -28,9 +28,12 @@ Libs\LibProfessionDB-1.0\Data\SourceNames.lua
 Core.lua
 ProfessionSense.lua
 RecipeAdvisor.lua
+Theme.lua
 CampAura.lua
 ReminderToast.lua
+SessionJournal.lua
 CampSense.lua
+DropSense.lua
 LootSense.lua
 BagReagents.lua
 QuietGuard.lua

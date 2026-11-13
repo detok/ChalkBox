@@ -13,7 +13,7 @@
 [![MIT](https://img.shields.io/badge/license-MIT-67C6B7.svg)](LICENSE)
 [![Forever](https://img.shields.io/badge/WoW-Forever-203342.svg)](https://github.com/detok/ChalkBox)
 
-### [⬇ Download ChalkBox 1.9.3](https://github.com/detok/ChalkBox/releases/download/v1.9.3/ChalkBox-1.9.3.zip)
+### [⬇ Download ChalkBox 1.10.0](https://github.com/detok/ChalkBox/releases/download/v1.10.0/ChalkBox-1.10.0.zip)
 
 [**All GitHub Releases**](https://github.com/detok/ChalkBox/releases) · [**Install Guide**](#-install-in-one-minute) · [**Features**](#-what-chalkbox-does) · [**Help & Bugs**](https://github.com/detok/ChalkBox/issues)
 
@@ -126,6 +126,18 @@ The strip still supports **top / bottom / hidden**, 18px **Reserve screen space*
 
 If separate bags stack too high, **ChalkBox → The Bar** now has a proper **vertical position slider**: **Blizzard's original anchor is at the midpoint (0)**. Drag the thumb **down** to lower bags (+120 maximum), or **up** to lift bags (−120 minimum). **Reset Bags** returns to Blizzard's default instantly. Combined bags, slots and sorting remain untouched. Slash alternatives: `/chalk bags offset 40` (down), `/chalk bags offset -35` (up), `/chalk bags reset`.
 
+### New in 1.10.0 — The Adventure Companion
+
+**One visual identity, more useful context, zero extra addons.** Global Appearance gives ChalkBox-owned windows a shared charcoal/midnight/slate/custom RGB background, gold/teal/neutral accents and background-strength control. The Bar, Adventure Prep toast, Combat Meter and Session Journal share that theme while retaining their local settings.
+
+**CampSense is more precise**: the compact toast recommends one actionable next step from readable Camp Benefits, tent eligibility, camp kits, wood/flint and Hunter pet happiness. It no longer nags you for Flint when usable kits are already in your bags. The previously missed "Camp Benefits absent" case now has a direct reminder. Unchanged alerts stay quiet by default; optional repeat is configurable.
+
+**DropSense — optional personal observations**: enable sampling and watch a specific item in **ChalkBox → DropSense** (`/chalk drops watch [item]`). It counts **readable opened loot windows**, whether that item appeared and how many units were seen. When enabled, hovering that item in a *native loot window* shows your observed hit frequency with sample size and a 95% uncertainty interval. This is **not** a per-creature or official Forever drop rate; unknown server chances are not guessed. The settings page includes a **chance-of-at-least-one-drop calculator** for a rate you trust, or use `/chalk drops chance 5 20`.
+
+**Session Journal**: open `/chalk session` for a clean, standalone recap of this adventure; use `/chalk session last` to revisit the previous one. The journal keeps up to 20 past sessions per character, tracking actually observed XP, levels, net gold, quest completions, opted-in loot windows/items, camp notices and confirmed repair merchant quotes.
+
+**LootSense controls**: individually show/hide learned recipe, possible-use and camping hints; keep your manual/quest protection signals and verified recipe highlighting independent.
+
 ### New in 1.9.3 — Repair Learning: a self-calibrating estimate
 
 The Bar now **learns from real merchant repair quotes** rather than replacing one rate with another. Each character retains up to **32 unique repair observations** and uses a robust average of relevant price-per-durability samples to make a better approximate prediction away from merchants. Exact gear matches are preferred; very different gear sets require another sample. Identical merchant quotes aren't repeatedly counted by the five-second update timer.
@@ -191,7 +203,7 @@ That's included too:
 
 ## 🚀 Install in one minute
 
-**Direct download:** [**ChalkBox 1.9.3 ZIP**](https://github.com/detok/ChalkBox/releases/download/v1.9.3/ChalkBox-1.9.3.zip)  
+**Direct download:** [**ChalkBox 1.10.0 ZIP**](https://github.com/detok/ChalkBox/releases/download/v1.10.0/ChalkBox-1.10.0.zip)  
 **Newer versions:** [**GitHub Releases**](https://github.com/detok/ChalkBox/releases)
 
 1. Download **`ChalkBox-<version>.zip`** from GitHub Releases — *not* the GitHub “Source code” archives.

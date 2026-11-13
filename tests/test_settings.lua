@@ -311,7 +311,11 @@ assert(checks[1].checked==true)
 checks[1]:Click(false)
 assert(ChalkBoxDB.lootAdvice==false,"native checkbox must control item advice")
 local edit
-for _,f in ipairs(frames) do if f.kind=="EditBox" then edit=f end end
+for _,f in ipairs(frames) do
+    if f.kind=="EditBox" and f.parent==categories["LootSense"].panel then
+        edit=f
+    end
+end
 assert(edit,"personal protection input must be on the options page")
 edit:SetText("New Item")
 Control("Keep Item"):Click()
@@ -323,12 +327,16 @@ Control("LootSense Appearance"):Click()
 assert(opened[#opened]==categories["LootSense Appearance"].ID)
 categories["LootSense Appearance"].panel:Show()
 local lootCheck=FindCheckByParentTitle("LootSense Appearance")
-assert(#lootCheck==1 and lootCheck[1].checked,
-    "ingredient highlighting defaults ON for verified recipes only")
-lootCheck[1]:Click(false)
+assert(#lootCheck==4 and lootCheck[4].checked,
+    "three independent LootSense detail filters plus learned-only bag markers")
+lootCheck[2]:Click(false)
+assert(ChalkBoxDB.lootCategories.potential==false,
+    "potential use hints can be hidden without disabling verified recipe advice")
+lootCheck[2]:Click(true)
+lootCheck[4]:Click(false)
 assert(ChalkBoxDB.lootHighlightKnown==false,
     "new bag highlight toggle is stored independently from tooltip hints")
-lootCheck[1]:Click(true)
+lootCheck[4]:Click(true)
 Control("Refresh Bag Markers"):Click()
 assert(printed[#printed]=="bag markers refresh")
 local questCheck=FindCheckByParentTitle("QuestSense")[1]
@@ -478,9 +486,10 @@ assert(ChalkBoxDB.guard.duel==false)
 Control("Show Protection Status"):Click()
 assert(printed[#printed]=="guard status")
 local prepChecks=FindCheckByParentTitle("Adventure Prep")
-assert(#prepChecks==5,"Adventure Prep has a toast option and four reminder preferences")
+assert(#prepChecks==6,"Adventure Prep includes repeat-unchanged opt-in and five existing preferences")
 categories["Adventure Prep"].panel:Show()
 assert(prepChecks[2].checked==true,"on-screen reminders enabled by default")
+assert(prepChecks[6].checked==false,"unchanged reminders no longer nag by default")
 prepChecks[2]:Click(false)
 assert(ChalkBoxDB.camp.toast==false,"onscreen reminders can be turned off")
 prepChecks[2]:Click(true)

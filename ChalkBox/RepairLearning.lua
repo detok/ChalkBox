@@ -174,6 +174,9 @@ function ChalkBox_RepairLearningObserve(gear,exactCost)
         cost=math.floor(exactCost+0.5),missing=f.missing,
         max=f.max,items=f.items,fingerprint=f.fingerprint}
     while #store.samples>LIMIT do table.remove(store.samples,1) end
+    if type(ChalkBox_JournalNoteRepair)=="function" then
+        pcall(ChalkBox_JournalNoteRepair,exactCost)
+    end
     return true
 end
 function ChalkBox_RepairLearningStatus()

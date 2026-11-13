@@ -88,6 +88,38 @@ end
 local function Clamp(v,low,high)
     return math.min(high,math.max(low,v))
 end
+-- Global theme colors only ChalkBox surfaces; local meter opacity remains
+-- independently adjustable. Theme opacity multiplies surface alpha.
+local function ApplyMeterTheme()
+    if not window then return end
+    local r,g,b,a=0.045,0.075,0.11,0.94
+    if type(ChalkBox_ThemeBackground)=="function" then
+        r,g,b,a=ChalkBox_ThemeBackground(0.94)
+    end
+    if window.background then
+        window.background:SetColorTexture(r,g,b,a)
+    end
+    for i,entry in ipairs(rows) do
+        if entry.background then
+            entry.background:SetColorTexture(
+                math.min(1,r*2+0.035),math.min(1,g*2+0.035),
+                math.min(1,b*2+0.04),i%2==0 and 0.80 or 0.66)
+        end
+    end
+    for _,button in ipairs(window.themeButtons or {}) do
+        if button.background then
+            button.background:SetColorTexture(
+                math.min(1,r*2+0.08),math.min(1,g*2+0.08),
+                math.min(1,b*2+0.08),0.94)
+        end
+    end
+    local ar,ag,ab=0.96,0.67,0.27
+    if type(ChalkBox_ThemeAccent)=="function" then
+        ar,ag,ab=ChalkBox_ThemeAccent()
+    end
+    if window.accent then window.accent:SetColorTexture(ar,ag,ab,1) end
+end
+function ChalkBox_MeterThemeRefresh() ApplyMeterTheme() end
 local function ApplyOpacity()
     if window and db and window.SetAlpha then window:SetAlpha(db.opacity) end
 end
@@ -181,6 +213,7 @@ local function MakeRow(i)
     frame:SetPoint("TOPRIGHT",window,"TOPRIGHT",-11,-39-(i-1)*25)
     local bg=frame:CreateTexture(nil,"BACKGROUND")
     bg:SetAllPoints(frame)
+    frame.background=bg
     bg:SetColorTexture(0.095,0.14,0.19,i%2==0 and 0.78 or 0.64)
     local bar=CreateFrame("StatusBar",nil,frame)
     bar:SetPoint("TOPLEFT",frame,"TOPLEFT",0,0)
@@ -378,7 +411,12 @@ local function MakeButton(parent,title,width,offset,action)
     button:SetPoint("TOPRIGHT",parent,"TOPRIGHT",offset,-6)
     local bg=button:CreateTexture(nil,"BACKGROUND")
     bg:SetAllPoints(button)
+    button.background=bg
     bg:SetColorTexture(0.14,0.21,0.28,0.94)
+    if window then
+        window.themeButtons=window.themeButtons or {}
+        window.themeButtons[#window.themeButtons+1]=button
+    end
     local text=Font(button,"GameFontHighlightSmall",0.96,0.90,0.75)
     text:SetAllPoints(button)
     if text.SetJustifyH then text:SetJustifyH("CENTER") end
@@ -502,12 +540,15 @@ local function CreateWindow()
     window:EnableMouse(true)
     local bg=window:CreateTexture(nil,"BACKGROUND")
     bg:SetAllPoints(window)
+    window.background=bg
     bg:SetColorTexture(0.045,0.075,0.11,0.94)
     local accent=window:CreateTexture(nil,"ARTWORK")
     accent:SetPoint("TOPLEFT",window,"TOPLEFT",0,0)
     accent:SetPoint("TOPRIGHT",window,"TOPRIGHT",0,0)
     accent:SetHeight(2)
+    window.accent=accent
     accent:SetColorTexture(0.96,0.67,0.27,1)
+    ApplyMeterTheme()
 
     header=CreateFrame("Frame",nil,window)
     header:SetPoint("TOPLEFT",window,"TOPLEFT",4,-4)

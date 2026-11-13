@@ -88,21 +88,29 @@ local function Classify(name,link,quality,itemType,itemSubType,equipLoc,
     -- Verified recipes learned by this character are more relevant than broad
     -- camping and profession-family rules. An external library never invents
     -- "known" status: only the character's profession scan can prove that.
-    if type(ChalkBox_RecipeAdvice)=="function" then
+    if type(ChalkBox_RecipeAdvice)=="function" and
+        (not db.lootCategories or db.lootCategories.crafting~=false) then
         local note,r,g,b=ChalkBox_RecipeAdvice(id,name)
-        if note then return note,r,g,b end
+        if note and (not note:find("^POTENTIAL USE") or
+            not db.lootCategories or db.lootCategories.potential~=false) then
+            return note,r,g,b
+        end
     end
-    if type(ChalkBox_CampUtility)=="function" then
+    if type(ChalkBox_CampUtility)=="function" and
+        (not db.lootCategories or db.lootCategories.camp~=false) then
         local utility=ChalkBox_CampUtility(id,name)
         if utility then return utility,0.52,0.91,0.70 end
     end
-    if type(ChalkBox_ProfessionMatch)~="function" then return end
+    if type(ChalkBox_ProfessionMatch)~="function" or
+        (db.lootCategories and db.lootCategories.crafting==false) then return end
     local profession,confidence=ChalkBox_ProfessionMatch(id,name,itemSubType,classID)
     if profession then
         if confidence=="known" then
             return "PROFESSION: used in a learned "..profession.." recipe",0.35,0.98,0.57
         end
-        return "PROFESSION: possible "..profession.." material (check recipes)",0.83,0.91,0.48
+        if not db.lootCategories or db.lootCategories.potential~=false then
+            return "PROFESSION: possible "..profession.." material (check recipes)",0.83,0.91,0.48
+        end
     end
 end
 
@@ -137,10 +145,16 @@ function ChalkBox_LootPresentation(message)
 end
 
 local function OnItemTooltip(tooltip)
-    if not db or db.lootAdvice == false or not tooltip or not tooltip.GetItem or IsVendorOffer(tooltip) then return end
+    if not db or not tooltip or not tooltip.GetItem or IsVendorOffer(tooltip) then return end
     local name, link = tooltip:GetItem()
     if not Public(name) or type(name) ~= "string" then return end
     if not Public(link) then link = nil end
+    -- DropSense is an independent, opt-in note available only on native
+    -- loot-window item tooltips, even when ordinary LootSense advice is off.
+    if type(ChalkBox_DropTooltip)=="function" then
+        pcall(ChalkBox_DropTooltip,tooltip,link)
+    end
+    if db.lootAdvice==false then return end
 
     -- A cached item link and tooltip name are already enough to identify
     -- learned-recipe reagents. Never reject all advice just because Forever's
@@ -254,6 +268,18 @@ SlashCmdList.CHALKBOX = function(input)
         if tonumber(learnedCount)==0 then
             Note("Open a crafting window, let its recipe list load, and /chalk loot scan. Then re-hover the item.")
         end
+    elseif command=="drops" or command=="drop" then
+        if type(ChalkBox_DropCommand)=="function" then
+            ChalkBox_DropCommand(argument)
+        else Note("DropSense is unavailable in this client.") end
+    elseif command=="session" or command=="journal" then
+        if type(ChalkBox_OpenSessionJournal)=="function" then
+            ChalkBox_OpenSessionJournal(argument=="last" and "last" or "current")
+        else Note("Session Journal is unavailable.") end
+    elseif command=="appearance" or command=="theme" then
+        if type(ChalkBox_OpenSettings)=="function" then
+            ChalkBox_OpenSettings("theme")
+        end
     elseif command == "loot" and (argument == "on" or argument == "off") then
         db.lootAdvice = (argument == "on")
         Note("Extra item advice: " .. (db.lootAdvice and "ON" or "OFF") ..
@@ -312,6 +338,7 @@ SlashCmdList.CHALKBOX = function(input)
     else
         Note("Open settings: /chalk | /chalk settings. Commands: keep [item] | forget [item] | list | loot on/off|status|scan | bags | meter | quests | bar | emota | prep | guard | help")
         Note("LootSense shows quest protections and your character's possible/known profession uses. No automatic selling.")
+        Note("New: /chalk drops status|watch [item]|chance <rate> <tries> | /chalk session | /chalk theme")
     end
 end
 
@@ -323,6 +350,7 @@ loader:SetScript("OnEvent", function(_, event, loadedAddon)
     if type(ChalkBoxDB.keep) ~= "table" then ChalkBoxDB.keep = {} end
     db = ChalkBoxDB
     if db.lootAdvice == nil then db.lootAdvice = true end
+    if type(db.lootCategories)~="table" then db.lootCategories={} end
     loader:UnregisterEvent("ADDON_LOADED")
 end)
 

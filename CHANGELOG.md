@@ -2,6 +2,16 @@
 
 All notable changes to the public ChalkBox addon are documented here.
 
+## 1.10.0 — The Adventure Companion
+
+- Add global ChalkBox appearance controls: charcoal/midnight/slate/custom RGB, accent color and background-only opacity multiplier for the Bar, toast, meter and session window.
+- Redesign Adventure Prep notifications as concise, compact, legible branded alerts. Fix missing Camp Benefits decision branch and actual-kit-aware supply checks; suppress unchanged prompts by default, with optional repeat interval.
+- Add **DropSense**, a separately opt-in, per-character loot-window observation journal for up to 32 watched item IDs/links. Show sample size, observed frequency and Wilson uncertainty in native loot item tooltips only. Add the independent-attempt drop calculator and clearly labeled player reference rate; never invent official Forever drop chances.
+- Add a persistent, separately openable **Session Journal** covering current and last 20 adventures: session XP/levels, net gold, quest turn-ins, opted-in loot observations, camp prompts, verified repair quotes.
+- Add independent LootSense filters for verified crafting uses, possible uses, and camp ingredient hints while retaining quest/personal keep protection.
+- Keep old SavedVariables, optional module behavior, native controls and single installable ZIP.
+- Expand Lua 5.1 tests and release docs. In-client layout and API testing still recommended.
+
 ## 1.9.3 — Repair Learning
 
 - Upgrade The Bar's repair estimate from a last-merchant single-rate reference to a **persistent per-character learning model** using up to 32 unique actual repair quotes.

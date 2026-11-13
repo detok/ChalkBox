@@ -34,6 +34,16 @@ Go to **ChalkBox → LootSense Appearance** to toggle subtle green reagent inset
 If no item glows, open a crafting window until the recipe list loads, use `/chalk loot scan`, and then **Refresh Bag Markers**. If the client doesn't expose its native bag buttons, there is no safe visual overlay to paint; tooltips still work.
 
 
+## New in 1.10.0 — Global Appearance and DropSense
+
+Open **ChalkBox → Global Appearance**. Choose Charcoal / Midnight / Slate / Custom and a Gold / Teal / Neutral accent. The global background-strength slider adjusts ChalkBox-owned backgrounds across The Bar, camp toasts, Combat Meter and Session Journal. Individual opacity controls still work, and Blizzard's UI is left alone. Custom RGB channel sliders set an exact background color.
+
+**DropSense is off until you enable it.** Go to **ChalkBox → DropSense**, turn on personal loot-window sampling, and watch an item ID or linked item. `/chalk drops on` and `/chalk drops watch [item]` work too. Observations survive logout; up to 32 item watches are supported. With loot-window tooltips enabled, hovering a watched item *in a loot window* shows hits across readably opened windows and a conservative 95% interval. ChalkBox does not count unseen kills, confirm which mob should drop an item, or know server-authoritative chances. Observations across mixed sources are **not** a specific mob's drop probability. The calculator computes `100 × [1-(1-p/100)^n]` for a **user-supplied** per-attempt percent and independent attempt count; it's not an inferred server rate. Use `/chalk drops chance 5 20` or the settings calculator.
+
+**Session Journal**: `/chalk session` opens a separate recap window; `/chalk session last` opens the last saved one. It saves the current plus 20 previous adventures per character, showing observed XP, levels, net gold, quest completions, logged loot (only when DropSense is on), camp notices and confirmed repair quotes. It never guesses combat kills or retroactively imports old logins.
+
+**LootSense Appearance** now offers independent toggles for learned crafting uses, unverified potential uses and camp hints in addition to the existing learned-recipe bag marker switch. Quest and manual protections remain the highest-priority item advice.
+
 ## CampSense (Adventure Prep)
 
 Forever camping has special uses beyond classic's cooking fire. CampSense can identify common components such as **Simple Wood**, **Flint and Tinder**, and **Light Leather** (used in camp features). It also checks supported player auras, **plus the separate Camp Tent rested-XP system**:
@@ -49,7 +59,7 @@ Forever camping has special uses beyond classic's cooking fire. CampSense can id
 | Rested XP already at least **5% of a level** | Another Camp Tent refill won't help |
 | Tent APIs unavailable | Tent state unknown; manually use `/chalk prep tent done` if necessary |
 
-**Camp Tent is a one-time Rested XP top-up, not a continuing Camp Benefits buff.** Missing the latter never proves you didn't receive the tent refill. If Forever doesn't report the harmful Boosted Rest aura, click **Tent Used** in Adventure Prep to acknowledge it for one hour this session (`/chalk prep tent clear` removes that acknowledgment). On-screen notices appear near the **top** and fade after nine seconds. Use **Adventure Prep → Toast Appearance** to unlock the frame, **Preview / Move (25s)** and drag it, set opacity (35–100%), and then relock it. Locked toasts are click-through, so they won't steal combat clicks. Try `/chalk prep test`. In the **Adventure Prep** page, you can toggle the toast, supplies, buff checks and class reminders independently, or pick 20/45/90-minute general reminder spacing.
+**Camp Tent is a one-time Rested XP top-up, not a continuing Camp Benefits buff.** Missing the latter never proves you didn't receive the tent refill. If Forever doesn't report the harmful Boosted Rest aura, click **Tent Used** in Adventure Prep to acknowledge it for one hour this session (`/chalk prep tent clear` removes that acknowledgment). On-screen notices are now compact branded cards near the **top** and fade after nine seconds. They use an icon-free short heading, a specific next action and the shared global background. The background-opacity slider no longer fades the words. Use **Adventure Prep → Toast Appearance** to unlock the frame, **Preview / Move (25s)** and drag it, set opacity (35–100%), and then relock it. Locked toasts are click-through, so they won't steal combat clicks. Try `/chalk prep test`. In the **Adventure Prep** page, you can toggle the toast, supplies, buff checks and class reminders independently, or enable **Repeat unchanged alerts** (off by default) and choose 20/45/90-minute repetition when desired. New information is prioritized without blind periodic reminders.
 
 ## Combat Meter — DPS, damage and more
 
@@ -77,7 +87,7 @@ Set the Blizzard meter to your preferred DPS/damage/healing statistic and Curren
 
 To keep only Blizzard's meter, turn off **Show compact DPS meter window** under ChalkBox → Combat Meter or type `/chalk meter hide`. The built-in gear menu still works. Use `/chalk meter native off` to remove the extra gear-menu entry, `/chalk meter native on` to restore it, or `/chalk meter native status` to diagnose support. This feature relies on the Forever `MENU_DAMAGE_METER_WINDOW_SETTINGS` menu extension and will quietly do nothing when that API is missing.
 
-## The Bar — customizable adventure dashboard (v1.9.3)
+## The Bar — customizable adventure dashboard (v1.10.0)
 
 The same **18px** strip now supports XP, XP/hour, estimated time to level, session time, gold/net change, **free equipped-bag slots, equipment durability, rested XP, home/world latency and Hunter pet health**. No new floating bar or additional screen height.
 

@@ -15,7 +15,7 @@
 | Project license | **MIT License** | Matches repository `LICENSE` |
 | Project description | [PROJECT_DESCRIPTION.md](PROJECT_DESCRIPTION.md) | Paste in Markdown mode; preview once before saving |
 | Logo | **Original SVG ready** | `../artwork/chalkbox-project-icon-512.svg`; use the 512px PNG export from the branding pack, then verify portal requirements before upload |
-| File to upload | **ChalkBox-1.9.3.zip** (initial draft) | Pull the actual installable ZIP from current build/release; never the repository ZIP |
+| File to upload | **ChalkBox-1.10.0.zip** (initial draft) | Pull the actual installable ZIP from current build/release; never the repository ZIP |
 | Release type | **Beta** until verified in client; **Release** when confident | A CurseForge Release file is needed for ordinary default app sync |
 | Source | https://github.com/detok/ChalkBox | Source link, **not** a third-party binary download |
 | Issues | https://github.com/detok/ChalkBox/issues | Support/bug reports |
@@ -29,7 +29,7 @@
 - The project ships **one installable folder** named `ChalkBox`.
 - The addon includes `ChalkBox.toc` (`Interface: 11509`) and `ChalkBox_Camelot.toc` (`Interface: 16001`). The Camelot-specific TOC documents the intended Forever flavor.
 - **Do not** tag other game flavors merely because a second TOC exists. Supported flavors need hands-on testing.
-- Current first-pass version is **1.9.3**, published as a **public prerelease** on GitHub. Refresh version numbers and changelog before your actual CurseForge upload.
+- Current first-pass version is **1.10.0**, published as a **public prerelease** on GitHub. Refresh version numbers and changelog before your actual CurseForge upload.
 - The existing `ChalkBox/assets/Icon.tga` is the **in-game addon icon**, not a ready-to-upload CurseForge project avatar.
 - CurseForge allows project Markdown or its WYSIWYG editor. Use Markdown for easier maintenance; copy directly from `PROJECT_DESCRIPTION.md`.
 - Do not put a GitHub binary ZIP download link in the **public** CurseForge description. CurseForge policies disallow external file download links; use the Files tab instead.

@@ -123,18 +123,176 @@ local function MakeHome()
         {"guard","QuietGuard","Invitation controls"},
         {"prep","Adventure Prep","Camp and class care reminders"},
         {"meter","Combat Meter","DPS, healing and party reports"},
+        {"theme","Global Appearance","One color theme for ChalkBox panels"},
+        {"drops","DropSense","Personal drop counts and chance calculator"},
+        {"journal","Session Journal","Current and previous adventures"},
     }
     for index,entry in ipairs(items) do
         local row=math.floor((index-1)/2)
         local col=(index-1)%2
         local x=28+col*258
-        local y=-130-row*48
+        local y=-123-row*40
         local pageKey=entry[1]
         Button(panel,entry[2],x,y,228,function() Activate(pageKey) end)
         Label(panel,entry[3],"GameFontHighlightSmall",x+4,y-29,228)
     end
-    Label(panel,"Also: Toast Appearance inside Adventure Prep. /chalk and /cb open this page.",
-        "GameFontHighlightSmall",28,-425,505)
+    Label(panel,"/chalk opens options. All modules remain optional.",
+        "GameFontHighlightSmall",28,-439,505)
+    return panel
+end
+
+-- Global appearance is a shared, optional surface layer. Local opacity
+-- controls on the Bar/toast/meter are preserved and apply independently.
+local function MakeTheme()
+    local panel=Panel("Global Appearance",
+        "One background and accent palette for ChalkBox windows, The Bar and camp alerts.")
+    Label(panel,"BACKGROUND PRESET","GameFontNormalLarge",28,-111,480)
+    local options={{"Charcoal","charcoal"},{"Midnight","midnight"},
+        {"Slate","slate"},{"Custom","custom"}}
+    for i,v in ipairs(options) do
+        Button(panel,v[1],26+(i-1)*125,-140,116,function()
+            if ChalkBox_ThemeSet then ChalkBox_ThemeSet("preset",v[2]) end
+            if panel.OnRefresh then panel.OnRefresh() end
+        end)
+    end
+    Label(panel,"ACCENT","GameFontNormal",27,-190,112)
+    for i,v in ipairs({{"Gold","gold"},{"Teal","teal"},
+        {"Neutral","neutral"}}) do
+        Button(panel,v[1],147+(i-1)*120,-184,111,function()
+            if ChalkBox_ThemeSet then ChalkBox_ThemeSet("accent",v[2]) end
+            if panel.OnRefresh then panel.OnRefresh() end
+        end)
+    end
+    local loading=false
+    local sliders={}
+    local controls={
+        {"opacity","Global background strength",0,100,-232},
+        {"r","Custom red",0,255,-288},
+        {"g","Custom green",0,255,-344},
+        {"b","Custom blue",0,255,-400},
+    }
+    for _,info in ipairs(controls) do
+        Label(panel,info[2],"GameFontHighlightSmall",28,info[5],220)
+        local slider=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
+        slider:SetSize(260,16)
+        slider:SetPoint("TOPLEFT",panel,"TOPLEFT",238,info[5]+2)
+        slider:SetMinMaxValues(info[3],info[4])
+        if slider.SetValueStep then slider:SetValueStep(1) end
+        local key=info[1]
+        slider:SetScript("OnValueChanged",function(_,v)
+            if loading or type(v)~="number" then return end
+            if ChalkBox_ThemeSet then ChalkBox_ThemeSet(key,v) end
+        end)
+        sliders[key]=slider
+    end
+    local current=Label(panel,"","GameFontHighlightSmall",28,-432,495)
+    panel:AddRefresh(function()
+        local t=ChalkBox_ThemeGet and ChalkBox_ThemeGet() or
+            {preset="charcoal",accent="gold",opacity=100,r=24,g=29,b=36}
+        loading=true
+        for key,slider in pairs(sliders) do slider:SetValue(t[key]) end
+        loading=false
+        current:SetText(t.preset.." / "..t.accent.." / "..
+            tostring(t.opacity).."%  |  RGB "..t.r..","..t.g..","..t.b)
+    end)
+    return panel
+end
+
+-- Never label a player sample as Blizzard's server drop rate.
+local function MakeDrops()
+    local panel=Panel("DropSense",
+        "Optional personal sample journal. Counts opened loot windows, NOT kills or official odds.")
+    Toggle(panel,"Track items I choose (OFF by default)",nil,-106,
+        function()
+            return ChalkBox_DropOptions and ChalkBox_DropOptions().enabled or false
+        end,
+        function(on)
+            if ChalkBox_DropSetOption then ChalkBox_DropSetOption("enabled",on) end
+        end)
+    Toggle(panel,"Add observed odds to item tooltips in LOOT WINDOWS only",
+        nil,-154,
+        function()
+            return ChalkBox_DropOptions and ChalkBox_DropOptions().tooltip or false
+        end,
+        function(on)
+            if ChalkBox_DropSetOption then ChalkBox_DropSetOption("tooltip",on) end
+        end)
+    Label(panel,"Watch an item ID or paste an item link:","GameFontNormal",
+        28,-203,500)
+    local item=CreateFrame("EditBox",nil,panel,"InputBoxTemplate")
+    item:SetSize(286,24);item:SetPoint("TOPLEFT",panel,"TOPLEFT",31,-222)
+    item:SetAutoFocus(false)
+    local function Watch(remove)
+        if not ChalkBox_DropWatch then return end
+        local val=item:GetText() or ""
+        if remove then
+            if ChalkBox_DropUnwatch then ChalkBox_DropUnwatch(val) end
+        else
+            ChalkBox_DropWatch(val,val:match("%[([^%]]+)%]"))
+        end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end
+    Button(panel,"Watch",330,-223,85,function() Watch(false) end)
+    Button(panel,"Remove",419,-223,85,function() Watch(true) end)
+    local summary=Label(panel,"","GameFontHighlightSmall",28,-260,490)
+    panel:AddRefresh(function()
+        local s=ChalkBox_DropOptions and ChalkBox_DropOptions() or {}
+        summary:SetText((s.watched or 0).." watched items / "..
+            (s.windows or 0).." sampled loot windows. Forever rates unverified.")
+    end)
+    Label(panel,"DROP CHANCE CALCULATOR","GameFontNormalLarge",28,-292,455)
+    Label(panel,"Known chance %","GameFontHighlightSmall",28,-330,140)
+    local rate=CreateFrame("EditBox",nil,panel,"InputBoxTemplate")
+    rate:SetSize(86,24);rate:SetPoint("TOPLEFT",panel,"TOPLEFT",151,-322)
+    rate:SetAutoFocus(false)
+    Label(panel,"Attempts","GameFontHighlightSmall",255,-330,75)
+    local attempts=CreateFrame("EditBox",nil,panel,"InputBoxTemplate")
+    attempts:SetSize(69,24);attempts:SetPoint("TOPLEFT",panel,"TOPLEFT",336,-322)
+    attempts:SetAutoFocus(false)
+    local feedback=Label(panel,"Use a rate you trust; ChalkBox has no verified server table.",
+        "GameFontHighlightSmall",28,-398,490)
+    Button(panel,"Calculate",412,-321,107,function()
+        local result=ChalkBox_DropCalculate and
+            ChalkBox_DropCalculate(rate:GetText(),attempts:GetText())
+        feedback:SetText(result and
+            (("%.2f%% chance of at least one drop"):format(result)..
+            " in "..attempts:GetText().." independent attempts.") or
+            "Enter a rate 0–100 and a whole number of attempts.")
+    end)
+    Button(panel,"Drop Journal Status",28,-359,210,function()
+        if ChalkBox_DropCommand then ChalkBox_DropCommand("status") end
+    end)
+    return panel
+end
+
+local function MakeJournal()
+    local panel=Panel("Session Journal",
+        "Your actual adventures, current session and up to 20 saved previous sessions.")
+    Label(panel,"ADVENTURE RECAP","GameFontNormalLarge",28,-111,460)
+    Label(panel,"XP, levels, net gold, quest turn-ins, observed loot and camp prompts.",
+        "GameFontHighlightSmall",28,-145,505)
+    Label(panel,"The journal stores only observed facts. No inferred kills or auction prices.",
+        "GameFontHighlightSmall",28,-168,505)
+    Button(panel,"Open Current Session",28,-207,221,function()
+        if ChalkBox_OpenSessionJournal then
+            ChalkBox_OpenSessionJournal("current")
+        end
+    end)
+    Button(panel,"Open Last Session",273,-207,221,function()
+        if ChalkBox_OpenSessionJournal then
+            ChalkBox_OpenSessionJournal("last")
+        end
+    end)
+    local summary=Label(panel,"","GameFontHighlight",28,-275,505)
+    panel:AddRefresh(function()
+        local s=ChalkBox_JournalStatus and ChalkBox_JournalStatus() or {}
+        summary:SetText("Current: "..(s.current and "recording" or "not started")..
+            "  |  Saved adventures: "..tostring(s.history or 0))
+    end)
+    Label(panel,"Use /chalk session or /chalk session last from anywhere.",
+        "GameFontHighlightSmall",28,-328,500)
+    Label(panel,"History is stored for this character and survives future logins.",
+        "GameFontHighlightSmall",28,-355,500)
     return panel
 end
 
@@ -233,29 +391,47 @@ end
 
 local function MakeLootAppearance()
     local panel=Panel("LootSense Appearance",
-        "A native tooltip section and restrained bag outlines for verified learned recipes.")
-    Label(panel,"ITEM INSIGHT","GameFontNormalLarge",27,-106,400)
-    Label(panel,"Tooltip notes keep the game's original fonts and rarity colors.",
-        "GameFontHighlightSmall",28,-137,500)
-    Label(panel,"A learned recipe is verified by scanning your actual profession window.",
-        "GameFontHighlightSmall",28,-159,500)
-    Label(panel,"BAG REAGENT MARKERS","GameFontNormalLarge",27,-204,460)
+        "Choose the kinds of item insights you want without changing WoW's item art.")
+    Label(panel,"ITEM INSIGHT FILTERS","GameFontNormalLarge",27,-104,490)
+    local kinds={
+        {"crafting","Learned crafting uses","Confirmed uses take priority.",-134},
+        {"potential","Possible or unverified uses","Hide speculative catalog hints.",-170},
+        {"camp","Camping item hints","Hide camp-related reagent notes.",-206},
+    }
+    for _,item in ipairs(kinds) do
+        local key=item[1]
+        Toggle(panel,item[2],nil,item[4],
+            function()
+                local d=DB()
+                return d and (not d.lootCategories or
+                    d.lootCategories[key]~=false)
+            end,
+            function(on)
+                local d=DB()
+                if not d then return end
+                if type(d.lootCategories)~="table" then
+                    d.lootCategories={}
+                end
+                d.lootCategories[key]=on
+            end)
+    end
+    Label(panel,"VERIFIED BAG REAGENT MARKERS","GameFontNormalLarge",
+        27,-246,480)
     Toggle(panel,"Highlight ingredients for learned recipes",
-        "Thin green inset only, never overwrites WoW's item rarity border.",-234,
+        nil,-275,
         function()
-            local db=DB()
-            return db and db.lootHighlightKnown~=false
+            local d=DB();return d and d.lootHighlightKnown~=false
         end,
         function(on)
             if ChalkBox_BagHighlightSet then ChalkBox_BagHighlightSet(on) end
         end)
-    Label(panel,"Marker strength","GameFontNormal",28,-321,150)
+    Label(panel,"Marker opacity","GameFontNormal",27,-326,145)
     local slider=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
-    slider:SetSize(250,17)
-    slider:SetPoint("TOPLEFT",panel,"TOPLEFT",181,-317)
+    slider:SetSize(255,17)
+    slider:SetPoint("TOPLEFT",panel,"TOPLEFT",182,-322)
     slider:SetMinMaxValues(15,100)
     if slider.SetValueStep then slider:SetValueStep(5) end
-    local alpha=Label(panel,"75%","GameFontHighlightSmall",447,-324,65)
+    local alpha=Label(panel,"75%","GameFontHighlightSmall",448,-328,65)
     local loading=false
     slider:SetScript("OnValueChanged",function(_,value)
         if loading or type(value)~="number" then return end
@@ -267,20 +443,22 @@ local function MakeLootAppearance()
     panel:AddRefresh(function()
         local status=ChalkBox_BagHighlightStatus and ChalkBox_BagHighlightStatus()
         local value=status and status.opacity or 75
-        loading=true
-        slider:SetValue(value)
-        loading=false
+        loading=true;slider:SetValue(value);loading=false
         alpha:SetText(tostring(value).."%")
     end)
-    Button(panel,"Refresh Bag Markers",28,-373,224,function()
-        if ChalkBox_BagHighlightsRefresh then ChalkBox_BagHighlightsRefresh() end
+    Button(panel,"Refresh Bag Markers",28,-371,224,function()
+        if ChalkBox_BagHighlightsRefresh then
+            ChalkBox_BagHighlightsRefresh()
+        end
     end)
-    Button(panel,"Scan Open Profession",270,-373,224,function()
+    Button(panel,"Scan Open Profession",270,-371,224,function()
         if ChalkBox_ProfessionRefresh then ChalkBox_ProfessionRefresh() end
-        if ChalkBox_BagHighlightsRefresh then ChalkBox_BagHighlightsRefresh() end
+        if ChalkBox_BagHighlightsRefresh then
+            ChalkBox_BagHighlightsRefresh()
+        end
     end)
-    Label(panel,"Only KNOWN recipes glow. Catalog-only potential uses never glow.",
-        "GameFontHighlightSmall",27,-425,505)
+    Label(panel,"Your quest and personal KEEP protections always stay prioritized.",
+        "GameFontHighlightSmall",27,-420,510)
     return panel
 end
 
@@ -767,26 +945,33 @@ local function MakePrep()
     local panel=Panel("Adventure Prep",
         "Checks your actual camping buff and reminds you when it is missing or fading.")
     local options={
-        {"enabled","Enable periodic prep reminders",-99},
-        {"toast","Show reminders on screen (recommended)",-147},
-        {"buffs","Check Camp Benefits buff and expiration",-195},
-        {"supplies","Also remind me about camp supplies",-243},
-        {"classCare","Also remind me about class and pet care",-291},
+        {"enabled","Enable smart prep notifications",-99},
+        {"toast","Show compact notifications on screen",-139},
+        {"buffs","Check Camp Benefits and tent readiness",-179},
+        {"supplies","Check actual camp supplies in bags",-219},
+        {"classCare","Check Hunter pet care when available",-259},
+        {"repeatUnresolved","Repeat unchanged alerts (optional)",-299},
     }
     for _,opt in ipairs(options) do
         Toggle(panel,opt[2],nil,opt[3],
             function()
-                local db=DB();return db and db.camp and db.camp[opt[1]]~=false
+                local d=DB()
+                if not d or not d.camp then return false end
+                if opt[1]=="repeatUnresolved" then
+                    return d.camp.repeatUnresolved==true
+                end
+                return d.camp[opt[1]]~=false
             end,
             function(on)
-                local key=opt[1]=="classCare" and "classcare" or opt[1]
+                local key=opt[1]=="classCare" and "classcare" or
+                    (opt[1]=="repeatUnresolved" and "repeat" or opt[1])
                 local value=on and "on" or "off"
                 if ChalkBox_CampCommand then
                     ChalkBox_CampCommand(opt[1]=="enabled" and value or (key.." "..value))
                 end
             end)
     end
-    Label(panel,"Reminder interval:","GameFontNormal",28,-350,166)
+    Label(panel,"Repeat after (if on):","GameFontNormal",28,-350,166)
     for i,minutes in ipairs({20,45,90}) do
         Button(panel,minutes.."m",171+(i-1)*80,-347,70,function()
             if ChalkBox_CampCommand then ChalkBox_CampCommand("interval "..minutes) end
@@ -942,6 +1127,9 @@ end
 local function Register()
     if registered then return end
     panels.home = MakeHome()
+    panels.theme = MakeTheme()
+    panels.drops = MakeDrops()
+    panels.journal = MakeJournal()
     panels.loot = MakeLoot()
     panels.loothighlight = MakeLootAppearance()
     panels.quests = MakeQuests()
@@ -961,7 +1149,13 @@ local function Register()
         Settings.RegisterAddOnCategory(rootCategory)
         if type(Settings.RegisterCanvasLayoutSubcategory) == "function" then
             for _, item in ipairs({
-                {"loot", "LootSense"},
+                {"theme", "Global Appearance"},
+                {"drops", "DropSense"},
+                {"journal", "Session Journal"},
+                {"theme", "Global Appearance"},
+            {"drops", "DropSense"},
+            {"journal", "Session Journal"},
+            {"loot", "LootSense"},
                 {"loothighlight", "LootSense Appearance"},
                 {"quests", "QuestSense"},
                 {"bar", "The Bar"},
