@@ -57,6 +57,46 @@ _G.ChalkBox_BarCommand=function(value)
     end
     printed[#printed+1]="bar "..value
 end
+local editor=false
+_G.ChalkBox_BarAppearanceGet=function() return ChalkBoxDB.barBackgroundOpacity or 70 end
+_G.ChalkBox_BarAppearanceSet=function(value)
+    ChalkBoxDB.barBackgroundOpacity=math.max(0,math.min(100,value))
+end
+_G.ChalkBox_BarEditStatus=function() return editor end
+_G.ChalkBox_BarHighlightNotPresent=function() return nil end
+local originalBarCommand=ChalkBox_BarCommand
+_G.ChalkBox_BarCommand=function(command)
+    if command=="edit on" then editor=true end
+    if command=="edit off" then editor=false end
+    if command=="layout reset" then ChalkBoxZoneDB.trailLayout=nil end
+    originalBarCommand(command)
+end
+_G.ChalkBox_BagHighlightStatus=function()
+    return {enabled=ChalkBoxDB.lootHighlightKnown~=false,
+        opacity=ChalkBoxDB.lootHighlightOpacity or 75}
+end
+_G.ChalkBox_BagHighlightSet=function(on) ChalkBoxDB.lootHighlightKnown=on end
+_G.ChalkBox_BagHighlightOpacity=function(value)
+    ChalkBoxDB.lootHighlightOpacity=math.floor(value+0.5)
+end
+_G.ChalkBox_BagHighlightsRefresh=function() printed[#printed+1]="bag markers refresh" end
+_G.ChalkBox_RaceCatalog=function()
+    return {
+        {token="Dwarf",label="Dwarf",implemented=true},
+        {token="VoidElf",label="Void Elf",implemented=false}
+    }
+end
+_G.UnitRace=function() return "Dwarf","Dwarf" end
+_G.ChalkBox_RaceBehaviorStatus=function(token)
+    local modes=ChalkBoxDB.emota.raceModes or {}
+    return {token=token,examples="FLEX, SALUTE",mode=modes[token] or "default"}
+end
+_G.ChalkBox_RaceBehaviorSet=function(token,mode)
+    if token~="Dwarf" then return false end
+    ChalkBoxDB.emota.raceModes=ChalkBoxDB.emota.raceModes or {}
+    ChalkBoxDB.emota.raceModes[token]=mode
+    return true
+end
 _G.ChalkBox_BagOffsetSet=function(value)
     ChalkBoxDB.bagOffsetY=math.max(-120,math.min(120,math.floor(value+0.5)))
 end
@@ -254,6 +294,18 @@ assert(ChalkBoxDB.keep["name:new"],"Keep Item must call original protection logi
 categories["LootSense"].panel:Show()
 Control("Remove"):Click() -- sorts by key; first is id:11
 assert(ChalkBoxDB.keep["id:11"]==nil,"Remove must use the exact protected key")
+Control("LootSense Appearance"):Click()
+assert(opened[#opened]==categories["LootSense Appearance"].ID)
+categories["LootSense Appearance"].panel:Show()
+local lootCheck=FindCheckByParentTitle("LootSense Appearance")
+assert(#lootCheck==1 and lootCheck[1].checked,
+    "ingredient highlighting defaults ON for verified recipes only")
+lootCheck[1]:Click(false)
+assert(ChalkBoxDB.lootHighlightKnown==false,
+    "new bag highlight toggle is stored independently from tooltip hints")
+lootCheck[1]:Click(true)
+Control("Refresh Bag Markers"):Click()
+assert(printed[#printed]=="bag markers refresh")
 local questCheck=FindCheckByParentTitle("QuestSense")[1]
 categories["QuestSense"].panel:Show()
 questCheck:Click(false)
@@ -285,9 +337,16 @@ assert(printed[#printed]=="bar reset")
 Control("Appearance"):Click()
 assert(opened[#opened]==categories["TrailBar Appearance"].ID,
     "TrailBar links into its own appearance and drag-layout page")
-Control("Customize Bar Stats"):Click()
+Control("Stats & Presets"):Click()
 assert(opened[#opened]==categories["TrailBar Stats"].ID,
     "TrailBar should navigate directly to the new stats page")
+categories["TrailBar Appearance"].panel:Show()
+Control("Edit Bar"):Click()
+assert(editor,"native drag-layout edit toggle starts edit mode")
+Control("Done Editing"):Click()
+assert(not editor,"done exits editor without losing saved layout")
+Control("Reset Layout"):Click()
+assert(printed[#printed]=="bar layout reset","reset layout button reaches controller")
 categories["TrailBar Stats"].panel:Show()
 local statsChecks=FindCheckByParentTitle("TrailBar Stats")
 assert(#statsChecks==9,"9 independent stats are accessible")
@@ -330,6 +389,20 @@ slider:SetValue(100)
 assert(ChalkBoxDB.emota.jokeFrequency==100,"joke frequency slider updates settings")
 Control("Surprise Me"):Click()
 assert(printed[#printed]=="random idle","idle preview must be reachable in normal settings")
+Control("Races"):Click()
+assert(opened[#opened]==categories["Emota Race Behavior"].ID,
+    "Emota links directly to new race behavior editor")
+categories["Emota Race Behavior"].panel:Show()
+Control("Expressive"):Click()
+assert(ChalkBoxDB.emota.raceModes.Dwarf=="expressive",
+    "live racial intensity selection saves the chosen race")
+Control("Next race"):Click()
+Control("Off"):Click()
+assert(ChalkBoxDB.emota.raceModes.VoidElf==nil,
+    "placeholder race does not gain fabricated emote behavior")
+Control("My race"):Click()
+Control("Default"):Click()
+assert(ChalkBoxDB.emota.raceModes.Dwarf=="default")
 Control("Catalog"):Click()
 assert(opened[#opened]==categories["Emote Catalog"].ID,
     "catalog must have its own native settings page")
@@ -413,6 +486,28 @@ for _,frame in ipairs(frames) do
     if frame.kind=="Slider" then sliders[#sliders+1]=frame end
 end
 assert(#sliders==6,"four existing sliders plus bag highlight and TrailBar appearance opacity")
+local appearanceSlider,highlightSlider
+for _,frame in ipairs(sliders) do
+    if frame.parent==categories["TrailBar Appearance"].panel then
+        appearanceSlider=frame
+    end
+    if frame.parent==categories["LootSense Appearance"].panel then
+        highlightSlider=frame
+    end
+end
+assert(appearanceSlider and appearanceSlider.value==70,
+    "native bar opacity slider defaults to original 70%")
+appearanceSlider:SetValue(0)
+assert(ChalkBoxDB.barBackgroundOpacity==0,
+    "slider makes only bar background disappear")
+appearanceSlider:SetValue(100)
+assert(ChalkBoxDB.barBackgroundOpacity==100,
+    "slider can produce an opaque Blizzard-charcoal background")
+assert(highlightSlider and highlightSlider.value==75,
+    "bag recipe insets have a separate 75% opacity default")
+highlightSlider:SetValue(40)
+assert(ChalkBoxDB.lootHighlightOpacity==40,
+    "reagent highlight strength is configurable in native settings")
 local meterSlider
 for _,frame in ipairs(sliders) do
     if frame.parent==categories["Combat Meter"].panel then meterSlider=frame end
