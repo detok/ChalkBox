@@ -116,7 +116,8 @@ local discovered=ChalkBox_DropMapData(1436)
 assert(#discovered.dungeons==1 and
     discovered.dungeons[1].name=="The Deadmines",
     "instance history links separately to the observed entrance zone")
-assert(ChalkBox_DropRead(500).quantity==1)
+assert(ChalkBox_DropRead(500).quantity==2,
+    "observed dungeon item stacks retain game-provided quantities")
 assert(ChalkBox_DropRead(500,"z:1436")==nil or
     ChalkBox_DropRead(500,"z:1436").areaQuantity==nil,
     "dungeon items do not leak into outdoors")
