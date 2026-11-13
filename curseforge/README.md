@@ -21,7 +21,7 @@ This directory contains the working content and production plan for a polished C
 | [FAQ.md](copy/FAQ.md) | Common questions and honest client limitations |
 | [COMMANDS.md](copy/COMMANDS.md) | Compact, accurate command reference |
 | [SUPPORT_AND_CREDITS.md](copy/SUPPORT_AND_CREDITS.md) | Bug-report template, MIT credit and library acknowledgements |
-| [FILE_CHANGELOG_1.8.6.md](copy/FILE_CHANGELOG_1.8.6.md) | Text to use with initial 1.8.5 file upload |
+| [FILE_CHANGELOG_1.8.6.md](copy/FILE_CHANGELOG_1.8.6.md) | Text to use with the v1.8.6 file upload |
 | [ARTWORK_TO_CREATE.md](ARTWORK_TO_CREATE.md) | Identity, design system, exact requested image concepts, priorities |
 | [SCREENSHOT_PLAN.md](artwork/SCREENSHOT_PLAN.md) | Capture instructions and per-shot visual storyboards |
 | [ARTWORK_FOLDER.md](artwork/ARTWORK_FOLDER.md) | Eventual asset directory naming/organization, no fake files |
@@ -40,14 +40,14 @@ This kit was prepared against **ChalkBox v1.8.6** on the public GitHub `main` br
 - [Release notes](../docs/RELEASE_NOTES.md)
 - [Third-party notices](../NOTICE.md)
 
-**Important distinctions:** TrailBar currently reports level/XP, XP/hour, ETA, session time and gold; it does **not** show empty bag slots, durability, latency or rested XP in the bar. Native action-bar empty-slot hiding is a WoW Edit Mode setting, **not a ChalkBox feature**. Blizzard's native-meter PRINT menu and the separate-bag offset are implemented, but still need real in-client confirmation. LootSense is advisory and never auto-sells.
+**Important distinctions:** TrailBar now reports **bag space, durability and rested XP**, with optional home/world latency and readable Hunter pet health, *as well as* XP, time and gold; it adapts to narrow widths. Native action-bar empty-slot hiding is a WoW Edit Mode setting, **not a ChalkBox feature**. Blizzard's native-meter PRINT menu and the separate-bag offset are implemented, but still need real in-client confirmation. LootSense is advisory and never auto-sells.
 
 ## Publishing discipline
 
 - **Do not** upload `curseforge/` or a GitHub source-code archive as the game addon. Use the versioned installation ZIP with a single top-level `ChalkBox/` directory.
 - **Do not** paste GitHub Release download links into the CurseForge description; use CurseForge's own Files tab for downloads.
 - Keep the listing free of fabricated screenshots, false endorsements, affiliation claims and features that have not shipped.
-- Update version references, images and change log when a later release supersedes 1.8.5.
+- Update version references, images and change log when a later release supersedes 1.8.6.
 - Do not publish the listing as completed or claim CurseForge approval until the site actually approves it.
 - This documentation-only commit should **not** change addon TOC versions or generate a new addon release.
 
