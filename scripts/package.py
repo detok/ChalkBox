@@ -45,6 +45,7 @@ FILES = (
     "TrailBar.lua",
     "BagLayout.lua",
     "CombatMeter.lua",
+    "NativeMeterPrint.lua",
     "ChalkBox_Settings.lua",
     "assets/Icon.tga",
 )
