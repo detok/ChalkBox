@@ -21,7 +21,7 @@ local utility={
     [211527]={label="Cozy Sleeping Bag",text="XP UTILITY: rest on the bag for up to 3% bonus XP for 2 hours."},
 }
 local function Safe(value)
-    return value~=nil and (type(issecretvalue)~="function" or not issecretvalue(value))
+    return (type(issecretvalue)~="function" or not issecretvalue(value)) and value~=nil
 end
 local function Note(msg)
     if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
