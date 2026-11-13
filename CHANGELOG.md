@@ -2,6 +2,14 @@
 
 All notable changes to the public ChalkBox addon are documented here.
 
+## 1.8.2 — One-line party DPS report and on-window reset
+
+- PRINT sends a **single, manual top-three summary to PARTY chat** after combat, for the meter's selected statistic and fight scope; fallback to last fight when current is empty.
+- Uses Forever's modern `C_ChatInfo.SendChatMessage` API (legacy fallback for Classic), respects protected combat values, refuses solo/raid misdelivery, avoids duplicate clicks and respects 255-character chat limit.
+- Adds an on-window **RESET** button between PRINT and LOCK; calls the existing confirmation before clearing shared Blizzard meter data, never during combat.
+- Keeps the compact class-icon header, opacity, lock/resize, QuestSense and the one-ZIP distribution.
+- Expanded Lua 5.1 tests cover chat restrictions and actual group targeting without leaking protected data.
+
 ## 1.8.1 — Native class and specialization icons for the DPS meter
 
 - Show compact genuine WoW **class emblems** beside combatant names, default on, using Blizzard's class sheet and `C_DamageMeter.classFilename`.

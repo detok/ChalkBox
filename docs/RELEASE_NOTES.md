@@ -1,37 +1,26 @@
-# ChalkBox 1.8.1 — Real WoW class icons in the DPS meter
+# ChalkBox 1.8.2 — One-click party DPS report + RESET button
 
-It is now easier to tell which player is which at a glance. Every ranked player has a compact **18 × 18 World of Warcraft icon** directly between their rank and name.
+The DPS meter now has everything you need right on the window.
 
-## Real in-game art, no other download
+## PRINT → Party chat
+- Click **PRINT** after a fight to send **one short message** to normal `PARTY` chat, summarizing the **top three** player results for the currently selected DPS / damage / healing / other mode and Fight / Last / Overall scope.
+- Example: `CB DPS (Last): 1 Detok 555 | 2 Companion 423 | 3 Friend 318`.
+- If **Fight** is empty, ChalkBox tries the previous completed fight.
+- Uses Forever's modern **`C_ChatInfo.SendChatMessage(message, "PARTY")`** API, with the legacy function fallback only when the modern one isn't present.
+- A solo player or raid member gets a local explanation; it **never** silently redirects to SAY, RAID, or instance chat.
+- Doesn't read or format **secret combat values** while fighting or when they remain protected after combat. If the game still masks results, it shows a reason instead of posting an inaccurate message.
+- Refuses rapid duplicate reports (three-second cooldown) and keeps messages within WoW's 255-character limit. **Never auto-posts**: only the button or `/chalk meter print` initiates a report.
+- If the client restricts chat messages in an instance, the failure is reported locally without retry spam. Please include game build when reporting the failure.
 
-- Default **Class** mode uses the client’s original class emblems, including **Hunter, Warrior, Mage, Rogue, Druid, Shaman, Priest, Warlock, and Paladin**.
-- The correct emblem is selected from Blizzard's own `classFilename` supplied in the `C_DamageMeter` result. No guesswork from player names or GUID parsing.
-- Optional **Spec** mode uses the supplied native `specIconID` (the same kind of numeric WoW icon identifier that the macro picker uses) when present. If missing, it falls back to the player's class emblem.
-- An unclassified source, such as a pet or an unidentified NPC, shows the neutral WoW question-mark icon, **not** an invented class.
-- **Off** hides emblems and expands the available name space.
-- Icons update when rankings change and clear when a row empties; the entire window still supports resizing, opacity, locking, printing, current/last/overall sessions, and six statistic modes.
+## RESET → Confirmed clear
+- A new visible **RESET** button sits next to PRINT, retaining the small no-branding/no-X meter header: **DPS | Fight | PRINT | RESET | LOCK**.
+- RESET opens the **existing confirmation dialog**; confirming clears **all Blizzard-shared damage meter sessions**, not just the current ChalkBox display. It won't reset during combat.
+- The original Settings **Reset Data...** and `/chalk meter reset` still work.
 
-## How to change icon style
+## Unchanged
+Native class/spec icons, mode and session choices, opacity, lock/resize, Combat Meter settings, QuestSense, camp toasts, LootSense with 2,511 bundled Forever recipes, and every other ChalkBox module.
 
-Open **Esc → Options → AddOns → ChalkBox → Combat Meter** and choose **Class**, **Spec**, or **Off** in the icon row.
+## Install
+Download just **ChalkBox-1.8.2.zip**, replace your `Interface/AddOns/ChalkBox` folder, and `/reload`.
 
-Alternatively, use:
-- `/chalk meter icons class` — recognizable class emblems (default).
-- `/chalk meter icons spec` — specialization art where Blizzard supplies it; class fallback.
-- `/chalk meter icons off` — hide the emblems.
-
-The choice is stored in your existing ChalkBox settings and survives reload.
-
-## Technical and compatibility details
-
-Blizzard's damage meter reports `classFilename` and optional `specIconID` as **NeverSecret** fields. ChalkBox only reads those identifiers and passes native texture/file IDs to UI texture methods. Protected player names and damage numbers remain protected and are never parsed or reformatted by the icons feature.
-
-Classic class icons use the original WoW `Interface\\Glues\\CharacterCreate\\UI-CharacterCreate-Classes` texture sheet, with Blizzard-defined tile coordinates (and a matching first-party fallback if `CLASS_ICON_TCOORDS` isn't exposed). No web requests, scraped artwork, downloaded asset packs, or additional addon dependencies.
-
-All existing QuestSense, CampSense, LootSense (including 2,511 bundled recipes), Toast Appearance, Emota, TrailBar and QuietGuard code remains functional and unchanged by this release.
-
-## Install and test
-
-Replace your existing `Interface/AddOns/ChalkBox/` folder with the single **ChalkBox-1.8.1.zip**, then `/reload`. Group with a different class or switch to **Last** after a fight; class icons should match the players without interfering with DPS totals.
-
-This release remains a **public prerelease** until real WoW Forever in-game visual verification. The Lua 5.1 test suite checks actual Hunter/Warrior atlas coordinates, the unknown fallback, optional specialization icon file IDs, clean empty rows, style switching, saved settings, and the unchanged native secret-value protections.
+**Public prerelease:** Lua 5.1 tests cover modern + classic chat APIs, one-line formatting, protected data, solo/raid safeguards, click rate limiting, and on-window reset confirmation. Test the PARTY send in actual Forever gameplay; some instance chat restrictions must be verified on your specific client.

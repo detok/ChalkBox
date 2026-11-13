@@ -77,11 +77,11 @@ If your client hides the debuff or rested-XP API, ChalkBox reports tent state **
 
 ## Combat Meter will not print my fight
 
-- The **PRINT** button posts *locally to your own chat*, never automatically to party/raid.
-- Try clicking it **after combat**, not mid-fight; combat totals may be protected.
+- **PRINT** sends **one short top-three ranking to normal PARTY chat** when clicked. It never sends automatically or broadcasts to RAID/SAY.
+- You must be in a normal **party**, not solo or a raid, and click **after combat**. Forever may still mark results as protected until the game releases them.
 - If **Fight** is empty, try **Last** in the window. The Print command also tries Last when current session has no data.
 - `/chalk meter status` verifies the native meter is available.
-- If the client still considers values secret, ChalkBox refuses to print and shows a message rather than attempting to bypass protection.
+- If the client still considers values secret or blocks party chat (e.g., in a restricted instance), ChalkBox refuses to send and shows a local diagnostic instead. Try `/chalk meter print` after combat and note the exact response.
 
 ## TrailBar overlays other UI
 

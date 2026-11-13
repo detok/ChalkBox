@@ -3,6 +3,16 @@
 local frames,queued,chat,callCount,resetCount={}, {}, {}, 0,0
 local locked=false
 local protected=true
+local grouped=true
+local raiding=false
+local now=1000
+local partyMessages={}
+_G.IsInGroup=function() return grouped end
+_G.IsInRaid=function() return raiding end
+_G.GetTime=function() return now end
+_G.C_ChatInfo={SendChatMessage=function(message,channel)
+    partyMessages[#partyMessages+1]={message=message,channel=channel}
+end}
 local function Secret(v)
     return setmetatable({secret=true,raw=v},{
         __lt=function() error("secret value compared by Lua!") end,
@@ -175,13 +185,19 @@ local function Button(caption)
     end
 end
 local printButton=Button("PRINT")
+local resetButton=Button("RESET")
 local lockButton=Button("LOCK")
 local grip
 for _,f in ipairs(frames) do
     if f.isChalkBoxResizeGrip then grip=f end
 end
-assert(printButton and lockButton and grip,
-    "visible PRINT/LOCK buttons and resize grip must be directly accessible")
+assert(printButton and resetButton and lockButton and grip,
+    "visible PRINT/RESET/LOCK buttons and resize grip must be directly accessible")
+local controls={Button("DPS  >"),Button("Fight  >"),printButton,resetButton,lockButton}
+for _,control in ipairs(controls) do
+    assert(control and control.w<=60,
+        "five compact controls must fit minimum-width meter window")
+end
 assert(not Button("X"),"the unwanted meter close button must be gone")
 local sawBranding=false
 for _,f in ipairs(labels) do
@@ -255,33 +271,87 @@ assert(callCount==old,"hidden window should not poll Blizzard data")
 ChalkBox_MeterCommand("show")
 Flush()
 assert(window.shown and callCount>old,"show immediately displays latest data")
-ChalkBox_MeterCommand("reset")
+resetButton.script.OnClick(resetButton)
 assert(lastPopup=="CHALKBOX_METER_RESET" and resetCount==0,
-    "reset must require clear confirmation")
+    "on-window RESET must invoke existing shared-data confirmation")
 locked=true
 assert(StaticPopupDialogs.CHALKBOX_METER_RESET.OnAccept()==false and resetCount==0,
     "do not reset combat data in combat")
 locked=false
 assert(StaticPopupDialogs.CHALKBOX_METER_RESET.OnAccept()==true and resetCount==1,
     "user-confirmed action resets Blizzard's shared sessions")
--- Printing is intentionally local only, never party chat and never secret.
+-- Printing is ONE explicit party chat line, never a multi-line chat flood.
 locked=true
 local oldChat=#chat
 printButton.script.OnClick(printButton)
-assert(#chat==oldChat+1 and chat[#chat]:find("Finish combat",1,true),
-    "print button refuses protected in-combat totals")
+assert(#chat==oldChat+1 and chat[#chat]:find("Finish combat",1,true)
+    and #partyMessages==0,
+    "PRINT never uses in-combat secret totals or sends to party")
 locked=false
 oldChat=#chat
 printButton.script.OnClick(printButton)
-assert(#chat==oldChat+1 and chat[#chat]:find("protected",1,true),
-    "protected data also refused when client still masks results after combat")
+assert(#chat==oldChat+1 and chat[#chat]:find("protected",1,true)
+    and #partyMessages==0,
+    "protected values after combat are never sent or formatted")
 protected=false
+grouped=false
+printButton.script.OnClick(printButton)
+assert(#partyMessages==0 and chat[#chat]:find("Join a party",1,true),
+    "solo players do not get a SAY or local-chat fallback")
+grouped=true
+raiding=true
+printButton.script.OnClick(printButton)
+assert(#partyMessages==0,"strict party request must never broadcast to raid")
+raiding=false
+printButton.script.OnClick(printButton)
+assert(#partyMessages==1 and partyMessages[1].channel=="PARTY",
+    "one click must submit EXACTLY one standard PARTY chat message")
+assert(partyMessages[1].message:find("CB HEAL (Overall):",1,true)
+    and partyMessages[1].message:find("1 Detok 4400",1,true)
+    and partyMessages[1].message:find("2 Other Player 2200",1,true)
+    and #partyMessages[1].message<=255,
+    "party report includes selected stat, selected session and ranking")
 oldChat=#chat
 printButton.script.OnClick(printButton)
-assert(#chat==oldChat+3 and chat[oldChat+1]:find("HEAL",1,true)
-    and chat[oldChat+2]:find("Detok",1,true),
-    "one-click print writes a header and both ranked results to LOCAL chat")
-assert(resetCount==1,"printing must never reset shared combat sessions")
+assert(#partyMessages==1 and #chat==oldChat+1
+    and chat[#chat]:find("already requested",1,true),
+    "double-clicking within three seconds does not spam group chat")
+now=1004
+C_ChatInfo.SendChatMessage=function()
+    error("Forever party chat restriction")
+end
+oldChat=#chat
+printButton.script.OnClick(printButton)
+assert(#partyMessages==1 and #chat==oldChat+1
+    and chat[#chat]:find("blocked",1,true),
+    "a Forever chat restriction is surfaced locally, with no fake success")
+C_ChatInfo.SendChatMessage=nil
+_G.SendChatMessage=function(message,channel)
+    partyMessages[#partyMessages+1]={message=message,channel=channel,legacy=true}
+end
+printButton.script.OnClick(printButton)
+assert(#partyMessages==2 and partyMessages[2].legacy
+    and partyMessages[2].channel=="PARTY",
+    "old Classic API is a supported fallback when modern chat API is absent")
+C_ChatInfo.SendChatMessage=function(message,channel)
+    partyMessages[#partyMessages+1]={message=message,channel=channel}
+end
+now=1010
+local saved=C_DamageMeter.GetCombatSessionFromType
+C_DamageMeter.GetCombatSessionFromType=function(session,typeId)
+    if session==Enum.DamageMeterSessionType.Current then
+        return {combatSources={}}
+    end
+    return saved(session,typeId)
+end
+ChalkBox_MeterCommand("current")
+Flush()
+printButton.script.OnClick(printButton)
+assert(#partyMessages==3
+    and partyMessages[3].message:find("CB HEAL (Last):",1,true),
+    "when the current session is empty, report the last recorded fight")
+C_DamageMeter.GetCombatSessionFromType=saved
+assert(resetCount==1,"PRINT never resets Blizzard's shared sessions")
 local api=C_DamageMeter
 C_DamageMeter=nil
 ChalkBox_MeterCommand("status")
@@ -290,4 +360,4 @@ ChalkBox_MeterCommand("dps")
 Flush()
 assert(window.shown)
 C_DamageMeter=api
-print("PASS: meter print guarded, no branding, draggable resize/lock/opacity, protected-value UI setters, modes, settings and shared reset confirmation")
+print("PASS: compact PARTY report modern+legacy chat APIs, secret/solo/raid guards, rate limit, visible confirmed RESET, icons, draggable meter and all sessions")
