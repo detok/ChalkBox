@@ -64,6 +64,14 @@ You can also type `/chalk meter icons class`, `/chalk meter icons spec`, or `/ch
 
 A slim top/bottom strip shows adventuring metrics. Screen-space reservation is **on** by default. Move the strip in **TrailBar** options. Run `/chalk bar status` to check whether the reserved space was applied, or `/chalk bar reserve off` to disable it if another UI conflicts. Some custom frames or Blizzard Edit Mode layouts may ignore the parent inset.
 
+### Separate bag windows clipping off the top?
+
+If you use **individual bags** rather than WoW Forever's combined bag, large bags can stack above the screen edge. ChalkBox can nudge Blizzard's native bag column down while keeping all item slots, art and sorting unchanged.
+
+Open **ChalkBox → TrailBar** and move the **Separate bags: move down** slider from 0 (default) toward 30. It goes to 80; the number is in game UI points and can vary slightly in physical pixels with UI Scale. The change is saved between logins and applies when the bags open or Blizzard recalculates their layout. The combined bag window is deliberately unaffected.
+
+You can also use `/chalk bags offset 30`, `/chalk bags reset` or `/chalk bags status`. If the settings slider is changed in combat, it will reapply the adjustment after combat. If you install a separate bag-mover addon, disable this ChalkBox adjustment (set 0) to avoid competing positions.
+
 ## QuietGuard
 
 The default settings attempt to prevent **guild invite spam and duel requests**. **Party, trade and channel invitations are not filtered unless you opt in**, to avoid blocking friends and ordinary gameplay. An anti-invite client API may be limited by your game build. View the active choices via `/chalk guard`, and change them under **QuietGuard** in Options.
