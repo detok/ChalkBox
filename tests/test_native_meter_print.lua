@@ -38,10 +38,12 @@ _G.IsInGroup=function() return group end
 _G.IsInRaid=function() return raid end
 _G.GetTime=function() return time end
 _G.issecretvalue=function(v) return v==secret end
+local eventFrame
 _G.CreateFrame=function()
     local frame={}
     function frame:RegisterEvent() end
     function frame:SetScript(_,fn) self.callback=fn end
+    eventFrame=frame
     return frame
 end
 local native={
@@ -62,6 +64,7 @@ local root={
     end
 }
 assert(loadfile("NativeMeterPrint.lua"))("ChalkBox")
+eventFrame.callback(eventFrame,"ADDON_LOADED","ChalkBox")
 local state=ChalkBox_NativeMeterStatus()
 assert(state.installed and state.enabled)
 callback(gear,root)
