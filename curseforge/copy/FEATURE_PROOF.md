@@ -1,13 +1,13 @@
 # Feature-claim audit — verify before publishing
 
-**Baseline:** ChalkBox v1.8.5, GitHub `main` as of November 13, 2026. “Implemented” means code is present and automated tests exercise it where appropriate, **not** a guarantee of identical behavior in every Forever client.
+**Baseline:** ChalkBox v1.8.6, pending release on GitHub `main` as of November 13, 2026. “Implemented” means code is present and automated tests exercise it where appropriate, **not** a guarantee of identical behavior in every Forever client.
 
 | Feature | Code and source | Responsible public claim | Boundary |
 | --- | --- | --- | --- |
 | LootSense | `ChalkBox/LootSense.lua`, `ProfessionSense.lua`, `RecipeAdvisor.lua` | Contextual protection, crafting, camping and quest item hints | Client item and learned-recipe data can be incomplete |
 | Local recipe catalog | `ChalkBox/Libs/LibProfessionDB-1.0/`, `docs/RECIPE_DATA.md` | 2,511 bundled Forever recipes | Catalog existence does not prove that a character learned the recipe |
 | Keep list | `LootSense.lua`, `ChalkBox_Settings.lua` | Protect items using names or links | Does not auto-sell, move, use or delete items |
-| TrailBar | `TrailBar.lua` | 18px strip: level/XP, XP/hour, level ETA, time and gold | No free bag-slot count, durability, latency or rested XP in TrailBar |
+| TrailBar | `TrailBar.lua`, `TrailBarStats.lua`, `ChalkBox_Settings.lua` | 18px strip: level/XP, XP/hour, level ETA, time, gold, **free bag slots, weighted gear durability, rested XP, world latency and Hunter pet health** | Layout hides lower-priority fields on narrow screens; unavailable or secret API readings never guessed. Real-client test pending |
 | Screen reservation | `TrailBar.lua` | Optional UI space reservation | Some custom UIs may not respond to UI-parent insets |
 | ChalkBox combat meter | `CombatMeter.lua` | Move/lock/resize/opacity, class/spec icons, DPS, damage, HPS, healing, taken, interrupts | Uses Forever's own `C_DamageMeter`; secret data is restricted |
 | Compact meter PARTY report | `CombatMeter.lua` | User-initiated top-three PARTY report after combat | No report solo/in raid or with secret data |
@@ -21,7 +21,7 @@
 
 ## Never claim these features yet
 
-- Free bag slots, gear durability, latency or rested XP **in TrailBar**
+- Always-visible free bag slots, durability, latency or rested XP on every screen width (the bar adaptively hides fields and native APIs may be unavailable)
 - Action-bar icon styling or hiding empty Action Bar 2 buttons **as a ChalkBox feature** (WoW has a native Edit Mode “Always Show Buttons” toggle)
 - Automatic selling/sorting, quest navigation, hidden-object discovery, automatic combat reporting, AI features or guaranteed accuracy
 - Native meter print proven on every Forever build; it has only automated mock coverage so far
