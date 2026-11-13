@@ -275,12 +275,12 @@ assert(loadfile("ChalkBox_Settings.lua"))("ChalkBox")
 local loader=frames[#frames]
 assert(loader.event=="PLAYER_LOGIN","must register settings when the client is ready")
 loader.script.OnEvent(loader,"PLAYER_LOGIN")
-assert(#registered==14,"native pages include LootSense Appearance, TrailBar Appearance and Emota Race Behavior")
+assert(#registered==17,"native pages include Global Appearance, DropSense, Session Journal and existing pages")
 assert(categories.home.name=="ChalkBox")
 ChalkBox_OpenSettings()
 assert(opened[#opened]==101,"default /chalk must open native settings")
 ChalkBox_OpenSettings("loot")
-assert(opened[#opened]==102)
+assert(opened[#opened]==categories["LootSense"].ID)
 ChalkBox_OnAddonCompartmentClick()
 assert(opened[#opened]==101)
 local function Control(caption)
@@ -311,24 +311,32 @@ assert(checks[1].checked==true)
 checks[1]:Click(false)
 assert(ChalkBoxDB.lootAdvice==false,"native checkbox must control item advice")
 local edit
-for _,f in ipairs(frames) do if f.kind=="EditBox" then edit=f end end
+for _,f in ipairs(frames) do
+    if f.kind=="EditBox" and f.parent==categories["LootSense"].panel then
+        edit=f
+    end
+end
 assert(edit,"personal protection input must be on the options page")
 edit:SetText("New Item")
 Control("Keep Item"):Click()
 assert(ChalkBoxDB.keep["name:new"],"Keep Item must call original protection logic")
 categories["LootSense"].panel:Show()
-Control("Remove"):Click() -- sorts by key; first is id:11
+ControlIn("LootSense","Remove"):Click() -- sorts by key; first is id:11
 assert(ChalkBoxDB.keep["id:11"]==nil,"Remove must use the exact protected key")
 Control("LootSense Appearance"):Click()
 assert(opened[#opened]==categories["LootSense Appearance"].ID)
 categories["LootSense Appearance"].panel:Show()
 local lootCheck=FindCheckByParentTitle("LootSense Appearance")
-assert(#lootCheck==1 and lootCheck[1].checked,
-    "ingredient highlighting defaults ON for verified recipes only")
-lootCheck[1]:Click(false)
+assert(#lootCheck==4 and lootCheck[4].checked,
+    "three independent LootSense detail filters plus learned-only bag markers")
+lootCheck[2]:Click(false)
+assert(ChalkBoxDB.lootCategories.potential==false,
+    "potential use hints can be hidden without disabling verified recipe advice")
+lootCheck[2]:Click(true)
+lootCheck[4]:Click(false)
 assert(ChalkBoxDB.lootHighlightKnown==false,
     "new bag highlight toggle is stored independently from tooltip hints")
-lootCheck[1]:Click(true)
+lootCheck[4]:Click(true)
 Control("Refresh Bag Markers"):Click()
 assert(printed[#printed]=="bag markers refresh")
 local questCheck=FindCheckByParentTitle("QuestSense")[1]
@@ -478,9 +486,10 @@ assert(ChalkBoxDB.guard.duel==false)
 Control("Show Protection Status"):Click()
 assert(printed[#printed]=="guard status")
 local prepChecks=FindCheckByParentTitle("Adventure Prep")
-assert(#prepChecks==5,"Adventure Prep has a toast option and four reminder preferences")
+assert(#prepChecks==6,"Adventure Prep includes repeat-unchanged opt-in and five existing preferences")
 categories["Adventure Prep"].panel:Show()
 assert(prepChecks[2].checked==true,"on-screen reminders enabled by default")
+assert(prepChecks[6].checked==false,"unchanged reminders no longer nag by default")
 prepChecks[2]:Click(false)
 assert(ChalkBoxDB.camp.toast==false,"onscreen reminders can be turned off")
 prepChecks[2]:Click(true)
@@ -533,7 +542,7 @@ local sliders={}
 for _,frame in ipairs(frames) do
     if frame.kind=="Slider" then sliders[#sliders+1]=frame end
 end
-assert(#sliders==6,"four existing sliders plus bag highlight and TrailBar appearance opacity")
+assert(#sliders==10,"six existing sliders plus four global appearance controls")
 local appearanceSlider,highlightSlider
 for _,frame in ipairs(sliders) do
     if frame.parent==categories["The Bar Appearance"].panel then

@@ -3,6 +3,7 @@
 -- recipes are explicit exceptions to profession-recipe cache guessing.
 local addonName=...
 local db,entryTime,lastNotice,lastCampState,lastTentState= nil,nil,-1e8,nil,nil
+local lastHintKey=nil
 local tentAcknowledgedUntil=nil
 local frame=CreateFrame("Frame")
 local ticker
@@ -129,43 +130,70 @@ local function TentStatus()
     end
     return actual
 end
-local function CampBuffHint(status)
-    if status.state=="gathering" then return nil end
-    if status.state=="missing" then
-        return "Camp Benefits are missing. Find or make a campfire, place features, and /sit for 1 minute."
-    end
-    if status.state=="expiring" then
-        local mins=math.max(1,math.ceil((status.seconds or 0)/60))
-        return "Camp Benefits expire in about "..mins.." min. Plan to rest at a campsite soon."
-    end
-end
+-- Return a concise verified next action, a short toast title, and a stable
+-- event key. Never say that a tent failed just because stat buffs are missing.
+-- Inventory checks are only used when the client gives readable quantities.
 local function MeaningfulHint(buffs,tent)
     buffs=buffs or CampStatus()
     tent=tent or TentStatus()
-    -- A tent grants a rested-XP refill, independently of the regular camp
-    -- stat buff. The absence of Camp Benefits NEVER proves the tent failed.
-    if buffs.state=="gathering" then return nil end
-    if db.buffs~=false and buffs.state=="expiring" then
-        return CampBuffHint(buffs)
-    end
-    if db.buffs~=false and tent.state=="ready" then
-        return "Rested XP is below 5% of a level. A Camp Tent can top it up. Sit by a tent at a campfire for about a minute."
-    end
-    -- Do not nag a tent user because the separate Camp Benefits stat aura
-    -- is absent. If the tent signal is unavailable, never invent a failure.
+    if buffs.state=="gathering" then return end
     local _,wood,flint,kit=CampingStatus()
-    if Forever() and db.supplies~=false then
-        if flint==0 then return "Camp prep: buy Flint and Tinder when you see a vendor (reusable)." end
-        if kit==0 and wood==0 then return "Camp prep: buy Simple Wood or craft/carry a Basic Campfire Kit." end
-        if wood~=nil and wood<2 and (kit==nil or kit<2) then
-            return "Camp prep: low on Simple Wood/Basic Campfire Kits. Stock up before roaming."
+    local tentCount=Count(279978)
+    if db.buffs~=false and buffs.state=="expiring" then
+        local mins=math.max(1,math.ceil((buffs.seconds or 0)/60))
+        return "Camp Benefits expire in "..mins..
+            " min. Rest at a campsite soon.",
+            "Camp Benefits fading","camp-expiring"
+    end
+    if db.buffs~=false and tent.state=="ready" and tentCount and
+        tentCount>0 then
+        return "Rested XP is below 5%. You have a Camp Tent; sit by it "..
+            "at a campfire for about 1 minute.",
+            "Tent refill available","tent-ready"
+    end
+    if db.buffs~=false and buffs.state=="missing" then
+        if kit and kit>0 then
+            return "Camp Benefits missing. You have "..kit..
+                " Campfire Kit(s); set up camp and rest for 1 minute.",
+                "Ready to make camp","camp-missing-kit"
+        elseif wood and wood>0 and flint and flint>0 then
+            return "Camp Benefits missing. You have Simple Wood and Flint "..
+                "and Tinder to prepare a Campfire Kit.",
+                "Prepare a campfire","camp-missing-craft"
+        else
+            return "Camp Benefits missing. Visit a campsite and rest "..
+                "for about 1 minute; check supplies first.",
+                "Camp Benefits missing","camp-missing"
         end
+    end
+    if Forever() and db.supplies~=false and kit~=nil and kit==0 then
+        if wood==0 then
+            return "No Campfire Kits or Simple Wood in your bags. "..
+                "Restock before your next camp.",
+                "Restock camp supplies","supplies-empty"
+        end
+        if flint==0 then
+            return "You have wood but no Flint and Tinder. "..
+                "Carry the reusable tool to make campfire kits.",
+                "Flint and Tinder needed","supplies-flint"
+        end
+    end
+    -- Existing kits make missing Flint and Tinder a future planning issue,
+    -- not a false claim that the character cannot camp right now.
+    if Forever() and db.supplies~=false and kit==0 and wood and
+        wood<2 then
+        return "Low on camp supplies. Carry Basic Campfire Kits or "..
+            "Simple Wood for your next trip.",
+            "Camp supplies running low","supplies-low"
     end
     if db.classCare~=false and CurrentClass()=="HUNTER" then
         local pet=PetStatus()
-        if pet and not pet:find("happy.",1,true) then return pet end
+        if pet and not pet:find("happy.",1,true) then
+            return pet,"Check your companion","hunter-pet"
+        end
     end
-    if db.classCare~=false then return hints[CurrentClass()] end
+    -- Generic class buffs remain in the voluntary checklist; they are not
+    -- proven missing by checking the class token alone.
 end
 
 local function Pulse()
@@ -180,26 +208,37 @@ local function Pulse()
     local changedTent=tent.state~=lastTentState
     lastCampState=current.state
     lastTentState=tent.state
-    local interval=math.max(20,math.min(120,tonumber(db.interval) or 45))
+    local msg,title,key=MeaningfulHint(current,tent)
+    if not msg then
+        -- Re-arm when problems resolve, so they can trigger again if lost.
+        lastHintKey=nil
+        return
+    end
     local urgent=db.buffs~=false and (
         (changedBuff and current.state=="expiring") or
         (changedTent and tent.state=="ready") or
         (changedBuff and current.state=="missing" and tent.state=="ready"))
-    -- Camp buff state changes deserve a prompt as soon as they are observed,
-    -- independent of generic supplies/class reminder cadence.
-    if now-lastNotice<interval*60 and not urgent then return end
-    local msg=MeaningfulHint(current,tent)
-    if msg then
-        local shown=false
-        if db.toast~=false and type(ChalkBox_ShowReminder)=="function" then
-            shown=ChalkBox_ShowReminder(msg,"CHALKBOX  -  ADVENTURE PREP")==true
-        end
-        -- Chat fallback covers clients that cannot create safe screen frames,
-        -- or users who explicitly disable on-screen reminders.
-        if not shown then Note(msg.."  (/chalk prep for a checklist)") end
-        lastNotice=now
+    -- The same unresolved condition does not issue the same popup every
+    -- 20/45/90 minutes. New actions have a 2-minute anti-spam floor;
+    -- urgent verified aura changes can bypass it.
+    local repeatAfter=math.max(20,math.min(120,tonumber(db.interval) or 45))*60
+    if key==lastHintKey and not urgent and
+        (db.repeatUnresolved~=true or now-lastNotice<repeatAfter) then
+        return
+    end
+    if now-lastNotice<120 and not urgent then return end
+    local shown=false
+    if db.toast~=false and type(ChalkBox_ShowReminder)=="function" then
+        shown=ChalkBox_ShowReminder(msg,title)==true
+    end
+    if not shown then Note(title..": "..msg.."  (/chalk prep for details)") end
+    lastNotice=now
+    lastHintKey=key
+    if type(ChalkBox_JournalNoteCamp)=="function" then
+        ChalkBox_JournalNoteCamp()
     end
 end
+
 function ChalkBox_CampStatus()
     local summary=CampingStatus()
     return {summary=summary,class=CurrentClass() or "Unknown",
@@ -288,6 +327,9 @@ function ChalkBox_CampCommand(msg)
             Note("Camp Tent: "..tent.state..(tent.seconds and
                 (" ("..math.ceil(tent.seconds/60).." min)") or "")..".")
         end
+    elseif key=="repeat" and (value=="on" or value=="off") then
+        db.repeatUnresolved=value=="on"
+        Note("Repeat unresolved camp alerts "..value..".")
     elseif key=="toast" and (value=="on" or value=="off") then
         db.toast=value=="on"
         if not db.toast and type(ChalkBox_HideReminder)=="function" then
@@ -317,6 +359,7 @@ frame:SetScript("OnEvent",function(_,event,name)
         if db.supplies==nil then db.supplies=true end
         if db.buffs==nil then db.buffs=true end
         if db.classCare==nil then db.classCare=true end
+        if db.repeatUnresolved==nil then db.repeatUnresolved=false end
         if type(db.interval)~="number" then db.interval=45 end
         if C_Timer and type(C_Timer.NewTicker)=="function" and not ticker then
             ticker=C_Timer.NewTicker(120,Pulse)

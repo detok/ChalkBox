@@ -80,7 +80,9 @@ now=2600;pulse()
 assert(ChalkBox_CampStatus().tent.state=="cooldown")
 local notified=#toasts
 now=3200;pulse()
-assert(#toasts==notified,"do not re-prompt tent when Boosted Rest is active")
+assert(#toasts==notified and
+    messages[#messages]:find("Camp Benefits missing",1,true),
+    "tent lockout suppresses tent prompts, but a separately missing stat buff may be reported")
 harmful={}
 rested=75
 now=3300;pulse()

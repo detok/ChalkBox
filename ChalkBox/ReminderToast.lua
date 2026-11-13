@@ -32,9 +32,25 @@ local function Position()
         box:SetPoint("TOP",UIParent,"TOP",0,-112)
     end
 end
+-- Global theme controls surface color; the toast's local opacity
+-- controls only its background. Text stays crisp until the 2-second fade.
+local function Tint()
+    if not box then return end
+    local d=DB()
+    local r,g,b,a=0.018,0.018,0.022,d.opacity
+    if type(ChalkBox_ThemeBackground)=="function" then
+        r,g,b,a=ChalkBox_ThemeBackground(d.opacity)
+    end
+    if box.background then box.background:SetColorTexture(r,g,b,a) end
+    local ar,ag,ab=0.86,0.66,0.38
+    if type(ChalkBox_ThemeAccent)=="function" then
+        ar,ag,ab=ChalkBox_ThemeAccent()
+    end
+    if box.accent then box.accent:SetColorTexture(ar,ag,ab,1) end
+end
+function ChalkBox_ToastThemeRefresh() Tint() end
 local function Opacity()
     if not box or not box.SetAlpha then return end
-    local d=DB()
     local factor=1
     if shownAt then
         local elapsed=Clock()-shownAt
@@ -43,7 +59,8 @@ local function Opacity()
             factor=math.max(0,math.min(1,(stop-elapsed)/2))
         end
     end
-    box:SetAlpha(d.opacity*factor)
+    Tint()
+    box:SetAlpha(factor)
 end
 local function Lock()
     if not box then return end
@@ -56,25 +73,27 @@ local function Ensure()
     local root=CreateFrame("Frame","ChalkBoxAdventureToast",UIParent)
     if not root or not root.SetSize or not root.CreateTexture or
         not root.CreateFontString then return false end
-    root:SetSize(490,85)
+    root:SetSize(430,72)
     if root.SetMovable then root:SetMovable(true) end
     if root.SetClampedToScreen then root:SetClampedToScreen(true) end
     if root.SetFrameStrata then root:SetFrameStrata("DIALOG") end
     local back=root:CreateTexture(nil,"BACKGROUND")
     back:SetAllPoints(root)
-    back:SetColorTexture(0.035,0.055,0.075,0.92)
+    root.background=back
+    back:SetColorTexture(0.018,0.018,0.022,0.92)
     local line=root:CreateTexture(nil,"ARTWORK")
     line:SetPoint("TOPLEFT",root,"TOPLEFT",0,0)
     line:SetPoint("BOTTOMLEFT",root,"BOTTOMLEFT",0,0)
-    line:SetWidth(4)
-    line:SetColorTexture(0.93,0.68,0.26,1)
-    headline=root:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
-    headline:SetPoint("TOPLEFT",root,"TOPLEFT",18,-12)
-    headline:SetPoint("RIGHT",root,"RIGHT",-16,0)
+    line:SetWidth(3)
+    root.accent=line
+    line:SetColorTexture(0.86,0.66,0.38,1)
+    headline=root:CreateFontString(nil,"OVERLAY","GameFontNormal")
+    headline:SetPoint("TOPLEFT",root,"TOPLEFT",16,-10)
+    headline:SetPoint("RIGHT",root,"RIGHT",-12,0)
     if headline.SetJustifyH then headline:SetJustifyH("LEFT") end
-    body=root:CreateFontString(nil,"OVERLAY","GameFontHighlight")
-    body:SetPoint("TOPLEFT",root,"TOPLEFT",18,-36)
-    body:SetPoint("BOTTOMRIGHT",root,"BOTTOMRIGHT",-16,9)
+    body=root:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+    body:SetPoint("TOPLEFT",root,"TOPLEFT",16,-32)
+    body:SetPoint("BOTTOMRIGHT",root,"BOTTOMRIGHT",-12,6)
     if body.SetJustifyH then body:SetJustifyH("LEFT") end
     if body.SetJustifyV then body:SetJustifyV("TOP") end
     root:Hide()
@@ -114,7 +133,12 @@ end
 function ChalkBox_ShowReminder(message,title,preview)
     if type(message)~="string" or message=="" or not Ensure() then return false end
     if type(InCombatLockdown)=="function" and InCombatLockdown() then return false end
-    headline:SetText(title or "CHALKBOX  -  ADVENTURE PREP")
+    local heading=title or "ADVENTURE TIP"
+    if heading:find("CHALKBOX",1,true) or
+        heading:find("CAMP REMINDER",1,true) then
+        heading="ADVENTURE TIP"
+    end
+    headline:SetText(heading)
     body:SetText(message)
     shownAt=Clock()
     untilSeconds=preview==true and 25 or duration

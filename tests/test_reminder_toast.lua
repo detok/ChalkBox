@@ -22,7 +22,7 @@ _G.CreateFrame=function(kind,name)
     function f:CreateTexture()
         local t={}
         function t:SetAllPoints() end
-        function t:SetColorTexture(...) end
+        function t:SetColorTexture(...) self.color={...} end
         function t:SetPoint(...) end
         function t:SetWidth(...) end
         return t
@@ -47,10 +47,12 @@ assert(ChalkBox_ShowReminder("Time to check your camping.","Adventure Prep"))
 local root=frames[1]
 assert(root.name=="ChalkBoxAdventureToast" and #frames==1)
 assert(root.shown and not root.mouse and root.movable and root.dragButton=="LeftButton")
-assert(root.w==490 and root.h==85)
+assert(root.w==430 and root.h==72,
+    "compact branded toast instead of large blue reminder rectangle")
 assert(root.anchor[1]=="TOP" and root.anchor[5]==-112,
     "new toast starts near the TOP of the game screen")
-assert(root.strata=="DIALOG" and root.alpha==0.92)
+assert(root.strata=="DIALOG" and root.alpha==1,
+    "background strength does not reduce the text opacity")
 assert(ChalkBox_ToastStatus().locked and ChalkBox_ToastStatus().opacity==0.92)
 now=207.5;root.OnUpdate(root)
 assert(root.shown and root.alpha<0.92 and root.alpha>0,
@@ -61,7 +63,7 @@ assert(ChalkBox_ToastCommand("unlock"))
 assert(root.mouse and not ChalkBox_ToastStatus().locked,
     "unlocked notice becomes draggable only while preview is visible")
 assert(ChalkBox_ToastCommand("preview"))
-assert(root.shown and root.alpha==0.92)
+assert(root.shown and root.alpha==1)
 root.OnDragStart(root)
 assert(root.moving)
 root.OnDragStop(root)
@@ -71,7 +73,9 @@ assert(ChalkBoxDB.camp.toastOptions.x==220 and
     "drag stores offsets relative to UIParent center")
 assert(root.anchor[1]=="CENTER" and root.anchor[4]==220)
 assert(ChalkBox_ToastCommand("opacity 65"))
-assert(root.alpha==0.65 and ChalkBox_ToastStatus().opacity==0.65)
+assert(root.alpha==1 and root.background.color[4]==0.65 and
+    ChalkBox_ToastStatus().opacity==0.65,
+    "toast local opacity affects its background, not its readable words")
 now=223;root.OnUpdate(root)
 assert(root.shown,"extended position preview lasts 25 seconds")
 assert(ChalkBox_ToastCommand("lock"))
@@ -84,7 +88,8 @@ now=236;root.OnUpdate(root)
 assert(not root.shown,"preview eventually disappears")
 assert(ChalkBox_ShowReminder("Second reminder"))
 assert(#frames==1,"one reused toast, no stacking or duplicate frame")
-assert(root.alpha==0.65,"transparency persists between alerts")
+assert(root.alpha==1 and root.background.color[4]==0.65,
+    "background transparency persists between alerts while text remains crisp")
 ChalkBox_HideReminder()
 assert(not root.shown)
 print("PASS: top-screen toast, click-through lock, drag and saved position, 35-100% opacity, 25s preview, timed fade and reuse")

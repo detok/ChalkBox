@@ -1,23 +1,47 @@
-# ChalkBox 1.9.3 — Repair Learning for The Bar
+# ChalkBox 1.10.0 — The Adventure Companion
 
-The Bar can now *learn from experience*. Rather than overwriting one calibration ratio, it records a bounded history of actual vendor repair quotes and uses these examples to estimate future costs.
+This release combines a global visual identity with more precise camping advice, opt-in loot-window drop observations and a persistent Session Journal. It is still **one addon, one download**.
 
-## How it learns
+## Global Appearance
 
-- **At a repair-capable merchant**, when Forever exposes an exact repair-all quote, store one sample of quote (copper), equipped durability damage, number of repairable worn items, total maximum durability and optional equipped item IDs.
-- **Prevent duplicates** from the five-second bar refresh and repeated identical vendor quotes. Limit storage to **32 distinct valid observations per character**.
-- **Away from a merchant**, predict approximate copper cost from the samples that match the current equipment best, using a robust average of observed copper-per-durability rates. Favor the same identified gear, filter outliers and reject very dissimilar durability pools.
-- **Learn from its misses:** compare the previous prediction against subsequent real merchant quotes and save the most recent percent difference for the tooltip.
-- **Honest display:** exact quotes have no prefix; predictions remain prefixed with `~`. If no credible sample exists, display `Repair --`. An undamaged equipped set may show `Repair 0c` but gear inside bags is excluded from that statement.
-- **Legacy-safe:** an existing 1.9.2 per-character rate remains available as an initial fallback until a real new observation is available.
+- New **ChalkBox → Global Appearance** native settings page: Charcoal / Midnight / Slate / Custom backgrounds, Gold / Teal / Neutral accents, shared background-strength slider, custom RGB channels.
+- Applies to The Bar, compact CampSense toast, Combat Meter background, buttons and rows, and new Session Journal window. Does not change Blizzard UI or gear rarity.
+- Keeps existing per-module opacity controls: the shared strength multiplies background opacity, so local preferences are not erased.
 
-## Controls
+## Adventure Prep & CampSense
 
-- Hover The Bar's **Repair** stat for the number of observed quotes, prediction source, confidence stage, and last checked error (when available).
-- `/chalk bar repair status` — view this character's saved learning status.
-- `/chalk bar repair reset` — clear this character's training examples, prediction errors and the old calibration.
-- Existing right-click menu, move/hide controls and `/chalk bar stat repair on|off` work unchanged.
+- Reduced blue 490×85 alert to a compact 430×72 charcoal toast with short action titles and independently adjustable *background* opacity. Text stays legible.
+- Prioritize actual Camp Benefits status, Boosted Rest/tent readiness, basic camp kit quantities, wood/flint and supported Hunter pet happiness; no false missing-Flint warning while ready-to-use kits are available.
+- Fix previously unused **confirmed missing Camp Benefits** reminder branch.
+- Silence unchanged alerts by default; optionally repeat unresolved notices after the chosen 20/45/90-minute interval.
+- Keep tent/rested XP completely separate from the Camp Benefits aura; never claim a missing buff means the tent failed.
+- Existing manual checklist, draggable/lockable toast and preview remain.
 
-**Limitations:** real vendor repair bills may include equipment stored in bags, vendor-specific discounts, guild repairs and unexpected gear changes. These differences cannot be inferred perfectly from equipped durability alone. Estimates are not guarantees; no addon ever repairs or pays automatically.
+## DropSense (opt-in, local-only)
 
-The full Lua 5.1 tests and single-addon ZIP CI remain required. Live WoW Forever gameplay verification is still recommended.
+- New **ChalkBox → DropSense** settings: enable sampling, optional notes *only in native loot-window item tooltips*, watch/unwatch up to 32 item IDs or links, and a percent/attempt probability calculator.
+- Sample read-only loot windows, count observed hits and item stacks, and save per-character observations across sessions. Tooltip shows successes, windows sampled and a Wilson 95% interval.
+- Drop percentages are **frequency across loot windows ChalkBox actually observed**, not confirmed mob-specific or server drop rates. Not all loot windows represent equivalent opportunities.
+- `/chalk drops on|off`, `watch [item]`, `unwatch <id>`, `status`, `reference <id> <percent>` and `chance <percent> <attempts>`.
+- A player-provided reference percentage is clearly labeled as such; **there is no pretend official Forever drop table**. Server loot tables are not exposed to ordinary addon APIs.
+- Does not count unseen kills, automate looting, or rely on external downloads.
+
+## Session Journal
+
+- New **ChalkBox → Session Journal** page and independent native-styled window with Current / Older / Newer buttons.
+- Tracks event-confirmed XP gained, levels, net gold, quest turn-ins, optional sampled loot windows/items, camping reminders and actual repair merchant quotes. Shows a compact top-observed-items summary when available.
+- Keeps the last 20 finished sessions per character and starts a fresh session on next login; previous adventures remain readable.
+- `/chalk session` and `/chalk session last` open the recap window.
+- No invented kill count, auction prices, combat data or unsupported history. Drop details require explicitly enabling DropSense.
+
+## LootSense fine controls
+
+- Keep the existing master on/off and independent verified-reagent markers.
+- Under **LootSense Appearance**, independently show/hide learned crafting uses, potential/unverified use hints and camping ingredient notes. Quest/personal KEEP protections remain prioritized when item advice is on.
+
+## Compatibility & tests
+
+- Existing The Bar layouts and single-character repair-learning history remain in the same saved variable keys.
+- No separate app, addon, map assets, server sync, authentication or automatic transactions.
+- Lua 5.1 regression coverage added for themes, individual toggles, sampled loot windows and deduplication, probability calculations, session persistence/window, and improved camp decision logic. Github CI validates single-addon ZIP packaging.
+- Actual Forever-client visuals, loot-window tooltip owners and long-play persistence should still be verified in-game.

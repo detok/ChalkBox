@@ -169,9 +169,14 @@ local function ApplyAppearance()
     backgroundOpacity=a
     if bar and bar.background and bar.background.SetColorTexture then
         -- Blizzard-style neutral near-black; alpha applies ONLY to the panel.
-        bar.background:SetColorTexture(0.018,0.018,0.022,a/100)
+        local r,g,bg,alpha=0.018,0.018,0.022,a/100
+        if type(ChalkBox_ThemeBackground)=="function" then
+            r,g,bg,alpha=ChalkBox_ThemeBackground(a/100)
+        end
+        bar.background:SetColorTexture(r,g,bg,alpha)
     end
 end
+function ChalkBox_BarThemeRefresh() ApplyAppearance() end
 function ChalkBox_BarAppearanceGet()
     return db and db.barBackgroundOpacity or 70
 end

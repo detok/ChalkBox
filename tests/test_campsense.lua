@@ -40,7 +40,8 @@ assert(ChalkBox_CampUtility(1)==nil and
 now=179;timers[1]()
 assert(#messages==0,"no messages immediately after login")
 now=181;timers[1]()
-assert(#messages==1 and messages[1]:find("Flint and Tinder",1,true))
+assert(#messages==1 and messages[1]:find("No Campfire Kits",1,true),
+    "missing ready-to-use kits and wood is more actionable than generic flint warning")
 now=400;timers[1]()
 assert(#messages==1,"reminders throttled to every 45 minutes")
 counts[4471]=1
