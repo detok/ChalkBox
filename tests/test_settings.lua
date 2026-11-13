@@ -58,7 +58,7 @@ _G.ChalkBox_BarCommand=function(value)
     printed[#printed+1]="bar "..value
 end
 _G.ChalkBox_BagOffsetSet=function(value)
-    ChalkBoxDB.bagOffsetY=math.max(0,math.min(80,math.floor(value+0.5)))
+    ChalkBoxDB.bagOffsetY=math.max(-120,math.min(120,math.floor(value+0.5)))
 end
 _G.ChalkBox_BagStatus=function()
     return {offset=ChalkBoxDB.bagOffsetY or 0}
@@ -218,7 +218,7 @@ assert(loadfile("ChalkBox_Settings.lua"))("ChalkBox")
 local loader=frames[#frames]
 assert(loader.event=="PLAYER_LOGIN","must register settings when the client is ready")
 loader.script.OnEvent(loader,"PLAYER_LOGIN")
-assert(#registered==11,"main page plus the original modules and new TrailBar Stats")
+assert(#registered==14,"native pages include LootSense Appearance, TrailBar Appearance and Emota Race Behavior")
 assert(categories.home.name=="ChalkBox")
 ChalkBox_OpenSettings()
 assert(opened[#opened]==101,"default /chalk must open native settings")
@@ -280,8 +280,11 @@ barChecks[4]:Click(false)
 assert(ChalkBoxDB.barReserve==false,"user can disable screen reservation")
 barChecks[4]:Click(true)
 assert(ChalkBoxDB.barReserve==true,"screen reservation can be re-enabled")
-Control("Reset Session Stats"):Click()
+Control("Reset Session"):Click()
 assert(printed[#printed]=="bar reset")
+Control("Appearance"):Click()
+assert(opened[#opened]==categories["TrailBar Appearance"].ID,
+    "TrailBar links into its own appearance and drag-layout page")
 Control("Customize Bar Stats"):Click()
 assert(opened[#opened]==categories["TrailBar Stats"].ID,
     "TrailBar should navigate directly to the new stats page")
@@ -328,7 +331,8 @@ assert(ChalkBoxDB.emota.jokeFrequency==100,"joke frequency slider updates settin
 Control("Surprise Me"):Click()
 assert(printed[#printed]=="random idle","idle preview must be reachable in normal settings")
 Control("Catalog"):Click()
-assert(opened[#opened]==107,"catalog must be its own native settings page")
+assert(opened[#opened]==categories["Emote Catalog"].ID,
+    "catalog must have its own native settings page")
 local catalogChecks=FindCheckByParentTitle("Emote Catalog")
 assert(#catalogChecks==6,"catalog supports up to six paged emotes")
 categories["Emote Catalog"].panel:Show()
@@ -408,7 +412,7 @@ local sliders={}
 for _,frame in ipairs(frames) do
     if frame.kind=="Slider" then sliders[#sliders+1]=frame end
 end
-assert(#sliders==4,"Emota, Combat Meter, Toast Appearance and TrailBar bags each have a slider")
+assert(#sliders==6,"four existing sliders plus bag highlight and TrailBar appearance opacity")
 local meterSlider
 for _,frame in ipairs(sliders) do
     if frame.parent==categories["Combat Meter"].panel then meterSlider=frame end
@@ -418,9 +422,15 @@ for _,frame in ipairs(sliders) do
     if frame.parent==categories["TrailBar"].panel then bagSlider=frame end
 end
 assert(bagSlider and bagSlider.value==0,"bag offset starts at Blizzard default")
-bagSlider:SetValue(30)
+bagSlider:SetValue(-30)
 assert(ChalkBoxDB.bagOffsetY==30,
-    "native TrailBar bag-offset slider persists a 30-point downward nudge")
+    "vertical slider downward moves separate bags down from the stock center")
+bagSlider:SetValue(35)
+assert(ChalkBoxDB.bagOffsetY==-35,
+    "vertical slider upward raises separate bags above Blizzard's stock anchor")
+bagSlider:SetValue(0)
+assert(ChalkBoxDB.bagOffsetY==0,
+    "vertical slider midpoint restores exactly Blizzard's original position")
 assert(meterSlider,"native meter opacity slider belongs to Combat Meter page")
 meterSlider:SetValue(65)
 assert(ChalkBoxDB.meter.opacity==0.65,
