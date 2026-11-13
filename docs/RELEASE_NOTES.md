@@ -1,20 +1,22 @@
-# ChalkBox 1.8.3 — LootSense material classification fix
+# ChalkBox 1.8.4 — Separate bag window offset
 
-**Fixes false First Aid profession labels, with the 1.8.2 DPS meter and everything else unchanged.**
+Your individual bag windows can now be nudged downward if a profession bag or other large bag goes off the top of your screen. **The default is unchanged: 0.** No new bag UI is installed.
 
-## LootSense and ProfessionSense
-- **Small Lustrous Pearl (item 5498)** is not a First Aid ingredient. It is used in Leatherworking, Tailoring and Blacksmithing recipes; a mistaken old saved scan must not label it First Aid.
-- First Aid is no longer inferred from the generic **Cloth** item subclass. ChalkBox now checks potential First Aid reagent IDs against the bundled Forever recipe data before displaying a cached learned-material claim.
-- Valid First Aid reagents (for example, Linen Cloth for Linen Bandage) remain recognized. Actual learned Leatherworking recipes involving the pearl still take precedence.
-- If an item cache or client version provides no dependable item ID, ChalkBox avoids unverified First Aid claims rather than guessing.
-- Run `/chalk loot scan` with your profession window open, then move your cursor off and back onto the item to refresh tooltip advice.
+## New bag positioning
+- Open **Esc → Options → AddOns → ChalkBox → TrailBar**.
+- Find **Separate bags: move down**. Slide from **0** (Blizzard default) to **80** (maximum), in 5-point steps.
+- Start with **30** if the top of the skinning bag is cut off. Adjust until all bag titles are visible.
+- ChalkBox uses Blizzard's own bag-anchor layout, repositions only the first anchor, and lets the other separate bags follow naturally.
+- **Combined bags are unaffected.** This feature is for individually opened bag windows.
+- Changes made during combat are safely deferred until combat ends. Reset to 0 for the original positioning.
+- Slash commands: `/chalk bags offset 30`, `/chalk bags reset`, `/chalk bags status`.
 
-## Preserved from 1.8.2
-- Native DPS meter class/spec icons, personal window size/position/opacity, movable toast, QuestSense, camp notices, Emota, QuietGuard and TrailBar.
-- **PRINT** manually sends one top-three party summary after a fight, subject to Forever's protected-value restrictions. **RESET** remains on the meter with confirmation; `/chalk meter print` and `/chalk meter reset` still work.
-- All 2,511 bundled Forever recipes, one installable ZIP, no external addon dependency.
+## Preserved from earlier releases
+- Original 18-pixel TrailBar with level/XP, XP/hour, time to level, session length and gold; its top/bottom position and screen-space reservation remain unchanged.
+- LootSense's 1.8.3 First Aid pearl fix and all 2,511 bundled Forever recipes.
+- DPS meter with manual party PRINT and RESET, class/spec icons, position and opacity settings, plus QuestSense, CampSense, Emota and other modules.
 
 ## Install
-Download only **ChalkBox-1.8.3.zip**, replace your `Interface/AddOns/ChalkBox` folder, then `/reload`.
+Download **ChalkBox-1.8.4.zip**, replace your existing `Interface/AddOns/ChalkBox` directory, and `/reload`. Your existing saved settings are retained.
 
-**Public prerelease:** Lua 5.1 syntax, regression tests and packaging are checked automatically. The new tooltip behavior should still be confirmed in the actual Forever client.
+**Public prerelease:** The Lua 5.1 tests cover the bag positioning logic, while actual in-game Forever bag rendering and other bag-moving addons can differ. Try the slider outside combat with all your bags open and report any overlap or Lua error.
