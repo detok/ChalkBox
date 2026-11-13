@@ -204,6 +204,29 @@ end
 assert(n>=2 and n<=5,"narrow bar must hide lower-priority metrics")
 assert(FindMetric("Lv ").visible,"level metric must survive narrow widths")
 assert(FindMetric("Gold ").visible,"gold metric survives normal narrow layouts")
+local segments={}
+for _,frame in ipairs(frames) do
+    if frame.parent==bar and frame.font and frame.visible then
+        local p=frame.points[1]
+        assert(p and (p[1]=="LEFT" or p[1]=="CENTER" or p[1]=="RIGHT"),
+            "visible metrics must have one of the allowed native group anchors")
+        local x=p[4]
+        if p[1]=="CENTER" then x=x-frame.width/2
+        elseif p[1]=="RIGHT" then x=bar.width+x-frame.width end
+        segments[#segments+1]={from=x,to=x+frame.width}
+    end
+end
+table.sort(segments,function(a,b) return a.from<b.from end)
+for i,segment in ipairs(segments) do
+    assert(segment.from>=0 and segment.to<=bar.width,
+        "no visible TrailBar text widget may extend off-screen")
+    if i>1 then assert(segments[i-1].to<=segment.from,
+        "adaptive modules must never overlap at narrow widths") end
+end
+bar.width=1440
+bar.scripts.OnSizeChanged(bar)
+assert(FindMetric("World ").visible and FindMetric("Pet ").visible,
+    "wider UI restores all configured latency and Hunter status metrics")
 bar.width=1024
 bar.scripts.OnSizeChanged(bar)
 ChalkBox_BarCommand("stats balanced")
