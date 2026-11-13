@@ -18,7 +18,7 @@ assert(ChalkBox_BarLayoutMove("gold","left",2),
 local result=ChalkBox_BarLayoutGet()
 assert(result.left[2]=="gold" and IsListed(result,"gold")==1,
     "moving gold into left must preserve one instance, at chosen index")
-assert(#result.right==3,"moving gold leaves time, latency and bag value in the right section")
+assert(#result.right==4,"moving gold preserves time, latency, resale and repair in the right section")
 assert(ChalkBox_BarLayoutMove("level","right",1),
     "even mandatory level can be placed in the right group")
 result=ChalkBox_BarLayoutGet()
@@ -43,7 +43,8 @@ ChalkBoxZoneDB.trailLayout={
 }
 result=ChalkBox_BarLayoutGet()
 assert(IsListed(result,"bags")==1 and IsListed(result,"gold")==1
-    and IsListed(result,"level")==1 and IsListed(result,"pet")==1 and IsListed(result,"bagvalue")==1,
+    and IsListed(result,"level")==1 and IsListed(result,"pet")==1 and IsListed(result,"bagvalue")==1 and
+    IsListed(result,"repair")==1,
     "malformed SavedVariables must normalize all modules exactly once")
 assert(result.align.bags=="right" and result.align.gold==nil,
     "invalid text alignment is ignored")

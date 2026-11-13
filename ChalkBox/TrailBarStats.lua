@@ -210,10 +210,66 @@ local function BagVendorValue()
         priced=priced,junkStacks=junkStacks,zeroStacks=zeroStacks}
 end
 
-function ChalkBox_BarReadStats(maxXP, includeBagValue)
+-- Exact repair bills are available only with a repair merchant open.
+-- Away from a merchant, the only defensible numeric estimate comes from
+-- a past observed bill scaled by currently missing equipped durability.
+-- If no trustworthy reference exists, report unknown rather than inventing
+-- a copper-per-point formula. The bill at a merchant includes damaged bag gear.
+local function RepairCost(gear)
+    if not gear or not PublicNumber(gear.max) or
+        not PublicNumber(gear.current) or gear.max<=0 or
+        gear.current>gear.max then return end
+    local missing=gear.max-gear.current
+    local merchant=MerchantFrame
+    local isOpen=merchant~=nil and
+        type(merchant.IsShown)=="function" and
+        Call(merchant.IsShown,merchant)==true
+    local canRepair=isOpen and Call(CanMerchantRepair)
+    if isOpen and Public(canRepair) and canRepair and
+        type(GetRepairAllCost)=="function" then
+        local amount=Call(GetRepairAllCost)
+        if PublicNumber(amount) and amount<=1e11 then
+            amount=math.floor(amount+0.5)
+            if missing>0 and amount>0 then
+                -- Keep the calibration character-specific, never account-wide.
+                if type(ChalkBoxZoneDB)~="table" then
+                    ChalkBoxZoneDB={}
+                end
+                ChalkBoxZoneDB.repairReference={
+                    rate=amount/missing,max=gear.max,
+                }
+            end
+            return {state="exact",copper=amount,missing=missing,
+                max=gear.max}
+        end
+    end
+    local stored=type(ChalkBoxZoneDB)=="table" and
+        ChalkBoxZoneDB.repairReference or nil
+    if type(stored)~="table" or
+        not PublicNumber(stored.rate) or stored.rate<=0 or
+        not PublicNumber(stored.max) or stored.max<=0 or
+        stored.rate>1e10 then
+        return {state="unavailable",missing=missing,max=gear.max}
+    end
+    -- New equipment can have a very different repair rate. Never carry an
+    -- old rate across an obviously changed total durability pool.
+    if math.abs(gear.max-stored.max)>stored.max*0.15 then
+        return {state="needs-calibration",missing=missing,max=gear.max}
+    end
+    local estimate=missing*stored.rate
+    if not PublicNumber(estimate) or estimate>1e11 then
+        return {state="unavailable",missing=missing,max=gear.max}
+    end
+    return {state="estimate",copper=math.floor(estimate+0.5),
+        missing=missing,max=gear.max}
+end
+
+function ChalkBox_BarReadStats(maxXP, includeBagValue, includeRepair)
+    local gear=Gear()
     return {
-        bags=Bags(),gear=Gear(),rested=Rested(maxXP),
+        bags=Bags(),gear=gear,rested=Rested(maxXP),
         latency=Latency(),pet=Pet(),
         bagvalue=includeBagValue==true and BagVendorValue() or nil,
+        repair=includeRepair==true and RepairCost(gear) or nil,
     }
 end

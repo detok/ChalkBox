@@ -133,12 +133,14 @@ local statDefaults={
     rate=true,eta=true,time=true,gold=true,
     bags=true,gear=true,rested=true,latency=false,pet=true,
     bagvalue=false, -- opt-in: preserves existing users' TrailBar layout
+    repair=true, -- honest quote/estimate, not uncalibrated guesswork
 }
 local specs={
     level={width=98,group="left"},
     rate={width=104,group="left"},
     bags={width=90,group="left"},
     bagvalue={width=125,group="right"},
+    repair={width=116,group="right"},
     gear={width=82,group="left"},
     eta={width=128,group="center"},
     rested={width=92,group="center"},
@@ -150,9 +152,9 @@ local specs={
 local groups={
     left={"level","rate","bags","gear"},
     center={"eta","rested","pet"},
-    right={"time","latency","bagvalue","gold"},
+    right={"time","latency","bagvalue","repair","gold"},
 }
-local dropPriority={"latency","time","pet","eta","rate","rested","gear","bagvalue","bags","gold"}
+local dropPriority={"latency","time","pet","eta","rate","rested","gear","bagvalue","bags","repair","gold"}
 local displayed={}
 local latest={}
 local lastLayout=""
@@ -325,11 +327,151 @@ local function Reflow()
     Arrange("right",rightStart)
 end
 
+-- Right-click menus belong to The Bar. Prefer Blizzard_Menu, fall back to
+-- the legacy dropdown on compatible clients. Edit Mode retains its old
+-- right-click alignment gesture for existing users.
+local menuNames={
+    level="Level & XP",rate="XP per hour",bags="Bag slots",
+    bagvalue="Bag resale",repair="Repair cost",gear="Durability",
+    eta="Time to level",rested="Rested XP",pet="Hunter pet",
+    time="Session timer",latency="Latency",gold="Gold",
+}
+local menuOrder={"rate","bags","bagvalue","repair","gear","eta",
+    "rested","pet","time","latency","gold"}
+local fallbackMenu
+local function AddMenuEntry(list,label,callback,children)
+    list[#list+1]={text=label,func=callback,children=children}
+end
+function ChalkBox_BarContextItems(key)
+    if key and not specs[key] then return end
+    local result={}
+    if key then
+        AddMenuEntry(result,menuNames[key] or key)
+        if key~="level" then
+            AddMenuEntry(result,(StatEnabled(key) and "Hide " or "Show ")..
+                (menuNames[key] or key),function()
+                ChalkBox_BarCommand("stat "..key.." "..
+                    (StatEnabled(key) and "off" or "on"))
+            end)
+        end
+        if key=="bagvalue" then
+            AddMenuEntry(result,"Switch to "..
+                (ChalkBox_BarBagValueModeGet()=="junk" and "Total" or "Junk")..
+                " value",function() ChalkBox_BarBagValueModeToggle() end)
+        end
+        local move={}
+        for _,section in ipairs({"left","center","right"}) do
+            local zone=section
+            AddMenuEntry(move,string.upper(section:sub(1,1))..section:sub(2),
+                function() ChalkBox_BarCommand("move "..key.." "..zone) end)
+        end
+        AddMenuEntry(result,"Move to",nil,move)
+        local align={}
+        for _,mode in ipairs({"left","center","right"}) do
+            local target=mode
+            AddMenuEntry(align,string.upper(mode:sub(1,1))..mode:sub(2),
+                function() ChalkBox_BarCommand("align "..key.." "..target) end)
+        end
+        AddMenuEntry(result,"Text alignment",nil,align)
+    else
+        AddMenuEntry(result,"The Bar")
+    end
+    local modules={}
+    for _,module in ipairs(menuOrder) do
+        local selected=module
+        AddMenuEntry(modules,(StatEnabled(selected) and "[x] " or "[ ] ")..
+            menuNames[selected],function()
+            ChalkBox_BarCommand("stat "..selected.." "..
+                (StatEnabled(selected) and "off" or "on"))
+        end)
+    end
+    AddMenuEntry(result,"Show / hide modules",nil,modules)
+    AddMenuEntry(result,editMode and "Finish editing" or "Edit The Bar",
+        function() ChalkBox_BarCommand(editMode and "edit off" or "edit on") end)
+    AddMenuEntry(result,"Reset module positions",
+        function() ChalkBox_BarCommand("layout reset") end)
+    local positions={}
+    AddMenuEntry(positions,"Top",function() ChalkBox_BarCommand("top") end)
+    AddMenuEntry(positions,"Bottom",function() ChalkBox_BarCommand("bottom") end)
+    AddMenuEntry(positions,"Hide The Bar",function() ChalkBox_BarCommand("off") end)
+    AddMenuEntry(result,"Bar position",nil,positions)
+    AddMenuEntry(result,"Module settings...",function()
+        if type(ChalkBox_OpenSettings)=="function" then
+            ChalkBox_OpenSettings("barstats")
+        end
+    end)
+    AddMenuEntry(result,"Appearance & layout...",function()
+        if type(ChalkBox_OpenSettings)=="function" then
+            ChalkBox_OpenSettings("barappearance")
+        end
+    end)
+    return result
+end
+local function BuildNativeMenu(root,items)
+    for _,item in ipairs(items) do
+        if item.children then
+            local submenu=root:CreateButton(item.text)
+            if submenu and submenu.CreateButton then
+                BuildNativeMenu(submenu,item.children)
+            end
+        elseif item.func then
+            root:CreateButton(item.text,function() item.func() end)
+        elseif type(root.CreateTitle)=="function" then
+            root:CreateTitle(item.text)
+        end
+    end
+end
+local function BuildLegacyMenu(items)
+    local output={}
+    for _,item in ipairs(items) do
+        if item.children then
+            output[#output+1]={text=item.text,hasArrow=true,
+                notCheckable=true,menuList=BuildLegacyMenu(item.children)}
+        elseif item.func then
+            output[#output+1]={text=item.text,func=item.func,notCheckable=true}
+        else
+            output[#output+1]={text=item.text,isTitle=true,notCheckable=true}
+        end
+    end
+    return output
+end
+function ChalkBox_BarOpenMenu(key,owner)
+    if type(InCombatLockdown)=="function" and InCombatLockdown() then
+        return false
+    end
+    local items=ChalkBox_BarContextItems(key)
+    if not items then return false end
+    if type(MenuUtil)=="table" and
+        type(MenuUtil.CreateContextMenu)=="function" then
+        local ok=pcall(MenuUtil.CreateContextMenu,owner or bar,
+            function(_,root) BuildNativeMenu(root,items) end)
+        if ok then return true end
+    end
+    if type(EasyMenu)=="function" then
+        if not fallbackMenu then
+            fallbackMenu=CreateFrame("Frame","ChalkBoxBarContextDropdown",
+                UIParent,"UIDropDownMenuTemplate")
+        end
+        return pcall(EasyMenu,BuildLegacyMenu(items),fallbackMenu,
+            "cursor",0,0,"MENU")
+    end
+    if type(ChalkBox_OpenSettings)=="function" then
+        ChalkBox_OpenSettings("barstats")
+    end
+    return false
+end
+
 local function CreateBar()
     if bar or not UIParent then return end
     bar=CreateFrame("Frame","ChalkBoxInfoBar",UIParent)
     bar:SetHeight(18)
     bar:SetFrameStrata("LOW")
+    if bar.EnableMouse then bar:EnableMouse(true) end
+    bar:SetScript("OnMouseUp",function(self,button)
+        if button=="RightButton" and not editMode then
+            ChalkBox_BarOpenMenu(nil,self)
+        end
+    end)
     local background=bar:CreateTexture(nil,"BACKGROUND")
     background:SetAllPoints(bar)
     bar.background=background
@@ -364,6 +506,27 @@ local function CreateBar()
             detail[#detail+1]="Excludes bank, worn equipment and your current gold."
             detail[#detail+1]="Left-click to flip Junk / Total; no items are sold."
             return detail
+        end},
+        {"repair","Repair cost",function()
+            local r=latest.repair
+            if not r then return {"Current repair information unavailable."} end
+            local lines={}
+            if r.state=="exact" then
+                lines[#lines+1]="Exact repair-all quote at this merchant: "..
+                    Coins(r.copper)
+            elseif r.state=="estimate" then
+                lines[#lines+1]="Estimated repair cost: about "..Coins(r.copper)
+                lines[#lines+1]="Scaled from your last observed vendor quote."
+            else
+                lines[#lines+1]="No reliable estimate yet. Visit a repair merchant"
+                lines[#lines+1]="with damaged equipment to calibrate the estimate."
+            end
+            lines[#lines+1]="Equipped durability lost: "..
+                (r.missing or "--").." / "..(r.max or "--").."."
+            lines[#lines+1]="Estimates use equipped wear; vendor bills also"
+            lines[#lines+1]="include damaged items in bags and may vary by discounts."
+            lines[#lines+1]="No auto repair or payment is performed."
+            return lines
         end},
         {"bags","Free bag slots",function()
             local a=latest.bags
@@ -485,29 +648,28 @@ local function CreateBar()
             lastLayout=""
             Reflow()
         end)
-        widget:SetScript("OnMouseUp",function(_,button)
-            if not editMode or button~="RightButton" then return end
-            local layout=type(ChalkBox_BarLayoutGet)=="function" and
-                ChalkBox_BarLayoutGet() or {}
-            local current=layout.align and layout.align[key] or "left"
-            local nextMode=current=="left" and "center" or
-                (current=="center" and "right" or "left")
-            if type(ChalkBox_BarLayoutAlign)=="function" then
-                ChalkBox_BarLayoutAlign(key,nextMode)
-                lastLayout=""
-                Reflow()
+        widget:SetScript("OnMouseUp",function(self,button)
+            if button=="RightButton" then
+                if editMode then
+                    local layout=type(ChalkBox_BarLayoutGet)=="function" and
+                        ChalkBox_BarLayoutGet() or {}
+                    local current=layout.align and layout.align[key] or "left"
+                    local nextMode=current=="left" and "center" or
+                        (current=="center" and "right" or "left")
+                    if type(ChalkBox_BarLayoutAlign)=="function" then
+                        ChalkBox_BarLayoutAlign(key,nextMode)
+                        lastLayout=""
+                        Reflow()
+                    end
+                else
+                    if GameTooltip then GameTooltip:Hide() end
+                    ChalkBox_BarOpenMenu(key,self)
+                end
+            elseif button=="LeftButton" and not editMode and key=="bagvalue" then
+                ChalkBox_BarBagValueModeToggle()
             end
         end)
         Hint(widget,name,details)
-        if key=="bagvalue" then
-            -- Direct user interaction only. Dragging in Edit Mode never changes
-            -- the display mode or triggers any inventory transaction.
-            widget:SetScript("OnMouseUp",function(_,button)
-                if button=="LeftButton" and not editMode then
-                    ChalkBox_BarBagValueModeToggle()
-                end
-            end)
-        end
     end
     bar:SetScript("OnSizeChanged",function() Reflow() end)
     EditDecorations()
@@ -679,7 +841,7 @@ Refresh=function()
     local stats={}
     if type(ChalkBox_BarReadStats)=="function" then
         local ok,value=pcall(ChalkBox_BarReadStats,session.maxXP,
-            StatEnabled("bagvalue"))
+            StatEnabled("bagvalue"),StatEnabled("repair"))
         if ok and type(value)=="table" then stats=value end
     end
     latest=stats
@@ -701,6 +863,13 @@ Refresh=function()
             or nil,true)..")")
     widgets.time.text:SetText("Time "..Duration(elapsed))
     widgets.bagvalue.text:SetText(BagValueText(stats.bagvalue))
+    local cost=stats.repair
+    local repairText="Repair --"
+    if cost and type(cost.copper)=="number" then
+        repairText="Repair "..(cost.state=="estimate" and "~" or "")..
+            Money(cost.copper)
+    end
+    widgets.repair.text:SetText(repairText)
     widgets.bags.text:SetText(stats.bags and
         ("Bags "..stats.bags.free.." free") or "Bags --")
     widgets.gear.text:SetText(stats.gear and
@@ -715,6 +884,8 @@ Refresh=function()
         or "Pet --")
     local highlights={
         gear=stats.gear and stats.gear.worst and stats.gear.worst<=25,
+        repair=cost and cost.missing and cost.max and cost.max>0 and
+            cost.missing/cost.max>=0.65,
         bags=stats.bags and stats.bags.general and stats.bags.general<=2,
         pet=pet and pet.state=="ready" and pet.percent<=30,
         latency=stats.latency and stats.latency.world>=250,
@@ -858,11 +1029,12 @@ function ChalkBox_BarCommand(message)
             ", XP/hr=" .. Number(xpPerHour) .. ", ETA=" .. Duration(eta) ..
             ", net gold/hr=" .. Money(goldPerHour, true))
     else
-        Note("TrailBar: /chalk bar top|bottom|off | reserve on/off | reset | status")
+        Note("The Bar: /chalk bar top|bottom|off | reserve on/off | reset | status")
         Note("Stats: /chalk bar stat <module> on/off | stats all|balanced|minimal")
         Note("Layout: /chalk bar edit on/off | layout reset | move <module> <left|center|right> [index]")
         Note("Text alignment: /chalk bar align <module> <left|center|right> | opacity 0-100")
         Note("Vendor value: /chalk bar stat bagvalue on | bagvalue junk|total|toggle")
+        Note("Repairs: /chalk bar stat repair on|off. Right-click any module for a menu.")
     end
     end
 end
@@ -876,6 +1048,7 @@ events:RegisterEvent("PLAYER_MONEY")
 for _,event in ipairs({
     "BAG_UPDATE_DELAYED","GET_ITEM_INFO_RECEIVED","ITEM_DATA_LOAD_RESULT",
     "PLAYER_EQUIPMENT_CHANGED","UPDATE_INVENTORY_DURABILITY",
+    "MERCHANT_SHOW","MERCHANT_UPDATE","MERCHANT_CLOSED",
     "UPDATE_EXHAUSTION","PLAYER_UPDATE_RESTING","UNIT_PET","UNIT_HEALTH",
     "UNIT_MAXHEALTH",
 }) do events:RegisterEvent(event) end

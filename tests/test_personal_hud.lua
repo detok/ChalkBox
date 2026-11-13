@@ -44,13 +44,14 @@ _G.UnitXP = function(unit) assert(unit=="player"); return playerXP end
 _G.UnitXPMax = function(unit) assert(unit=="player"); return xpMax end
 _G.UnitLevel = function(unit) assert(unit=="player"); return playerLevel end
 _G.GetMoney = function() return money end
-_G.ChalkBox_BarReadStats=function(_,includeBagValue)
+_G.ChalkBox_BarReadStats=function(_,includeBagValue,includeRepair)
     return {
         bags={free=12,total=96,general=7,special=5},
         gear={percent=87,worst=76,items=9},
         rested={percent=42,xp=420},
         latency={home=21,world=63},
         pet={state="ready",percent=95},
+        repair=includeRepair and {state="estimate",copper=7400,missing=31,max=500} or nil,
         bagvalue=includeBagValue and {totalCopper=182250,junkCopper=12525,
             totalUnknown=0,junkUnknown=0,totalComplete=true,junkComplete=true} or nil,
     }
@@ -128,6 +129,42 @@ _G.CreateFrame = function(_, name, parent)
     frames[#frames+1]=frame
     return frame
 end
+-- Mock the modern native menu framework, recording actual nested callbacks.
+local lastNativeMenu
+local function MockMenu()
+    return {
+        entries={},
+        CreateTitle=function(self,label)
+            self.entries[#self.entries+1]={text=label,isTitle=true}
+        end,
+        CreateButton=function(self,label,fn)
+            local e={text=label,func=fn}
+            self.entries[#self.entries+1]=e
+            local submenu=MockMenu()
+            e.children=submenu.entries
+            e.submenu=submenu
+            return submenu
+        end,
+    }
+end
+_G.MenuUtil={
+    CreateContextMenu=function(owner,generator)
+        local root=MockMenu()
+        generator(owner,root)
+        lastNativeMenu=root.entries
+    end,
+}
+local function FindMenu(items,label)
+    for _,entry in ipairs(items or {}) do
+        if entry.text==label then return entry end
+        if entry.children then
+            local result=FindMenu(entry.children,label)
+            if result then return result end
+        end
+    end
+end
+local openedPage
+_G.ChalkBox_OpenSettings=function(page) openedPage=page end
 _G.GameTooltip = {SetOwner=function() end,ClearLines=function() end,
     AddLine=function() end,Show=function() end,Hide=function() end}
 
@@ -205,6 +242,38 @@ assert(FindText("Value 18g"),"total shows vendor value for all bag items")
 assert(FindText("Gear 87%"),"durability appears in the actual TrailBar widgets")
 assert(FindText("Rest 42%"),"rested XP appears as a level percent")
 assert(FindText("Pet 95%"),"Hunter pet status is available when readable")
+assert(ChalkBoxDB.barStats.repair==true,
+    "repair module is enabled on Balanced by default")
+assert(FindText("Repair ~74s"),"Bar labels calibrated costs as estimates")
+local repairMenuData=ChalkBox_BarContextItems("repair")
+assert(type(repairMenuData)=="table",
+    "repair cost is a real customizable stat, not a hardcoded label")
+local gearContext=FindMetric("Gear ")
+assert(gearContext and gearContext.scripts.OnMouseUp)
+gearContext.scripts.OnMouseUp(gearContext,"RightButton")
+assert(FindMenu(lastNativeMenu,"Hide Durability"),
+    "right-click outside Edit Mode opens native item menu")
+FindMenu(lastNativeMenu,"Hide Durability").func()
+assert(not ChalkBoxDB.barStats.gear,"menu action hides clicked module")
+bar.scripts.OnMouseUp(bar,"RightButton")
+local allModules=FindMenu(lastNativeMenu,"Show / hide modules")
+assert(allModules and FindMenu(allModules.children,"[ ] Durability"),
+    "background menu can restore hidden modules")
+FindMenu(allModules.children,"[ ] Durability").func()
+assert(ChalkBoxDB.barStats.gear,"module restored through bar background menu")
+local gearMove=ChalkBox_BarContextItems("gear")
+FindMenu(gearMove,"Right").func()
+local moved=false
+for _,key in ipairs(ChalkBox_BarLayoutGet().right) do
+    if key=="gear" then moved=true end
+end
+assert(moved,"context menu moves modules to another third")
+FindMenu(FindMenu(gearMove,"Text alignment").children,"Center").func()
+assert(ChalkBox_BarLayoutGet().align.gear=="center",
+    "context menu applies per-module text alignment")
+ChalkBox_BarCommand("layout reset")
+FindMenu(lastNativeMenu,"Module settings...").func()
+assert(openedPage=="barstats","context menu navigates into native Settings")
 local valueWidget=FindMetric("Value ")
 assert(valueWidget and valueWidget.scripts.OnMouseUp,
     "Bag Value widget is directly clickable outside Edit Mode")
@@ -221,6 +290,14 @@ ChalkBox_BarCommand("bagvalue total")
 ChalkBox_BarCommand("stat bagvalue off")
 assert(not ChalkBoxDB.barStats.bagvalue,
     "disabling the optional module doesn't change its mode preference")
+-- Crucial regression: Bag Value left click still flips modes; its right
+-- click now opens the native menu without killing Edit Mode alignment.
+valueWidget.scripts.OnMouseUp(valueWidget,"RightButton")
+assert(FindMenu(lastNativeMenu,"Switch to Junk value"),
+    "bag value context menu supports its own Junk/Total switch")
+FindMenu(lastNativeMenu,"Switch to Junk value").func()
+assert(ChalkBox_BarBagValueModeGet()=="junk")
+ChalkBox_BarBagValueModeSet("total")
 assert(FindMetric("Bags ").visible and FindMetric("Gear ").visible
     and FindMetric("Rest ").visible,
     "new priority widgets appear on a normal screen")
@@ -309,6 +386,14 @@ assert(ChalkBox_BarAppearanceGet()==0 and bar.background.rgba[4]==0,
 assert(ChalkBox_BarAppearanceSet(100))
 assert(bar.background.rgba[4]==1 and bar.background.rgba[1]<0.03,
     "fully opaque bar is neutral Blizzard-like charcoal, not blue")
+combat=true
+assert(not ChalkBox_BarOpenMenu("gear",gearContext) and
+    not ChalkBox_BarEditSet(true),
+    "combat forbids layout editor and unsafe customization menus")
+combat=false
+assert(ChalkBox_BarEditSet(true),
+    "Edit Mode can resume after combat")
+ChalkBox_BarEditSet(false)
 combat=true
 assert(not ChalkBox_BarEditSet(true),"combat may not enter layout editor")
 combat=false

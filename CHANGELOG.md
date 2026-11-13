@@ -2,6 +2,16 @@
 
 All notable changes to the public ChalkBox addon are documented here.
 
+## 1.9.2 — The Bar: repair pricing and contextual controls
+
+- Rename the user-facing **TrailBar** settings to **The Bar**, while preserving the existing `/chalk bar` commands and saved layout keys.
+- Add a **Repair** module to The Bar, enabled by default and safely hidden on narrow displays when it cannot fit.
+- At repair merchants, use `GetRepairAllCost` for an **exact** repair-all price. Away from vendors, show **~** estimates only after a valid character-specific observed quote; before calibration show **Repair --**, never an invented formula.
+- Invalidate estimates when the equipped total durability pool has changed substantially. Clearly explain that the merchant quote includes repairs for items in bags while estimates use currently equipped wear, and that discounts can change costs.
+- Add right-click native Blizzard menu controls on every module and empty Bar background: show/hide modules, move left/center/right, choose alignment, edit/reset layout, top/bottom/hide, and jump to native settings. Keep the EasyMenu fallback and in-combat safety guards.
+- Retain left-click Junk/Total for Bag Value and Edit Mode's original right-click alignment shortcut.
+- Expand Lua 5.1 tests for vendor-only exact quotes, sample calibration, cache invalidation, menu actions and saved layouts.
+
 ## 1.9.1 — TrailBar Vendor Value
 
 - Add an optional **Bag vendor value** TrailBar module with two one-click modes: **Junk** (poor/gray quality only) and **Total** (all equipped-bag contents).
