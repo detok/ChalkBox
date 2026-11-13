@@ -22,17 +22,21 @@ Hover over an item to see contextual advice when ChalkBox has relevant evidence:
 
 The download includes a local **2,511-recipe Forever database** for possible crafting uses; you do not need to install a separate recipe library. Open your profession window once to let ChalkBox learn what your character can actually craft. Where available, material tooltips show recipe names and the amounts in your bags.
 
-### TrailBar — essential numbers, almost no screen space
+### TrailBar — your adventure dashboard in 18 pixels
 
-An unobtrusive **18-pixel** strip at the top or bottom of your screen shows:
+A compact, **responsive 18-pixel** strip at the top or bottom of your screen shows the numbers that matter:
 
-- Level and current XP percentage
-- Session XP/hour
-- Estimated time to your next level, when enough XP data exists
-- Time elapsed this session
-- Current gold and net gold gained or spent
+- Level and XP percentage, session XP/hour, and estimated time to your next level
+- **Free bag slots** across equipped bags, with **general vs. profession-only free slots** in the tooltip
+- **Gear durability**, including weighted overall condition and lowest-condition item
+- **Rested XP** expressed as a percent of one level, separately from Camp Benefits
+- **Hunter pet health** when the client permits it, with a safe unavailable state for protected values
+- Optional **world latency** (home and world ping in the tooltip)
+- Session time, current gold and net gold change
 
-Mouse over the metrics for details. Choose top, bottom or hidden; the optional reserved-screen-space mode keeps the strip from sitting on top of ordinary UI elements.
+Choose **Balanced**, **Minimal**, or **All**, or enable individual widgets under **ChalkBox → TrailBar Stats**. The bar automatically hides lower-priority metrics at narrow UI widths so labels don't overlap. Increasing the width lets them reappear. The bar stays 18 pixels tall regardless of how many metrics you enable.
+
+Each widget has helpful mouseover detail, and optional reserved-screen-space mode keeps the strip out of ordinary UI. If an API is unavailable, ChalkBox leaves that metric unavailable rather than inventing a number.
 
 ### Combat Meter — pick the display you prefer
 
