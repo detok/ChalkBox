@@ -191,7 +191,9 @@ local function Install()
             local frame
             if owner and type(owner.GetParent)=="function" then
                 local parentOK,parent=pcall(owner.GetParent,owner)
-                if parentOK and type(parent)=="table" then frame=parent end
+                if parentOK and parent and type(parent.GetCombatSession)=="function" then
+                    frame=parent
+                end
             end
             if not frame or type(frame.GetCombatSession)~="function"
                 or type(frame.GetDamageMeterType)~="function" then return end
