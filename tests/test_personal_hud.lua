@@ -35,6 +35,9 @@ function UIParent:SetAllPoints()
 end
 UIParent:SetAllPoints()
 _G.ChalkBoxDB = {}
+_G.ChalkBoxZoneDB = {}
+local cursorX=0
+_G.GetCursorPosition=function() return cursorX,0 end
 _G.DEFAULT_CHAT_FRAME = {AddMessage=function(_, line) notes[#notes + 1]=line end}
 _G.GetTime = function() return now end
 _G.UnitXP = function(unit) assert(unit=="player"); return playerXP end
@@ -75,7 +78,8 @@ _G.C_Timer = {NewTicker=function(_,callback)
 end}
 
 local function NewTexture()
-    return {SetAllPoints=function() end, SetColorTexture=function() end,
+    return {SetAllPoints=function() end,
+        SetColorTexture=function(self,r,g,b,a) self.rgba={r,g,b,a} end,
         SetPoint=function() end, SetHeight=function() end, SetWidth=function() end,
         Show=function(self) self.visible=true end, Hide=function(self) self.visible=false end}
 end
@@ -103,6 +107,20 @@ _G.CreateFrame = function(_, name, parent)
     function frame:GetPoint(i) return unpack(self.points[i] or {}) end
     function frame:EnableMouse() end
     function frame:GetWidth() return self.width end
+    function frame:GetLeft() return 0 end
+    function frame:GetEffectiveScale() return 1 end
+    function frame:GetCenter()
+        local p=self.points[1]
+        if not p then return nil end
+        local point,relative,relPoint,offset=p[1],p[2],p[3],p[4]
+        if point=="LEFT" then return offset+self.width/2 end
+        if point=="CENTER" then return offset end
+        if point=="RIGHT" then return relative.width+offset-self.width/2 end
+    end
+    function frame:SetMovable(v) self.movable=v end
+    function frame:RegisterForDrag(v) self.dragButton=v end
+    function frame:StartMoving() self.moving=true end
+    function frame:StopMovingOrSizing() self.moving=false end
     function frame:Show() self.visible=true end
     function frame:Hide() self.visible=false end
     frames[#frames+1]=frame
@@ -119,6 +137,7 @@ local function Fire(event,...)
     end
 end
 assert(loadfile("Emota.lua"))("ChalkBox")
+assert(loadfile("TrailBarLayout.lua"))("ChalkBox")
 assert(loadfile("TrailBar.lua"))("ChalkBox")
 Fire("ADDON_LOADED","ChalkBox")
 assert(ChalkBoxDB.emota.auto==false,"integrated auto-emotes must default off")
@@ -235,6 +254,40 @@ assert(FindMetric("Gear ").visible,"preset restores previously hidden durability
 local state=ChalkBox_BarStatus()
 assert(type(state.enabled)=="table" and type(state.visible)=="table",
     "native status gives enabled vs currently fitting modules")
+-- Polished 1.9: edit-mode direct mouse drag, per-character layout, text align.
+ChalkBox_BarCommand("edit on")
+assert(ChalkBox_BarEditStatus(),"in-game editor is enabled")
+local bagWidget=FindMetric("Bags ")
+assert(bagWidget and bagWidget.movable and bagWidget.dragButton=="LeftButton",
+    "user can physically drag stat modules within the 18px bar")
+cursorX=945
+bagWidget.scripts.OnDragStart(bagWidget)
+assert(bagWidget.moving,"left drag must start moving only in edit mode")
+bagWidget.scripts.OnDragStop(bagWidget)
+local custom=ChalkBox_BarLayoutGet()
+local placed=false
+for _,entry in ipairs(custom.right) do if entry=="bags" then placed=true end end
+assert(placed and not bagWidget.moving,
+    "drop on right third saves bag stat in right group")
+bagWidget.scripts.OnMouseUp(bagWidget,"RightButton")
+assert(ChalkBox_BarLayoutGet().align.bags=="center",
+    "right-click in Edit Mode cycles in-module text alignment")
+ChalkBox_BarCommand("edit off")
+assert(not ChalkBox_BarEditStatus(),"edit mode unlocks and relocks explicitly")
+ChalkBox_BarCommand("layout reset")
+assert(ChalkBox_BarLayoutGet().left[3]=="bags" and
+    not ChalkBox_BarLayoutGet().align.bags,
+    "reset layout restores the original group, order and text justification")
+assert(ChalkBox_BarAppearanceSet(0))
+assert(ChalkBox_BarAppearanceGet()==0 and bar.background.rgba[4]==0,
+    "zero opacity removes only the charcoal panel background")
+assert(ChalkBox_BarAppearanceSet(100))
+assert(bar.background.rgba[4]==1 and bar.background.rgba[1]<0.03,
+    "fully opaque bar is neutral Blizzard-like charcoal, not blue")
+combat=true
+assert(not ChalkBox_BarEditSet(true),"combat may not enter layout editor")
+combat=false
+ChalkBox_BarAppearanceSet(70)
 -- A normal UIParent-anchored widget keeps its own offset; by shrinking the
 -- root, every such widget follows the inset without being named by the addon.
 local anchoredChild=CreateFrame("Frame","NeverWhitelisted",UIParent)
