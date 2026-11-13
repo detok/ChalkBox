@@ -1,6 +1,6 @@
 # ChalkBox 2.0 — real Forever screenshot shot list
 
-**No screenshot in this folder should be fabricated or presented as already verified in-game.** Existing \`.svg\` logo, banner, hero and feature grid are **editorial brand illustrations** only.
+**No screenshot in this folder should be fabricated or presented as already verified in-game.** Existing `.svg` logo, banner, hero and feature grid are **editorial brand illustrations** only.
 
 ## Must-capture screenshots for a 2.0 launch
 
@@ -24,6 +24,6 @@
 2. Verify each shown feature works before uploading. Remove developer test fixtures/overlays.
 3. Avoid visible account details, private chat, identifying information or private combat logs.
 4. Capture in a readable window size (16:9 preferred). Crop unwanted desktop/browser edges, but **do not edit in nonexistent game data**.
-5. Use descriptive names e.g. \`01-map-discoveries-forever.png\`, \`02-macroforge-spellbook.png\`, \`03-lootsense-item-insight.png\`.
+5. Use descriptive names e.g. `01-map-discoveries-forever.png`, `02-macroforge-spellbook.png`, `03-lootsense-item-insight.png`.
 6. Maintain captions: "observed drop frequency" ≠ server drop chance; "generated macro" ≠ a combat bot; "preview toast" ≠ an automatic in-combat event.
-7. When the gallery is ready, add screenshot links to README and the CurseForge listing. Until then the branded \`chalkbox-feature-grid-1600x900.svg\` remains an **illustration, not a screenshot**.
+7. When the gallery is ready, add screenshot links to README and the CurseForge listing. Until then the branded `chalkbox-feature-grid-1600x900.svg` remains an **illustration, not a screenshot**.

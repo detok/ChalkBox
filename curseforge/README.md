@@ -2,7 +2,7 @@
 
 **Status: GitHub 2.0 prerelease prepared for in-client testing. The CurseForge project has not been submitted or approved; authentic gameplay screenshots are still pending.**
 
-This folder is a **public editorial and publishing workspace**, not part of the installable WoW addon. The game release remains the single versioned \`ChalkBox-2.0.0.zip\` asset from [GitHub Releases](https://github.com/detok/ChalkBox/releases/tag/v2.0.0). Do not upload the repository source-code ZIP or this \`curseforge/\` folder as an addon.
+This folder is a **public editorial and publishing workspace**, not part of the installable WoW addon. The game release remains the single versioned `ChalkBox-2.0.0.zip` asset from [GitHub Releases](https://github.com/detok/ChalkBox/releases/tag/v2.0.0). Do not upload the repository source-code ZIP or this `curseforge/` folder as an addon.
 
 ## The product story
 
@@ -28,15 +28,15 @@ The story is useful information and player control—not speculative official dr
 | [GITHUB_PRESENTATION](submission/GITHUB_PRESENTATION.md) | Front-page structure and **manual GitHub About** tasks |
 | [QA_AND_POLICY](submission/QA_AND_POLICY.md) | Publishing guardrails |
 
-Older version-specific \`FILE_CHANGELOG_1.x.md\` files are **archival**, not copy for 2.0.
+Older version-specific `FILE_CHANGELOG_1.x.md` files are **archival**, not copy for 2.0.
 
 ## Artwork truth
 
-Six original branding SVGs are already committed under [artwork](artwork/). Flat PNGs can be exported from these sources for a hosting portal if required. **Do not claim the brand's feature illustration is a real WoW screenshot.** The \`ChalkBox/assets/Icon.tga\` in the addon remains unchanged until verified in-client.
+Six original branding SVGs are already committed under [artwork](artwork/). Flat PNGs can be exported from these sources for a hosting portal if required. **Do not claim the brand's feature illustration is a real WoW screenshot.** The `ChalkBox/assets/Icon.tga` in the addon remains unchanged until verified in-client.
 
 ## Release gate
 
-1. Both TOCs say **2.0.0** and the release ZIP contains one \`ChalkBox/\` folder.
+1. Both TOCs say **2.0.0** and the release ZIP contains one `ChalkBox/` folder.
 2. GitHub's **Lua tests and installable ZIP** workflow is green on the merged commit.
 3. The World Map Discoveries late-loading fix is tested **in the actual Forever client**, including the command fallback and diagnostics.
 4. MacroForge spellbook, generated macro copy, save/reload and optional native installation are tested in client.

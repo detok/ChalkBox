@@ -4,10 +4,10 @@
 
 ## A. Engineering gate
 
-- [ ] Both Forever \`.toc\` files specify **2.0.0**, and \`scripts/package.py\` still bundles every required module.
+- [ ] Both Forever `.toc` files specify **2.0.0**, and `scripts/package.py` still bundles every required module.
 - [ ] **Lua tests and installable ZIP** checks pass on the merge commit.
-- [ ] Download \`ChalkBox-2.0.0.zip\` from a GitHub **release asset**, not “Source code (zip).”
-- [ ] Check one top-level \`ChalkBox/\` folder, included \`LICENSE\`, full recipe library and no unbundled addon dependency.
+- [ ] Download `ChalkBox-2.0.0.zip` from a GitHub **release asset**, not “Source code (zip).”
+- [ ] Check one top-level `ChalkBox/` folder, included `LICENSE`, full recipe library and no unbundled addon dependency.
 - [ ] Verify existing SavedVariables persist across upgrade (DropSense, MacroForge, The Bar, repair history, sessions, KEEP).
 
 ## B. 2.0 in-client smoke test — required before full release

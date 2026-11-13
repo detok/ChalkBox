@@ -4,7 +4,7 @@
 An all-in-one quality-of-life addon built for **World of Warcraft: Forever**. It includes loot insights, a personal map discoveries journal, MacroForge, The Bar, QuestSense, camping reminders, meter extras, optional personality and persistent session history.
 
 ## Is everything in one ZIP?
-Yes. Extract one \`ChalkBox/\` folder into \`Interface/AddOns\`. Its profession recipe database and support libraries are already included.
+Yes. Extract one `ChalkBox/` folder into `Interface/AddOns`. Its profession recipe database and support libraries are already included.
 
 ## Do I need CurseForge to install it?
 No. GitHub Releases offers the installable ZIP. A separate CurseForge project has not been claimed or approved.
@@ -25,7 +25,7 @@ No. The addon measures *appearance among readable loot windows* attributed to a 
 No. Blizzard macros cannot bypass the GCD, automatically inspect procs/cooldowns for conditional casts or execute secure combat actions without appropriate player input. MacroForge teaches legitimate modifier branches, one-spell openers, trinket attempts and manual sequences.
 
 ## Does MacroForge change my macros automatically?
-No. **Select Text** highlights generated macro text to Ctrl+C, then you paste in \`/macro\`. **Install New** is an optional explicit click outside combat that refuses to overwrite a same-named existing macro. Saved recipes are distinct from your native WoW macros.
+No. **Select Text** highlights generated macro text to Ctrl+C, then you paste in `/macro`. **Install New** is an optional explicit click outside combat that refuses to overwrite a same-named existing macro. Saved recipes are distinct from your native WoW macros.
 
 ## Why does the repair number sometimes show ~ or --?
 The exact vendor repair-all quote is only available at a repair merchant. Away from one, ChalkBox can estimate from real quotes your character previously observed and labels it **~**. When there isn't a trustworthy calibration, it displays **--**. Damage inside bags and merchant discounts can make estimates differ.

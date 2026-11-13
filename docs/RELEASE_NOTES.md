@@ -10,8 +10,8 @@ The **Discoveries** button previously attempted to attach to a world-map frame t
 
 - **Recover when the map loads late:** initialize on player/map addon events and temporarily retry until the world-map frame exists. Stop retrying once the button is attached.
 - **Use the visible map canvas:** position the button toward Forever's top-left map controls, raise it above the map canvas, and refresh its position when the map reopens or changes.
-- **Keep a guaranteed manual entry point:** \`/chalk drops map\` opens the standalone browser even if the button cannot attach.
-- **New diagnostics:** \`/chalk drops map status\` reports whether the world-map frame exists, whether the button attached and is visible, the saved map-button toggle, and the selected map ID.
+- **Keep a guaranteed manual entry point:** `/chalk drops map` opens the standalone browser even if the button cannot attach.
+- **New diagnostics:** `/chalk drops map status` reports whether the world-map frame exists, whether the button attached and is visible, the saved map-button toggle, and the selected map ID.
 - **No replacements:** do not modify the map's quest tracker, map canvas engine, native quest pins, or other addons' map code.
 
 **Important:** these are code-level fixes verified by automated tests. We still need a real Forever screenshot and a map open/close check to confirm placement at your UI scale.
@@ -35,13 +35,13 @@ The **Discoveries** button previously attempted to attach to a world-map frame t
 ## Backward compatibility
 
 - Preserve existing SavedVariables, individual module toggles, per-character saved loot, item KEEP records, learned repair history, MacroForge recipes, bar layouts and session history.
-- No extra addon dependencies or external account. One top-level \`ChalkBox/\` directory in the release ZIP.
+- No extra addon dependencies or external account. One top-level `ChalkBox/` directory in the release ZIP.
 - Both Forever-compatible TOCs declare version **2.0.0**.
 
 ## Quality gate and what still needs testing
 
 - Automated Lua 5.1 syntax and all module tests (including new late-loading world-map regression), installable ZIP structure and bundled library notices must pass.
-- **In Forever:** verify the Discoveries button appears after opening the map from a fresh login, stays visible when the map changes and in windowed/fullscreen modes, and that \`/chalk drops map\` works as a fallback.
+- **In Forever:** verify the Discoveries button appears after opening the map from a fresh login, stays visible when the map changes and in windowed/fullscreen modes, and that `/chalk drops map` works as a fallback.
 - Verify MacroForge shows real spells and class icons and can copy/install a test macro only on an explicit click; the Session Journal persists after relog; Combat Meter and camp toast display correctly; existing item protections remain intact.
 - Add actual game screenshots to GitHub/CurseForge material only after this pass. The committed editorial artwork is not a gameplay screenshot.
 

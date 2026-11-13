@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         Thanks for helping test ChalkBox! Start with the [troubleshooting guide](https://github.com/detok/ChalkBox/blob/main/docs/TROUBLESHOOTING.md).
-        **2.0 map issue?** Try \`/chalk drops map\` and \`/chalk drops map status\` and paste the output below.
+        **2.0 map issue?** Try `/chalk drops map` and `/chalk drops map status` and paste the output below.
         Never post passwords, account IDs, private chat, tokens, or identifying screenshots.
   - type: input
     id: addon

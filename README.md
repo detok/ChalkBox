@@ -114,22 +114,22 @@ The build includes both Forever TOC variants and all required bundled data. **Yo
 
 | Command | Purpose |
 | --- | --- |
-| \`/chalk\` or \`/cb\` | Open ChalkBox options |
-| \`/chalk macro\` | Open MacroForge |
-| \`/chalk forge rescan\` | Rescan learned spells |
-| \`/chalk drops map\` | Open Map Discoveries independently of its map button |
-| \`/chalk drops map status\` | Explain map button attachment and visibility |
-| \`/chalk drops map on\` / \`off\` | Toggle the map button without deleting history |
-| \`/chalk drops on\` / \`off\` | Start or stop loot-window observations |
-| \`/chalk drops chance 5 20\` | Example: probability of at least one drop across 20 independent attempts if your supplied chance is 5% |
-| \`/chalk session\` / \`/chalk session last\` | Current or previous saved session |
-| \`/chalk bar status\` | Inspect The Bar |
-| \`/chalk bar stat repair on\` | Enable the repair module |
-| \`/chalk bar repair status\` | Inspect learned repair observations |
-| \`/chalk quests status\` | Explain current QuestSense choices |
-| \`/chalk loot status\` | Inspect item advice and profession detection |
-| \`/chalk prep\` | Review current camping state |
-| \`/chalk meter status\` | Check Blizzard meter compatibility |
+| `/chalk` or `/cb` | Open ChalkBox options |
+| `/chalk macro` | Open MacroForge |
+| `/chalk forge rescan` | Rescan learned spells |
+| `/chalk drops map` | Open Map Discoveries independently of its map button |
+| `/chalk drops map status` | Explain map button attachment and visibility |
+| `/chalk drops map on` / `off` | Toggle the map button without deleting history |
+| `/chalk drops on` / `off` | Start or stop loot-window observations |
+| `/chalk drops chance 5 20` | Example: probability of at least one drop across 20 independent attempts if your supplied chance is 5% |
+| `/chalk session` / `/chalk session last` | Current or previous saved session |
+| `/chalk bar status` | Inspect The Bar |
+| `/chalk bar stat repair on` | Enable the repair module |
+| `/chalk bar repair status` | Inspect learned repair observations |
+| `/chalk quests status` | Explain current QuestSense choices |
+| `/chalk loot status` | Inspect item advice and profession detection |
+| `/chalk prep` | Review current camping state |
+| `/chalk meter status` | Check Blizzard meter compatibility |
 
 [Complete user guide](docs/USER_GUIDE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Changes](CHANGELOG.md)
 

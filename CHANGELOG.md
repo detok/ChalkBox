@@ -3,7 +3,7 @@
 ## 2.0.0 — The Quiet Adventure Companion (prerelease)
 
 - **Fix Forever's Map Discoveries entry point:** late WorldMapFrame load now gets a retry until it can attach; button anchors against the visible top-left map canvas and raises above its overlay. Refresh when map opens or changes. Remove fragile reliance on the optional WORLD_MAP_UPDATE event.
-- **Always-available fallback:** \`/chalk drops map\` opens the loot browser directly; new \`/chalk drops map status\` reports map frame, button, anchor and visibility for real-client troubleshooting.
+- **Always-available fallback:** `/chalk drops map` opens the loot browser directly; new `/chalk drops map status` reports map frame, button, anchor and visibility for real-client troubleshooting.
 - **2.0 presentation pass:** coherent README, banner/feature artwork usage, current install directions, all shipped module descriptions, honest limitations, refreshed CurseForge copy, launch checklist, screenshots plan and early-access release notes.
 - **Feature set prepared for testing:** automatic all-item DropSense, outdoor/dungeon map browser, loot item protection and professions, MacroForge, configurable The Bar with repair learning and vendor bag value, Session Journal, camp reminders, quest watches, native and compact combat-meter print, shared themes, Emota, QuietGuard and bag positioning.
 - **No breaking changes:** same one-addon ZIP layout, existing saves and module settings. Real-client verification still required before claiming a polished public 2.0 release.

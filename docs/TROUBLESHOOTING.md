@@ -9,7 +9,7 @@ The 2.0 prerelease fixes a **Forever-specific late-loading map-frame and placeme
 1. Open WoW's regular world map once. Look near the **upper-left map canvas**, below the native map pin controls.
 2. Open **Options → AddOns → ChalkBox → DropSense**. Ensure **Show Discoveries button on World Map** is checked. This toggle does not control whether loot sampling is recording.
 3. Type **/chalk drops map**. This opens the same **standalone Discoveries browser** even if the map button couldn't attach. The browser can use your current player zone when the map is not loaded.
-4. Type **/chalk drops map status**. Copy both status lines: whether \`WorldMapFrame\` exists, whether the button attached, whether it is shown, the saved toggle, the anchor type, the selected map ID and tracking status.
+4. Type **/chalk drops map status**. Copy both status lines: whether `WorldMapFrame` exists, whether the button attached, whether it is shown, the saved toggle, the anchor type, the selected map ID and tracking status.
 5. If a map skin such as Leatrix Maps or Simple Map is running, try windowed and fullscreen map modes. Record **the names of your other map addons** rather than deleting all preferences.
 6. Include a **real screenshot** of the whole map and the status output with your Forever client build when [reporting an issue](https://github.com/detok/ChalkBox/issues/new/choose).
 

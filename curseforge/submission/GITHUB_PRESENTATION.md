@@ -5,7 +5,7 @@
 ## Live README structure
 
 1. Original [ChalkBox header artwork](../artwork/chalkbox-github-header-1600x470.svg), 2.0 prerelease/test badge, Lua CI badge, MIT and Forever badges.
-2. **Prominent versioned download** linking directly to the installable \`ChalkBox-2.0.0.zip\` asset.
+2. **Prominent versioned download** linking directly to the installable `ChalkBox-2.0.0.zip` asset.
 3. One-addon positioning and **honest pre-release / map visibility** notice.
 4. Current module catalog: Map Discoveries, DropSense, MacroForge, LootSense, professions, The Bar, repair learning, Session Journal, combat, quests, camp, theme, QuietGuard, Emota and bags.
 5. Feature stories explained in plain language. No official drop-rate claims, no macro rotation automation, no claimed live-client screenshots.
@@ -16,16 +16,16 @@
 
 These settings **cannot be changed by editing README.md**, and the connected GitHub editor doesn't expose a repository-metadata mutation. On https://github.com/detok/ChalkBox use **About → gear icon**:
 
-- **Description:** \`The quiet WoW Forever companion: MacroForge, Map Discoveries, LootSense, The Bar, quest, combat, camp and session tools.\`
-- **Website:** \`https://github.com/detok/ChalkBox/releases\`
-- **Topics:** \`world-of-warcraft\`, \`wow-forever\`, \`wow-addon\`, \`macro-builder\`, \`lua\`, \`map\`, \`quality-of-life\`, \`quest-tracker\`
+- **Description:** `The quiet WoW Forever companion: MacroForge, Map Discoveries, LootSense, The Bar, quest, combat, camp and session tools.`
+- **Website:** `https://github.com/detok/ChalkBox/releases`
+- **Topics:** `world-of-warcraft`, `wow-forever`, `wow-addon`, `macro-builder`, `lua`, `map`, `quality-of-life`, `quest-tracker`
 - Enable **Releases** and **Issues** in sidebar navigation.
 
 Then go to **Settings → General → Social preview** and upload a PNG of the existing original [1200×630 banner](../artwork/chalkbox-banner-1200x630.svg) or branded social preview. GitHub does not automatically use the README hero as a social card. Do not upload any proprietary fonts.
 
 ## Green CI and branch protection
 
-The workflow \`Lua tests and installable ZIP\` is the minimum merge gate. For optional branch protection, use **Settings → Rules → Rulesets** and require PRs + this observed check while avoiding accidental admin-only deadlocks in a solo project. The current integration cannot change repository rulesets.
+The workflow `Lua tests and installable ZIP` is the minimum merge gate. For optional branch protection, use **Settings → Rules → Rulesets** and require PRs + this observed check while avoiding accidental admin-only deadlocks in a solo project. The current integration cannot change repository rulesets.
 
 ## Media policy
 
