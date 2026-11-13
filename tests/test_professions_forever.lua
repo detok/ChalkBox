@@ -1,6 +1,6 @@
 -- WoW Forever 1.60 test: legacy profession APIs absent, modern data loads
 -- after SHOW, and some recipe schematic endpoints are incomplete.
-local seenFrame,timers={}
+local seenFrame,timers=nil,{}
 _G.ChalkBoxProfessionDB=nil
 _G.GetProfessions=nil
 _G.GetProfessionInfo=nil
