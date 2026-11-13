@@ -18,7 +18,15 @@ ART = {
     "chalkbox-hero-1600x900.svg": ("ChalkBox-Hero-1600x900.png", 1600, 900, "Editorial-Only"),
     "chalkbox-feature-grid-1600x900.svg": ("ChalkBox-Feature-Illustration-1600x900.png", 1600, 900, "Editorial-Only"),
 }
+SCREENSHOTS = (
+    "01-settings-overview.jpg", "02-lootsense.jpg",
+    "03-dropsense.jpg", "04-the-bar.jpg",
+    "05-combat-meter.jpg", "06-macroforge.jpg",
+    "07-adventure-prep.jpg", "08-appearance.jpg",
+    "09-item-insight.jpg", "10-discoveries.jpg",
+)
 COPY = [
+    "screenshots/README.md",
     "copy/PROJECT_DESCRIPTION.md", "copy/PROJECT_FIELDS.md",
     "copy/SHORT_COPY.md", "copy/QUICK_START.md",
     "copy/COMMANDS.md", "copy/FAQ.md",
@@ -76,6 +84,16 @@ def build() -> Path:
             raise FileNotFoundError(source)
         files.append(entry(prefix + "Copy-and-Checklist/" + item,
             source.read_bytes()))
+    # Publish real gameplay captures separately from the graphic artwork.
+    # The game addon ZIP never contains screenshots.
+    for filename in SCREENSHOTS:
+        source = SOURCE / "screenshots" / filename
+        if not source.is_file():
+            raise FileNotFoundError(source)
+        data = source.read_bytes()
+        if not data.startswith(b"\xff\xd8\xff"):
+            raise ValueError(f"Not a JPG screenshot: {filename}")
+        files.append(entry(prefix + "Screenshots/" + filename, data))
     readme = (
         f"CHALKBOX CURSEFORGE MEDIA KIT {v}\n\n"
         "This is the media kit, NOT the installable addon.\n"
@@ -83,7 +101,9 @@ def build() -> Path:
         "Use Artwork/PNG/Upload-Ready/Project-Icon-512.png as the avatar.\n"
         "Listing copy and the checklist are in Copy-and-Checklist/.\n"
         "Editorial-Only graphics are illustrations, NOT gameplay screenshots.\n"
-        "Real WoW Forever screenshots are not included.\n"
+        "Ten original cropped WoW Forever screenshots are under Screenshots/.\n"
+        "The screenshots exclude the character nameplate and chat.\n"
+        "Use Screenshots/ on the CurseForge gallery page; they are real gameplay.\n"
         "Verify the WoW Forever game flavor in the CurseForge upload form.\n"
         "Creator: Detok Whitemaine.\n"
         "Source: https://github.com/detok/ChalkBox\n"
