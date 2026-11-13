@@ -112,7 +112,8 @@ local function MakeHome()
     local items = {
         {"loot", "LootSense", "Item tooltip advice and your personal don't-sell list"},
         {"quests", "QuestSense", "Automatically follow accepted quests in your current zone"},
-        {"bar", "TrailBar", "An unobtrusive 18px strip for XP/hour, ETA, gold and time"},
+        {"bar", "TrailBar", "Compact XP/gold display and separate-bag placement"},
+        {"barstats","TrailBar Stats","Choose bags, durability, rested XP, latency and pet status"},
         {"emota", "Emota", "Character jokes, emotes and optional diagnostic messages"},
         {"catalog", "Emote Catalog", "Every client-known emote, with switches and preview buttons"},
         {"guard", "QuietGuard", "Block random guild invites and duels; optional social filters"},
@@ -120,7 +121,7 @@ local function MakeHome()
         {"meter", "Combat Meter", "Native DPS, damage, healing and fight rankings"}
     }
     for index, info in ipairs(items) do
-        local y = -128 - (index-1) * 39
+        local y = -128 - (index-1) * 34
         Button(panel, info[2], 28, y, 205, function() Activate(info[1]) end)
         Label(panel, info[3], "GameFontHighlightSmall", 247, y - 7, 276)
     end
@@ -263,6 +264,9 @@ end
 local function MakeBar()
     local panel=Panel("TrailBar", "An 18px strip with left, center and right-aligned information.")
     Label(panel,"Placement","GameFontNormalLarge",28,-111)
+    Button(panel,"Customize Bar Stats",315,-103,185,function()
+        Activate("barstats")
+    end)
     local position={
         {"top","Top of screen",-145},
         {"bottom","Bottom of screen",-199},
@@ -310,6 +314,52 @@ local function MakeBar()
         if ChalkBox_BarCommand then ChalkBox_BarCommand("reset") end end)
     Button(panel,"Check Screen Layout",232,-410,190,function()
         if ChalkBox_BarCommand then ChalkBox_BarCommand("status") end end)
+    return panel
+end
+
+local function MakeBarStats()
+    local panel=Panel("TrailBar Stats",
+        "Choose visible stats. The 18px strip automatically fits the screen width.")
+    local options={
+        {"bags","Free bag slots","Includes profession-bag free slots"},
+        {"gear","Gear durability","Weighted repair condition; warns when low"},
+        {"rested","Rested XP","Bonus XP as a percent of one level"},
+        {"latency","World latency","Home/world ms shown in tooltip"},
+        {"pet","Hunter pet health","Never guesses secret health during combat"},
+        {"rate","XP per hour","Session XP/hour"},
+        {"eta","Time to level","Estimate from XP/hour"},
+        {"time","Session timer","Since login or last bar reset"},
+        {"gold","Gold and session net","Current money and net change"},
+    }
+    for index,item in ipairs(options) do
+        local key,title,description=unpack(item)
+        Toggle(panel,title,nil,-111-(index-1)*29,
+            function()
+                if ChalkBox_BarStatEnabled then
+                    return ChalkBox_BarStatEnabled(key)
+                end
+                local d=DB()
+                return d and d.barStats and d.barStats[key]==true
+            end,
+            function(on)
+                if ChalkBox_BarCommand then
+                    ChalkBox_BarCommand("stat "..key..(on and " on" or " off"))
+                end
+            end)
+        -- Keep explanatory text on the right; don't shrink the hit target.
+        Label(panel,description,"GameFontHighlightSmall",
+            288,-117-(index-1)*29,225)
+    end
+    Label(panel,"Quick layouts","GameFontNormalLarge",28,-380)
+    local function Choose(preset)
+        if ChalkBox_BarCommand then ChalkBox_BarCommand("stats "..preset) end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end
+    Button(panel,"Balanced",28,-401,146,function() Choose("balanced") end)
+    Button(panel,"Minimal",185,-401,146,function() Choose("minimal") end)
+    Button(panel,"All",342,-401,146,function() Choose("all") end)
+    Label(panel,"Even 'All' hides lowest-priority widgets on narrow screens.",
+        "GameFontHighlightSmall",28,-433,496)
     return panel
 end
 
@@ -642,6 +692,7 @@ local function Register()
     panels.loot = MakeLoot()
     panels.quests = MakeQuests()
     panels.bar = MakeBar()
+    panels.barstats = MakeBarStats()
     panels.emota = MakeEmota()
     panels.catalog = MakeCatalog()
     panels.guard = MakeGuard()
@@ -657,6 +708,7 @@ local function Register()
                 {"loot", "LootSense"},
                 {"quests", "QuestSense"},
                 {"bar", "TrailBar"},
+                {"barstats", "TrailBar Stats"},
                 {"emota", "Emota"},
                 {"catalog", "Emote Catalog"},
                 {"guard", "QuietGuard"},
@@ -680,6 +732,7 @@ local function Register()
             {"loot", "LootSense"},
             {"quests", "QuestSense"},
             {"bar", "TrailBar"},
+                {"barstats", "TrailBar Stats"},
             {"emota", "Emota"},
             {"catalog", "Emote Catalog"},
             {"guard", "QuietGuard"},
