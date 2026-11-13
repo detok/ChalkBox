@@ -73,3 +73,71 @@ function ChalkBox_CampBuffStatus()
     end
     return {state="missing",name="Camp Benefits"}
 end
+
+-- Camp Tent is a Rested XP refill, not a Camp Benefits stat aura. Successful
+-- use applies the one-hour HARMFUL Boosted Rest lockout, spell 1229451.
+local BOOSTED_REST=1229451
+local function TentDebuff()
+    local modern=C_UnitAuras and C_UnitAuras.GetAuraDataByIndex
+    local legacy=UnitDebuff
+    if type(modern)~="function" and type(legacy)~="function" then
+        return nil,"unavailable"
+    end
+    for i=1,80 do
+        local ok,name,spellID,expires
+        if type(modern)=="function" then
+            local aura
+            ok,aura=pcall(modern,"player",i,"HARMFUL")
+            if not ok then return nil,"restricted" end
+            if aura==nil then return false end
+            if not Visible(aura) or type(aura)~="table" then return nil,"restricted" end
+            name,spellID,expires=aura.name,aura.spellId,aura.expirationTime
+        else
+            local icon,count,kind,duration,source,stealable,plate
+            ok,name,icon,count,kind,duration,expires,source,stealable,plate,spellID=
+                pcall(legacy,"player",i,"HARMFUL")
+            if not ok then return nil,"restricted" end
+            if name==nil then return false end
+        end
+        if not Visible(name) and not Visible(spellID) then return nil,"restricted" end
+        if (Visible(spellID) and spellID==BOOSTED_REST)
+            or (Visible(name) and name=="Boosted Rest") then
+            local now=Clock()
+            return {seconds=Visible(expires) and type(expires)=="number"
+                and now and expires>0 and math.max(0,math.floor(expires-now))
+                or nil}
+        end
+    end
+    return false
+end
+
+local function RestedPercent()
+    if type(UnitXPMax)~="function" or type(GetXPExhaustion)~="function" then
+        return nil
+    end
+    local okMax,maxXP=pcall(UnitXPMax,"player")
+    local okRest,restXP=pcall(GetXPExhaustion)
+    if not okMax or not okRest or not Visible(maxXP) or type(maxXP)~="number"
+        or maxXP<=0 then return nil end
+    -- GetXPExhaustion() returns nil when no rested XP is stored.
+    if restXP==nil then restXP=0 end
+    if not Visible(restXP) or type(restXP)~="number" or restXP<0 then return nil end
+    return restXP/maxXP
+end
+function ChalkBox_CampTentStatus()
+    local debuff,reason=TentDebuff()
+    if type(debuff)=="table" then
+        return {state="cooldown",seconds=debuff.seconds,
+            detail="Boosted Rest: tent refill already used"}
+    end
+    local percent=RestedPercent()
+    if percent and percent>=0.05 then
+        return {state="sufficient",rested=percent,
+            detail="Already have at least 5% of a level in rested XP"}
+    end
+    if debuff==false and percent then
+        return {state="ready",rested=percent,
+            detail="Tent could refill rested XP to 5% of a level"}
+    end
+    return {state="unknown",reason=reason or "XP or debuff API unavailable"}
+end
