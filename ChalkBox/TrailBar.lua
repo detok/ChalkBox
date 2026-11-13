@@ -576,9 +576,7 @@ end
 function ChalkBox_BarCommand(message)
     if not db then return end
     local action = string.lower((message or ""):match("^%s*(.-)%s*$") or "")
-    local stat,choice=action:match("^stat%s+(%a+)%s+(on|off)$")
-    -- Lua patterns have no alternation; parse the setting and validate below.
-    if not stat then stat,choice=action:match("^stat%s+(%a+)%s+(%a+)$") end
+    local stat,choice=action:match("^stat%s+(%a+)%s+(%a+)$")
     if stat and specs[stat] and stat~="level"
         and (choice=="on" or choice=="off") then
         ConfigureStats()
@@ -673,6 +671,12 @@ events:SetScript("OnEvent", function(_, event, name)
         end
     elseif event=="PLAYER_REGEN_ENABLED" then
         if reservation.pending then PlaceBar() end
+    elseif (event=="UNIT_HEALTH" or event=="UNIT_MAXHEALTH")
+        and name~="pet" then
+        -- Ignore the many party/target health events; only our Hunter pet matters.
+        return
+    elseif event=="UNIT_PET" and name~="player" then
+        return
     elseif event=="UI_SCALE_CHANGED" or event=="DISPLAY_SIZE_CHANGED" then
         if bar then PlaceBar() end
     else
