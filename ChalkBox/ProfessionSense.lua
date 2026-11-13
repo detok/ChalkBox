@@ -148,6 +148,9 @@ local function ReadLegacyTrade()
         if kind ~= "header" and kind ~= "subheader" and kind ~= "unavailable" then
             local n = type(GetTradeSkillNumReagents) == "function" and GetTradeSkillNumReagents(i) or 0
             if Safe(n) and type(n) == "number" then
+                if n>0 and Safe(recipeName) and type(recipeName)=="string" then
+                    scan.recipes=scan.recipes+1
+                end
                 for j=1,math.min(n,25) do
                     local reagent,link
                     local required
@@ -180,6 +183,9 @@ local function ReadLegacyCraft()
         if kind ~= "header" and kind ~= "subheader" then
             local n = type(GetCraftNumReagents) == "function" and GetCraftNumReagents(i) or 0
             if Safe(n) and type(n) == "number" then
+                if n>0 and Safe(recipeName) and type(recipeName)=="string" then
+                    scan.recipes=scan.recipes+1
+                end
                 for j=1,math.min(n,25) do
                     local reagent,link
                     local required
