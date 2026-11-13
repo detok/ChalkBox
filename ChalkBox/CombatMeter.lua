@@ -176,14 +176,16 @@ local function DrawRow(row,source,maxValue,perSecond)
     if Safe(maxValue) and type(maxValue)=="number" and maxValue<=0 then
         maxValue=1
     end
-    if maxValue~=nil then
-        -- C_DamageMeter's own maximum is used. These C UI setters accept
-        -- secret values; do not compute a percentage in Lua.
+    -- Never compare a potentially secret number with nil in Lua. The built-in
+    -- SetMinMaxValues / SetValue / SetFormattedText methods take the data directly.
+    local secretMax=type(issecretvalue)=="function" and issecretvalue(maxValue)
+    local secretAmount=type(issecretvalue)=="function" and issecretvalue(amount)
+    if secretMax or maxValue~=nil then
         row.bar:SetMinMaxValues(0,maxValue)
     else
         row.bar:SetMinMaxValues(0,1)
     end
-    if amount~=nil then
+    if secretAmount or amount~=nil then
         row.bar:SetValue(amount)
         DisplayValue(row.value,amount)
     else
