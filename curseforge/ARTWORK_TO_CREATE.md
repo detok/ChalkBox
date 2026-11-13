@@ -1,7 +1,6 @@
 # ChalkBox visual identity and artwork production brief
 
-> **FOR THE NEXT PASS. This is a specification, not completed artwork.**  
-> No new images have been created in this first pass. Do not mark any item “Done” until the actual file exists, is visually reviewed and is checked into `curseforge/artwork/`.
+> **Brand artwork completed in vector format on this branch.** The project icon, wordmark, hero, banner, GitHub header and editorial feature overview are checked into `curseforge/artwork/`. PNG exports are included in the separately delivered branding ZIP; live in-client screenshots remain pending.
 
 ## Art direction — recognizable and distinct
 
@@ -25,7 +24,7 @@
 - **Typography:** a clean readable display/serif or sturdy geometric headline, paired with a neutral sans body. Artwork should contain very few words.
 - **Avoid:** offensive/playful slurs, copyrighted fantasy character illustration, third-party logos without authorization, AI-generated fake in-game panels, screenshots that promise unimplemented features.
 
-## Priority assets (all to be produced in second pass)
+## Priority assets (brand completed; gameplay screenshots pending)
 
 Dimensions below are recommended **working canvases**, not assertions about CurseForge’s current mandatory upload sizes. Check the actual author form's accepted formats, resolution, crop and file-size rules before final export.
 
@@ -71,6 +70,10 @@ Dimensions below are recommended **working canvases**, not assertions about Curs
 **Phase 4 — review:** Inspect every asset at full size and thumbnail size, validate crop and dimensions, capture filename, and commit to `curseforge/artwork/`.  
 **Phase 5 — integration:** Add images to GitHub README and CurseForge Markdown/media gallery where supported; do not hotlink unapproved assets.
 
+## Legacy production prompt (already completed for brand art)
+
+This prompt remains only as background context; the vector artwork is already created.
+
 ## Prompt to use next time
 
 > Use `detok/ChalkBox/curseforge/ARTWORK_TO_CREATE.md` and `curseforge/artwork/SCREENSHOT_PLAN.md` as the official visual brief. First create the branded logo, hero and banner, using ChalkBox’s color palette and tone. Do not redesign or fabricate the game interface. Leave screenshot-derived promotional assets pending until real in-game screenshots are supplied; then make composites and integrate them into both the GitHub README and CurseForge gallery.
@@ -79,9 +82,10 @@ Dimensions below are recommended **working canvases**, not assertions about Curs
 
 | Asset group | Status |
 | --- | --- |
-| Logo / icon | Not created |
-| Hero / banner | Not created |
+| Logo / icon / wordmark | Editable SVG completed; PNG in downloadable brand pack |
+| Hero / banner / GitHub header | Editable SVG completed; PNG in downloadable brand pack |
+| Editorial feature grid | Completed — explicitly NOT an in-game screenshot |
 | Real Forever screenshots | Not supplied |
-| Feature composites | Not created |
-| GitHub image integration | Pending assets |
-| CurseForge image upload | Pending project creation and moderation |
+| Screenshot-derived composites | Awaiting authentic game captures |
+| GitHub image integration | Updated on this brand branch |
+| CurseForge image upload | Pending project creation, portal verification and moderation |

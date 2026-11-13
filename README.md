@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="curseforge/artwork/chalkbox-github-header-1600x470.svg" alt="ChalkBox — a quieter, smarter way to adventure" width="100%" />
+
 # ✦ ChalkBox
 
 ### A quieter, smarter way to adventure in **World of Warcraft: Forever**
@@ -55,7 +57,11 @@ Every module has native in-game options. **No automated item selling, no fabrica
 
 ## 🖥️ See it in action
 
-**Authentic gameplay screenshots and polished banners are in production.** This first-pass README intentionally contains no mocked gameplay imagery.
+**The original ChalkBox artwork is ready.** The image below is an **editorial feature illustration, not an in-game screenshot**. Authentic Forever screenshots of current addon features are still pending. No fictional gameplay UI is used.
+
+![ChalkBox feature overview — editorial illustration, not a screenshot](curseforge/artwork/chalkbox-feature-grid-1600x900.svg)
+
+[Full-size hero illustration](curseforge/artwork/chalkbox-hero-1600x900.svg) · [Brand identity guide](docs/BRANDING.md) · [Artwork sources](curseforge/artwork/ARTWORK_FOLDER.md)
 
 Artwork specification and game-capture shot list: [CurseForge / GitHub media plan](curseforge/ARTWORK_TO_CREATE.md) · [Screenshot checklist](curseforge/artwork/SCREENSHOT_PLAN.md).
 

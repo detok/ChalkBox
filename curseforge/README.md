@@ -1,6 +1,6 @@
 # ChalkBox — CurseForge launch kit (first pass)
 
-**Status: editorial package prepared; artwork not created; CurseForge project not submitted.**
+**Status: editorial package prepared; brand vector artwork created; real game screenshots pending; CurseForge project not submitted.**
 
 This directory contains the working content and production plan for a polished ChalkBox project on CurseForge. It is **not** part of the WoW addon installed by players. The installable release remains the existing `ChalkBox-<version>.zip` built by `scripts/package.py`.
 
@@ -8,7 +8,7 @@ This directory contains the working content and production plan for a polished C
 
 1. **[PROJECT_DESCRIPTION.md](copy/PROJECT_DESCRIPTION.md)** — the complete, paste-ready CurseForge project description. Markdown-mode is recommended; inspect the published preview.
 2. **[PROJECT_FIELDS.md](copy/PROJECT_FIELDS.md)** — title, summary, flavor, categories, license and links for the project form.
-3. **[ARTWORK_TO_CREATE.md](ARTWORK_TO_CREATE.md)** — the single master creative brief for the *next pass*. **No artwork or simulated game screenshots have been made.**
+3. **[ARTWORK_TO_CREATE.md](ARTWORK_TO_CREATE.md)** — the single master creative brief for the brand pass and screenshot follow-up. **Six original vector brand assets are complete. Real gameplay screenshots are still required; none have been faked.**
 4. **[PUBLISH_CHECKLIST.md](submission/PUBLISH_CHECKLIST.md)** — ordered checklist from author account to reviewed public project, with release-file checks.
 
 ## Copy and reference documents
