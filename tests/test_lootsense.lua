@@ -100,6 +100,18 @@ recipeMode="future"
 assert(Hover(102):find("POTENTIAL USE: Camp Tent",1,true),
     "potential recipe is labeled not learned")
 recipeMode=nil
+-- Forever may call OnTooltipSetItem before item metadata finishes caching.
+-- A trusted tooltip link and item name still support learned-recipe advice.
+local getInfo=C_Item.GetItemInfo
+C_Item.GetItemInfo=function() return nil end
+recipeMode="known"
+assert(Hover(102):find("KNOWN RECIPE: Camp Tent",1,true),
+    "cold item cache must not suppress known recipe tooltip advice")
+C_Item.GetItemInfo=nil
+assert(Hover(102):find("KNOWN RECIPE: Camp Tent",1,true),
+    "missing item info API must not suppress known recipe advice")
+C_Item.GetItemInfo=getInfo
+recipeMode=nil
 assert(Hover(108)=="","irrelevant trade material should be quiet")
 assert(Hover(4470):find("CAMP SUPPLY",1,true),"wood must always be flagged for Forever camping")
 assert(Hover(4471):find("CAMP TOOL",1,true),"flint/tinder reusable utility flagged")
