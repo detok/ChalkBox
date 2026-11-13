@@ -17,7 +17,7 @@ Interface/
       assets/Icon.tga
 ```
 
-Do not leave an extra folder such as `ChalkBox-1.5.1/ChalkBox/` between `AddOns` and the addon. Download the **`ChalkBox-*.zip`** asset from Releases instead of GitHub's **Source code** ZIP. Check whether your Forever build has disabled older addons and record its interface version.
+Do not leave an extra folder such as `ChalkBox-1.6.1/ChalkBox/` between `AddOns` and the addon. Download the **`ChalkBox-*.zip`** asset from Releases instead of GitHub's **Source code** ZIP. Check whether your Forever build has disabled older addons and record its interface version.
 
 ## I don't see a CampSense popup
 
@@ -29,9 +29,9 @@ Do not leave an extra folder such as `ChalkBox-1.5.1/ChalkBox/` between `AddOns`
 
 ## LootSense doesn't mention a material I can craft with
 
-1. Open that character's actual **profession window** and wait for its recipes to populate.
-2. Run **`/chalk loot scan`** and hover the material again.
-3. Run **`/chalk loot status`** to read the currently detected professions and external library index status.
+1. Open that character's actual **crafting profession window** and wait for its recipes to populate. Forever can populate recipes after the panel first appears.
+2. Run **`/chalk loot scan`**, move the pointer off the material, and hover it again; an already-open tooltip won't necessarily refresh by itself.
+3. Run **`/chalk loot status`**. It shows whether LootSense advice is **ON**, the detected profession, how many learned recipes it saw in the latest scan, the scanning API used, and the bundled database status. If advice is OFF, type **`/chalk loot on`**.
 4. Remember: **known** recipe claims require a successful scan. The bundled offline recipe catalog cannot claim you learned something; only your profession scan can.
 5. If one known recipe is missing or the quantity is incorrect, report the exact **item link, recipe name, profession and skill level**. A screenshot of the game tooltip and profession window is very helpful.
 
