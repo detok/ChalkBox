@@ -39,6 +39,8 @@ _G.ChalkBox_RecipeAdvice=function(id,name)
         return "POTENTIAL USE: Camp Tent (Leatherworking, not confirmed learned)",0.84,0.88,0.48
     end
 end
+local meterCommands={}
+_G.ChalkBox_MeterCommand=function(cmd) meterCommands[#meterCommands+1]=cmd end
 local messages = {}
 _G.DEFAULT_CHAT_FRAME={AddMessage=function(_, msg) messages[#messages+1]=msg end}
 local catalog = {
@@ -131,6 +133,12 @@ onTooltip(tip)
 assert(#tip.lines==1,"hover refresh must not duplicate advice")
 SlashCmdList.CHALKBOX("list")
 assert(messages[#messages]:find("Broken Fang",1,true),"list should show protected items")
+SlashCmdList.CHALKBOX("meter")
+SlashCmdList.CHALKBOX("meter overall")
+SlashCmdList.CHALKBOX("dps show")
+assert(#meterCommands==3 and meterCommands[1]=="" and
+    meterCommands[2]=="overall" and meterCommands[3]=="show",
+    "new combat meter must route through original ChalkBox slash handler")
 SlashCmdList.CHALKBOX("forget |Hitem:101:0|h[Broken Fang]|h")
 assert(Hover(101)=="","forget restores quiet default")
 SlashCmdList.CHALKBOX("keep Light Leather")
