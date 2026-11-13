@@ -33,7 +33,7 @@ _G.ChalkBox_QuestStatus=function()
         limit=ChalkBoxZoneDB.limit,api=true,accepted=8,tracked=5,reason="ready"}
 end
 local defaults={rate=true,eta=true,time=true,gold=true,bags=true,
-    gear=true,rested=true,latency=false,pet=true,bagvalue=false}
+    gear=true,rested=true,latency=false,pet=true,bagvalue=false,repair=true}
 _G.ChalkBoxDB.barStats={}
 for k,v in pairs(defaults) do ChalkBoxDB.barStats[k]=v end
 _G.ChalkBox_BarStatEnabled=function(key)
