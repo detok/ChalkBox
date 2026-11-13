@@ -2,12 +2,29 @@
 ## Title: ChalkBox
 ## Notes: Loot safety, camp buffs, quest help, XP tracking and character personality.
 ## Author: Detok Whitemaine
-## Version: 1.5.1
+## Version: 1.6.0
 ## SavedVariables: ChalkBoxDB
 ## SavedVariablesPerCharacter: ChalkBoxZoneDB, ChalkBoxProfessionDB
 ## IconTexture: Interface\AddOns\ChalkBox\assets\Icon
 ## AddonCompartmentFunc: ChalkBox_OnAddonCompartmentClick
 
+Libs\LibStub\LibStub.lua
+Libs\LibProfessionDB-1.0\LibProfessionDB-1.0.lua
+Libs\LibProfessionDB-1.0\Data\Alchemy.lua
+Libs\LibProfessionDB-1.0\Data\Blacksmithing.lua
+Libs\LibProfessionDB-1.0\Data\Cooking.lua
+Libs\LibProfessionDB-1.0\Data\Enchanting.lua
+Libs\LibProfessionDB-1.0\Data\Engineering.lua
+Libs\LibProfessionDB-1.0\Data\Firstaid.lua
+Libs\LibProfessionDB-1.0\Data\Fishing.lua
+Libs\LibProfessionDB-1.0\Data\Leatherworking.lua
+Libs\LibProfessionDB-1.0\Data\Mining.lua
+Libs\LibProfessionDB-1.0\Data\Tailoring.lua
+Libs\LibProfessionDB-1.0\Data\RecipeItems.lua
+Libs\LibProfessionDB-1.0\Data\HiddenRecipes.lua
+Libs\LibProfessionDB-1.0\Data\AcquireMethods.lua
+Libs\LibProfessionDB-1.0\Data\Sources.lua
+Libs\LibProfessionDB-1.0\Data\SourceNames.lua
 Core.lua
 ProfessionSense.lua
 RecipeAdvisor.lua
