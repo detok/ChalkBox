@@ -81,6 +81,15 @@ end
 local function Learned(itemID)
     if type(ChalkBox_LearnedRecipeUses)~="function" then return false end
     local ok,recipes=pcall(ChalkBox_LearnedRecipeUses,itemID,nil)
+    if ok and type(recipes)=="table" and #recipes>0 then return true end
+    -- Legacy profession scans can record a reagent by localized item name
+    -- only. Match the same evidence the tooltip uses when the item cache
+    -- supplies a safe name; never use an offline catalog as proof.
+    local getName=C_Item and C_Item.GetItemInfo or GetItemInfo
+    if type(getName)~="function" then return false end
+    local success,name=pcall(getName,itemID)
+    if not success or not Public(name) or type(name)~="string" then return false end
+    ok,recipes=pcall(ChalkBox_LearnedRecipeUses,itemID,name)
     return ok and type(recipes)=="table" and #recipes>0
 end
 local function UpdateButton(button)
