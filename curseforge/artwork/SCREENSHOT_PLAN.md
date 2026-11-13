@@ -16,15 +16,15 @@ This is the shot list for the second pass and the source of truth for *what the 
 
 | Priority | Screenshot | Set up in WoW Forever | What must be visible |
 | --- | --- | --- | --- |
-| **1** | **LootSense tooltip** | Open Leatherworking/Cooking, run `/chalk loot scan`, hover a reagent in a learned recipe | Real item link/tooltip with **KNOWN RECIPE** correctly shown |
-| **1** | **TrailBar** | Enable bar top, gather a little session XP and gold | Readable 18px strip showing **Bags**, **Gear**, **Rest** and XP/gold on a screen wide enough to fit, some native gameplay in background |
+| **1** | **LootSense tooltip** | Open Leatherworking/Cooking, run `/chalk loot scan`, hover a reagent in a learned recipe | Real item link/tooltip with **CHALKBOX | ITEM INSIGHT** and learned recipe evidence, plus actual green inset on the ingredient bag slot |
+| **1** | **TrailBar** | Enable bar top, gather a little session XP and gold | Readable 18px **charcoal** strip showing **Bags**, **Gear**, **Rest** and XP/gold, plus a second genuine shot in Edit Mode with tinted draggable regions, some native gameplay in background |
 | **1** | **Blizzard meter PRINT** | Use Blizzard's meter after a genuine **party** fight, open its gear menu | **ChalkBox: PRINT top 3 to PARTY** option inside the real native menu; screenshot is usable only if the integration actually appears |
 | **2** | **Compact ChalkBox meter** | Enable ChalkBox Combat Meter, select DPS and Last Fight, optionally class icons | Real class-icon rows, player names obscured as needed, header controls |
 | **2** | **QuestSense** | Open ChalkBox QuestSense settings with an accepted quest list and native tracker nearby | Mode/limit/status evidence, no fake quest pointers |
 | **2** | **Adventure Prep toast** | `/chalk prep test` or real supported notice | Toast near top, text and background visible and unblocked |
-| **2** | **Separate bags** | Disable combined bags and open several large bags, set offset 0 then 30 | True before/after comparison proving correct window shift (if it works on this client) |
-| **2** | **Settings home** | `/chalk` | Clear native ChalkBox options navigation, not a fabricated custom launcher |
-| **3** | **Emota/QuietGuard** | Open their actual settings; use Emota preview outside combat | Configurable switches and genuine in-game emote if possible |
+| **2** | **Separate bags** | Disable combined bags and open several large bags, set offset 0 then 30 | True before/after view of **vertical ±120** slider with Blizzard 0 centered, proving bag movement if the client confirms it |
+| **2** | **Settings home** | `/chalk` | Real two-column ChalkBox native settings home and TrailBar Appearance page |
+| **3** | **Emota/QuietGuard** | Open their actual settings; use Emota preview outside combat | Actual Emota Race Behavior page with the race dropdown and real-vs-planned status, plus genuine emote preview if possible |
 
 ## Suggested narrative order for CurseForge gallery
 
