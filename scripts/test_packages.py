@@ -47,7 +47,7 @@ def test() -> None:
                        for x in archive.namelist()), (
                            "Old standalone addons must not reappear")
         assert archive.read("ChalkBox/Libs/LibProfessionDB-1.0/LICENSE").startswith(
-            b"MIT License\\n\\nCopyright (c) 2026 Pimptasty"), "Original MIT author credit missing"
+            b"MIT License\n\nCopyright (c) 2026 Pimptasty"), "Original MIT author credit missing"
         assert len([name for name in archive.namelist()
                     if name.startswith("ChalkBox/Libs/LibProfessionDB-1.0/Data/")]) == 15, (
             "Incomplete Forever recipe data bundle")
