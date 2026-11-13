@@ -21,7 +21,7 @@ This directory contains the working content and production plan for a polished C
 | [FAQ.md](copy/FAQ.md) | Common questions and honest client limitations |
 | [COMMANDS.md](copy/COMMANDS.md) | Compact, accurate command reference |
 | [SUPPORT_AND_CREDITS.md](copy/SUPPORT_AND_CREDITS.md) | Bug-report template, MIT credit and library acknowledgements |
-| [FILE_CHANGELOG_1.8.5.md](copy/FILE_CHANGELOG_1.8.5.md) | Text to use with initial 1.8.5 file upload |
+| [FILE_CHANGELOG_1.8.6.md](copy/FILE_CHANGELOG_1.8.6.md) | Text to use with initial 1.8.5 file upload |
 | [ARTWORK_TO_CREATE.md](ARTWORK_TO_CREATE.md) | Identity, design system, exact requested image concepts, priorities |
 | [SCREENSHOT_PLAN.md](artwork/SCREENSHOT_PLAN.md) | Capture instructions and per-shot visual storyboards |
 | [ARTWORK_FOLDER.md](artwork/ARTWORK_FOLDER.md) | Eventual asset directory naming/organization, no fake files |
@@ -31,7 +31,7 @@ This directory contains the working content and production plan for a polished C
 
 ## Editorial source of truth
 
-This kit was prepared against **ChalkBox v1.8.5** on the public GitHub `main` branch (2026-11-13), including its two TOCs, Lua modules, current documentation and release process.
+This kit was prepared against **ChalkBox v1.8.6** on the public GitHub `main` branch (2026-11-13), including its two TOCs, Lua modules, current documentation and release process.
 
 - [Source repository](https://github.com/detok/ChalkBox)
 - [Current source README](../README.md)
