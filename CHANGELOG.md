@@ -2,6 +2,16 @@
 
 All notable changes to the public ChalkBox addon are documented here.
 
+## 1.7.1 — Boosted Rest Camp Tent detection and personalized DPS meter
+
+- Detect Camp Tent's **Boosted Rest (1229451) harmful debuff** and sufficient Rested XP independently of ordinary Camp Benefits; suppress false reminders and show separate status.
+- Add a one-hour, session-only **Tent Used** acknowledgment in Adventure Prep when aura detection isn't available.
+- Remove the DPS meter's CHALKBOX header logo and unnecessary bottom explanation.
+- Add direct on-window **LOCK/UNLOCK**, **PRINT**, opacity slider, and bottom-right drag-to-resize grip with saved width/row count.
+- Print native fight numbers only to local chat **after combat**, refusing protected results instead of leaking or inventing data.
+- Add opacity slider in native settings and `/chalk meter opacity N` commands; keep all other addon modules unchanged.
+- Add new tests for harmful-aura detection, rested-XP thresholds, protected fight printing and drag/opacity/lock behavior.
+
 ## 1.7.0 — Built-in native DPS and combat meter
 
 - Added a compact, class-colored, draggable ChalkBox combat meter with an obvious marker for your own character.
