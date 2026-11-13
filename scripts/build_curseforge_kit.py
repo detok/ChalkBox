@@ -91,7 +91,7 @@ def build() -> Path:
         if not source.is_file():
             raise FileNotFoundError(source)
         data = source.read_bytes()
-        if not data.startswith(b"\\xff\\xd8\\xff"):
+        if not data.startswith(b"\xff\xd8\xff"):
             raise ValueError(f"Not a JPG screenshot: {filename}")
         files.append(entry(prefix + "Screenshots/" + filename, data))
     readme = (

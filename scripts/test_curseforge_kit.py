@@ -17,7 +17,7 @@ def test():
         assert sum(n.endswith(".png") for n in names) == 9
         assert sum(n.endswith(".jpg") for n in names) == len(SCREENSHOTS)
         assert all(archive.read("ChalkBox-CurseForge-Kit/Screenshots/"+f)
-            .startswith(b"\\xff\\xd8\\xff") for f in SCREENSHOTS)
+            .startswith(b"\xff\xd8\xff") for f in SCREENSHOTS)
         assert any(name.endswith("/Screenshots/10-discoveries.jpg")
             for name in names)
         assert all(archive.read(name).startswith(PNG)
