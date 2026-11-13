@@ -153,6 +153,46 @@ local dropPriority={"latency","time","pet","eta","rate","rested","gear","bags","
 local displayed={}
 local latest={}
 local lastLayout=""
+local editMode=false
+local backgroundOpacity=70
+local function ApplyAppearance()
+    if not db then return end
+    local a=tonumber(db.barBackgroundOpacity)
+    if not a then a=70 end
+    a=math.max(0,math.min(100,math.floor(a+0.5)))
+    db.barBackgroundOpacity=a
+    backgroundOpacity=a
+    if bar and bar.background and bar.background.SetColorTexture then
+        -- Blizzard-style neutral near-black; alpha applies ONLY to the panel.
+        bar.background:SetColorTexture(0.018,0.018,0.022,a/100)
+    end
+end
+function ChalkBox_BarAppearanceGet()
+    return db and db.barBackgroundOpacity or 70
+end
+function ChalkBox_BarAppearanceSet(value)
+    if not db or type(value)~="number" or value~=value then return false end
+    db.barBackgroundOpacity=math.max(0,math.min(100,math.floor(value+0.5)))
+    ApplyAppearance()
+    return true
+end
+local function EditDecorations()
+    for _,widget in pairs(widgets) do
+        if widget.editBackground then
+            widget.editBackground:SetColorTexture(0.45,0.32,0.12,
+                editMode and 0.55 or 0)
+        end
+    end
+end
+function ChalkBox_BarEditStatus() return editMode end
+function ChalkBox_BarEditSet(on)
+    if on and type(InCombatLockdown)=="function" and InCombatLockdown() then
+        return false
+    end
+    editMode=(on==true)
+    EditDecorations()
+    return true
+end
 local function ConfigureStats()
     if not db then return end
     if type(db.barStats)~="table" then db.barStats={} end
@@ -175,6 +215,10 @@ end
 
 local function Reflow()
     if not bar then return end
+    if type(ChalkBox_BarLayoutGet)=="function" then
+        local saved=ChalkBox_BarLayoutGet()
+        if type(saved)=="table" then groups=saved end
+    end
     local width=bar:GetWidth()
     if not Public(width) or type(width)~="number" or width<=0 then return end
     local chosen={}
@@ -224,6 +268,10 @@ local function Reflow()
         for _,key in ipairs(groups[group]) do
             if chosen[key] then
                 local widget=widgets[key]
+                local justification=groups.align and groups.align[key] or group
+                if widget.text and widget.text.SetJustifyH then
+                    widget.text:SetJustifyH(string.upper(justification))
+                end
                 widget:ClearAllPoints()
                 if group=="left" then
                     widget:SetPoint("LEFT",bar,"LEFT",x,0)
@@ -253,7 +301,8 @@ local function CreateBar()
     bar:SetFrameStrata("LOW")
     local background=bar:CreateTexture(nil,"BACKGROUND")
     background:SetAllPoints(bar)
-    background:SetColorTexture(0.06,0.08,0.12,0.70)
+    bar.background=background
+    ApplyAppearance()
     local progress=bar:CreateTexture(nil,"ARTWORK")
     progress:SetPoint("BOTTOMLEFT",bar,"BOTTOMLEFT",0,0)
     progress:SetHeight(1)
@@ -328,9 +377,77 @@ local function CreateBar()
             (specs[key].group=="center" and "CENTER" or "LEFT"))
         widget.text=font
         widgets[key]=widget
+        local grab=widget:CreateTexture(nil,"BACKGROUND")
+        grab:SetAllPoints(widget)
+        grab:SetColorTexture(0.45,0.32,0.12,0)
+        widget.editBackground=grab
+        if widget.SetMovable then widget:SetMovable(true) end
+        if widget.RegisterForDrag then widget:RegisterForDrag("LeftButton") end
+        widget:SetScript("OnDragStart",function(self)
+            if not editMode or (type(InCombatLockdown)=="function"
+                and InCombatLockdown()) then return end
+            if self.StartMoving then self:StartMoving() end
+        end)
+        widget:SetScript("OnDragStop",function(self)
+            if self.StopMovingOrSizing then self:StopMovingOrSizing() end
+            if not editMode or (type(InCombatLockdown)=="function"
+                and InCombatLockdown()) then return end
+            local x
+            if type(GetCursorPosition)=="function" and bar.GetEffectiveScale then
+                local cursor=GetCursorPosition()
+                local scale=bar:GetEffectiveScale()
+                if Public(cursor) and type(cursor)=="number" and
+                    Public(scale) and type(scale)=="number" and scale>0 then
+                    x=cursor/scale
+                end
+            end
+            if not x and self.GetCenter then x=self:GetCenter() end
+            local left=bar.GetLeft and bar:GetLeft()
+            local width=bar:GetWidth()
+            if not Public(left) or type(left)~="number"
+                or not Public(width) or type(width)~="number"
+                or width<=0 or not Public(x) or type(x)~="number" then
+                lastLayout=""
+                Reflow()
+                return
+            end
+            -- The three drop zones are real thirds of the bar's live width.
+            local relativeX=x-left
+            local destination=relativeX<width/3 and "left" or
+                (relativeX>width*2/3 and "right" or "center")
+            local index=1
+            for _,other in ipairs(groups[destination] or {}) do
+                if other~=key then
+                    local neighbor=widgets[other]
+                    local cx=neighbor and neighbor.GetCenter and neighbor:GetCenter()
+                    if Public(cx) and type(cx)=="number" and x>cx then
+                        index=index+1
+                    end
+                end
+            end
+            if type(ChalkBox_BarLayoutMove)=="function" then
+                ChalkBox_BarLayoutMove(key,destination,index)
+            end
+            lastLayout=""
+            Reflow()
+        end)
+        widget:SetScript("OnMouseUp",function(_,button)
+            if not editMode or button~="RightButton" then return end
+            local layout=type(ChalkBox_BarLayoutGet)=="function" and
+                ChalkBox_BarLayoutGet() or {}
+            local current=layout.align and layout.align[key] or "left"
+            local nextMode=current=="left" and "center" or
+                (current=="center" and "right" or "left")
+            if type(ChalkBox_BarLayoutAlign)=="function" then
+                ChalkBox_BarLayoutAlign(key,nextMode)
+                lastLayout=""
+                Reflow()
+            end
+        end)
         Hint(widget,name,details)
     end
     bar:SetScript("OnSizeChanged",function() Reflow() end)
+    EditDecorations()
 end
 
 -- A Titan-style screen reservation, not a whitelist of named UI frames.
@@ -577,7 +694,45 @@ end
 function ChalkBox_BarCommand(message)
     if not db then return end
     local action = string.lower((message or ""):match("^%s*(.-)%s*$") or "")
-    local stat,choice=action:match("^stat%s+(%a+)%s+(%a+)$")
+    local alpha=action:match("^opacity%s+(%d+)$")
+    local module,section,index=action:match("^move%s+(%a+)%s+(%a+)%s*(%d*)$")
+    local aligned,mode=action:match("^align%s+(%a+)%s+(%a+)$")
+    if alpha then
+        ChalkBox_BarAppearanceSet(tonumber(alpha))
+        Note("TrailBar charcoal background opacity: "..ChalkBox_BarAppearanceGet().."%.")
+    elseif action=="edit" or action=="edit toggle" or action=="edit on"
+        or action=="edit off" then
+        local on=action=="edit on" or
+            ((action=="edit" or action=="edit toggle") and not editMode)
+        if ChalkBox_BarEditSet(on) then
+            Note("TrailBar edit "..(on and "ON: drag stats between thirds and reorder; right-click to cycle text alignment." or "OFF: layout saved per character."))
+        else Note("Cannot edit TrailBar while in combat.") end
+    elseif action=="layout reset" then
+        if type(ChalkBox_BarLayoutReset)=="function" then
+            ChalkBox_BarLayoutReset()
+            lastLayout=""
+            Reflow()
+        end
+        Note("TrailBar positions and text alignment reset for this character.")
+    elseif action=="layout" or action=="layout status" then
+        Note(type(ChalkBox_BarLayoutDescription)=="function"
+            and ChalkBox_BarLayoutDescription() or "Layout module unavailable.")
+    elseif module and (section=="left" or section=="center" or section=="right") then
+        if type(ChalkBox_BarLayoutMove)=="function" and
+            ChalkBox_BarLayoutMove(module,section,tonumber(index)) then
+            lastLayout=""
+            Reflow()
+            Note(module.." moved to "..section.." and saved per character.")
+        else Note("Unknown TrailBar module or section.") end
+    elseif aligned and (mode=="left" or mode=="center" or mode=="right") then
+        if type(ChalkBox_BarLayoutAlign)=="function" and
+            ChalkBox_BarLayoutAlign(aligned,mode) then
+            lastLayout=""
+            Reflow()
+            Note(aligned.." text aligned "..mode..".")
+        else Note("Unknown TrailBar module.") end
+    else
+        local stat,choice=action:match("^stat%s+(%a+)%s+(%a+)$")
     if stat and specs[stat] and stat~="level"
         and (choice=="on" or choice=="off") then
         ConfigureStats()
@@ -632,8 +787,10 @@ function ChalkBox_BarCommand(message)
             ", net gold/hr=" .. Money(goldPerHour, true))
     else
         Note("TrailBar: /chalk bar top|bottom|off | reserve on/off | reset | status")
-        Note("Stats: /chalk bar stat bags|gear|rested|latency|pet|rate|eta|time|gold on/off")
-        Note("Presets: /chalk bar stats all|balanced|minimal | stats")
+        Note("Stats: /chalk bar stat <module> on/off | stats all|balanced|minimal")
+        Note("Layout: /chalk bar edit on/off | layout reset | move <module> <left|center|right> [index]")
+        Note("Text alignment: /chalk bar align <module> <left|center|right> | opacity 0-100")
+    end
     end
 end
 
@@ -662,6 +819,7 @@ events:SetScript("OnEvent", function(_, event, name)
         -- uses a real UIParent safe-area inset and defaults ON for all users.
         if db.barReserve==nil then db.barReserve=true end
         ConfigureStats()
+        ApplyAppearance()
     elseif event == "PLAYER_ENTERING_WORLD" then
         if not session.started then ResetSession() end
         CreateBar()
