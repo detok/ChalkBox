@@ -38,24 +38,39 @@ local function ValidOffset(v)
     return type(v)=="number" and v==v and v>-5000 and v<5000 and
         (type(issecretvalue)~="function" or not issecretvalue(v))
 end
+local function ValidColor(value)
+    return Public(value) and type(value)=="number" and value==value
+        and value>=0 and value<=1
+end
 local function Colors()
     local r,g,b,a=0.018,0.018,0.022,0.97
     if type(ChalkBox_ThemeBackground)=="function" then
-        r,g,b,a=ChalkBox_ThemeBackground(0.97)
+        local ok,red,green,blue,alpha=pcall(ChalkBox_ThemeBackground,0.97)
+        if ok and ValidColor(red) and ValidColor(green)
+            and ValidColor(blue) and ValidColor(alpha) then
+            r,g,b,a=red,green,blue,alpha
+        end
     end
-    return r,g,b,a
+    -- Discoveries is a reading surface, not an overlay. A global theme
+    -- opacity of zero must not erase the window behind its controls.
+    return r,g,b,math.max(0.92,a)
 end
 local function Accent()
     if type(ChalkBox_ThemeAccent)=="function" then
-        return ChalkBox_ThemeAccent()
+        local ok,r,g,b=pcall(ChalkBox_ThemeAccent)
+        if ok and ValidColor(r) and ValidColor(g) and ValidColor(b) then
+            return r,g,b
+        end
     end
     return 0.86,0.66,0.38
 end
 local function Tint()
     if not panel then return end
     local r,g,b,a=Colors()
+    local ar,ag,ab=Accent()
     if panel.back then panel.back:SetColorTexture(r,g,b,a) end
-    if panel.stripe then panel.stripe:SetColorTexture(Accent()) end
+    if panel.edge then panel.edge:SetColorTexture(ar,ag,ab,0.82) end
+    if panel.stripe then panel.stripe:SetColorTexture(ar,ag,ab,1) end
     for i,row in ipairs(rows) do
         if row.back then
             row.back:SetColorTexture(
@@ -443,6 +458,7 @@ local function EnsurePanel()
     f:SetSize(PANEL_W,PANEL_H)
     f:SetPoint("CENTER",UIParent,"CENTER",0,0)
     if type(f.SetFrameStrata)=="function" then f:SetFrameStrata("DIALOG") end
+    if type(f.SetToplevel)=="function" then f:SetToplevel(true) end
     if type(f.SetMovable)=="function" then f:SetMovable(true) end
     if type(f.SetClampedToScreen)=="function" then
         f:SetClampedToScreen(true)
@@ -459,8 +475,14 @@ local function EnsurePanel()
     f:SetScript("OnDragStop",function(self)
         if self.StopMovingOrSizing then self:StopMovingOrSizing() end
     end)
-    local bg=f:CreateTexture(nil,"BACKGROUND")
-    bg:SetAllPoints(f);f.back=bg
+    -- A dedicated visible border and inset body keep the journal legible
+    -- even when the shared theme requests a fully transparent background.
+    local edge=f:CreateTexture(nil,"BACKGROUND",nil,-1)
+    edge:SetAllPoints(f);f.edge=edge
+    local bg=f:CreateTexture(nil,"BACKGROUND",nil,0)
+    bg:SetPoint("TOPLEFT",f,"TOPLEFT",2,-2)
+    bg:SetPoint("BOTTOMRIGHT",f,"BOTTOMRIGHT",-2,2)
+    f.back=bg
     local stripe=f:CreateTexture(nil,"ARTWORK")
     stripe:SetPoint("TOPLEFT",f,"TOPLEFT",0,0)
     stripe:SetPoint("TOPRIGHT",f,"TOPRIGHT",0,0)
@@ -557,6 +579,7 @@ function ChalkBox_OpenMapDiscoveries()
     refresh()
     Tint()
     panel:Show()
+    if type(panel.Raise)=="function" then panel:Raise() end
     return true
 end
 -- The new visibility fix in 2.0 is retained: Forever may load the map

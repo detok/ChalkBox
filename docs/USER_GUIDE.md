@@ -1,6 +1,6 @@
 # ChalkBox User Guide
 
-**Version 2.0.2 · World of Warcraft: Forever**
+**Version 2.0.3 · World of Warcraft: Forever**
 
 ChalkBox puts several small tools in one addon. Everything is managed from **Options → AddOns → ChalkBox**, or **/chalk**. Choose the modules you want; the rest can stay out of sight.
 
@@ -24,6 +24,8 @@ The native sidebar contains related pages under their parent module:
 Select the module first, then its child page. The same top heading and return-to-ChalkBox navigation appear throughout. Older settings keys and SavedVariables are retained.
 
 ## DropSense and Map Discoveries
+
+**2.0.3:** The Discoveries journal keeps a legible background and border even when the global theme background strength is set to zero.
 
 **DropSense** collects every readable item it encounters in a loot window while tracking is enabled. Data is saved for the character and survives logout. Open the normal world map and click **Discoveries**, or type **/chalk drops map**.
 
@@ -108,7 +110,7 @@ Recorded details include observed XP, levels, net gold, quest turn-ins, sampled 
 
 ## Install, updates and troubleshooting
 
-Download the installable **ChalkBox-2.0.2.zip** from the [release page](https://github.com/detok/ChalkBox/releases/tag/v2.0.2). Extract the single ChalkBox folder into **Interface/AddOns**. Don't extract an extra nested ChalkBox folder.
+Download the installable **ChalkBox-2.0.3.zip** from the [release page](https://github.com/detok/ChalkBox/releases/tag/v2.0.3). Extract the single ChalkBox folder into **Interface/AddOns**. Don't extract an extra nested ChalkBox folder.
 
 When updating, **keep your SavedVariables**. Use **/chalk** to check preferences and **/chalk update** to see the installed version.
 

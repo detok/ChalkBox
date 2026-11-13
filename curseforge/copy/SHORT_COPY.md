@@ -14,7 +14,7 @@ Quality-of-life tools for WoW Forever: MacroForge, DropSense, LootSense, The Bar
 
 **Release announcement**
 
-ChalkBox 2.0.2 is available for testing. Settings pages are now grouped under their modules, the optional DPS meter starts closed, and the CurseForge art and listing kit is ready. It includes the existing DropSense map browser, MacroForge, The Bar, session history and other ChalkBox tools.
+ChalkBox 2.0.3 is available for testing, including a visibility fix for the Discoveries journal. Settings pages are now grouped under their modules, the optional DPS meter starts closed, and the CurseForge art and listing kit is ready. It includes the existing DropSense map browser, MacroForge, The Bar, session history and other ChalkBox tools.
 
 **Screenshot captions (for actual in-game images only)**
 

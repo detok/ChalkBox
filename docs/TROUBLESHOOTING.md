@@ -1,5 +1,10 @@
 # Troubleshooting
 
+## 2.0.3: Discoveries controls appear without a panel
+
+Discoveries now keeps its main background readable when **Global Appearance → background strength** is zero, and brings the journal to the front when opened. Update to 2.0.3, use `/reload`, and type `/chalk drops map`. If controls still behave oddly, enable `/console scriptErrors 1` and capture the Lua error.
+
+
 ## 2.0.2: Settings navigation or Combat Meter
 
 **Nested pages:** Open Options → AddOns → ChalkBox. Select a module (for example, The Bar), then select its nested Modules or Appearance page. The home page has shortcuts to the primary modules. Saved options have not been reset or renamed.
@@ -8,7 +13,7 @@
 
 **Settings page won't open:** Try /chalk, then the parent page. Some Forever Settings builds do not automatically expand the parent when a nested page is opened directly; ChalkBox now opens its parent first.
 
-**CurseForge file confusion:** The playable file is ChalkBox-2.0.2.zip. ChalkBox-CurseForge-Media-2.0.2.zip contains artwork and listing copy; it is not an installable addon.
+**CurseForge file confusion:** The playable file is ChalkBox-2.0.3.zip. ChalkBox-CurseForge-Media-2.0.3.zip contains artwork and listing copy; it is not an installable addon.
 
 
 These steps are safe and require no SavedVariables deletion or client reset.
