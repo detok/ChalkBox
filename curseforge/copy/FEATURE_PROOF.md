@@ -1,6 +1,6 @@
 # Feature-claim audit — verify before publishing
 
-**Baseline:** ChalkBox v1.8.6, pending release on GitHub `main` as of November 13, 2026. “Implemented” means code is present and automated tests exercise it where appropriate, **not** a guarantee of identical behavior in every Forever client.
+**Baseline:** ChalkBox v1.8.6, prepared against the GitHub release source as of November 13, 2026. “Implemented” means code is present and automated tests exercise it where appropriate, **not** a guarantee of identical behavior in every Forever client.
 
 | Feature | Code and source | Responsible public claim | Boundary |
 | --- | --- | --- | --- |
