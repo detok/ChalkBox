@@ -2,7 +2,7 @@
 
 ## Installation from GitHub (always available)
 
-1. Visit **https://github.com/detok/ChalkBox/releases/latest** or the [GitHub Releases index](https://github.com/detok/ChalkBox/releases) and download **`ChalkBox-<version>.zip`** — **not** GitHub's “Source code” archive.
+1. Visit **https://github.com/detok/ChalkBox/releases** or the [GitHub Releases index](https://github.com/detok/ChalkBox/releases) and download **`ChalkBox-<version>.zip`** — **not** GitHub's “Source code” archive.
 2. Find your **World of Warcraft: Forever** installation using Battle.net's game menu → **Show in Explorer / Finder**, then open its `Interface/AddOns` directory.
 3. Extract the included **`ChalkBox`** folder directly into `Interface/AddOns`. Final path: `Interface/AddOns/ChalkBox/ChalkBox.toc`. The `ChalkBox_Camelot.toc` should be next to it.
 4. Enable ChalkBox on the character-select AddOns menu, enter the game, then type **`/chalk`** or **`/cb`**.
