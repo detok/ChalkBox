@@ -21,7 +21,7 @@ Welcome! ChalkBox is a single addon; all sections live in **Esc → Options → 
 - **PROFESSION: possible**: An item belongs to a family associated with one of your current crafts; check the actual recipes.
 - **No extra line**: No strong information available. **Silence does not mean safe to sell.**
 
-Hold **Shift** on a relevant item to see more learned recipe uses. Use `/chalk loot scan` after opening the profession window. Use `/chalk loot status` to check whether the external catalog was indexed. The optional third-party recipe library is not required for your learned recipe scanner or camping hints; see [Recipe data](RECIPE_DATA.md).
+Hold **Shift** on a relevant item to see more learned recipe uses. Use `/chalk loot scan` after opening the profession window. Use `/chalk loot status` to confirm the **bundled** catalog was indexed. **All 2,511 Forever recipes are bundled now.** There is no second addon to download. The offline catalog helps discover possible uses, while the actual profession window is still the only proof your character knows a recipe. See [Recipe data](RECIPE_DATA.md).
 
 ChalkBox does not click vendor buttons or automate selling. Always review items before deleting or selling them.
 

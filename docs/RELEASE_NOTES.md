@@ -1,30 +1,37 @@
-# ChalkBox 1.5.1 — Public standalone launch 🎉
+# ChalkBox 1.6.0 — One-download Forever recipe intelligence
 
-**ChalkBox now has its own public GitHub project.** This release packages exactly **one** addon: `ChalkBox-1.5.1.zip`.
+This is our first **truly self-contained** recipe-aware LootSense release. **There is only one install: ChalkBox-1.6.0.zip.** No other addons, setup tools, game web APIs or additional downloads are needed.
 
-## What's included
+## 2,511 Forever recipes, included
 
-- **LootSense** — warns about quest items, personal keep-list items, learned-recipe materials and verified Forever camping reagents. It does not sell or delete anything.
-- **CampSense** — checks actual Camp Benefits when the client permits aura reads, and shows a visible, fading center-screen reminder when a camping benefit appears missing or nearly expired.
-- **TrailBar** — 18px screen-reserved XP/hour, level ETA and gold tracker.
-- **Emota** — intermittent character personality with race/class and resting-area context.
-- **QuietGuard** — configurable nuisance invites and duel suppression.
-- **QuestSense** — optional native zone-quest watch helpers.
+ChalkBox now embeds **LibProfessionDB 1.9.1's Forever-only recipe core (2,511 spells across ten professions)** and the public-domain **LibStub** loader. No Classic/TBC/Retail data trees or unrelated Ace3/LibVersionCheck features are bundled. The game reads the database locally; your tooltip works without an internet connection.
 
-## What's different about the public repository
+**Attribution and licenses:** the embedded library and its data are (c) 2026 **Pimptasty**, under MIT. The original license is packaged unchanged at `ChalkBox/Libs/LibProfessionDB-1.0/LICENSE`. LibStub is explicitly public domain. ChalkBox's own modules remain MIT (c) 2026 Detok. Source and verification details: [RECIPE_DATA.md](RECIPE_DATA.md). No scraping or copy of proprietary Wowhead files.
 
-- One clean addon folder, **no** Don’t Sell That or EmotaSpeak ZIPs.
-- Reproducible packaging, GitHub Actions Lua 5.1 tests, public issue templates, MIT license, contribution and troubleshooting guides.
-- The addon artwork and saved settings are carried forward; updating from 1.5.0 is an ordinary folder replacement.
-- The optional LibProfessionDB adapter **does not redistribute** its external database and cannot verify that every recipe is known without an actual profession scan.
+## Smarter, safer LootSense
 
-## Install
+- **Known recipe:** only when the character's actual learned profession list confirms it. Shows recipe name, profession and ingredient requirement (if available).
+- **Potential use:** a validated Forever catalog entry exists but it's **not confirmed learned**. Ingredients relevant to your own profession are prioritized.
+- **Other profession:** not a claim you personally need the material.
+- The game can resolve recipe names from spell IDs; if the spell is not available, it tries the crafted item name. A numeric fallback is honestly labeled instead of inventing a name.
+- An ingredient that you already have enough of says how much is in bags and how much one craft takes, rather than endlessly repeating a shortage indicator.
+- Quest and manually protected items take priority. Verified camp reagents and utilities remain supported.
+- Unknown does not mean **safe to sell**. No automated selling, destroying, item movement, crafting, auction searches or unsolicited chat.
 
-1. Download **ChalkBox-1.5.1.zip** below. Do not download GitHub's automatic *Source code* ZIP.
-2. Unzip to `World of Warcraft/_classic_era_/Interface/AddOns/` or your Forever install's equivalent folder. Result: `Interface/AddOns/ChalkBox/ChalkBox.toc`.
-3. Enable ChalkBox and use `/reload`.
-4. Type `/chalk` to open settings, or `/chalk prep test` to check that on-screen reminders work.
+## All existing modules retained
 
-**Public prerelease:** Automated Lua 5.1 tests and ZIP validation run on every PR and release. Forever-specific native APIs and the optional third-party recipe adapter still rely on community in-game feedback. Please [report a bug](https://github.com/detok/ChalkBox/issues/new/choose) if something behaves differently in your client.
+CampSense checks actual Camp Benefits and shows the nine-second onscreen reminder; TrailBar, QuietGuard, Emota, QuestSense and your existing settings all remain. The existing ChalkBox addon folder replaces the old one without changing your SavedVariables.
 
-Source code and documentation: [github.com/detok/ChalkBox](https://github.com/detok/ChalkBox).
+## Install / confirm
+
+1. Download **ChalkBox-1.6.0.zip** from this release, not GitHub's automatically generated source ZIP.
+2. Extract the `ChalkBox/` folder into your game client's `Interface/AddOns/`.
+3. Launch or `/reload`, then type **`/chalk loot status`**. The offline recipe catalog should say **bundled**, with roughly 2,511 indexed recipes.
+4. Open each profession window once to identify recipes your character actually knows. Type `/chalk loot scan` if needed.
+5. Hover a reagent such as Light Leather to see specific **potential** and **known** uses. Test CampSense with `/chalk prep test`.
+
+## Validation
+
+The automated release pipeline checks Lua 5.1 syntax, the entire ChalkBox suite, a live load of the **actual bundled 2,511-recipe dataset**, ZIP integrity, deterministic packaging and original MIT license/source checks.
+
+Still a **prerelease** until tested in a real WoW Forever game session, especially localized recipe-name lookups and UI restrictions. Please [report a problem](https://github.com/detok/ChalkBox/issues/new/choose) if a specific recipe or tooltip appears incorrectly.

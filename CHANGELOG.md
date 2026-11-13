@@ -2,6 +2,15 @@
 
 All notable changes to the public ChalkBox addon are documented here.
 
+## 1.6.0 — Complete offline Forever recipes in one download
+
+- **Bundled the MIT-licensed LibProfessionDB 1.9.1 Forever-only database** (2,511 recipes), with original Pimptasty copyright/license and the public-domain LibStub loader.
+- Replaced the optional external database install with a truly self-contained ChalkBox ZIP.
+- Fixed recipe matching against static entries lacking localized recipe names. Names resolve from the client spell API first, then crafted-item names, with an honest ID fallback.
+- Made offline recipe indexing deterministic, improved tooltip advice when you already have enough materials, and retained the distinction between **known recipe** and **potential use**.
+- Added an integration test loading all 2,511 real bundled recipes and archive/license checks.
+- Original standalone addons are still excluded; CampSense, TrailBar, QuietGuard, Emota and QuestSense unchanged.
+
 ## 1.5.1 — Public launch
 
 - Established **detok/ChalkBox** as the one-and-only public home for the combined addon.

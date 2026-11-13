@@ -1,11 +1,21 @@
-# Third-party acknowledgements
+# Third-party notices and provenance
 
-**ChalkBox itself** is © 2026 Detok, released under the repository's MIT license.
+### LibProfessionDB 1.9.1 — Pimptasty
 
-**LibProfessionDB** (by **Pmptasty**) is a separate optional World of Warcraft profession-recipe library. The ChalkBox `RecipeAdvisor.lua` module is an independently written adapter that calls its public addon API if the library is installed. **No LibProfessionDB source, recipe dataset, Ace3, or LibVersionCheck files are bundled here.**
+This distribution includes an embedded **Forever-only** copy of **LibProfessionDB-1.0**, written by **Pimptasty** (Copyright (c) 2026 Pimptasty), released under the **MIT License**.
 
-- Project: https://www.curseforge.com/wow/addons/libprofessiondb
-- License and attribution for an installed library are governed by the library's own upstream distribution. If we ever bundle it, we will audit the exact release and preserve its copyright and license notices.
-- ChalkBox does not scrape Wowhead or download recipe data at runtime.
+- Original project: https://www.curseforge.com/wow/addons/libprofessiondb
+- Forever-only vendored snapshot source: https://github.com/JF10R/comradeCraft/tree/master/ComradeCraft/Libs/LibProfessionDB-1.0
+- Exact unmodified license: `ChalkBox/Libs/LibProfessionDB-1.0/LICENSE` (also included in the downloadable ZIP).
+- Original library source Git blob: `f88a046c61bb4e3a3fda5172f2265639ee921d1d`.
+- The library and data retain their own original authorship; ChalkBox only supplies its independent item-relevance adapter.
 
-Earlier versions of ChalkBox were developed alongside the owner's separate Don’t Sell That and EmotaSpeak addons. Those independently installable packages are **not part of this repository or release**.
+### LibStub — public domain
+
+Includes the original **LibStub v2** loader, placed in the **public domain** by its authors (Kaelten, Cladhaire, ckknight, Mikk, Ammo, Nevcairiel, joshbork). Original source notice remains in `ChalkBox/Libs/LibStub/LibStub.lua`.
+
+### ChalkBox
+
+Original ChalkBox modules are Copyright (c) 2026 **Detok**, MIT-licensed as documented in `LICENSE` and `ChalkBox/LICENSE`.
+
+**No DontSellThat or EmotaSpeak standalone addon files** are shipped. No Wowhead scraping or proprietary recipe files are bundled. See [the full data/license explanation](docs/RECIPE_DATA.md).

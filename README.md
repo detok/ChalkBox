@@ -41,7 +41,7 @@ LootSense: KNOWN RECIPE: Camp Tent (Leatherworking) - 3/5 in bags
 
 Open your crafting profession windows once after installing. `/chalk loot scan` refreshes scans, and `/chalk loot status` explains what's available. Hold **Shift** over an ingredient for more learned recipe uses, when detected.
 
-An optional separately installed **[LibProfessionDB](https://www.curseforge.com/wow/addons/libprofessiondb)** can supply a broader *potential-use* catalog. **ChalkBox does not bundle its third-party files**, and compatibility with that optional library still needs live-client verification. It must never say *known recipe* unless your character's own data supports it. See [recipe data and licensing](docs/RECIPE_DATA.md).
+**No additional download needed:** ChalkBox now **includes LibProfessionDB's 2,511 WoW Forever recipes** and its required LibStub support inside the one ZIP. The library is credited to **Pimptasty**, and the original MIT copyright/license is preserved. ChalkBox's own code decides item relevance. The bundled database tells us what recipes *exist*, not what your character knows. Your profession-window scan is still the only proof of learned recipes. See [recipe data and licensing](docs/RECIPE_DATA.md).
 
 **ChalkBox will never declare an unknown item safe to sell.** It doesn't automate selling, trading, deleting, purchasing or item use.
 
@@ -85,6 +85,6 @@ GitHub Actions runs these checks on pull requests, then publishes the single-add
 
 ## License and acknowledgements
 
-**MIT-licensed** — see [LICENSE](LICENSE). Created by **Detok**. Thanks to the WoW Forever community for testing and feedback. ChalkBox's optional recipe-library adapter credits **Pmptasty / LibProfessionDB**; no copy of that project or its database is included here. More at [NOTICE](NOTICE.md).
+**MIT-licensed** — see [LICENSE](LICENSE). Created by **Detok**. Thanks to the WoW Forever community for testing and feedback. This release bundles the separately MIT-licensed **LibProfessionDB 1.9.1 by Pimptasty**, with its copyright notice intact, and the public-domain **LibStub**. More at [NOTICE](NOTICE.md).
 
 If something looks wrong in your game, please [open a bug report](../../issues/new/choose). Include your WoW client build, ChalkBox version and the exact tooltip or message you saw.
