@@ -77,9 +77,19 @@ Set the Blizzard meter to your preferred DPS/damage/healing statistic and Curren
 
 To keep only Blizzard's meter, turn off **Show compact DPS meter window** under ChalkBox → Combat Meter or type `/chalk meter hide`. The built-in gear menu still works. Use `/chalk meter native off` to remove the extra gear-menu entry, `/chalk meter native on` to restore it, or `/chalk meter native status` to diagnose support. This feature relies on the Forever `MENU_DAMAGE_METER_WINDOW_SETTINGS` menu extension and will quietly do nothing when that API is missing.
 
-## TrailBar — customizable adventure dashboard (v1.9.1)
+## The Bar — customizable adventure dashboard (v1.9.2)
 
 The same **18px** strip now supports XP, XP/hour, estimated time to level, session time, gold/net change, **free equipped-bag slots, equipment durability, rested XP, home/world latency and Hunter pet health**. No new floating bar or additional screen height.
+
+### New in v1.9.2 — Repair and the right-click menu
+
+**The Bar** is the new display name for TrailBar. Existing preferences and commands are unchanged. The **Repair** stat is enabled by default and occupies a small block on the right when screen space allows.
+
+At a repair merchant, the addon displays the actual repair-all quote (`Repair 2g`). After it has observed one valid vendor quote while your equipment is damaged, it can display a **rough estimate** away from the merchant (`Repair ~2g`) based on subsequent equipped durability loss. The current repair quote can include damaged carried gear; the extrapolated estimate models *equipped* wear only. Prices and discounts can differ at the next merchant. If no valid sample exists or the gear durability pool changed substantially, the module says `Repair --`, not zero. Hover for the reason. **ChalkBox never automatically repairs anything.**
+
+**Right-click** a module outside Edit Mode to open a Blizzard-style menu: hide/show the selected stat, move it between the three sections, select text alignment, enter/finish Edit Mode, reset positions, move or hide The Bar, and open settings. **Right-click an empty part of The Bar** to restore hidden modules using the general menu. In Edit Mode, right-click retains the original quick alignment cycle. Left-clicking Bag Value still switches **Junk / Total**.
+
+Quick command: `/chalk bar stat repair on|off`. Settings live at **ChalkBox → The Bar Stats / The Bar Appearance**.
 
 ### Bag value: Junk vs. Total (v1.9.1)
 
@@ -99,7 +109,7 @@ Values use **Forever's real APIs** and are never invented. If the client lacks t
 
 ### Change the layout
 
-Open **Esc → Options → AddOns → ChalkBox → TrailBar Stats**. Ten switches independently control XP/hour, level ETA, session time, gold, bags, gear, rested XP, latency, Hunter pet status and optional vendor bag value. Level/XP always remains visible.
+Open **Esc → Options → AddOns → ChalkBox → TrailBar Stats**. Eleven switches independently control XP/hour, level ETA, session time, gold, bags, gear, rested XP, latency, Hunter pet status optional vendor bag value and repair quotes/estimates. Level/XP always remains visible.
 
 Choose one of three quick profiles:
 
@@ -111,13 +121,13 @@ Choose one of three quick profiles:
 
 The strip **automatically hides lower-priority widgets** when the UI width gets too small, while preserving your saved choices. Increasing the display width brings the fields back. This avoids text overlapping on narrow screens. Use `/chalk bar stats` to compare enabled vs. currently shown modules.
 
-Commands: `/chalk bar stats balanced`, `/chalk bar stats all`, `/chalk bar stats minimal`, and `/chalk bar stat bags|gear|rested|pet|latency|rate|eta|time|gold|bagvalue on|off`. Existing bar placement, reserved screen space, session reset and diagnostics commands remain unchanged.
+Commands: `/chalk bar stats balanced`, `/chalk bar stats all`, `/chalk bar stats minimal`, and `/chalk bar stat bags|gear|rested|pet|latency|rate|eta|time|gold|bagvalue|repair on|off`. Existing bar placement, reserved screen space, session reset and diagnostics commands remain unchanged.
 
 ### New in v1.9 — Edit Mode and transparency
 
 Open **Esc → Options → AddOns → ChalkBox → TrailBar Appearance**. The bar now uses a Blizzard-like **neutral charcoal** background. Move **Background opacity** anywhere from **0%** (just the text and XP underline) to **100%** (fully opaque); the slider does not fade the actual numbers. `/chalk bar opacity 0` also works.
 
-Choose **Edit Bar** to turn on soft amber highlight regions behind the text. The bar is divided conceptually into **Left / Center / Right** thirds. Grab and **drag a module left or right** to place it in another zone; drag past another module to change the order within that zone. **Right-click a stat while editing** to cycle its *text alignment* left, center or right inside its own block. Click **Done Editing** to relock and prevent accidental changes. The **Reset Layout** button puts all eleven stats back in their default zones/order.
+Choose **Edit Bar** to turn on soft amber highlight regions behind the text. The bar is divided conceptually into **Left / Center / Right** thirds. Grab and **drag a module left or right** to place it in another zone; drag past another module to change the order within that zone. **Right-click a stat while editing** to cycle its *text alignment* left, center or right inside its own block. Click **Done Editing** to relock and prevent accidental changes. The **Reset Layout** button puts all twelve stats back in their default zones/order.
 
 Layout and text alignment are stored **per character** in SavedVariables. Your Hunter does not have to use the same order as another character. Stat visibility switches and overall bar style remain in regular addon settings. When screens are too narrow, responsive priority hiding still applies *temporarily*, without altering the saved order.
 

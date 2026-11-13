@@ -62,12 +62,12 @@ local function Button(panel, caption, x, y, w, fn)
     return button
 end
 
-local function Toggle(panel, caption, description, y, value, onChange, x)
+local function Toggle(panel, caption, description, y, value, onChange, x, labelWidth)
     x = x or 24
     local check = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
     check:SetSize(25, 25)
     check:SetPoint("TOPLEFT", panel, "TOPLEFT", x, y)
-    Label(panel, caption, "GameFontNormal", x + 34, y - 4, 445)
+    Label(panel, caption, "GameFontNormal", x + 34, y - 4, labelWidth or 445)
     if description then
         Label(panel, description, "GameFontHighlightSmall", x + 34, y - 28, 445)
     end
@@ -114,9 +114,9 @@ local function MakeHome()
         {"loot","LootSense","Item insights and personal keep list"},
         {"loothighlight","LootSense Appearance","Verified reagent highlighting"},
         {"quests","QuestSense","Native accepted-quest watches"},
-        {"bar","TrailBar","Bar position and bag correction"},
-        {"barstats","TrailBar Stats","Stats, toggles and presets"},
-        {"barappearance","TrailBar Appearance","Drag layout and opacity"},
+        {"bar","The Bar","Bar position and bag correction"},
+        {"barstats","The Bar Stats","Stats, toggles and presets"},
+        {"barappearance","The Bar Appearance","Drag layout and opacity"},
         {"emota","Emota","Automatic emote personality"},
         {"races","Emota Race Behavior","Racial flavor and live presets"},
         {"catalog","Emote Catalog","Emotes and individual permissions"},
@@ -323,7 +323,7 @@ local function MakeQuests()
 end
 
 local function MakeBar()
-    local panel=Panel("TrailBar",
+    local panel=Panel("The Bar",
         "Keep the 18px bar clean. Set placement and adjust Blizzard's separate bags.")
     Label(panel,"BAR POSITION","GameFontNormalLarge",28,-108)
     Button(panel,"Stats & Presets",282,-100,126,function() Activate("barstats") end)
@@ -399,7 +399,7 @@ local function MakeBar()
 end
 
 local function MakeBarStats()
-    local panel=Panel("TrailBar Stats",
+    local panel=Panel("The Bar Stats",
         "Choose visible stats. The 18px strip automatically fits the screen width.")
     local options={
         {"bags","Free bag slots","Includes profession-bag free slots"},
@@ -412,10 +412,14 @@ local function MakeBarStats()
         {"time","Session timer","Since login or last bar reset"},
         {"gold","Gold and session net","Current money and net change"},
         {"bagvalue","Bag vendor value","Click the stat or the mode button to flip"},
+        {"repair","Repair estimate","Exact at a repair vendor; ~ based on prior quote"},
     }
     for index,item in ipairs(options) do
         local key,title,description=unpack(item)
-        Toggle(panel,title,nil,-110-(index-1)*26,
+        local column=math.floor((index-1)/6)
+        local line=(index-1)%6
+        local x=25+column*260
+        Toggle(panel,title,nil,-110-line*35,
             function()
                 if ChalkBox_BarStatEnabled then
                     return ChalkBox_BarStatEnabled(key)
@@ -427,14 +431,12 @@ local function MakeBarStats()
                 if ChalkBox_BarCommand then
                     ChalkBox_BarCommand("stat "..key..(on and " on" or " off"))
                 end
-            end)
-        -- Keep explanatory text on the right; don't shrink the hit target.
-        if key~="bagvalue" then
-            Label(panel,description,"GameFontHighlightSmall",
-                288,-116-(index-1)*26,225)
-        end
+            end,x,214)
     end
-    local modeButton=Button(panel,"Value: Total",303,-343,199,function()
+    Label(panel,"Right-click any visible stat for its menu.",
+        "GameFontHighlightSmall",28,-325,490)
+    Label(panel,"Bag resale display:","GameFontHighlightSmall",28,-352,260)
+    local modeButton=Button(panel,"Value: Total",303,-340,199,function()
         if ChalkBox_BarBagValueModeToggle then
             ChalkBox_BarBagValueModeToggle()
         elseif ChalkBox_BarCommand then
@@ -461,7 +463,7 @@ local function MakeBarStats()
 end
 
 local function MakeBarAppearance()
-    local panel=Panel("TrailBar Appearance",
+    local panel=Panel("The Bar Appearance",
         "Blizzard-inspired charcoal, transparent background and a per-character drag layout.")
     Label(panel,"BACKGROUND","GameFontNormalLarge",28,-111,370)
     Label(panel,"Only the panel fades. Text, hover details and the XP line remain clear.",
@@ -505,11 +507,11 @@ local function MakeBarAppearance()
         mode:SetText("Edit mode: "..(ChalkBox_BarEditStatus and
             ChalkBox_BarEditStatus() and "ON — move modules" or "OFF — locked"))
     end)
-    Label(panel,"Drag a module within the bar to reorder it or across the left/",
+    Label(panel,"Outside Edit Mode, right-click a stat for its context menu.",
         "GameFontHighlightSmall",28,-378,500)
-    Label(panel,"center/right thirds to change its zone. Right-click while editing",
+    Label(panel,"Inside Edit Mode, drag to move modules between thirds;",
         "GameFontHighlightSmall",28,-400,500)
-    Label(panel,"to cycle text alignment inside the module. Layout is per character.",
+    Label(panel,"right-click cycles alignment. Layout is per character.",
         "GameFontHighlightSmall",28,-422,500)
     return panel
 end
@@ -962,9 +964,9 @@ local function Register()
                 {"loot", "LootSense"},
                 {"loothighlight", "LootSense Appearance"},
                 {"quests", "QuestSense"},
-                {"bar", "TrailBar"},
-                {"barstats", "TrailBar Stats"},
-                {"barappearance", "TrailBar Appearance"},
+                {"bar", "The Bar"},
+                {"barstats", "The Bar Stats"},
+                {"barappearance", "The Bar Appearance"},
                 {"emota", "Emota"},
                 {"races", "Emota Race Behavior"},
                 {"catalog", "Emote Catalog"},
@@ -989,9 +991,9 @@ local function Register()
             {"loot", "LootSense"},
                 {"loothighlight", "LootSense Appearance"},
             {"quests", "QuestSense"},
-            {"bar", "TrailBar"},
-                {"barstats", "TrailBar Stats"},
-                {"barappearance", "TrailBar Appearance"},
+            {"bar", "The Bar"},
+                {"barstats", "The Bar Stats"},
+                {"barappearance", "The Bar Appearance"},
             {"emota", "Emota"},
                 {"races", "Emota Race Behavior"},
             {"catalog", "Emote Catalog"},

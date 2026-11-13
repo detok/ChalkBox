@@ -73,6 +73,47 @@ assert(valuation.totalCopper==10379 and valuation.junkCopper==1304 and
     "newly cached item prices reconcile both complete valuation modes")
 prices[300]=nil
 prices[500]={quality=nil,price=75}
+-- Exact repair-all cost is available only with a repair merchant open;
+-- outside the merchant we use a prior quote or explicitly return unknown.
+_G.ChalkBoxZoneDB={}
+local merchantOpen=false
+local quotedCost=30000
+_G.MerchantFrame={IsShown=function() return merchantOpen end}
+_G.CanMerchantRepair=function() return true end
+_G.GetRepairAllCost=function()
+    assert(merchantOpen,"repair API must NEVER be called without merchant")
+    return quotedCost,true
+end
+assert(ChalkBox_BarReadStats(playerMax).repair==nil,
+    "repair price scanning is disabled when the Bar module is off")
+local repair=ChalkBox_BarReadStats(playerMax,false,true).repair
+assert(repair.state=="unavailable" and not repair.copper,
+    "before a vendor quote an exact-looking repair estimate must not be invented")
+merchantOpen=true
+repair=ChalkBox_BarReadStats(playerMax,false,true).repair
+assert(repair.state=="exact" and repair.copper==30000 and
+    repair.missing==150,
+    "real repair-all quote is shown only at a real repair vendor")
+assert(ChalkBoxZoneDB.repairReference.rate==200,
+    "per-character calibration is derived from observed bill and worn durability")
+merchantOpen=false
+items[1][1]=70
+repair=ChalkBox_BarReadStats(playerMax,false,true).repair
+assert(repair.state=="estimate" and repair.copper==32000,
+    "missing wear scales the last real vendor quote and is marked approximate")
+items[17][2]=200
+repair=ChalkBox_BarReadStats(playerMax,false,true).repair
+assert(repair.state=="needs-calibration" and not repair.copper,
+    "changing the durability pool drastically invalidates stale estimates")
+items[17][2]=100
+items[1][1]=80
+merchantOpen=true
+quotedCost=0
+repair=ChalkBox_BarReadStats(playerMax,false,true).repair
+assert(repair.state=="exact" and repair.copper==0,
+    "real merchant zero is valid and different from unavailable")
+merchantOpen=false
+quotedCost=30000
 local s=ChalkBox_BarReadStats(playerMax)
 assert(s.bags.free==10 and s.bags.total==52 and s.bags.general==8
     and s.bags.special==2 and s.bags.bags==5,

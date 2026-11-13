@@ -347,9 +347,9 @@ Control("15"):Click()
 assert(ChalkBoxZoneDB.limit==15,"autowatch limit can be selected from native options")
 Control("Tracking Diagnostics"):Click()
 assert(printed[#printed]=="quests status")
-local barChecks=FindCheckByParentTitle("TrailBar")
+local barChecks=FindCheckByParentTitle("The Bar")
 assert(#barChecks==4)
-categories["TrailBar"].panel:Show()
+categories["The Bar"].panel:Show()
 barChecks[2]:Click(true)
 assert(ChalkBoxDB.bar=="bottom","placement selection must update saved bar")
 assert(barChecks[4].checked==true,"screen reservation should be enabled by default")
@@ -360,21 +360,21 @@ assert(ChalkBoxDB.barReserve==true,"screen reservation can be re-enabled")
 Control("Reset Session"):Click()
 assert(printed[#printed]=="bar reset")
 Control("Appearance"):Click()
-assert(opened[#opened]==categories["TrailBar Appearance"].ID,
-    "TrailBar links into its own appearance and drag-layout page")
+assert(opened[#opened]==categories["The Bar Appearance"].ID,
+    "The Bar links into its own appearance and drag-layout page")
 Control("Stats & Presets"):Click()
-assert(opened[#opened]==categories["TrailBar Stats"].ID,
-    "TrailBar should navigate directly to the new stats page")
-categories["TrailBar Appearance"].panel:Show()
+assert(opened[#opened]==categories["The Bar Stats"].ID,
+    "The Bar should navigate directly to the new stats page")
+categories["The Bar Appearance"].panel:Show()
 Control("Edit Bar"):Click()
 assert(editor,"native drag-layout edit toggle starts edit mode")
 Control("Done Editing"):Click()
 assert(not editor,"done exits editor without losing saved layout")
 Control("Reset Layout"):Click()
 assert(printed[#printed]=="bar layout reset","reset layout button reaches controller")
-categories["TrailBar Stats"].panel:Show()
-local statsChecks=FindCheckByParentTitle("TrailBar Stats")
-assert(#statsChecks==10,"10 independent stats including bag resale are accessible")
+categories["The Bar Stats"].panel:Show()
+local statsChecks=FindCheckByParentTitle("The Bar Stats")
+assert(#statsChecks==11,"eleven independent stats include bag value and repair estimate")
 assert(statsChecks[1].checked==true and statsChecks[4].checked==false,
     "bag space is on by default and optional latency starts off")
 statsChecks[4]:Click(true)
@@ -382,8 +382,8 @@ assert(ChalkBoxDB.barStats.latency==true,
     "latency checkbox persists the new module preference")
 statsChecks[2]:Click(false)
 assert(ChalkBoxDB.barStats.gear==false,"gear checkbox disables the module")
-assert(not statsChecks[10].checked,
-    "new vendor value module starts optional")
+assert(not statsChecks[10].checked and statsChecks[11].checked,
+    "vendor value starts optional while repair status starts enabled")
 statsChecks[10]:Click(true)
 assert(ChalkBoxDB.barStats.bagvalue,
     "new vendor total module can be enabled through native settings")
@@ -402,8 +402,9 @@ Control("All"):Click()
 assert(ChalkBoxDB.barStats.gear and ChalkBoxDB.barStats.latency,
     "All preset enables optional modules")
 Control("Balanced"):Click()
-assert(ChalkBoxDB.barStats.gear and not ChalkBoxDB.barStats.latency,
-    "Balanced preset restores tested defaults")
+assert(ChalkBoxDB.barStats.gear and ChalkBoxDB.barStats.repair and
+    not ChalkBoxDB.barStats.latency,
+    "Balanced preset restores repair and gear while leaving latency off")
 local emotaChecks=FindCheckByParentTitle("Emota")
 categories["Emota"].panel:Show()
 assert(#emotaChecks==5)
@@ -535,7 +536,7 @@ end
 assert(#sliders==6,"four existing sliders plus bag highlight and TrailBar appearance opacity")
 local appearanceSlider,highlightSlider
 for _,frame in ipairs(sliders) do
-    if frame.parent==categories["TrailBar Appearance"].panel then
+    if frame.parent==categories["The Bar Appearance"].panel then
         appearanceSlider=frame
     end
     if frame.parent==categories["LootSense Appearance"].panel then
@@ -561,7 +562,7 @@ for _,frame in ipairs(sliders) do
 end
 local bagSlider
 for _,frame in ipairs(sliders) do
-    if frame.parent==categories["TrailBar"].panel then bagSlider=frame end
+    if frame.parent==categories["The Bar"].panel then bagSlider=frame end
 end
 assert(bagSlider and bagSlider.value==0,"bag offset starts at Blizzard default")
 bagSlider:SetValue(-30)

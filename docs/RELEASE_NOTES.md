@@ -1,18 +1,19 @@
-# ChalkBox 1.9.1 — TrailBar Bag Resale Value
+# ChalkBox 1.9.2 — The Bar
 
-## Optional vendor bag valuation
+## Repair cost module
+- **Repair** appears in The Bar by default (and can be toggled under **The Bar Stats**).
+- With a repair merchant open, shows a verified **exact repair-all cost**, when exposed by the Forever API.
+- Elsewhere, shows a clearly marked **~ estimate**, scaled from a previous exact merchant quote and your currently missing equipped durability. Calibration is saved per character.
+- Without a usable observed quote, or when changed equipment makes extrapolation unreliable, shows **Repair --**. Never guesses a made-up repair price.
+- The hover detail explains exact vs approximate, worn item coverage, possible bag gear, and discounts. **No automatic repair or spending**.
 
-- Adds **Bag vendor value** to **Esc → Options → AddOns → ChalkBox → TrailBar Stats** (off by default so existing layouts stay the same).
-- Flip the same TrailBar module between **Value** (the vendor resale price of all equipped bag contents) and **Junk** (gray/poor-quality contents only).
-- **Left-click the module** outside Edit Mode to toggle. The native settings page has a `Value: Total / Value: Junk` button, too.
-- Slash controls: `/chalk bar stat bagvalue on`, `/chalk bar bagvalue junk|total|toggle`. The saved mode persists.
-- Every item stack is multiplied by the actual game-provided vendor sell price, not an auction or estimated market price.
-- Hover the stat to see both totals in exact gold/silver/copper, incomplete-price counts, and what is included.
-- If an item has an uncached, unavailable or protected price, ChalkBox shows a truthful **minimum known value (`>=`)** rather than fabricating an exact total.
-- Excludes bank items, worn equipment, and already-held gold. Makes **no inventory transactions**.
+## Right-click menus for The Bar
+- Right-click individual modules outside Edit Mode: toggle their visibility, move them between sections, choose text alignment, adjust bar placement, edit/reset the layout, and open The Bar's native settings.
+- Right-click unused Bar background for all module visibility controls, including restoring hidden widgets.
+- Menus use Blizzard_Menu when present, with legacy EasyMenu fallback. Configuration controls are disabled in combat.
+- In Edit Mode the original right-click alignment cycle remains; Bag Value left-click still flips Junk vs Total.
 
-The 18px height, adaptive width fit, draggable layout and other modules from 1.9.0 are retained. Existing bar settings and layouts are migrated automatically by adding the new opt-in stat at the end of the right section. Real-client visual testing remains recommended.
-
-## Version 1.9.0 features retained
-
-Editable TrailBar, charcoal opacity, known-recipe reagent green bag markers, native Item Insight tooltips, signed separate-bag offset, native settings pages and Emota race behavior are unchanged.
+## Naming and compatibility
+- TrailBar is now called **The Bar** in native UI and docs. Existing `/chalk bar` commands, old SavedVariables, existing on-disk Lua module names and layouts are **unchanged**.
+- All other 1.9.1 and 1.9.0 features are preserved.
+- Automated Lua 5.1 and installable ZIP validation; in-game look and menu testing is still recommended.
