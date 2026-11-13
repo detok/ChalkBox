@@ -1,6 +1,9 @@
 -- Discoveries 2.0.1: native dropdown selection, item search, sorting,
 -- source-specific statistics, empty map behavior and movable map control.
 _G.ChalkBoxZoneDB={}
+-- A transparent global theme must never make the journal body disappear.
+_G.ChalkBox_ThemeBackground=function() return 0.12,0.15,0.18,0 end
+_G.ChalkBox_ThemeAccent=function() return 0.2,0.8,0.7 end
 local frames={}
 local function Frame(kind,name,parent)
     local f={kind=kind,name=name,parent=parent,shown=false,text=""}
@@ -159,7 +162,17 @@ assert(button and button.parent==WorldMapFrame and button.shown,
 button.OnClick(button,"LeftButton")
 local journal=Find("ChalkBoxMapDiscoveries")
 assert(journal and journal:IsShown() and journal.w==660 and journal.h==616,
-    "2.0.1 journal uses a legible wide layout")
+    "Discoveries journal opens at the expected size")
+assert(journal.back and journal.back.color and journal.back.color[4]>=0.92,
+    "transparent global theme must not hide the Discoveries panel")
+assert(journal.edge and journal.edge.color and journal.edge.color[4]>=0.8,
+    "journal has a visible accent border")
+assert(journal.back.color[1]==0.12 and journal.stripe.color[2]==0.8,
+    "global theme colors still apply")
+_G.ChalkBox_ThemeBackground=function() error("theme unavailable") end
+ChalkBox_MapDiscoveriesThemeRefresh()
+assert(journal.back.color[4]>=0.92,
+    "a theme failure must not erase the existing journal background")
 local filterCount=0
 for _,f in ipairs(frames) do
     if f.kind=="Button" and f.parent==journal and f.text and

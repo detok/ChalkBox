@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.3 — Discoveries panel visibility (prerelease)
+- Keep the standalone Discoveries panel legible even with transparent global appearance settings.
+- Add a visible frame edge, bring the journal forward when opened and guard theme failures.
+- Regression-test transparent and failing theme callbacks while preserving all existing data and controls.
+
+
 ## 2.0.2 — Settings and CurseForge preparation
 
 - Grouped native AddOns settings beneath their parent modules. The Bar now owns Modules and Appearance; LootSense owns Appearance; Adventure Prep owns Toast Appearance; Emota owns Race Behavior and Emote Catalog.
