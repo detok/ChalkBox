@@ -38,11 +38,27 @@ Yes. Reset in ChalkBox's compact meter requests confirmation before resetting **
 
 ### Does ChalkBox replace my bags or action bars?
 
-No. The optional **0–80-point separate-bag offset** merely nudges Blizzard's regular bag layout; combined bags stay normal. Native Edit Mode's **Always Show Buttons** toggle for Action Bar 2 is a **WoW feature**, not a ChalkBox feature.
+No. The optional **vertical −120..+120-point separate-bag offset** merely nudges Blizzard's regular bag layout; combined bags stay normal. Native Edit Mode's **Always Show Buttons** toggle for Action Bar 2 is a **WoW feature**, not a ChalkBox feature.
 
 ### Can TrailBar show free slots, gear durability, rested XP, latency and pet health?
 
-**Yes—new in v1.8.6.** Open **ChalkBox → TrailBar Stats** to toggle nine optional widgets or choose Balanced / Minimal / All. Bag data includes specialized bag space, gear is weighted durability, and rested XP is a percent of one level. Hunter pet health shows unavailable instead of reading secret combat data. Some stats automatically hide on narrow screens and reappear when there is room.
+**Yes—expanded in v1.8.6.** Open **ChalkBox → TrailBar Stats** to toggle nine optional widgets or choose Balanced / Minimal / All. Bag data includes specialized bag space, gear is weighted durability, and rested XP is a percent of one level. Hunter pet health shows unavailable instead of reading secret combat data. Some stats automatically hide on narrow screens and reappear when there is room.
+
+### Can I drag stats within TrailBar or remove its background?
+
+Yes—new in **v1.9**. Go to **ChalkBox → TrailBar Appearance → Edit Bar** to drag modules into left/center/right sections, reorder them and right-click to change text alignment. Layout is saved per character; Reset Layout restores stock. Background opacity can be **0–100%** without fading the text.
+
+### Can ChalkBox highlight ingredients for recipes I know?
+
+Yes. **LootSense Appearance** adds subtle green insets on Blizzard bag buttons **only** for ingredients in recipes the current character has actually learned. It does not mark catalog-only potential uses, replace item icons or change rarities. You can disable it or adjust the strength.
+
+### How do I configure Emota's race personality?
+
+Open **Emota Race Behavior** to choose a race and adjust **Off / Subtle / Default / Expressive** weighting for live racial profiles. Other races appear as **planned** placeholders, not working feature claims. Emota's automatic master switch still starts off.
+
+### How does the vertical separate-bag slider work?
+
+The midpoint, **0**, is Blizzard's original bag position. Thumb up gives a negative offset to raise individual bags; thumb down gives positive offsets to lower them. Try `/chalk bags offset -35` or `/chalk bags offset 40`. Reset Bags restores 0.
 
 ### Why is one of my TrailBar stats hidden?
 
