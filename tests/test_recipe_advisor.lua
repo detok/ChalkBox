@@ -44,7 +44,7 @@ assert(loadfile("RecipeAdvisor.lua"))("ChalkBox")
 local events=frames[#frames]
 events.OnEvent(events,"PLAYER_ENTERING_WORLD")
 local state,total,count=ChalkBox_RecipeAdvisorStatus()
-assert(state=="ready" and total==4 and count==5,
+assert(state=="bundled" and total==4 and count==5,
     "read all relevant offline recipes once and construct item-to-recipes index")
 local advice=ChalkBox_RecipeAdvice("2318","Light Leather")
 assert(advice:find("POTENTIAL USE: Camp Tent",1,true) or
@@ -74,7 +74,7 @@ assert(ChalkBox_RecipeAdvice("999999","Unrelated")==nil,
     "do not invent relevance for unrelated items")
 dbEnabled=false
 ChalkBox_RecipeAdvisorRescan()
-assert(select(1,ChalkBox_RecipeAdvisorStatus())=="not available",
+assert(select(1,ChalkBox_RecipeAdvisorStatus())=="not loaded",
     "missing third-party database is a supported fallback, not a crash")
 assert(ChalkBox_RecipeAdvice("999","Untracked")==nil,
     "absence of external data must be quiet")
