@@ -390,11 +390,28 @@ local function MakeButton(parent,title,width,offset,action)
     button:SetScript("OnClick",action)
     return button
 end
--- Print is an explicit LOCAL-chat snapshot, not a party broadcast.
--- Never read/process the protected fields during combat.
+-- PRINT is an explicit one-line PARTY report, never an automated broadcast.
+-- Forever secret combat values MUST NOT be read or formatted in combat.
+local lastPartyReportAt=-1e9
 local function PrintFight()
     if type(InCombatLockdown)=="function" and InCombatLockdown() then
-        Chat("Finish combat before printing the fight; live totals are protected.")
+        Chat("Finish combat before reporting the fight; live totals are protected.")
+        return false
+    end
+    -- A party report is never silently redirected to SAY, RAID or local chat.
+    if type(IsInGroup)~="function" or not IsInGroup()
+        or (type(IsInRaid)=="function" and IsInRaid()) then
+        Chat("Join a party to use PRINT. Nothing was sent.")
+        return false
+    end
+    local send=C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
+    if type(send)~="function" then
+        Chat("This client has no supported party chat send API.")
+        return false
+    end
+    local now=type(GetTime)=="function" and GetTime() or nil
+    if Safe(now) and type(now)=="number" and now-lastPartyReportAt<3 then
+        Chat("Party report already requested. Give it a moment.")
         return false
     end
     local available,reason=IsAvailable()
@@ -419,31 +436,49 @@ local function PrintFight()
         title="Last"
     end
     if not sources or #sources==0 then
-        Chat("No completed fight data to print yet.")
+        Chat("No completed fight data to report.")
         return false
     end
-    -- Scan first. If ANY selected number/name is protected, do not print a
-    -- misleading, incomplete ranking or try a forbidden Lua conversion.
-    local entries={}
-    for i=1,math.min(#sources,db.rows) do
+    -- Keep it to ONE group message, top three combatants only. Validate
+    -- everything before calling chat; partial secret rankings never leak.
+    local parts={}
+    for i=1,math.min(#sources,3) do
         local source=sources[i]
         if not Safe(source) or type(source)~="table" then
-            Chat("The fight contains protected data. Try again after combat.")
+            Chat("Fight values are protected; try after combat.")
             return false
         end
         local name=source.name
         local amount=mode.perSecond and source.amountPerSecond or source.totalAmount
-        if not Safe(name) or type(name)~="string" or
-            not Safe(amount) or type(amount)~="number" then
-            Chat("Some fight values are still protected. Try again after combat.")
+        if not Safe(name) or type(name)~="string"
+            or not Safe(amount) or type(amount)~="number" then
+            Chat("Fight values are still protected; try after combat.")
             return false
         end
-        entries[#entries+1]={name=name,amount=amount}
+        -- Prevent control codes and chat markup from damaging the summary.
+        name=name:gsub("[%c|]","")
+        if name=="" then name="Unknown" end
+        parts[#parts+1]=string.format("%d %s %.0f",i,name,amount)
     end
-    Chat(mode.label.." | "..title.." | "..#entries.." players (local chat)")
-    for i,entry in ipairs(entries) do
-        Chat(string.format("%d. %s - %.0f",i,entry.name,entry.amount))
+    local message="CB "..mode.label.." ("..title.."): "..table.concat(parts," | ")
+    if #message>255 then
+        -- Avoid truncation by the chat API: drop lower-ranked entries.
+        while #message>255 and #parts>1 do
+            table.remove(parts)
+            message="CB "..mode.label.." ("..title.."): "..table.concat(parts," | ")
+        end
     end
+    if #message>255 then
+        Chat("Fight report is too long for party chat; nothing sent.")
+        return false
+    end
+    local ok,result=pcall(send,message,"PARTY")
+    if not ok or result==false then
+        Chat("Party chat blocked the report; nothing else was sent.")
+        return false
+    end
+    if Safe(now) and type(now)=="number" then lastPartyReportAt=now end
+    Chat("Party report submitted ("..#parts.." players).")
     return true
 end
 function ChalkBox_MeterPrintFight()
@@ -495,14 +530,18 @@ local function CreateWindow()
         end
     end)
     -- Zero branding/footer noise. Every button does something useful.
-    meterButton=MakeButton(header,"DPS",67,-224,function()
+    -- Fits at the minimum 300px width: DPS / Fight / PRINT / RESET / LOCK.
+    meterButton=MakeButton(header,"DPS",48,-241,function()
         Next(modes,"mode",SetMode)
     end)
-    sessionButton=MakeButton(header,"Fight",70,-146,function()
+    sessionButton=MakeButton(header,"Fight",60,-176,function()
         Next(sessions,"session",SetSession)
     end)
-    MakeButton(header,"PRINT",65,-72,function() PrintFight() end)
-    lockButton=MakeButton(header,"LOCK",60,-5,function()
+    MakeButton(header,"PRINT",52,-119,function() PrintFight() end)
+    MakeButton(header,"RESET",56,-58,function()
+        ChalkBox_MeterCommand("reset") -- existing confirmation; never immediate
+    end)
+    lockButton=MakeButton(header,"LOCK",50,-3,function()
         db.locked=not db.locked
         ApplyLocked()
     end)
@@ -589,7 +628,7 @@ end
 local function Help()
     Chat("/chalk meter [show|hide|toggle|dps|damage|hps|healing|taken|interrupts]")
     Chat("/chalk meter [current|last|overall|print|lock|unlock|icons class/spec/off|rows 5/8/12|opacity 35-100|reset]")
-    Chat("Drag the heading to move, bottom-right grip to resize; PRINT sends a local chat summary after combat.")
+    Chat("PRINT sends a single top-three summary to PARTY after combat; RESET asks before clearing all Blizzard sessions.")
 end
 function ChalkBox_MeterCommand(input)
     if not db then db=Settings() end
