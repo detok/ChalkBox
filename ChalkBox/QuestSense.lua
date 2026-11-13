@@ -168,6 +168,11 @@ local function Reconcile()
         lastZone=zoneKey
     end
     local before=Count(watched)
+    if #quests==0 and before>0 then
+        pending=true
+        lastReason="quest log still loading; preserving watched quests"
+        return
+    end
     local accepted={}
     for _,quest in ipairs(quests) do accepted[quest.id]=true end
     for id in pairs(settings.managed) do
@@ -182,7 +187,7 @@ local function Reconcile()
     local mode=settings.mode or "smart"
     local prioritized={}
     for _,quest in ipairs(quests) do
-        local score=scores[quest.id] or 0
+        local score=mode=="all" and 0 or (scores[quest.id] or 0)
         if mode~="zone" or score>=350 then
             prioritized[#prioritized+1]={id=quest.id,title=quest.title,score=score,
                 logIndex=quest.index}
@@ -214,7 +219,7 @@ local function Reconcile()
     -- Diff this addon's watches only; no clearing manual selection or
     -- resetting Blizzard's super-tracked quest.
     busy=true
-    local removed,added=0,0
+    local removed,added,failed=0,0,0
     for id in pairs(settings.managed) do
         if not desired[id] or not accepted[id] or not settings.enabled then
             if watched[id] then
@@ -225,7 +230,11 @@ local function Reconcile()
                         removed=removed+1
                         watched=after
                         settings.managed[id]=nil
+                    else
+                        failed=failed+1
                     end
+                else
+                    failed=failed+1
                 end
             else
                 settings.managed[id]=nil
@@ -243,23 +252,32 @@ local function Reconcile()
                         watched=after
                         settings.managed[id]=true
                         added=added+1
+                    else
+                        failed=failed+1
                     end
+                else
+                    failed=failed+1
                 end
             end
         end
     end
     busy=false
     settings.cleanup=nil
-    pending=false
+    pending=failed>0
     recentlyAccepted={}
-    lastReason="ready"
+    lastReason=failed>0 and ("watch API rejected "..failed..
+        " change(s); retry when the map is closed") or "ready"
     lastStats={accepted=#quests,candidates=#prioritized,
         watched=Count(watched),auto=Count(settings.managed),added=added,
         removed=removed,zone=name or "unknown",mode=mode,
         max=MaxWatches(),manual=manuallyWatched,initialWatches=before}
 end
 QueueUpdate=function()
-    if not settings or queued or busy or not API() then return end
+    if not settings or queued or busy then return end
+    if not API() then
+        lastReason="Forever C_QuestLog APIs not available"
+        return
+    end
     if not settings.enabled and not settings.cleanup then return end
     queued=true
     if C_Timer and type(C_Timer.After)=="function" then
