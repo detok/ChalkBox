@@ -50,6 +50,14 @@ Do not leave an extra folder such as `ChalkBox-1.6.1/ChalkBox/` between `AddOns`
 
 A missing annotation doesn't mean an item is safe to sell. Keep important items manually with `/chalk keep [item]`.
 
+## Class icons don't appear, or all players show the same icon
+
+Under **Options → AddOns → ChalkBox → Combat Meter**, choose **Class** (the default). The source class must be supplied by Blizzard's native `C_DamageMeter.classFilename` data. If no class is supplied, ChalkBox deliberately shows a neutral question mark.
+
+**Spec** uses Blizzard's `specIconID` when available; otherwise it falls back to the correct class. For traditional class emblems try `/chalk meter icons class`. If the icons aren't wanted, `/chalk meter icons off` returns the name column to its original width.
+
+If an emblem looks wrong, report the **ChalkBox version, Forever client build, visible player class, and a screenshot**. Do not assume icons can identify every pet or unclassified damage source.
+
 ## Combat Meter is empty or not displaying
 
 1. Type **`/chalk meter show`** or use **Options → AddOns → ChalkBox → Combat Meter → Show compact DPS meter window**.
