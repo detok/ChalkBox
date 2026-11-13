@@ -15,8 +15,8 @@
 - **Logo symbol:** custom chalk-drawn treasure/utility box or small open satchel inside a simple geometric frame. An optional soft four-point waypoint star can evoke “insight”; do not use Blizzard trademarks, official WoW iconography, or a copied class crest as the primary brand mark.
 - **Wordmark:** `ChalkBox` in a bold, highly legible face. Avoid thin script or medieval lettering that is unreadable at 200px.
 - **Color palette (starting point):**
-  - Midnight navy `#101B27` — backgrounds
-  - Deep blue-gray `#203342` — panels and outlines
+  - Blizzard-like charcoal `#141416` — backgrounds
+  - Neutral slate `#2B2C30` — panels and outlines
   - Warm parchment `#EFE3C4` — primary text
   - Antique gold `#DDAE61` — focus/accent
   - Muted teal `#67C6B7` — information/positive
@@ -35,14 +35,14 @@ Dimensions below are recommended **working canvases**, not assertions about Curs
 | P0 | `chalkbox-hero-1600x900.png` | 1600×900 landscape | Main headline “ChalkBox”, tagline, tasteful motif, empty clean area for real game screenshot insert later | GitHub README hero / CurseForge gallery |
 | P0 | `chalkbox-banner-1200x630.png` | 1200×630 landscape | Cropped marketing banner; product + very short value proposition | Social/OG thumbnail, README promotional image |
 | P1 | `chalkbox-feature-grid-1600x900.png` | 1600×900 landscape | Editorial overview of LootSense/TrailBar/QuestSense/CampSense/Combat Meter with short module labels | CurseForge gallery after screenshots available |
-| P1 | `chalkbox-trailbar-explainer-1600x900.png` | 1600×900 landscape | **Real screenshot** showing XP, bag free slots, gear durability, rested XP and gold (enabled metrics must actually fit); arrows/callouts only outside native pixels | Product screenshots/gallery |
-| P1 | `chalkbox-lootsense-example-1600x900.png` | 1600×900 landscape | **Real in-game tooltip**, captured showing known vs possible uses | Product screenshots/gallery |
+| P1 | `chalkbox-trailbar-explainer-1600x900.png` | 1600×900 landscape | **Real v1.9 screenshot** of movable TrailBar modules and neutral charcoal/transparent background, showing XP, bags, gear, rested and gold; real UI only | Product screenshots/gallery |
+| P1 | `chalkbox-lootsense-example-1600x900.png` | 1600×900 landscape | **Real v1.9 in-game item tooltip** with native CHALKBOX | ITEM INSIGHT formatting, plus verified reagent bag marker | Product screenshots/gallery |
 | P1 | `chalkbox-native-meter-print-1600x900.png` | 1600×900 landscape | **Real built-in damage meter menu**, with ChalkBox party print option visible and sensitive names hidden | Key differentiator screenshot |
 | P2 | `chalkbox-combat-meter-1600x900.png` | 1600×900 landscape | **Real ChalkBox compact meter**, class icons, modes and PRINT/RESET controls | Gallery |
 | P2 | `chalkbox-questsense-1600x900.png` | 1600×900 landscape | **Real native quest tracker** beside ChalkBox QuestSense settings | Gallery |
 | P2 | `chalkbox-adventure-prep-1600x900.png` | 1600×900 landscape | **Real toast**, visually unobtrusive and readable | Gallery |
-| P2 | `chalkbox-bag-offset-1600x900.png` | 1600×900 landscape | **Real** separate bags shown fully onscreen; slider set at 30, before/after only if accurate | Gallery |
-| P2 | `chalkbox-settings-1600x900.png` | 1600×900 landscape | **Real** native ChalkBox AddOns settings categories | Gallery |
+| P2 | `chalkbox-bag-offset-1600x900.png` | 1600×900 landscape | **Real** separate bags shown fully onscreen; vertical slider with 0 at center and signed ± positioning, before/after only if accurate | Gallery |
+| P2 | `chalkbox-settings-1600x900.png` | 1600×900 landscape | **Real** polished two-column native ChalkBox settings home and new Appearance/Race pages | Gallery |
 
 ### Minimum launch art set
 

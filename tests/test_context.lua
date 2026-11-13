@@ -36,4 +36,35 @@ race="BrandNewRace";class="BrandNewClass"
 local fresh=ChalkBox_PersonalityContext()
 assert(type(fresh.weights)=="table" and next(fresh.weights)==nil,
     "unknown future classes/races must fail open without errors")
+-- Race Behavior editor provides honest live vs. planned profiles.
+_G.ChalkBoxDB={emota={}}
+local catalog=ChalkBox_RaceCatalog()
+assert(#catalog>=20,"race selector lists implemented and planned profiles")
+local dwarf=ChalkBox_RaceBehaviorStatus("Dwarf")
+local future=ChalkBox_RaceBehaviorStatus("VoidElf")
+assert(dwarf.implemented and dwarf.examples:find("FLEX",1,true),
+    "Dwarf racial behavior shows the actual weighted emote list")
+assert(future and not future.implemented and future.examples=="",
+    "future race is explicitly labeled planned, with no fabricated behavior")
+assert(not ChalkBox_RaceBehaviorSet("VoidElf","expressive"),
+    "planned races do not pretend to have live custom weights")
+assert(ChalkBox_RaceBehaviorSet("Dwarf","off"))
+race="Dwarf";class="HUNTER";rest=false;pet=false
+local off=ChalkBox_PersonalityContext()
+assert(off.weights.FLEX==nil or off.weights.FLEX==0,
+    "Off removes dwarf racial weights without suppressing hunter class weights")
+assert(ChalkBox_RaceBehaviorSet("Dwarf","expressive"))
+local expressive=ChalkBox_PersonalityContext()
+assert(expressive.weights.FLEX==8,
+    "Expressive increases this character's actual racial emote weight")
+assert(ChalkBox_RaceBehaviorSet("Dwarf","subtle"))
+local subtle=ChalkBox_PersonalityContext()
+assert(subtle.weights.FLEX==2,
+    "Subtle reduces racial-emote bias but keeps working idle logic")
+assert(ChalkBox_RaceBehaviorSet("Dwarf","default"))
+assert(ChalkBox_PersonalityContext().weights.FLEX==4,
+    "Default restores original dwarf behavior")
+assert(not ChalkBox_RaceBehaviorSet("Dwarf","ultra"),
+    "invalid race intensity modes are rejected")
+print("PASS: racial flavor intensities, honest placeholders and saved user preferences")
 print("PASS: all supported races/classes, Dwarf Hunter pet, inn/rest area, and safe future-race fallback")

@@ -1,4 +1,4 @@
--- ChalkBox Bag Layout: small downward nudge for Blizzard's separate bags.
+-- ChalkBox Bag Layout: signed vertical correction for Blizzard's separate bags.
 -- Changes only Blizzard's first column anchor, never item buttons or sorting.
 -- The stock layout is re-run before each adjustment so offsets do not stack.
 local addonName = ...
@@ -17,8 +17,8 @@ end
 
 local function Offset()
     local value = db and tonumber(db.bagOffsetY) or 0
-    if not value or value < 0 then return 0 end
-    return math.min(80, math.floor(value + 0.5))
+    if not value or not Safe(value) or value~=value then return 0 end
+    return math.max(-120,math.min(120,math.floor(value+0.5)))
 end
 
 local function ShownFirstBag()
@@ -88,7 +88,7 @@ end
 
 function ChalkBox_BagOffsetSet(value)
     if not db or not Safe(value) or type(value)~="number" then return end
-    db.bagOffsetY=math.max(0,math.min(80,math.floor(value+0.5)))
+    db.bagOffsetY=math.max(-120,math.min(120,math.floor(value+0.5)))
     RefreshLayout()
 end
 
@@ -104,11 +104,15 @@ end
 
 function ChalkBox_BagCommand(command)
     local input=(command or ""):match("^%s*(.-)%s*$")
-    local value=tonumber(input:match("^offset%s+(%d+)$") or input:match("^(%d+)$"))
+    local raw=input:match("^offset%s+([%+%-]?%d+)$") or
+        input:match("^([%+%-]?%d+)$")
+    local value=tonumber(raw)
     if value then
         ChalkBox_BagOffsetSet(value)
-        Note("Separate bags: "..Offset().."px downward"..(pending and
-            " (will update after combat/layout availability)" or "")..".")
+        local offset=Offset()
+        Note("Separate bags: "..math.abs(offset).."px "..
+            (offset>0 and "downward" or (offset<0 and "upward" or "(Blizzard default)"))..
+            (pending and " (will update after combat/layout availability)" or "")..".")
     elseif input=="reset" then
         ChalkBox_BagOffsetSet(0)
         Note("Separate bags: Blizzard default position restored.")
@@ -116,7 +120,7 @@ function ChalkBox_BagCommand(command)
         Note("Separate bag offset: "..Offset().."px, layout hook="..tostring(hooked)..
             ", applied="..tostring(lastApplied).."px, pending="..tostring(pending)..".")
     else
-        Note("Separate bag layout: /chalk bags offset 0-80 | reset | status.")
+        Note("Separate bag layout: /chalk bags offset -120..120 (negative = up, positive = down) | reset | status.")
     end
 end
 

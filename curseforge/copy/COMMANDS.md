@@ -15,7 +15,12 @@
 | `/chalk bar stats` | List configured and currently visible TrailBar modules |
 | `/chalk bar stats balanced` / `minimal` / `all` | Apply a responsive bar profile |
 | `/chalk bar stat bags on` / `gear off` / `latency on` | Enable or disable individual TrailBar stats |
-| `/chalk bags offset 30` / `reset` | Nudge separate bag group downward, or restore default |
+| `/chalk bar edit on` / `off` | Unlock/lock module dragging and alignment |
+| `/chalk bar move bags center 2` | Move stat to a group and position |
+| `/chalk bar align gold right` | Set a stat's text alignment inside its block |
+| `/chalk bar layout reset` / `layout` | Reset per-character order or display saved layout |
+| `/chalk bar opacity 0` / `100` | Adjust background-only transparency |
+| `/chalk bags offset -35` / `+30` / `reset` | Move bags up or down from stock, or reset to center |
 | `/chalk bags status` | Bag layout hook and offset diagnostic |
 | `/chalk meter show` / `hide` | Show or hide ChalkBox's separate combat window |
 | `/chalk meter dps` / `damage` / `hps` / `healing` | Change compact meter statistic |

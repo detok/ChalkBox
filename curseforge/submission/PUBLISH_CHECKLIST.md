@@ -29,7 +29,7 @@
 - [ ] Ensure the ZIP has exactly one top-level `ChalkBox/` directory (no nested folder, GitHub repo metadata or `curseforge/`)
 - [ ] Confirm bundled `LibProfessionDB` MIT license and `ChalkBox/LICENSE` are inside the ZIP
 - [ ] Assign this file to **Forever / 1.60.1** (or the then-current Forever version) and choose **Beta** until native menu/offset game-client testing is complete
-- [ ] Enter version-appropriate release notes from [FILE_CHANGELOG_1.8.6.md](../copy/FILE_CHANGELOG_1.8.6.md)
+- [ ] Enter version-appropriate release notes from [FILE_CHANGELOG_1.9.0.md](../copy/FILE_CHANGELOG_1.9.0.md)
 
 ## 4. Artwork and honesty gate
 

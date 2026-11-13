@@ -2,7 +2,7 @@
 
 ## Preferred project summary (one sentence)
 
-A quieter WoW Forever companion with smart loot hints, an adaptive XP/bag/gear dashboard, quest watches, camping and native DPS tools.
+A quieter WoW Forever companion with native item insights, learned-recipe highlights, a draggable adventure bar, quests and DPS tools.
 
 ## Alternate summaries
 
@@ -33,13 +33,13 @@ ChalkBox is a WoW Forever utility addon focused on the little things that make a
 ## Promotional captions (for when real screenshots exist)
 
 - **Hero:** One addon for the moments between the big fights.
-- **TrailBar:** XP, free bag slots, gear durability, rested XP and gold—all in 18 pixels.
-- **LootSense:** A helpful reason to keep something; never a blind “safe to sell.”
+- **TrailBar:** Arrange XP, bags, durability, rested XP and gold anywhere—all in 18 pixels.
+- **LootSense:** Native item insights and green bag outlines for truly learned recipes.
 - **Native meter:** Your Blizzard damage meter. One extra PARTY print option.
 - **QuestSense:** Smarter watch lists in the quest tracker you already know.
 - **Adventure Prep:** Camping and tent reminders without the constant nagging.
 - **Bag offset:** A small fix for large separate bags that stack too high.
-- **Settings:** All your controls in one native AddOns menu.
+- **Settings:** Native menus, per-character layout editor, opacity and racial behavior controls.
 
 ## Tone, terms and claims
 

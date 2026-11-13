@@ -7,7 +7,7 @@ The front-page `README.md` has been redesigned to be the **primary public produc
 1. Product name, tagline and badges (build, license, version, Forever)
 2. **Direct GitHub download** prominently at the top — versioned current ZIP
 3. Feature grid and honest scope (no invented gameplay)
-4. Product deep dives: LootSense, TrailBar, native/compact combat meters, QuestSense, camping/Emota
+4. Product deep dives: native-styled LootSense/known recipe highlights, configurable TrailBar editor, native/compact combat meters, QuestSense, Emota racial behavior and camping
 5. Screenshots area — deliberately text-only **until genuine assets exist**
 6. Direct install steps; explicit `_forever_/Interface/AddOns/ChalkBox/`
 7. Commands and expandable FAQ
@@ -52,4 +52,4 @@ Place genuine files in `curseforge/artwork/` following `../ARTWORK_TO_CREATE.md`
 
 ## Release-document rules
 
-The primary direct download currently points to **ChalkBox 1.8.6**. When a newer version is published, update the versioned top README link. The **[Releases index](https://github.com/detok/ChalkBox/releases)** is always available. Do **not** rely on GitHub's `/releases/latest` route for a repository whose releases are all marked **prerelease**; that route can skip prereleases.
+The primary direct download currently points to **ChalkBox 1.9.0**. When a newer version is published, update the versioned top README link. The **[Releases index](https://github.com/detok/ChalkBox/releases)** is always available. Do **not** rely on GitHub's `/releases/latest` route for a repository whose releases are all marked **prerelease**; that route can skip prereleases.

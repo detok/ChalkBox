@@ -57,8 +57,48 @@ _G.ChalkBox_BarCommand=function(value)
     end
     printed[#printed+1]="bar "..value
 end
+local editor=false
+_G.ChalkBox_BarAppearanceGet=function() return ChalkBoxDB.barBackgroundOpacity or 70 end
+_G.ChalkBox_BarAppearanceSet=function(value)
+    ChalkBoxDB.barBackgroundOpacity=math.max(0,math.min(100,value))
+end
+_G.ChalkBox_BarEditStatus=function() return editor end
+_G.ChalkBox_BarHighlightNotPresent=function() return nil end
+local originalBarCommand=ChalkBox_BarCommand
+_G.ChalkBox_BarCommand=function(command)
+    if command=="edit on" then editor=true end
+    if command=="edit off" then editor=false end
+    if command=="layout reset" then ChalkBoxZoneDB.trailLayout=nil end
+    originalBarCommand(command)
+end
+_G.ChalkBox_BagHighlightStatus=function()
+    return {enabled=ChalkBoxDB.lootHighlightKnown~=false,
+        opacity=ChalkBoxDB.lootHighlightOpacity or 75}
+end
+_G.ChalkBox_BagHighlightSet=function(on) ChalkBoxDB.lootHighlightKnown=on end
+_G.ChalkBox_BagHighlightOpacity=function(value)
+    ChalkBoxDB.lootHighlightOpacity=math.floor(value+0.5)
+end
+_G.ChalkBox_BagHighlightsRefresh=function() printed[#printed+1]="bag markers refresh" end
+_G.ChalkBox_RaceCatalog=function()
+    return {
+        {token="Dwarf",label="Dwarf",implemented=true},
+        {token="VoidElf",label="Void Elf",implemented=false}
+    }
+end
+_G.UnitRace=function() return "Dwarf","Dwarf" end
+_G.ChalkBox_RaceBehaviorStatus=function(token)
+    local modes=ChalkBoxDB.emota.raceModes or {}
+    return {token=token,examples="FLEX, SALUTE",mode=modes[token] or "default"}
+end
+_G.ChalkBox_RaceBehaviorSet=function(token,mode)
+    if token~="Dwarf" then return false end
+    ChalkBoxDB.emota.raceModes=ChalkBoxDB.emota.raceModes or {}
+    ChalkBoxDB.emota.raceModes[token]=mode
+    return true
+end
 _G.ChalkBox_BagOffsetSet=function(value)
-    ChalkBoxDB.bagOffsetY=math.max(0,math.min(80,math.floor(value+0.5)))
+    ChalkBoxDB.bagOffsetY=math.max(-120,math.min(120,math.floor(value+0.5)))
 end
 _G.ChalkBox_BagStatus=function()
     return {offset=ChalkBoxDB.bagOffsetY or 0}
@@ -147,6 +187,15 @@ _G.ChalkBox_EmotaSetEnabled=function(token,v)
 end
 _G.ChalkBox_EmotaTest=function(token) printed[#printed+1]="try "..token end
 
+local raceDropdown
+local nativeRaceOptions={}
+_G.UIDropDownMenu_Initialize=function(menu,cb) menu.BuildOptions=cb;raceDropdown=menu end
+_G.UIDropDownMenu_CreateInfo=function() return {} end
+_G.UIDropDownMenu_AddButton=function(info,level)
+    nativeRaceOptions[#nativeRaceOptions+1]=info
+end
+_G.UIDropDownMenu_SetWidth=function(menu,value) menu.dropWidth=value end
+_G.UIDropDownMenu_SetText=function(menu,value) menu.dropLabel=value end
 _G.CreateFrame=function(kind,name,parent)
     local f={kind=kind,name=name,parent=parent,shown=true,script={}}
     function f:SetSize(w,h) self.w=w;self.h=h end
@@ -218,7 +267,7 @@ assert(loadfile("ChalkBox_Settings.lua"))("ChalkBox")
 local loader=frames[#frames]
 assert(loader.event=="PLAYER_LOGIN","must register settings when the client is ready")
 loader.script.OnEvent(loader,"PLAYER_LOGIN")
-assert(#registered==11,"main page plus the original modules and new TrailBar Stats")
+assert(#registered==14,"native pages include LootSense Appearance, TrailBar Appearance and Emota Race Behavior")
 assert(categories.home.name=="ChalkBox")
 ChalkBox_OpenSettings()
 assert(opened[#opened]==101,"default /chalk must open native settings")
@@ -229,6 +278,14 @@ assert(opened[#opened]==101)
 local function Control(caption)
     for _,f in ipairs(widgets) do if f.text==caption then return f end end
     error("Missing native option button: "..caption)
+end
+local function ControlIn(categoryName,caption)
+    local category=categories[categoryName]
+    assert(category,categoryName)
+    for _,frame in ipairs(widgets) do
+        if frame.parent==category.panel and frame.text==caption then return frame end
+    end
+    error("Missing native control "..categoryName.."/"..caption)
 end
 local function FindCheckByParentTitle(title)
     local category = categories[title]
@@ -254,6 +311,18 @@ assert(ChalkBoxDB.keep["name:new"],"Keep Item must call original protection logi
 categories["LootSense"].panel:Show()
 Control("Remove"):Click() -- sorts by key; first is id:11
 assert(ChalkBoxDB.keep["id:11"]==nil,"Remove must use the exact protected key")
+Control("LootSense Appearance"):Click()
+assert(opened[#opened]==categories["LootSense Appearance"].ID)
+categories["LootSense Appearance"].panel:Show()
+local lootCheck=FindCheckByParentTitle("LootSense Appearance")
+assert(#lootCheck==1 and lootCheck[1].checked,
+    "ingredient highlighting defaults ON for verified recipes only")
+lootCheck[1]:Click(false)
+assert(ChalkBoxDB.lootHighlightKnown==false,
+    "new bag highlight toggle is stored independently from tooltip hints")
+lootCheck[1]:Click(true)
+Control("Refresh Bag Markers"):Click()
+assert(printed[#printed]=="bag markers refresh")
 local questCheck=FindCheckByParentTitle("QuestSense")[1]
 categories["QuestSense"].panel:Show()
 questCheck:Click(false)
@@ -280,11 +349,21 @@ barChecks[4]:Click(false)
 assert(ChalkBoxDB.barReserve==false,"user can disable screen reservation")
 barChecks[4]:Click(true)
 assert(ChalkBoxDB.barReserve==true,"screen reservation can be re-enabled")
-Control("Reset Session Stats"):Click()
+Control("Reset Session"):Click()
 assert(printed[#printed]=="bar reset")
-Control("Customize Bar Stats"):Click()
+Control("Appearance"):Click()
+assert(opened[#opened]==categories["TrailBar Appearance"].ID,
+    "TrailBar links into its own appearance and drag-layout page")
+Control("Stats & Presets"):Click()
 assert(opened[#opened]==categories["TrailBar Stats"].ID,
     "TrailBar should navigate directly to the new stats page")
+categories["TrailBar Appearance"].panel:Show()
+Control("Edit Bar"):Click()
+assert(editor,"native drag-layout edit toggle starts edit mode")
+Control("Done Editing"):Click()
+assert(not editor,"done exits editor without losing saved layout")
+Control("Reset Layout"):Click()
+assert(printed[#printed]=="bar layout reset","reset layout button reaches controller")
 categories["TrailBar Stats"].panel:Show()
 local statsChecks=FindCheckByParentTitle("TrailBar Stats")
 assert(#statsChecks==9,"9 independent stats are accessible")
@@ -327,8 +406,33 @@ slider:SetValue(100)
 assert(ChalkBoxDB.emota.jokeFrequency==100,"joke frequency slider updates settings")
 Control("Surprise Me"):Click()
 assert(printed[#printed]=="random idle","idle preview must be reachable in normal settings")
+Control("Races"):Click()
+assert(opened[#opened]==categories["Emota Race Behavior"].ID,
+    "Emota links directly to new race behavior editor")
+categories["Emota Race Behavior"].panel:Show()
+assert(raceDropdown and raceDropdown.BuildOptions,
+    "Blizzard-supported native race dropdown actually initializes")
+raceDropdown.BuildOptions(raceDropdown,1)
+assert(#nativeRaceOptions==2 and nativeRaceOptions[1].text=="Dwarf",
+    "race dropdown enumerates real and planned entries")
+nativeRaceOptions[2].func()
+Control("Off"):Click()
+assert((ChalkBoxDB.emota.raceModes or {}).VoidElf==nil,
+    "planned dropdown choice cannot be configured as live")
+nativeRaceOptions[1].func()
+Control("Expressive"):Click()
+assert(ChalkBoxDB.emota.raceModes.Dwarf=="expressive",
+    "live racial intensity selection saves the chosen race")
+Control("Next race"):Click()
+Control("Off"):Click()
+assert((ChalkBoxDB.emota.raceModes or {}).VoidElf==nil,
+    "placeholder race does not gain fabricated emote behavior")
+Control("My race"):Click()
+Control("Default"):Click()
+assert(ChalkBoxDB.emota.raceModes.Dwarf=="default")
 Control("Catalog"):Click()
-assert(opened[#opened]==107,"catalog must be its own native settings page")
+assert(opened[#opened]==categories["Emote Catalog"].ID,
+    "catalog must have its own native settings page")
 local catalogChecks=FindCheckByParentTitle("Emote Catalog")
 assert(#catalogChecks==6,"catalog supports up to six paged emotes")
 categories["Emote Catalog"].panel:Show()
@@ -396,7 +500,7 @@ assert(ChalkBoxDB.meter.locked,"lock switch is active")
 assert(ChalkBoxDB.meter.iconMode=="class","WoW class badges are shown by default")
 Control("Spec"):Click()
 assert(ChalkBoxDB.meter.iconMode=="spec","users can prefer WoW specialization art")
-Control("Off"):Click()
+ControlIn("Combat Meter","Off"):Click()
 assert(ChalkBoxDB.meter.iconMode=="off","icons can be hidden to save space")
 Control("Class"):Click()
 assert(ChalkBoxDB.meter.iconMode=="class","easy one-click return to class icons")
@@ -408,7 +512,29 @@ local sliders={}
 for _,frame in ipairs(frames) do
     if frame.kind=="Slider" then sliders[#sliders+1]=frame end
 end
-assert(#sliders==4,"Emota, Combat Meter, Toast Appearance and TrailBar bags each have a slider")
+assert(#sliders==6,"four existing sliders plus bag highlight and TrailBar appearance opacity")
+local appearanceSlider,highlightSlider
+for _,frame in ipairs(sliders) do
+    if frame.parent==categories["TrailBar Appearance"].panel then
+        appearanceSlider=frame
+    end
+    if frame.parent==categories["LootSense Appearance"].panel then
+        highlightSlider=frame
+    end
+end
+assert(appearanceSlider and appearanceSlider.value==70,
+    "native bar opacity slider defaults to original 70%")
+appearanceSlider:SetValue(0)
+assert(ChalkBoxDB.barBackgroundOpacity==0,
+    "slider makes only bar background disappear")
+appearanceSlider:SetValue(100)
+assert(ChalkBoxDB.barBackgroundOpacity==100,
+    "slider can produce an opaque Blizzard-charcoal background")
+assert(highlightSlider and highlightSlider.value==75,
+    "bag recipe insets have a separate 75% opacity default")
+highlightSlider:SetValue(40)
+assert(ChalkBoxDB.lootHighlightOpacity==40,
+    "reagent highlight strength is configurable in native settings")
 local meterSlider
 for _,frame in ipairs(sliders) do
     if frame.parent==categories["Combat Meter"].panel then meterSlider=frame end
@@ -418,9 +544,15 @@ for _,frame in ipairs(sliders) do
     if frame.parent==categories["TrailBar"].panel then bagSlider=frame end
 end
 assert(bagSlider and bagSlider.value==0,"bag offset starts at Blizzard default")
-bagSlider:SetValue(30)
+bagSlider:SetValue(-30)
 assert(ChalkBoxDB.bagOffsetY==30,
-    "native TrailBar bag-offset slider persists a 30-point downward nudge")
+    "vertical slider downward moves separate bags down from the stock center")
+bagSlider:SetValue(35)
+assert(ChalkBoxDB.bagOffsetY==-35,
+    "vertical slider upward raises separate bags above Blizzard's stock anchor")
+bagSlider:SetValue(0)
+assert(ChalkBoxDB.bagOffsetY==0,
+    "vertical slider midpoint restores exactly Blizzard's original position")
 assert(meterSlider,"native meter opacity slider belongs to Combat Meter page")
 meterSlider:SetValue(65)
 assert(ChalkBoxDB.meter.opacity==0.65,

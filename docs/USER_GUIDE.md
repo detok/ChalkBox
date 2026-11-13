@@ -25,6 +25,15 @@ Hold **Shift** on a relevant item to see more learned recipe uses. Use `/chalk l
 
 ChalkBox does not click vendor buttons or automate selling. Always review items before deleting or selling them.
 
+### New in v1.9 — native-looking Item Insight
+
+LootSense no longer appends a long `LootSense: blah` tooltip line. It uses a small **CHALKBOX | ITEM INSIGHT** subsection with a short, clearly colored verdict and evidence on the next line. For instance, a **Used in a learned recipe** note includes the actual crafted item and observed amounts. **Possible crafting use** remains explicitly unconfirmed.
+
+Go to **ChalkBox → LootSense Appearance** to toggle subtle green reagent insets in **Blizzard's own bag slots**. Highlights only appear for items used by recipes your **current character has really learned**. The bundled offline catalog, profession family guesses, potential recipes and unknown items **do not** trigger the green outline. Set marker opacity from **15–100%**, Refresh Bag Markers, or Scan Open Profession. The overlay does not change rarity borders, drag and drop, selling, or bag sorting.
+
+If no item glows, open a crafting window until the recipe list loads, use `/chalk loot scan`, and then **Refresh Bag Markers**. If the client doesn't expose its native bag buttons, there is no safe visual overlay to paint; tooltips still work.
+
+
 ## CampSense (Adventure Prep)
 
 Forever camping has special uses beyond classic's cooking fire. CampSense can identify common components such as **Simple Wood**, **Flint and Tinder**, and **Light Leather** (used in camp features). It also checks supported player auras, **plus the separate Camp Tent rested-XP system**:
@@ -68,7 +77,7 @@ Set the Blizzard meter to your preferred DPS/damage/healing statistic and Curren
 
 To keep only Blizzard's meter, turn off **Show compact DPS meter window** under ChalkBox → Combat Meter or type `/chalk meter hide`. The built-in gear menu still works. Use `/chalk meter native off` to remove the extra gear-menu entry, `/chalk meter native on` to restore it, or `/chalk meter native status` to diagnose support. This feature relies on the Forever `MENU_DAMAGE_METER_WINDOW_SETTINGS` menu extension and will quietly do nothing when that API is missing.
 
-## TrailBar — customizable adventure dashboard (v1.8.6)
+## TrailBar — customizable adventure dashboard (v1.9.0)
 
 The same **18px** strip now supports XP, XP/hour, estimated time to level, session time, gold/net change, **free equipped-bag slots, equipment durability, rested XP, home/world latency and Hunter pet health**. No new floating bar or additional screen height.
 
@@ -98,6 +107,16 @@ The strip **automatically hides lower-priority widgets** when the UI width gets 
 
 Commands: `/chalk bar stats balanced`, `/chalk bar stats all`, `/chalk bar stats minimal`, and `/chalk bar stat bags|gear|rested|pet|latency|rate|eta|time|gold on|off`. Existing bar placement, reserved screen space, session reset and diagnostics commands remain unchanged.
 
+### New in v1.9 — Edit Mode and transparency
+
+Open **Esc → Options → AddOns → ChalkBox → TrailBar Appearance**. The bar now uses a Blizzard-like **neutral charcoal** background. Move **Background opacity** anywhere from **0%** (just the text and XP underline) to **100%** (fully opaque); the slider does not fade the actual numbers. `/chalk bar opacity 0` also works.
+
+Choose **Edit Bar** to turn on soft amber highlight regions behind the text. The bar is divided conceptually into **Left / Center / Right** thirds. Grab and **drag a module left or right** to place it in another zone; drag past another module to change the order within that zone. **Right-click a stat while editing** to cycle its *text alignment* left, center or right inside its own block. Click **Done Editing** to relock and prevent accidental changes. The **Reset Layout** button puts all ten stats back in their default zones/order.
+
+Layout and text alignment are stored **per character** in SavedVariables. Your Hunter does not have to use the same order as another character. Stat visibility switches and overall bar style remain in regular addon settings. When screens are too narrow, responsive priority hiding still applies *temporarily*, without altering the saved order.
+
+Useful commands: `/chalk bar edit on|off`, `/chalk bar layout`, `/chalk bar layout reset`, `/chalk bar move gear center 1`, `/chalk bar align bags right`. Edit Mode deliberately refuses to start in combat.
+
 ### Existing screen layout and bag shift
 
 Screen-space reservation is **on** by default. Move the strip in **TrailBar** options. Run `/chalk bar status` to check whether the reserved space was applied, or `/chalk bar reserve off` to disable it if another UI conflicts. Some custom frames or Blizzard Edit Mode layouts may ignore the parent inset.
@@ -106,17 +125,21 @@ Screen-space reservation is **on** by default. Move the strip in **TrailBar** op
 
 If you use **individual bags** rather than WoW Forever's combined bag, large bags can stack above the screen edge. ChalkBox can nudge Blizzard's native bag column down while keeping all item slots, art and sorting unchanged.
 
-Open **ChalkBox → TrailBar** and move the **Separate bags: move down** slider from 0 (default) toward 30. It goes to 80; the number is in game UI points and can vary slightly in physical pixels with UI Scale. The change is saved between logins and applies when the bags open or Blizzard recalculates their layout. The combined bag window is deliberately unaffected.
+Open **ChalkBox → TrailBar**. In v1.9 there is a **vertical slider from −120 to +120 UI points**, with **Blizzard's original placement at the middle (0)**. The top of the slider raises bags, the bottom lowers them. **Reset Bags** instantly returns to 0; the value on the side says **up/down** instead of leaving you to guess.
 
-You can also use `/chalk bags offset 30`, `/chalk bags reset` or `/chalk bags status`. If the settings slider is changed in combat, it will reapply the adjustment after combat. If you install a separate bag-mover addon, disable this ChalkBox adjustment (set 0) to avoid competing positions.
+You can also type `/chalk bags offset 30` to lower bags, `/chalk bags offset -35` to raise them, `/chalk bags reset` to restore stock or `/chalk bags status` to inspect the hook. Actual pixel movement may vary with UI Scale. The change persists between sessions and applies when bags open or Blizzard reanchors them. Combined bags remain untouched. In combat, changes are deferred. If another addon owns bag positions, reset to 0 to avoid competing anchors.
 
 ## QuietGuard
 
 The default settings attempt to prevent **guild invite spam and duel requests**. **Party, trade and channel invitations are not filtered unless you opt in**, to avoid blocking friends and ordinary gameplay. An anti-invite client API may be limited by your game build. View the active choices via `/chalk guard`, and change them under **QuietGuard** in Options.
 
-## Emota
+## Emota and Race Behavior
 
 The master automatic-emote option is **off until you enable it**. When enabled, it occasionally picks native emotes, avoids recent repeats, and checks safety conditions such as combat or movement. Race/class context includes a hunter/pet-aware option and gentler resting-area behavior. Each emote can be enabled/disabled from the **Emote Catalog**, and you can test one with `/chalk emota idle preview`.
+
+**New in v1.9:** open **ChalkBox → Emota Race Behavior** (or click **Races** from the Emota page). Use the supported native race dropdown, or Previous/Next and My Race buttons, to inspect each race's weighted flavor. **Live behavior** races show their signature emotes. **Planned** ones are explicitly placeholders with no unique behavior yet.
+
+For a live race, select **Off / Subtle / Default / Expressive**. This changes only the *weighting of racial idle personality*, not the default anti-spam timer, class/pet influences, or the character's actual race. Default retains exactly the pre-1.9 racial flavor. Selecting a different race in the chooser is for inspection and configuring its future behavior, **not** a way to make your current character act as another race.
 
 ## QuestSense (Forever smart quest tracking)
 

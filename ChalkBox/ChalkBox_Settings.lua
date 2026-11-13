@@ -38,7 +38,7 @@ local function Panel(titleText, subtitle)
     local line = panel:CreateTexture(nil, "ARTWORK")
     line:SetPoint("TOPLEFT", panel, "TOPLEFT", 24, -86)
     line:SetSize(495, 1)
-    line:SetColorTexture(0.42, 0.52, 0.63, 0.55)
+    line:SetColorTexture(0.74, 0.56, 0.31, 0.68)
     local callbacks = {}
     local function Refresh()
         for _, callback in ipairs(callbacks) do callback() end
@@ -107,26 +107,34 @@ function ChalkBox_OnAddonCompartmentClick()
 end
 
 local function MakeHome()
-    local panel = Panel(title, "Personal loot, quest, XP and emote helpers. All controls are in this native Options menu.")
-    Label(panel, "Choose a section", "GameFontNormalLarge", 28, -110)
-    local items = {
-        {"loot", "LootSense", "Item tooltip advice and your personal don't-sell list"},
-        {"quests", "QuestSense", "Automatically follow accepted quests in your current zone"},
-        {"bar", "TrailBar", "Compact XP/gold display and separate-bag placement"},
-        {"barstats","TrailBar Stats","Choose bags, durability, rested XP, latency and pet status"},
-        {"emota", "Emota", "Character jokes, emotes and optional diagnostic messages"},
-        {"catalog", "Emote Catalog", "Every client-known emote, with switches and preview buttons"},
-        {"guard", "QuietGuard", "Block random guild invites and duels; optional social filters"},
-        {"prep", "Adventure Prep", "Camping supplies, buffs and race/class-care reminders"},
-        {"meter", "Combat Meter", "Native DPS, damage, healing and fight rankings"}
+    local panel=Panel(title,
+        "Small, configurable tools for WoW Forever. Everything stays within native AddOns Options.")
+    Label(panel,"ADVENTURE TOOLS","GameFontNormalLarge",28,-103,390)
+    local items={
+        {"loot","LootSense","Item insights and personal keep list"},
+        {"loothighlight","LootSense Appearance","Verified reagent highlighting"},
+        {"quests","QuestSense","Native accepted-quest watches"},
+        {"bar","TrailBar","Bar position and bag correction"},
+        {"barstats","TrailBar Stats","Stats, toggles and presets"},
+        {"barappearance","TrailBar Appearance","Drag layout and opacity"},
+        {"emota","Emota","Automatic emote personality"},
+        {"races","Emota Race Behavior","Racial flavor and live presets"},
+        {"catalog","Emote Catalog","Emotes and individual permissions"},
+        {"guard","QuietGuard","Invitation controls"},
+        {"prep","Adventure Prep","Camp and class care reminders"},
+        {"meter","Combat Meter","DPS, healing and party reports"},
     }
-    for index, info in ipairs(items) do
-        local y = -128 - (index-1) * 34
-        Button(panel, info[2], 28, y, 205, function() Activate(info[1]) end)
-        Label(panel, info[3], "GameFontHighlightSmall", 247, y - 7, 276)
+    for index,entry in ipairs(items) do
+        local row=math.floor((index-1)/2)
+        local col=(index-1)%2
+        local x=28+col*258
+        local y=-130-row*48
+        local pageKey=entry[1]
+        Button(panel,entry[2],x,y,228,function() Activate(pageKey) end)
+        Label(panel,entry[3],"GameFontHighlightSmall",x+4,y-29,228)
     end
-    Label(panel, "Open this page with /chalk or /cb.",
-        "GameFontHighlight", 28, -436, 490)
+    Label(panel,"Also: Toast Appearance inside Adventure Prep. /chalk and /cb open this page.",
+        "GameFontHighlightSmall",28,-425,505)
     return panel
 end
 
@@ -223,6 +231,59 @@ local function MakeLoot()
     return panel
 end
 
+local function MakeLootAppearance()
+    local panel=Panel("LootSense Appearance",
+        "A native tooltip section and restrained bag outlines for verified learned recipes.")
+    Label(panel,"ITEM INSIGHT","GameFontNormalLarge",27,-106,400)
+    Label(panel,"Tooltip notes keep the game's original fonts and rarity colors.",
+        "GameFontHighlightSmall",28,-137,500)
+    Label(panel,"A learned recipe is verified by scanning your actual profession window.",
+        "GameFontHighlightSmall",28,-159,500)
+    Label(panel,"BAG REAGENT MARKERS","GameFontNormalLarge",27,-204,460)
+    Toggle(panel,"Highlight ingredients for learned recipes",
+        "Thin green inset only, never overwrites WoW's item rarity border.",-234,
+        function()
+            local db=DB()
+            return db and db.lootHighlightKnown~=false
+        end,
+        function(on)
+            if ChalkBox_BagHighlightSet then ChalkBox_BagHighlightSet(on) end
+        end)
+    Label(panel,"Marker strength","GameFontNormal",28,-321,150)
+    local slider=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
+    slider:SetSize(250,17)
+    slider:SetPoint("TOPLEFT",panel,"TOPLEFT",181,-317)
+    slider:SetMinMaxValues(15,100)
+    if slider.SetValueStep then slider:SetValueStep(5) end
+    local alpha=Label(panel,"75%","GameFontHighlightSmall",447,-324,65)
+    local loading=false
+    slider:SetScript("OnValueChanged",function(_,value)
+        if loading or type(value)~="number" then return end
+        if ChalkBox_BagHighlightOpacity then
+            ChalkBox_BagHighlightOpacity(value)
+        end
+        alpha:SetText(tostring(math.floor(value+0.5)).."%")
+    end)
+    panel:AddRefresh(function()
+        local status=ChalkBox_BagHighlightStatus and ChalkBox_BagHighlightStatus()
+        local value=status and status.opacity or 75
+        loading=true
+        slider:SetValue(value)
+        loading=false
+        alpha:SetText(tostring(value).."%")
+    end)
+    Button(panel,"Refresh Bag Markers",28,-373,224,function()
+        if ChalkBox_BagHighlightsRefresh then ChalkBox_BagHighlightsRefresh() end
+    end)
+    Button(panel,"Scan Open Profession",270,-373,224,function()
+        if ChalkBox_ProfessionRefresh then ChalkBox_ProfessionRefresh() end
+        if ChalkBox_BagHighlightsRefresh then ChalkBox_BagHighlightsRefresh() end
+    end)
+    Label(panel,"Only KNOWN recipes glow. Catalog-only potential uses never glow.",
+        "GameFontHighlightSmall",27,-425,505)
+    return panel
+end
+
 local function MakeQuests()
     local panel=Panel("QuestSense",
         "WoW Forever C_QuestLog: track accepted quests without guessing map pins.")
@@ -262,58 +323,78 @@ local function MakeQuests()
 end
 
 local function MakeBar()
-    local panel=Panel("TrailBar", "An 18px strip with left, center and right-aligned information.")
-    Label(panel,"Placement","GameFontNormalLarge",28,-111)
-    Button(panel,"Customize Bar Stats",315,-103,185,function()
-        Activate("barstats")
-    end)
+    local panel=Panel("TrailBar",
+        "Keep the 18px bar clean. Set placement and adjust Blizzard's separate bags.")
+    Label(panel,"BAR POSITION","GameFontNormalLarge",28,-108)
+    Button(panel,"Stats & Presets",282,-100,126,function() Activate("barstats") end)
+    Button(panel,"Appearance",416,-100,112,function() Activate("barappearance") end)
     local position={
-        {"top","Top of screen",-145},
-        {"bottom","Bottom of screen",-199},
-        {"off","Hide bar",-253}
+        {"top","Top of screen",-151},
+        {"bottom","Bottom of screen",-194},
+        {"off","Hide the bar",-237},
     }
     for _,entry in ipairs(position) do
         Toggle(panel,entry[2],nil,entry[3],
             function() local db=DB(); return db and db.bar==entry[1] end,
             function() if ChalkBox_BarCommand then ChalkBox_BarCommand(entry[1]) end end)
     end
-    Toggle(panel,"Reserve screen space for TrailBar",
-        "On by default. Resizes the usable UI area; bar stays at the physical edge.",-310,
+    Toggle(panel,"Reserve screen space (18px)",
+        "Recommended: keeps Blizzard's UI out of the bar's screen strip.",-284,
         function() local db=DB(); return db and db.barReserve~=false end,
         function(on)
             if ChalkBox_BarCommand then
                 ChalkBox_BarCommand(on and "reserve on" or "reserve off")
             end
         end)
-    -- Optional, independent of the TrailBar position: leave Blizzard's
-    -- item slots and bag stacking intact; only lower the first bag anchor.
-    Label(panel,"Separate bags: move down","GameFontNormal",28,-356,197)
-    local bagSlider=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
-    bagSlider:SetSize(229,18)
-    bagSlider:SetPoint("TOPLEFT",panel,"TOPLEFT",226,-351)
-    bagSlider:SetMinMaxValues(0,80)
+    Label(panel,"SEPARATE BAG POSITION","GameFontNormalLarge",28,-335,300)
+    Label(panel,"Move bags relative to Blizzard's original anchor.",
+        "GameFontHighlightSmall",28,-360,315)
+    local current=Label(panel,"0  —  Blizzard default",
+        "GameFontHighlight",28,-385,318)
+    local bagSlider=CreateFrame("Slider",nil,panel)
+    bagSlider:SetSize(22,115)
+    bagSlider:SetPoint("TOPLEFT",panel,"TOPLEFT",363,-312)
+    if bagSlider.SetOrientation then bagSlider:SetOrientation("VERTICAL") end
+    bagSlider:SetMinMaxValues(-120,120)
     if bagSlider.SetValueStep then bagSlider:SetValueStep(5) end
-    local bagValue=Label(panel,"0 px","GameFontHighlightSmall",466,-357,59)
-    local settingBag=false
+    if bagSlider.SetThumbTexture then
+        bagSlider:SetThumbTexture("Interface\\Buttons\\UI-SliderBar-Button-Vertical")
+    end
+    local track=bagSlider:CreateTexture(nil,"BACKGROUND")
+    track:SetSize(5,115)
+    track:SetPoint("CENTER",bagSlider,"CENTER",0,0)
+    track:SetColorTexture(0.30,0.30,0.31,0.85)
+    Label(panel,"UP  −120","GameFontHighlightSmall",399,-313,120)
+    Label(panel,"0 · BLIZZARD","GameFontHighlightSmall",399,-365,120)
+    Label(panel,"DOWN  +120","GameFontHighlightSmall",399,-418,120)
+    local updating=false
     bagSlider:SetScript("OnValueChanged",function(_,value)
-        if settingBag or type(value)~="number" then return end
-        if ChalkBox_BagOffsetSet then ChalkBox_BagOffsetSet(value) end
-        bagValue:SetText(tostring(math.floor(value+0.5)).." px")
+        if updating or type(value)~="number" then return end
+        -- Vertical sliders put their maximum at the top. Negate to make the
+        -- top move bags UP and bottom move bags DOWN, with Blizzard 0 centered.
+        local offset=math.floor(-value+0.5)
+        if ChalkBox_BagOffsetSet then ChalkBox_BagOffsetSet(offset) end
+        current:SetText((offset==0 and "0  —  Blizzard default") or
+            ((offset>0 and "+" or "")..offset.." points  ("..
+            (offset>0 and "down" or "up")..")"))
     end)
     panel:AddRefresh(function()
         local status=ChalkBox_BagStatus and ChalkBox_BagStatus()
         local offset=status and status.offset or 0
-        settingBag=true
-        bagSlider:SetValue(offset)
-        settingBag=false
-        bagValue:SetText(tostring(offset).." px")
+        updating=true
+        bagSlider:SetValue(-offset)
+        updating=false
+        current:SetText((offset==0 and "0  —  Blizzard default") or
+            ((offset>0 and "+" or "")..offset.." points  ("..
+            (offset>0 and "down" or "up")..")"))
     end)
-    Label(panel,"Only separate bags; 0 = Blizzard default. Never moves bags in combat.",
-        "GameFontHighlightSmall",28,-376,495)
-    Button(panel,"Reset Session Stats",28,-410,190,function()
-        if ChalkBox_BarCommand then ChalkBox_BarCommand("reset") end end)
-    Button(panel,"Check Screen Layout",232,-410,190,function()
-        if ChalkBox_BarCommand then ChalkBox_BarCommand("status") end end)
+    Button(panel,"Reset Session",28,-416,133,function()
+        if ChalkBox_BarCommand then ChalkBox_BarCommand("reset") end
+    end)
+    Button(panel,"Reset Bags",172,-416,112,function()
+        if ChalkBox_BagOffsetSet then ChalkBox_BagOffsetSet(0) end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
     return panel
 end
 
@@ -363,6 +444,60 @@ local function MakeBarStats()
     return panel
 end
 
+local function MakeBarAppearance()
+    local panel=Panel("TrailBar Appearance",
+        "Blizzard-inspired charcoal, transparent background and a per-character drag layout.")
+    Label(panel,"BACKGROUND","GameFontNormalLarge",28,-111,370)
+    Label(panel,"Only the panel fades. Text, hover details and the XP line remain clear.",
+        "GameFontHighlightSmall",28,-145,500)
+    local slider=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
+    slider:SetSize(340,18)
+    slider:SetPoint("TOPLEFT",panel,"TOPLEFT",42,-192)
+    slider:SetMinMaxValues(0,100)
+    if slider.SetValueStep then slider:SetValueStep(5) end
+    local info=Label(panel,"70%","GameFontHighlight",401,-197,95)
+    local loading=false
+    slider:SetScript("OnValueChanged",function(_,value)
+        if loading or type(value)~="number" then return end
+        if ChalkBox_BarAppearanceSet then ChalkBox_BarAppearanceSet(value) end
+        info:SetText(math.floor(value+0.5).."%")
+    end)
+    panel:AddRefresh(function()
+        local value=ChalkBox_BarAppearanceGet and ChalkBox_BarAppearanceGet() or 70
+        loading=true
+        slider:SetValue(value)
+        loading=false
+        info:SetText(tostring(value).."%")
+    end)
+    Label(panel,"0% = text only     ·     100% = solid charcoal",
+        "GameFontHighlightSmall",36,-225,460)
+    Label(panel,"LAYOUT EDITOR","GameFontNormalLarge",28,-274,460)
+    Button(panel,"Edit Bar",28,-306,150,function()
+        if ChalkBox_BarCommand then ChalkBox_BarCommand("edit on") end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    Button(panel,"Done Editing",190,-306,150,function()
+        if ChalkBox_BarCommand then ChalkBox_BarCommand("edit off") end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    Button(panel,"Reset Layout",352,-306,150,function()
+        if ChalkBox_BarCommand then ChalkBox_BarCommand("layout reset") end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    local mode=Label(panel,"","GameFontHighlightSmall",29,-349,500)
+    panel:AddRefresh(function()
+        mode:SetText("Edit mode: "..(ChalkBox_BarEditStatus and
+            ChalkBox_BarEditStatus() and "ON — move modules" or "OFF — locked"))
+    end)
+    Label(panel,"Drag a module within the bar to reorder it or across the left/",
+        "GameFontHighlightSmall",28,-378,500)
+    Label(panel,"center/right thirds to change its zone. Right-click while editing",
+        "GameFontHighlightSmall",28,-400,500)
+    Label(panel,"to cycle text alignment inside the module. Layout is per character.",
+        "GameFontHighlightSmall",28,-422,500)
+    return panel
+end
+
 local function MakeEmota()
     local panel=Panel("Emota","Occasional, randomized idle personality. Existing reactions remain optional.")
     local function Change(key,on)
@@ -407,16 +542,116 @@ local function MakeEmota()
         slider:SetValue(value)
         setting=false
     end)
-    Button(panel,"Wave",27,-393,82,function()
+    Button(panel,"Wave",27,-393,67,function()
         if ChalkBox_EmotaCommand then ChalkBox_EmotaCommand("test") end end)
-    Button(panel,"Test Joke",116,-393,85,function()
+    Button(panel,"Test Joke",100,-393,86,function()
         if ChalkBox_EmotaTestJoke then ChalkBox_EmotaTestJoke() end end)
-    Button(panel,"Surprise Me",208,-393,101,function()
+    Button(panel,"Surprise Me",191,-393,108,function()
         if ChalkBox_EmotaPreviewIdle then ChalkBox_EmotaPreviewIdle() end end)
-    Button(panel,"Reset Idle",316,-393,88,function()
+    Button(panel,"Reset Idle",304,-393,84,function()
         if ChalkBox_EmotaCommand then ChalkBox_EmotaCommand("idle reset") end end)
-    Button(panel,"Catalog",411,-393,86,function()
-        Activate("catalog") end)
+    Button(panel,"Catalog",393,-393,66,function() Activate("catalog") end)
+    Button(panel,"Races",463,-393,66,function() Activate("races") end)
+    return panel
+end
+
+local function MakeRacePreferences()
+    local panel=Panel("Emota Race Behavior",
+        "Inspect real racial emote flavor and customize your character's own race.")
+    local list=ChalkBox_RaceCatalog and ChalkBox_RaceCatalog() or {}
+    local selectedIndex=1
+    local detected
+    if type(UnitRace)=="function" then
+        local _,token=UnitRace("player")
+        if type(token)=="string" then
+            detected=token
+            for i,row in ipairs(list) do
+                if row.token==token then selectedIndex=i;break end
+            end
+        end
+    end
+    Label(panel,"RACE TO INSPECT","GameFontNormalLarge",28,-105,420)
+    local selectedText=Label(panel,"","GameFontHighlight",29,-149,480)
+    local statusText=Label(panel,"","GameFontHighlightSmall",28,-228,492)
+    local examples=Label(panel,"","GameFontHighlightSmall",28,-254,492)
+    local modeText=Label(panel,"","GameFontHighlight",28,-286,492)
+    local function Choose(index)
+        if #list==0 then return end
+        selectedIndex=(index-1)%#list+1
+        if panel.OnRefresh then panel.OnRefresh() end
+    end
+    local dropdown
+    if type(UIDropDownMenu_Initialize)=="function" and
+        type(UIDropDownMenu_CreateInfo)=="function" and
+        type(UIDropDownMenu_AddButton)=="function" then
+        dropdown=CreateFrame("Frame",nil,panel,"UIDropDownMenuTemplate")
+        dropdown:SetPoint("TOPLEFT",panel,"TOPLEFT",178,-132)
+        if type(UIDropDownMenu_SetWidth)=="function" then
+            UIDropDownMenu_SetWidth(dropdown,262)
+        end
+        UIDropDownMenu_Initialize(dropdown,function(_,level)
+            for i,item in ipairs(list) do
+                local info=UIDropDownMenu_CreateInfo()
+                info.text=item.label..(item.implemented and "" or " (planned)")
+                info.checked=i==selectedIndex
+                local selection=i
+                info.func=function() Choose(selection) end
+                UIDropDownMenu_AddButton(info,level)
+            end
+        end)
+    end
+    Button(panel,"Previous race",28,-183,154,function()
+        Choose(selectedIndex-1)
+    end)
+    Button(panel,"Next race",192,-183,154,function()
+        Choose(selectedIndex+1)
+    end)
+    Button(panel,"My race",356,-183,142,function()
+        for i,row in ipairs(list) do
+            if row.token==detected then Choose(i);return end
+        end
+    end)
+    Label(panel,"RACIAL FLAVOR INTENSITY","GameFontNormalLarge",28,-318,460)
+    for i,item in ipairs({
+        {"off","Off"},{"subtle","Subtle"},{"default","Default"},{"expressive","Expressive"},
+    }) do
+        local behaviorMode=item[1]
+        Button(panel,item[2],27+(i-1)*128,-345,114,function()
+            local target=list[selectedIndex]
+            if target and ChalkBox_RaceBehaviorSet then
+                ChalkBox_RaceBehaviorSet(target.token,behaviorMode)
+            end
+            if panel.OnRefresh then panel.OnRefresh() end
+        end)
+    end
+    Label(panel,"Only your character's actual race affects live behavior.",
+        "GameFontHighlightSmall",28,-396,492)
+    Label(panel,"Planned races are visible in the picker, but have no invented behavior.",
+        "GameFontHighlightSmall",28,-418,500)
+    panel:AddRefresh(function()
+        local item=list[selectedIndex]
+        if not item then
+            selectedText:SetText("Race list unavailable.")
+            return
+        end
+        local status=ChalkBox_RaceBehaviorStatus and
+            ChalkBox_RaceBehaviorStatus(item.token)
+        selectedText:SetText(item.label..(item.implemented and
+            "  •  Live behavior" or "  •  Planned / placeholder"))
+        statusText:SetText(detected==item.token and
+            "This is your current race." or
+            "Preview only. Selecting this does not change your character's race.")
+        examples:SetText(item.implemented and
+            ("Signature emotes: "..(status and status.examples or "None")) or
+            "No special emote weighting is implemented for this race yet.")
+        modeText:SetText(item.implemented and
+            ("Current racial flavor: "..(status and status.mode or "default")) or
+            "Racial intensity: unavailable until that race is implemented.")
+        if dropdown and type(UIDropDownMenu_SetText)=="function" then
+            UIDropDownMenu_SetText(dropdown,item.label..
+                (item.implemented and "" or " (planned)"))
+        end
+    end)
     return panel
 end
 
@@ -690,10 +925,13 @@ local function Register()
     if registered then return end
     panels.home = MakeHome()
     panels.loot = MakeLoot()
+    panels.loothighlight = MakeLootAppearance()
     panels.quests = MakeQuests()
     panels.bar = MakeBar()
     panels.barstats = MakeBarStats()
+    panels.barappearance = MakeBarAppearance()
     panels.emota = MakeEmota()
+    panels.races = MakeRacePreferences()
     panels.catalog = MakeCatalog()
     panels.guard = MakeGuard()
     panels.prep = MakePrep()
@@ -706,10 +944,13 @@ local function Register()
         if type(Settings.RegisterCanvasLayoutSubcategory) == "function" then
             for _, item in ipairs({
                 {"loot", "LootSense"},
+                {"loothighlight", "LootSense Appearance"},
                 {"quests", "QuestSense"},
                 {"bar", "TrailBar"},
                 {"barstats", "TrailBar Stats"},
+                {"barappearance", "TrailBar Appearance"},
                 {"emota", "Emota"},
+                {"races", "Emota Race Behavior"},
                 {"catalog", "Emote Catalog"},
                 {"guard", "QuietGuard"},
                 {"prep", "Adventure Prep"},
@@ -730,10 +971,13 @@ local function Register()
         InterfaceOptions_AddCategory(panels.home)
         for _, item in ipairs({
             {"loot", "LootSense"},
+                {"loothighlight", "LootSense Appearance"},
             {"quests", "QuestSense"},
             {"bar", "TrailBar"},
                 {"barstats", "TrailBar Stats"},
+                {"barappearance", "TrailBar Appearance"},
             {"emota", "Emota"},
+                {"races", "Emota Race Behavior"},
             {"catalog", "Emote Catalog"},
             {"guard", "QuietGuard"},
             {"prep", "Adventure Prep"},

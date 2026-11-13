@@ -1,4 +1,4 @@
--- ChalkBox Bag Layout: only nudges separate Blizzard bag windows downward.
+-- ChalkBox Bag Layout: reversible signed vertical shift around Blizzard's default.
 -- Tests source-compatible anchors, idempotence, combat deferral and reset.
 local parent={}
 local stockY=85
@@ -80,8 +80,14 @@ assert(frame.y==15 and not ChalkBox_BagStatus().pending,
     "deferred layout safely resumes after combat")
 
 ChalkBox_BagOffsetSet(999)
-assert(ChalkBoxDB.bagOffsetY==80 and frame.y==5,
-    "maximum 80px clamp stops excessive offsets")
+assert(ChalkBoxDB.bagOffsetY==120 and frame.y==-35,
+    "maximum +120 clamp limits excessive downward movement")
+ChalkBox_BagOffsetSet(-120)
+assert(ChalkBoxDB.bagOffsetY==-120 and frame.y==205,
+    "negative values move the bag UP relative to Blizzard's anchor")
+ChalkBox_BagCommand("offset -35")
+assert(ChalkBoxDB.bagOffsetY==-35 and frame.y==120,
+    "signed slash offsets provide real above-default positioning")
 ChalkBox_BagCommand("reset")
 assert(ChalkBoxDB.bagOffsetY==0 and frame.y==85,
     "reset returns Blizzard's original anchor")
@@ -90,4 +96,4 @@ assert(frame.y==55,"slash command uses same safe slider path")
 ChalkBox_BagCommand("status")
 ChalkBox_BagCommand("not a command")
 assert(frame.y==55,"unrecognized commands do not move bags")
-print("PASS: safe separate-bag offset 0-80, no stacking, combined bags untouched, combat deferral, and stock reset")
+print("PASS: signed separate-bag offset -120..120, no stacking, combined bags untouched, combat deferral, and stock reset")
