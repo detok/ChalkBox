@@ -5,7 +5,7 @@ local addonName=...
 local db
 local last={marked=0,visible=0,reason="not initialized"}
 local queued=false
-local hooked=false
+local hooked={all=false,items=false}
 local stripColor={0.24,0.94,0.57}
 
 local function Public(v)
@@ -139,25 +139,24 @@ function ChalkBox_BagHighlightStatus()
     return {enabled=Enabled() or false,opacity=math.floor(Alpha()*100+0.5),
         marked=last.marked,visible=last.visible,reason=last.reason}
 end
+local function QueueRefresh()
+    if type(C_Timer)=="table" and type(C_Timer.After)=="function" then
+        if queued then return end
+        queued=true
+        C_Timer.After(0,function() queued=false;Refresh() end)
+    else Refresh() end
+end
 local function HookBagUpdates()
-    if hooked or type(hooksecurefunc)~="function" then return end
-    if type(ContainerFrame_UpdateAll)=="function" then
-        hooked=pcall(hooksecurefunc,"ContainerFrame_UpdateAll",function()
-            if type(C_Timer)=="table" and type(C_Timer.After)=="function" then
-                if queued then return end
-                queued=true
-                C_Timer.After(0,function() queued=false;Refresh() end)
-            else Refresh() end
-        end)
-    elseif type(ContainerFrameMixin)=="table" and
-        type(ContainerFrameMixin.UpdateItems)=="function" then
-        hooked=pcall(hooksecurefunc,ContainerFrameMixin,"UpdateItems",function()
-            if type(C_Timer)=="table" and type(C_Timer.After)=="function" then
-                if queued then return end
-                queued=true
-                C_Timer.After(0,function() queued=false;Refresh() end)
-            else Refresh() end
-        end)
+    if type(hooksecurefunc)~="function" then return end
+    -- A bag can update individually without ContainerFrame_UpdateAll firing.
+    -- Hook both safe native extension points as they become available.
+    if not hooked.all and type(ContainerFrame_UpdateAll)=="function" then
+        hooked.all=pcall(hooksecurefunc,"ContainerFrame_UpdateAll",QueueRefresh)
+    end
+    if not hooked.items and type(ContainerFrameMixin)=="table"
+        and type(ContainerFrameMixin.UpdateItems)=="function" then
+        hooked.items=pcall(hooksecurefunc,ContainerFrameMixin,"UpdateItems",
+            QueueRefresh)
     end
 end
 local events=CreateFrame("Frame")
