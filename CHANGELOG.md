@@ -2,6 +2,18 @@
 
 All notable changes to the public ChalkBox addon are documented here.
 
+## 1.9.0 — The Polish Update
+
+- Add drag/drop TrailBar Edit Mode: move/reorder every module between left/center/right sections, right-click text alignment, **per-character saved layout**, reset and in-combat safety; preserves the existing responsive 18px layout.
+- Replace the bluish TrailBar panel with Blizzard-like charcoal and add **0–100% background-only opacity** slider, retaining crisp labels and the XP underline.
+- Reorganize the native ChalkBox settings landing page with dedicated **TrailBar Appearance**, **LootSense Appearance** and **Emota Race Behavior** pages, preserving all original controls.
+- Restyle LootSense advice as a separated native **CHALKBOX | ITEM INSIGHT** tooltip section rather than `LootSense: ...`, retaining all real learned vs potential classifications.
+- Add subtle customizable emerald **known-recipe reagent outlines** to supported Blizzard bag item buttons; strictly requires actually scanned learned recipes, never offline catalog speculation, and never replaces inventory clicks/rarity.
+- Add Emota race chooser with implemented/placeholder distinctions and per-race **Off / Subtle / Default / Expressive** weighting. Existing default personality is unchanged.
+- Replace the separate-bag position slider with a **vertical signed -120..+120** control: stock Blizzard position centered, upward negative and downward positive, with reset button and slash support.
+- Test native bag hooks, recipe highlights, per-character layout/drag/align, appearance alpha, race flavor states, signed bag offsets, intact legacy features and deterministic ZIP contents.
+- Update GitHub readme, user guide and CurseForge listing draft; continue direct GitHub Release distribution.
+
 ## 1.8.6 — Adaptive rich-stat TrailBar
 
 - **Actually implemented** new TrailBar readings: equipped bag free/total slots (ordinary vs specialized in tooltip), weighted equipment durability and lowest-condition warning, rested bonus XP as % of one level, optional home/world latency and optional Hunter pet health.
