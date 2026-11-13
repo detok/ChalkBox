@@ -419,7 +419,7 @@ refresh=function()
                 ("%.1f%%"):format(item.rate) or "—")
             row.hint:SetText(item.rate and
                 ("Observed in %d of %d readable %s windows"):format(
-                    item.windows,item.attempts,sourceName)) or
+                    item.windows,item.attempts,sourceName) or
                 "Collected here · rate requires one known creature source")
             if type(row.frame.Show)=="function" then row.frame:Show() end
         end
