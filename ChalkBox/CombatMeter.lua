@@ -385,6 +385,13 @@ local function CreateWindow()
     window=CreateFrame("Frame","ChalkBoxCombatMeterFrame",UIParent)
     window:SetFrameStrata("MEDIUM")
     window:SetMovable(true)
+    if window.SetResizable then window:SetResizable(true) end
+    if window.SetResizeBounds then
+        window:SetResizeBounds(300,66+5*25,600,66+12*25)
+    elseif window.SetMinResize and window.SetMaxResize then
+        window:SetMinResize(300,66+5*25)
+        window:SetMaxResize(600,66+12*25)
+    end
     if window.SetClampedToScreen then window:SetClampedToScreen(true) end
     window:EnableMouse(true)
     local bg=window:CreateTexture(nil,"BACKGROUND")
@@ -393,8 +400,9 @@ local function CreateWindow()
     local accent=window:CreateTexture(nil,"ARTWORK")
     accent:SetPoint("TOPLEFT",window,"TOPLEFT",0,0)
     accent:SetPoint("TOPRIGHT",window,"TOPRIGHT",0,0)
-    accent:SetHeight(3)
+    accent:SetHeight(2)
     accent:SetColorTexture(0.96,0.67,0.27,1)
+
     header=CreateFrame("Frame",nil,window)
     header:SetPoint("TOPLEFT",window,"TOPLEFT",4,-4)
     header:SetPoint("TOPRIGHT",window,"TOPRIGHT",-4,-4)
@@ -415,23 +423,70 @@ local function CreateWindow()
             db.position="custom"
         end
     end)
-    local logo=Font(header,"GameFontNormal",0.96,0.74,0.34)
-    logo:SetPoint("LEFT",header,"LEFT",9,0)
-    logo:SetWidth(94)
-    logo:SetText("CHALKBOX")
-    meterButton=MakeButton(header,"DPS",67,-113,function() Next(modes,"mode",SetMode) end)
-    sessionButton=MakeButton(header,"Fight",74,-35,function() Next(sessions,"session",SetSession) end)
-    local close=MakeButton(header,"x",24,-7,function() SetShown(false) end)
-    local footer=Font(window,"GameFontHighlightSmall",0.53,0.66,0.72)
-    footer:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",13,11)
-    footer:SetPoint("BOTTOMRIGHT",window,"BOTTOMRIGHT",-12,11)
-    if footer.SetJustifyH then footer:SetJustifyH("CENTER") end
-    notice=footer
+    -- Zero branding/footer noise. Every button does something useful.
+    meterButton=MakeButton(header,"DPS",59,-249,function()
+        Next(modes,"mode",SetMode)
+    end)
+    sessionButton=MakeButton(header,"Fight",70,-176,function()
+        Next(sessions,"session",SetSession)
+    end)
+    MakeButton(header,"PRINT",61,-109,function() PrintFight() end)
+    lockButton=MakeButton(header,"LOCK",60,-42,function()
+        db.locked=not db.locked
+        ApplyLocked()
+    end)
+    MakeButton(header,"X",24,-5,function() SetShown(false) end)
+
+    notice=Font(window,"GameFontHighlightSmall",0.62,0.70,0.77)
+    notice:SetPoint("TOPLEFT",window,"TOPLEFT",28,-67)
+    notice:SetPoint("TOPRIGHT",window,"TOPRIGHT",-20,-67)
+    if notice.SetJustifyH then notice:SetJustifyH("CENTER") end
+    notice:SetText("")
+
     for i=1,12 do rows[i]=MakeRow(i) end
+
+    local opacityLabel=Font(window,"GameFontHighlightSmall",0.65,0.76,0.85)
+    opacityLabel:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",12,8)
+    opacityLabel:SetText("Opacity")
+    opacitySlider=CreateFrame("Slider",nil,window,"OptionsSliderTemplate")
+    opacitySlider:SetSize(120,12)
+    opacitySlider:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",65,8)
+    opacitySlider:SetMinMaxValues(35,100)
+    if opacitySlider.SetValueStep then opacitySlider:SetValueStep(5) end
+    opacitySlider:SetScript("OnValueChanged",function(_,amount)
+        if db and type(amount)=="number" then
+            db.opacity=Clamp(math.floor(amount+0.5),35,100)/100
+            ApplyOpacity()
+        end
+    end)
+    opacitySlider:SetValue(math.floor(db.opacity*100+0.5))
+
+    resizeHandle=CreateFrame("Button",nil,window)
+    resizeHandle.isChalkBoxResizeGrip=true
+    resizeHandle:SetSize(20,20)
+    resizeHandle:SetPoint("BOTTOMRIGHT",window,"BOTTOMRIGHT",-2,2)
+    resizeHandle:EnableMouse(true)
+    for i=1,3 do
+        local stripe=resizeHandle:CreateTexture(nil,"OVERLAY")
+        stripe:SetSize(2+i*3,1)
+        stripe:SetPoint("BOTTOMRIGHT",resizeHandle,"BOTTOMRIGHT",-2,-2-i*4)
+        stripe:SetColorTexture(0.75,0.77,0.79,0.78)
+    end
+    resizeHandle:SetScript("OnMouseDown",function(_,button)
+        if button=="LeftButton" and not db.locked and window.StartSizing then
+            window:StartSizing("BOTTOMRIGHT")
+        end
+    end)
+    resizeHandle:SetScript("OnMouseUp",function()
+        window:StopMovingOrSizing()
+        SaveResizedWindow()
+    end)
+
     ApplyLayout()
     UpdateButtons()
     if db.shown then window:Show() else window:Hide() end
 end
+
 local function ResetNative()
     if type(InCombatLockdown)=="function" and InCombatLockdown() then
         Chat("Cannot reset damage data during combat.")
