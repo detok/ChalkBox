@@ -3,6 +3,7 @@
 -- recipes are explicit exceptions to profession-recipe cache guessing.
 local addonName=...
 local db,entryTime,lastNotice,lastCampState= nil,nil,-1e8,nil
+local tentAcknowledgedUntil=nil
 local frame=CreateFrame("Frame")
 local ticker
 local utility={
@@ -116,6 +117,18 @@ local function CampStatus()
     end
     return ChalkBox_CampBuffStatus()
 end
+local function TentStatus()
+    local actual=type(ChalkBox_CampTentStatus)=="function"
+        and ChalkBox_CampTentStatus() or {state="unknown"}
+    if actual.state=="cooldown" or actual.state=="sufficient" then return actual end
+    local now=type(GetTime)=="function" and GetTime() or nil
+    if tentAcknowledgedUntil and Safe(now) and type(now)=="number"
+        and now<tentAcknowledgedUntil then
+        return {state="acknowledged",seconds=math.floor(tentAcknowledgedUntil-now),
+            detail="Manually confirmed for this session"}
+    end
+    return actual
+end
 local function CampBuffHint(status)
     if status.state=="gathering" then return nil end
     if status.state=="missing" then
@@ -126,23 +139,20 @@ local function CampBuffHint(status)
         return "Camp Benefits expire in about "..mins.." min. Plan to rest at a campsite soon."
     end
 end
-local function MeaningfulHint(buffs)
+local function MeaningfulHint(buffs,tent)
     buffs=buffs or CampStatus()
-    -- Camping countdown is already running. Never interrupt it or tell the
-    -- character to start another camp while the buff is active.
+    tent=tent or TentStatus()
+    -- A tent grants a rested-XP refill, independently of the regular camp
+    -- stat buff. The absence of Camp Benefits NEVER proves the tent failed.
     if buffs.state=="gathering" then return nil end
-    if db.buffs~=false and (buffs.state=="missing" or buffs.state=="expiring") then
-        local message=CampBuffHint(buffs)
-        local _,wood,flint,kit=CampingStatus()
-        if message and db.supplies~=false and buffs.state=="missing"
-            and kit==0 and flint==0 then
-            message=message.." You need Flint and Tinder and Simple Wood."
-        elseif message and db.supplies~=false and buffs.state=="missing"
-            and kit==0 and wood==0 then
-            message=message.." Buy Simple Wood for a campfire kit."
-        end
-        return message
+    if db.buffs~=false and tent.state=="ready" then
+        return "Rested XP is below 5% of a level. A Camp Tent can top it up. Sit by a tent at a campfire for about a minute."
     end
+    if db.buffs~=false and buffs.state=="expiring" then
+        return CampBuffHint(buffs)
+    end
+    -- Do not nag a tent user because the separate Camp Benefits stat aura
+    -- is absent. If the tent signal is unavailable, never invent a failure.
     local _,wood,flint,kit=CampingStatus()
     if Forever() and db.supplies~=false then
         if flint==0 then return "Camp prep: buy Flint and Tinder when you see a vendor (reusable)." end
@@ -155,8 +165,6 @@ local function MeaningfulHint(buffs)
         local pet=PetStatus()
         if pet and not pet:find("happy.",1,true) then return pet end
     end
-    -- Camp Benefits are already active (or unreadable): never invent an
-    -- expiring/missing buff. Optional class-care hints remain separate.
     if db.classCare~=false then return hints[CurrentClass()] end
 end
 
@@ -167,15 +175,17 @@ local function Pulse()
     if not entryTime then entryTime=now end
     if now-entryTime<180 then return end
     local current=CampStatus()
-    local changed=current.state~=lastCampState
-    lastCampState=current.state
+    local tent=TentStatus()
+    local stateKey=current.state..":"..tent.state
+    local changed=stateKey~=lastCampState
+    lastCampState=stateKey
     local interval=math.max(20,math.min(120,tonumber(db.interval) or 45))
-    local urgent=changed and (current.state=="missing" or current.state=="expiring")
-        and db.buffs~=false
+    local urgent=changed and
+        (tent.state=="ready" or current.state=="expiring") and db.buffs~=false
     -- Camp buff state changes deserve a prompt as soon as they are observed,
     -- independent of generic supplies/class reminder cadence.
     if now-lastNotice<interval*60 and not urgent then return end
-    local msg=MeaningfulHint(current)
+    local msg=MeaningfulHint(current,tent)
     if msg then
         local shown=false
         if db.toast~=false and type(ChalkBox_ShowReminder)=="function" then
@@ -191,6 +201,7 @@ function ChalkBox_CampStatus()
     local summary=CampingStatus()
     return {summary=summary,class=CurrentClass() or "Unknown",
         race=CurrentRace() or "Unknown",pet=PetStatus(),buff=CampStatus(),
+        tent=TentStatus(),
         interval=(db and db.interval or 45),enabled=db and db.enabled~=false,
         toast=db and db.toast~=false}
 end
@@ -214,9 +225,24 @@ function ChalkBox_CampChecklist()
         elseif s.buff.state=="expiring" then
             Note("Camp Benefits: expiring in "..math.ceil((s.buff.seconds or 0)/60).." min.")
         elseif s.buff.state=="missing" then
-            Note("Camp Benefits: MISSING; rest at a campsite to refresh.")
+            Note("Camp Benefits: stat-buff aura absent. This does NOT mean your Camp Tent XP failed.")
         else
             Note("Camp Benefits: unable to read auras; no missing-buff assumptions.")
+        end
+    end
+    if s.tent then
+        if s.tent.state=="cooldown" then
+            Note("Camp Tent: Boosted Rest ACTIVE; tent already credited"..
+                (s.tent.seconds and (" ("..math.ceil(s.tent.seconds/60).." min remaining)") or "")..".")
+        elseif s.tent.state=="sufficient" then
+            Note("Camp Tent: already have at least 5% of a level in rested XP; another tent won't add more.")
+        elseif s.tent.state=="acknowledged" then
+            Note("Camp Tent: manually marked as completed for this session"..
+                (s.tent.seconds and (" ("..math.ceil(s.tent.seconds/60).." min)") or "")..".")
+        elseif s.tent.state=="ready" then
+            Note("Camp Tent: rested XP below 5% and no Boosted Rest; tent refill may help.")
+        else
+            Note("Camp Tent: status unknown; cannot tell whether you already used a tent.")
         end
     end
     if s.pet then Note("Pet: "..s.pet) end
@@ -238,6 +264,25 @@ function ChalkBox_CampCommand(msg)
         local k=key=="classcare" and "classCare" or key
         db[k]=value=="on"
         Note(k.." reminders "..value..".")
+    elseif key=="tent" and (value=="done" or value=="clear" or value=="status") then
+        if value=="done" then
+            local now=type(GetTime)=="function" and GetTime() or 0
+            if Safe(now) and type(now)=="number" then
+                tentAcknowledgedUntil=now+3600
+                lastCampState=nil
+                Note("Tent manually marked complete for 1 hour this session. Boosted Rest is still checked automatically.")
+            else
+                Note("Unable to mark tent without a safe game clock.")
+            end
+        elseif value=="clear" then
+            tentAcknowledgedUntil=nil
+            lastCampState=nil
+            Note("Manual tent confirmation cleared.")
+        else
+            local tent=TentStatus()
+            Note("Camp Tent: "..tent.state..(tent.seconds and
+                (" ("..math.ceil(tent.seconds/60).." min)") or "")..".")
+        end
     elseif key=="toast" and (value=="on" or value=="off") then
         db.toast=value=="on"
         if not db.toast and type(ChalkBox_HideReminder)=="function" then
