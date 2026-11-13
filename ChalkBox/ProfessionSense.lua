@@ -7,6 +7,7 @@ local learned = {}
 local recipeUses = {}
 local available = {}
 local seenWindow = {}
+local authoritativeProfessions = false
 local loaded = false
 local scan = {source="not scanned", recipes=0, reagents=0, lastWindow="none", retries=0}
 local scanScheduled = false
@@ -78,6 +79,7 @@ local function ReadProfessions()
         end
     end
     local sawAny=next(found)~=nil
+    authoritativeProfessions=sawAny
     if not sawAny then
         for name in pairs(seenWindow) do found[name]=true end
     else
@@ -135,7 +137,7 @@ local function ReadLegacyTrade()
         or type(GetTradeSkillInfo) ~= "function" then return end
     local name = GetTradeSkillLine()
     local profession = Normalize(name)
-    if not profession then return end
+    if not profession or (authoritativeProfessions and not available[profession]) then return end
     available[profession]=true
     seenWindow[profession]=true
     scan.lastWindow=profession
@@ -163,7 +165,7 @@ end
 local function ReadLegacyCraft()
     if type(GetCraftDisplaySkillLine) ~= "function" or type(GetNumCrafts) ~= "function" then return end
     local profession = Normalize(GetCraftDisplaySkillLine())
-    if not profession then return end
+    if not profession or (authoritativeProfessions and not available[profession]) then return end
     available[profession]=true
     seenWindow[profession]=true
     scan.lastWindow=profession
