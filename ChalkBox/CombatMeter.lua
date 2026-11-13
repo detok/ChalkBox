@@ -427,18 +427,17 @@ local function CreateWindow()
         end
     end)
     -- Zero branding/footer noise. Every button does something useful.
-    meterButton=MakeButton(header,"DPS",59,-249,function()
+    meterButton=MakeButton(header,"DPS",67,-224,function()
         Next(modes,"mode",SetMode)
     end)
-    sessionButton=MakeButton(header,"Fight",70,-176,function()
+    sessionButton=MakeButton(header,"Fight",70,-146,function()
         Next(sessions,"session",SetSession)
     end)
-    MakeButton(header,"PRINT",61,-109,function() PrintFight() end)
-    lockButton=MakeButton(header,"LOCK",60,-42,function()
+    MakeButton(header,"PRINT",65,-72,function() PrintFight() end)
+    lockButton=MakeButton(header,"LOCK",60,-5,function()
         db.locked=not db.locked
         ApplyLocked()
     end)
-    MakeButton(header,"X",24,-5,function() SetShown(false) end)
 
     notice=Font(window,"GameFontHighlightSmall",0.62,0.70,0.77)
     notice:SetPoint("TOPLEFT",window,"TOPLEFT",28,-67)
