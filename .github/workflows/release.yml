@@ -41,7 +41,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ChalkBox-addon
-          path: dist/ChalkBox-*.zip
+          path: dist/ChalkBox-[0-9]*.zip
           if-no-files-found: error
       - name: Publish release on main
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
