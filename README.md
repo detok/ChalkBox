@@ -27,6 +27,7 @@ ChalkBox helps you **avoid wasting useful items**, keep up with your camping buf
 | **ProfessionSense** | Records relevant learned recipe ingredients when you open profession windows. Where the client provides them, keeps recipe names and quantities. |
 | **CampSense** | Checks the **Camp Benefits** aura, reminds you when it is missing/expiring, and shows a small **center-screen toast**. Also tracks camp tools and class/pet preparedness. |
 | **TrailBar** | Slim 18px bar for XP/hour, time to level, gold and time, with real screen-space reservation. |
+| **Combat Meter** | Native Forever DPS/damage/healing leaderboards, current/last/overall fights, class-colored bars and simple draggable window. |
 | **QuestSense** | Helps manage native tracking for accepted quests in the area without replacing your quest log. |
 | **QuietGuard** | Tries to decline unsolicited guild invites and duels; optional filters for other invitations. |
 | **Emota** | Occasional native emote personality with race/class flavor, resting-area context and hunter-pet awareness. |
@@ -45,6 +46,14 @@ Open a crafting profession window until the recipe list loads; ChalkBox detects 
 
 **ChalkBox will never declare an unknown item safe to sell.** It doesn't automate selling, trading, deleting, purchasing or item use.
 
+### Built-in Combat Meter — no additional addon
+
+Want to see how you're doing in a fight? ChalkBox now includes a **lightweight, movable DPS meter**. It reads Blizzard's own `C_DamageMeter` totals (Forever blocks direct combat-log parsing), displaying class-colored bars without doing unsafe calculations on protected combat values.
+
+**Two easy buttons** on the title bar cycle the statistic (**DPS / DMG / HPS / HEAL / TAKEN / INT**) and session (**Fight / Last / Overall**). Your row gets a gold marker. Drag the header, hide with **x**, or open **Esc → Options → AddOns → ChalkBox → Combat Meter** to lock, resize or show the window. It is enabled by default and doesn't change Blizzard's built-in meter.
+
+Use `/chalk meter` to toggle, `/chalk meter dps` for DPS, `/chalk meter overall` for overall, and `/chalk meter help` for every command. Reset asks for confirmation because it clears Blizzard's shared meter sessions too. Pet and guardian grouping remains whatever Blizzard supplies; ChalkBox does not invent its own numbers. See [user guide](docs/USER_GUIDE.md).
+
 ### Camping reminders you can actually see
 
 Use **`/chalk prep test`** to preview the central reminder instantly. **`/chalk prep`** prints your available camp tools and known buff state. The addon checks for Forever's **Camp Benefits** aura and tries not to bother you while you are already receiving **Welcoming Campfire** benefits. The toast automatically fades after nine seconds; turn it off in **Adventure Prep** if you prefer chat-only reminders.
@@ -60,6 +69,8 @@ Use **`/chalk prep test`** to preview the central reminder instantly. **`/chalk 
 | `/chalk forget [item]` | Remove a personal protection |
 | `/chalk prep` | Print camping and buff checklist |
 | `/chalk prep test` | Display a test toast |
+| `/chalk meter` | Show or hide the built-in native DPS meter |
+| `/chalk meter help` | List statistic, fight and layout controls |
 | `/chalk guard` | See social invite protections |
 | `/chalk bar status` | Check TrailBar placement and reserved space |
 | `/chalk emota idle preview` | Test a random idle emote |
