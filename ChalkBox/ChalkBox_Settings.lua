@@ -116,10 +116,11 @@ local function MakeHome()
         {"emota", "Emota", "Character jokes, emotes and optional diagnostic messages"},
         {"catalog", "Emote Catalog", "Every client-known emote, with switches and preview buttons"},
         {"guard", "QuietGuard", "Block random guild invites and duels; optional social filters"},
-        {"prep", "Adventure Prep", "Camping supplies, buffs and race/class-care reminders"}
+        {"prep", "Adventure Prep", "Camping supplies, buffs and race/class-care reminders"},
+        {"meter", "Combat Meter", "Native DPS, damage, healing and fight rankings"}
     }
     for index, info in ipairs(items) do
-        local y = -132 - (index-1) * 45
+        local y = -128 - (index-1) * 39
         Button(panel, info[2], 28, y, 205, function() Activate(info[1]) end)
         Label(panel, info[3], "GameFontHighlightSmall", 247, y - 7, 276)
     end
@@ -471,6 +472,44 @@ local function MakePrep()
     return panel
 end
 
+local function MakeMeter()
+    local panel=Panel("Combat Meter",
+        "Blizzard-native damage data. No combat-log parsing or secret-value calculations.")
+    local function Run(command)
+        if ChalkBox_MeterCommand then ChalkBox_MeterCommand(command) end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end
+    Toggle(panel,"Show compact DPS meter window",
+        "Appears by default; doesn't replace Blizzard's own meter.",-108,
+        function()
+            local status=ChalkBox_MeterStatus and ChalkBox_MeterStatus()
+            return status and status.shown==true
+        end,
+        function(on) Run(on and "show" or "hide") end)
+    Toggle(panel,"Lock meter position",nil,-173,
+        function()
+            local status=ChalkBox_MeterStatus and ChalkBox_MeterStatus()
+            return status and status.locked==true
+        end,
+        function(on) Run(on and "lock" or "unlock") end)
+    Label(panel,"Rows visible","GameFontNormalLarge",30,-232,340)
+    for i,n in ipairs({5,8,12}) do
+        Button(panel,tostring(n).." rows",27+(i-1)*138,-256,120,
+            function() Run("rows "..n) end)
+    end
+    Label(panel,"Window size","GameFontNormalLarge",30,-305,340)
+    for i,n in ipairs({85,100,115}) do
+        Button(panel,tostring(n).."%",27+(i-1)*138,-331,120,
+            function() Run("scale "..n) end)
+    end
+    Button(panel,"Show Window",27,-386,133,function() Run("show") end)
+    Button(panel,"Reset Position",172,-386,145,function() Run("position reset") end)
+    Button(panel,"Reset Data...",328,-386,140,function() Run("reset") end)
+    Label(panel,"Tip: click DPS or Fight in the meter heading to switch views.",
+        "GameFontHighlightSmall",29,-417,495)
+    return panel
+end
+
 local function Register()
     if registered then return end
     panels.home = MakeHome()
@@ -481,6 +520,7 @@ local function Register()
     panels.catalog = MakeCatalog()
     panels.guard = MakeGuard()
     panels.prep = MakePrep()
+    panels.meter = MakeMeter()
     if Settings and type(Settings.RegisterCanvasLayoutCategory) == "function"
         and type(Settings.RegisterAddOnCategory) == "function" then
         rootCategory = Settings.RegisterCanvasLayoutCategory(panels.home, title)
@@ -494,6 +534,7 @@ local function Register()
                 {"catalog", "Emote Catalog"},
                 {"guard", "QuietGuard"},
                 {"prep", "Adventure Prep"},
+                {"meter", "Combat Meter"},
             }) do
                 local sub = Settings.RegisterCanvasLayoutSubcategory(rootCategory,
                     panels[item[1]], item[2])
@@ -515,6 +556,7 @@ local function Register()
             {"catalog", "Emote Catalog"},
             {"guard", "QuietGuard"},
             {"prep", "Adventure Prep"},
+                {"meter", "Combat Meter"},
         }) do
             local panel = panels[item[1]]
             panel.parent = title
