@@ -518,8 +518,8 @@ local function ConfirmReset()
 end
 local function Help()
     Chat("/chalk meter [show|hide|toggle|dps|damage|hps|healing|taken|interrupts]")
-    Chat("/chalk meter [current|last|overall|lock|unlock|rows 5/8/12|scale 85/100/115|reset]")
-    Chat("Drag the heading to move. Mode and Fight controls cycle views. Reset also clears Blizzard's meter.")
+    Chat("/chalk meter [current|last|overall|print|lock|unlock|rows 5/8/12|opacity 35-100|reset]")
+    Chat("Drag the heading to move, bottom-right grip to resize; PRINT sends a local chat summary after combat.")
 end
 function ChalkBox_MeterCommand(input)
     if not db then db=Settings() end
@@ -530,15 +530,19 @@ function ChalkBox_MeterCommand(input)
     elseif value=="hide" or value=="off" then SetShown(false)
     elseif value=="reset" then ConfirmReset()
     elseif value=="reset confirm" then ResetNative()
+    elseif value=="print" then PrintFight()
     elseif value=="help" then Help()
     elseif value=="status" then
         local enabled=IsAvailable()
         Chat("Native API: "..(enabled and "available" or "unavailable")..
             " | "..db.mode.." | "..db.session..
-            " | "..db.rows.." rows | "..(db.shown and "shown" or "hidden"))
+            " | "..db.rows.." rows | "..math.floor(db.opacity*100)..
+            "% opacity | "..(db.locked and "locked" or "unlocked")..
+            " | "..(db.shown and "shown" or "hidden"))
     elseif value=="lock" or value=="unlock" then
         db.locked=value=="lock"
-        Chat(db.locked and "Window locked." or "Drag header to move the window.")
+        ApplyLocked()
+        Chat(db.locked and "Meter locked in place." or "Meter unlocked: drag the header or resize grip.")
     elseif value=="position reset" then
         db.position=nil;db.x=nil;db.y=nil
         ApplyLayout()
@@ -549,7 +553,12 @@ function ChalkBox_MeterCommand(input)
     else
         local n=value:match("^rows (%d+)$")
         local scale=value:match("^scale (%d+)$")
-        if n and (tonumber(n)==5 or tonumber(n)==8 or tonumber(n)==12) then
+        local opacity=value:match("^opacity (%d+)$")
+        if opacity and tonumber(opacity)>=35 and tonumber(opacity)<=100 then
+            db.opacity=math.floor(tonumber(opacity)+0.5)/100
+            if opacitySlider then opacitySlider:SetValue(db.opacity*100) end
+            ApplyOpacity()
+        elseif n and (tonumber(n)==5 or tonumber(n)==8 or tonumber(n)==12) then
             db.rows=tonumber(n)
             ApplyLayout();QueueRefresh()
         elseif scale and (tonumber(scale)==85 or tonumber(scale)==100 or tonumber(scale)==115) then
@@ -562,7 +571,8 @@ function ChalkBox_MeterStatus()
     if not db then db=Settings() end
     local enabled=IsAvailable()
     return {shown=db.shown,locked=db.locked,mode=db.mode,session=db.session,
-        rows=db.rows,scale=db.scale,available=enabled}
+        rows=db.rows,scale=db.scale,opacity=db.opacity,width=db.width,
+        available=enabled}
 end
 local event=CreateFrame("Frame")
 event:RegisterEvent("ADDON_LOADED")
