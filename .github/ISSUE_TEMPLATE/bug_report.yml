@@ -1,17 +1,18 @@
 name: Bug report
-description: Something isn't working correctly in ChalkBox or WoW Forever
+description: Report a reproducible problem in ChalkBox or WoW Forever
 title: "[Bug] "
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting this! Please don't include account passwords or private chat.
-        Try the [troubleshooting guide](https://github.com/detok/ChalkBox/blob/main/docs/TROUBLESHOOTING.md) first.
+        Thanks for helping test ChalkBox! Start with the [troubleshooting guide](https://github.com/detok/ChalkBox/blob/main/docs/TROUBLESHOOTING.md).
+        **2.0 map issue?** Try `/chalk drops map` and `/chalk drops map status` and paste the output below.
+        Never post passwords, account IDs, private chat, tokens, or identifying screenshots.
   - type: input
     id: addon
     attributes:
       label: ChalkBox version
-      placeholder: "1.5.1"
+      placeholder: "2.0.0"
     validations:
       required: true
   - type: dropdown
@@ -20,8 +21,8 @@ body:
       label: Game client
       options:
         - WoW Forever / Camelot
-        - WoW Classic Era
-        - Other (please describe in details)
+        - WoW Classic Era (unverified)
+        - Other (explain in details)
     validations:
       required: true
   - type: input
@@ -32,22 +33,25 @@ body:
   - type: dropdown
     id: module
     attributes:
-      label: ChalkBox module
+      label: ChalkBox feature
       options:
+        - Map Discoveries / DropSense
+        - MacroForge
         - LootSense / ProfessionSense
-        - CampSense / Reminder Toast
-        - TrailBar
-        - QuietGuard
-        - Emota
+        - The Bar / Repair Learning
+        - Session Journal
+        - Combat Meter / native PRINT
         - QuestSense
-        - Settings / Install / Other
+        - CampSense / Reminder Toast
+        - Global Appearance
+        - Emota / QuietGuard / Bags
+        - Settings / installation / other
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
       label: Steps to reproduce
-      description: How can another player observe the same problem?
       placeholder: |
         1. ...
         2. ...
@@ -57,13 +61,22 @@ body:
   - type: textarea
     id: expected
     attributes:
-      label: Expected versus actual behavior
-      description: Include exact tooltip lines and item/recipe links, if relevant.
+      label: What did you expect, and what happened instead?
+      description: Include real item links, macro text, panel titles, or quest names where relevant.
     validations:
       required: true
   - type: textarea
+    id: diagnostics
+    attributes:
+      label: Helpful diagnostics (especially for map or macro bugs)
+      description: "Map: paste /chalk drops map status. MacroForge: /chalk forge status. Include any related map/UI addons."
+      placeholder: |
+        /chalk drops map status:
+        Other addons:
+        Fullscreen/windowed map:
+  - type: textarea
     id: logs
     attributes:
-      label: Lua errors or screenshots (optional)
-      description: Paste error text or drag images here. Remove identifying information.
+      label: Lua errors and real-client screenshots (optional)
+      description: Paste error text or drag a screenshot here. Redact identifying details.
       render: text

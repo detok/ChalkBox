@@ -561,6 +561,21 @@ function ChalkBox_DropCommand(input)
         local chance=ChalkBox_DropCalculate(rate,tries)
         Note(chance and (("%.2f%% chance in %s independent attempts"):format(
             chance,tries)) or "Usage: /chalk drops chance <percent> <attempts>")
+    elseif cmd=="map" and args=="status" then
+        local state=type(ChalkBox_MapDiscoveriesStatus)=="function"
+            and ChalkBox_MapDiscoveriesStatus() or nil
+        if state then
+            Note(("Map button: frame %s, attached %s, visible %s, toggle %s, anchor %s."):format(
+                tostring(state.frame),tostring(state.button),
+                tostring(state.shown),tostring(state.allowed),
+                tostring(state.anchor)))
+            Note(("Tracking %s; %d mapped area(s); selected map %s."):format(
+                state.tracking and "ON" or "OFF",state.areas,
+                tostring(state.mapID or "unavailable")))
+            if not state.button then
+                Note("Open the world map once, then use /chalk drops map.")
+            end
+        else Note("Map diagnostics are unavailable in this client.") end
     elseif cmd=="open" or cmd=="map" then
         if type(ChalkBox_OpenMapDiscoveries)=="function" then
             ChalkBox_OpenMapDiscoveries()
@@ -574,7 +589,8 @@ function ChalkBox_DropCommand(input)
         end
         if opt.limitReached then Note("Journal capacity reached for some new entries.") end
     else
-        Note("/chalk drops on|off | map on|off | map | status | chance <percent> <tries>")
+        Note("/chalk drops on|off | map | map on|off | map status | status")
+        Note("/chalk drops chance <percent> <tries>")
     end
 end
 for _,name in ipairs({"LOOT_READY","LOOT_OPENED","LOOT_CLOSED",

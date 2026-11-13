@@ -1,38 +1,41 @@
 name: Feature request
-description: Improve ChalkBox for ordinary adventurers
+description: Suggest a useful improvement to the ChalkBox adventure companion
 title: "[Feature] "
 body:
   - type: markdown
     attributes:
       value: |
-        ChalkBox aims to protect useful items without unnecessary clutter or automation.
-        Please describe the problem you want solved, not just a UI control.
+        ChalkBox focuses on trustworthy information, familiar WoW UI and player-controlled actions. Tell us what would make an actual adventure smoother.
   - type: textarea
     id: problem
     attributes:
-      label: What's missing or frustrating?
+      label: What is frustrating or missing?
     validations:
       required: true
   - type: textarea
     id: solution
     attributes:
-      label: What should ChalkBox do instead?
-      description: Example tooltip text or reminder timing is welcome.
+      label: How should ChalkBox help?
+      description: A specific workflow, command, tooltip, or example is useful.
     validations:
       required: true
-  - type: textarea
-    id: examples
-    attributes:
-      label: Real item, recipe, class, or gameplay examples (optional)
   - type: dropdown
     id: module
     attributes:
-      label: Which module does this affect?
+      label: Feature area
       options:
-        - LootSense
-        - CampSense
-        - TrailBar
-        - Emota
-        - QuietGuard
-        - QuestSense
-        - New / Other
+        - Map Discoveries / DropSense
+        - MacroForge
+        - LootSense / ProfessionSense
+        - The Bar / Repair Learning
+        - Session Journal
+        - QuestSense / CampSense
+        - Combat Meter / native PRINT
+        - Global Appearance
+        - Emota / QuietGuard / Bags
+        - New idea / other
+  - type: textarea
+    id: examples
+    attributes:
+      label: Real game examples (optional)
+      description: Class/spell, item, zone, dungeon, character workflow or UI screenshot.

@@ -342,8 +342,8 @@ SlashCmdList.CHALKBOX = function(input)
     else
         Note("Open settings: /chalk | /chalk settings. Commands: keep [item] | forget [item] | list | loot on/off|status|scan | bags | meter | quests | bar | emota | prep | guard | help")
         Note("LootSense shows quest protections and your character's possible/known profession uses. No automatic selling.")
-        Note("New: /chalk drops status|watch [item]|chance <rate> <tries> | /chalk session | /chalk theme")
-        Note("New: /chalk macro opens MacroForge; /chalk forge rescan refreshes your spellbook.")
+        Note("Explore: /chalk drops map | map status | map on|off | /chalk drops status | chance 5 20")
+        Note("Build: /chalk macro opens MacroForge | /chalk forge rescan refreshes your spellbook.")
     end
 end
 

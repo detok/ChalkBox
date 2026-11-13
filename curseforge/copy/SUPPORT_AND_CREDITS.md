@@ -47,7 +47,7 @@ Complete credits and provenance: https://github.com/detok/ChalkBox/blob/main/NOT
 
 ## Maintenance checklist
 
-- [ ] Update the current 1.9.0 release version in this folder when a new addon version is shipped
+- [ ] Update the current 2.0.0 prerelease version and public claims when a newer addon version is shipped
 - [ ] Validate future claims against `FEATURE_PROOF.md`
 - [ ] Upload the exact official addon ZIP to CurseForge, assigned to the correct Forever flavor
 - [ ] Keep legal notices and third-party credit intact

@@ -1,56 +1,46 @@
-# ChalkBox — CurseForge launch kit (first pass)
+# ChalkBox — 2.0 GitHub + CurseForge launch kit
 
-**Status: editorial package prepared; brand vector artwork created; real game screenshots pending; CurseForge project not submitted.**
+**Status: GitHub 2.0 prerelease prepared for in-client testing. The CurseForge project has not been submitted or approved; authentic gameplay screenshots are still pending.**
 
-This directory contains the working content and production plan for a polished ChalkBox project on CurseForge. It is **not** part of the WoW addon installed by players. The installable release remains the existing `ChalkBox-<version>.zip` built by `scripts/package.py`.
+This folder is a **public editorial and publishing workspace**, not part of the installable WoW addon. The game release remains the single versioned `ChalkBox-2.0.0.zip` asset from [GitHub Releases](https://github.com/detok/ChalkBox/releases/tag/v2.0.0). Do not upload the repository source-code ZIP or this `curseforge/` folder as an addon.
 
-## Start here
+## The product story
 
-1. **[PROJECT_DESCRIPTION.md](copy/PROJECT_DESCRIPTION.md)** — the complete, paste-ready CurseForge project description. Markdown-mode is recommended; inspect the published preview.
-2. **[PROJECT_FIELDS.md](copy/PROJECT_FIELDS.md)** — title, summary, flavor, categories, license and links for the project form.
-3. **[ARTWORK_TO_CREATE.md](ARTWORK_TO_CREATE.md)** — the single master creative brief for the brand pass and screenshot follow-up. **Six original vector brand assets are complete. Real gameplay screenshots are still required; none have been faked.**
-4. **[PUBLISH_CHECKLIST.md](submission/PUBLISH_CHECKLIST.md)** — ordered checklist from author account to reviewed public project, with release-file checks.
+**ChalkBox is the quiet adventure companion for WoW Forever.** One addon brings together **MacroForge**, **automatic DropSense + Map Discoveries**, **LootSense + ProfessionSense**, **The Bar + Repair Learning**, **Session Journal**, **QuestSense**, camping, combat-meter tools, a shared theme and optional quality-of-life modules.
 
-## Copy and reference documents
+The story is useful information and player control—not speculative official drop percentages, AI combat or replacing Blizzard's whole interface.
 
-| File | Purpose |
+## Editorial assets
+
+| Document | Why it exists |
 | --- | --- |
-| [SHORT_COPY.md](copy/SHORT_COPY.md) | Alternate summaries, opening pitches, promotional captions |
-| [FEATURE_PROOF.md](copy/FEATURE_PROOF.md) | Feature/claim verification against the present source code, plus boundaries |
-| [QUICK_START.md](copy/QUICK_START.md) | Installation and first five minutes for an end user |
-| [FAQ.md](copy/FAQ.md) | Common questions and honest client limitations |
-| [COMMANDS.md](copy/COMMANDS.md) | Compact, accurate command reference |
-| [SUPPORT_AND_CREDITS.md](copy/SUPPORT_AND_CREDITS.md) | Bug-report template, MIT credit and library acknowledgements |
-| [FILE_CHANGELOG_1.9.0.md](copy/FILE_CHANGELOG_1.9.0.md) | Text to use with the v1.9.0 file upload |
-| [ARTWORK_TO_CREATE.md](ARTWORK_TO_CREATE.md) | Identity, design system, exact requested image concepts, priorities |
-| [SCREENSHOT_PLAN.md](artwork/SCREENSHOT_PLAN.md) | Capture instructions and per-shot visual storyboards |
-| [ARTWORK_FOLDER.md](artwork/ARTWORK_FOLDER.md) | Eventual asset directory naming/organization, no fake files |
-| [PUBLISH_CHECKLIST.md](submission/PUBLISH_CHECKLIST.md) | CurseForge UI workflow and gates |
-| [GITHUB_PRESENTATION.md](submission/GITHUB_PRESENTATION.md) | GitHub landing page, primary download links, About metadata, optional branch-protection steps |
-| [QA_AND_POLICY.md](submission/QA_AND_POLICY.md) | Accuracy, moderation, file packaging and screenshot QA |
+| [PROJECT_DESCRIPTION](copy/PROJECT_DESCRIPTION.md) | Polished listing body, ready to adapt for the CurseForge editor |
+| [PROJECT_FIELDS](copy/PROJECT_FIELDS.md) | Proposed public project metadata, short summary and safe source links |
+| [SHORT_COPY](copy/SHORT_COPY.md) | Headlines, captions, launch preview and GitHub About text |
+| [QUICK_START](copy/QUICK_START.md) | Player-friendly first five minutes |
+| [COMMANDS](copy/COMMANDS.md) | Current 2.0 command reference |
+| [FAQ](copy/FAQ.md) | Concise answers and important technical limitations |
+| [FEATURE_PROOF](copy/FEATURE_PROOF.md) | Claim-to-code matrix and honest live-client QA boundaries |
+| [SUPPORT_AND_CREDITS](copy/SUPPORT_AND_CREDITS.md) | Support and licenses |
+| [BRANDING](../docs/BRANDING.md) | Original ChalkBox visual identity and six committed SVG assets |
+| [SCREENSHOT_PLAN](artwork/SCREENSHOT_PLAN.md) | Real-client capture plan—no fake UI screenshots |
+| [PUBLISH_CHECKLIST](submission/PUBLISH_CHECKLIST.md) | Account, file, policy, screenshot and launch steps |
+| [GITHUB_PRESENTATION](submission/GITHUB_PRESENTATION.md) | Front-page structure and **manual GitHub About** tasks |
+| [QA_AND_POLICY](submission/QA_AND_POLICY.md) | Publishing guardrails |
 
-## Editorial source of truth
+Older version-specific `FILE_CHANGELOG_1.x.md` files are **archival**, not copy for 2.0.
 
-This kit was prepared against **ChalkBox v1.9.0** on the public GitHub `main` branch (2026-11-13), including its two TOCs, Lua modules, current documentation and release process.
+## Artwork truth
 
-- [Source repository](https://github.com/detok/ChalkBox)
-- [Current source README](../README.md)
-- [User guide](../docs/USER_GUIDE.md)
-- [Changelog](../CHANGELOG.md)
-- [Release notes](../docs/RELEASE_NOTES.md)
-- [Third-party notices](../NOTICE.md)
+Six original branding SVGs are already committed under [artwork](artwork/). Flat PNGs can be exported from these sources for a hosting portal if required. **Do not claim the brand's feature illustration is a real WoW screenshot.** The `ChalkBox/assets/Icon.tga` in the addon remains unchanged until verified in-client.
 
-**Important distinctions:** TrailBar has **drag-to-reorder sections, per-character saved module alignment and charcoal opacity**, alongside bag, gear, rested XP, optional latency, Hunter pet, XP and gold modules. Native action-bar empty-slot hiding is a WoW Edit Mode setting, **not a ChalkBox feature**. Blizzard's native-meter PRINT menu and the separate-bag offset are implemented, but still need real in-client confirmation. LootSense remains advisory, adds an in-game Item Insight section and outlines only truly learned-recipe ingredients; it never auto-sells.
+## Release gate
 
-## Publishing discipline
+1. Both TOCs say **2.0.0** and the release ZIP contains one `ChalkBox/` folder.
+2. GitHub's **Lua tests and installable ZIP** workflow is green on the merged commit.
+3. The World Map Discoveries late-loading fix is tested **in the actual Forever client**, including the command fallback and diagnostics.
+4. MacroForge spellbook, generated macro copy, save/reload and optional native installation are tested in client.
+5. Real feature screenshots are captured before adding a gallery.
+6. Only then prepare the CurseForge author upload/approval; until approved, keep primary downloads on GitHub.
 
-- **Do not** upload `curseforge/` or a GitHub source-code archive as the game addon. Use the versioned installation ZIP with a single top-level `ChalkBox/` directory.
-- **Do not** paste GitHub Release download links into the CurseForge description; use CurseForge's own Files tab for downloads.
-- Keep the listing free of fabricated screenshots, false endorsements, affiliation claims and features that have not shipped.
-- Update version references, images and change log when a later release supersedes 1.9.0.
-- Do not publish the listing as completed or claim CurseForge approval until the site actually approves it.
-- This documentation-only commit should **not** change addon TOC versions or generate a new addon release.
-
-## Next pass
-
-The next request can simply be: **“Use `curseforge/ARTWORK_TO_CREATE.md` and `curseforge/artwork/SCREENSHOT_PLAN.md` to make the ChalkBox CurseForge artwork.”** Actual in-game screenshots should be supplied/captured from the real client; marketing backgrounds and icon art can be designed separately.
+**No separate dependency, fake screenshot, fake rate, or claimed CurseForge listing.**

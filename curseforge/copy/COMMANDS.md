@@ -1,40 +1,38 @@
-# ChalkBox — command reference
+# ChalkBox 2.0 — command reference
+
+Commands operate inside the **one ChalkBox addon**.
 
 | Command | Action |
 | --- | --- |
-| `/chalk`, `/cb`, `/chalk settings` | Open native AddOns settings |
-| `/chalk keep [item]` | Mark exact item name or item link to keep |
-| `/chalk forget [item]` | Remove personal item protection |
-| `/chalk list` | List protected items |
-| `/chalk loot on` / `off` | Toggle extra tooltip advice |
-| `/chalk loot scan` | Scan currently available character profession data |
-| `/chalk loot status` | Explain learned recipes and database status |
-| `/chalk bar top` / `bottom` / `off` | Move, show or hide TrailBar |
-| `/chalk bar reserve on` / `off` | Toggle bar space reservation |
-| `/chalk bar reset` / `status` | Reset session stats or inspect bar state |
-| `/chalk bar stats` | List configured and currently visible TrailBar modules |
-| `/chalk bar stats balanced` / `minimal` / `all` | Apply a responsive bar profile |
-| `/chalk bar stat bags on` / `gear off` / `latency on` | Enable or disable individual TrailBar stats |
-| `/chalk bar edit on` / `off` | Unlock/lock module dragging and alignment |
-| `/chalk bar move bags center 2` | Move stat to a group and position |
-| `/chalk bar align gold right` | Set a stat's text alignment inside its block |
-| `/chalk bar layout reset` / `layout` | Reset per-character order or display saved layout |
-| `/chalk bar opacity 0` / `100` | Adjust background-only transparency |
-| `/chalk bags offset -35` / `+30` / `reset` | Move bags up or down from stock, or reset to center |
-| `/chalk bags status` | Bag layout hook and offset diagnostic |
-| `/chalk meter show` / `hide` | Show or hide ChalkBox's separate combat window |
-| `/chalk meter dps` / `damage` / `hps` / `healing` | Change compact meter statistic |
-| `/chalk meter current` / `last` / `overall` | Change compact meter fight scope |
-| `/chalk meter print` | Manually send top-three ranking to normal PARTY |
-| `/chalk meter reset` | Ask before clearing shared Blizzard sessions |
-| `/chalk meter native on` / `off` / `status` | Toggle/diagnose Blizzard native-meter gear-menu PRINT |
-| `/chalk meter help` | List all meter display/layout options |
-| `/chalk quests smart` / `zone` / `all` | Accepted-quest watch mode |
-| `/chalk quests status` / `refresh` | Diagnoses and refreshes auto-watches |
-| `/chalk prep` / `/chalk prep test` | Camp checklist/help or on-screen toast preview |
-| `/chalk prep tent done` / `clear` | Manual tent acknowledgement controls |
-| `/chalk guard` | See QuietGuard settings/status |
-| `/chalk emota idle preview` | Preview an idle emote |
-| `/chalk help` | Show command groups |
+| `/chalk`, `/cb` | Open ChalkBox settings |
+| `/chalk macro` | Open MacroForge wizard |
+| `/chalk forge rescan` | Refresh learned spellbook abilities |
+| `/chalk forge status` | Current MacroForge scan/saved-build status |
+| `/chalk drops map` | Open Discoveries independent of map button |
+| `/chalk drops map status` | Diagnose map frame/button/visibility |
+| `/chalk drops map on` / `off` | Show/hide map button |
+| `/chalk drops on` / `off` | Start/stop personal loot-window recording |
+| `/chalk drops status` | Inspect tracked items, sampled windows and mapped zones |
+| `/chalk drops tooltip on` / `off` | Show/hide observed-loot notes in native loot-window tooltips |
+| `/chalk drops chance 5 20` | Example probability calculator for a **user-supplied** 5% independent chance across 20 tries |
+| `/chalk session` | View this session |
+| `/chalk session last` | View previous saved session |
+| `/chalk loot status` | LootSense, profession knowledge and read API status |
+| `/chalk loot scan` | Refresh learned-recipe knowledge after opening a crafting window |
+| `/chalk keep [item]` / `forget [item]` | Add/remove a personal KEEP protection |
+| `/chalk bar status` | Inspect The Bar |
+| `/chalk bar stat bagvalue on` | Enable bag vendor resale module |
+| `/chalk bar bagvalue junk` / `total` | Flip gray-junk vs all equipped bag contents |
+| `/chalk bar stat repair on` / `off` | Repair module visibility |
+| `/chalk bar repair status` | Inspect repair learning samples |
+| `/chalk bar repair reset` | Clear **this character's** learned repair sample history |
+| `/chalk quests status` | Show QuestSense status |
+| `/chalk quests refresh` | Queue native quest-watch refresh |
+| `/chalk prep` | Inspect camp state |
+| `/chalk prep test` | Preview the camp reminder toast |
+| `/chalk meter status` | Inspect meter availability |
+| `/chalk meter print` | Manually print a supported combat summary to normal PARTY chat |
+| `/chalk theme` | Global Appearance settings |
+| `/chalk help` | In-game help |
 
-**Notes:** PARTY prints only after combat in a normal party when Forever allows access to results. The native meter gear-menu print follows **that native meter window's** selected mode/fight; the compact meter's `/chalk meter print` follows ChalkBox's own selection.
+**Note:** DropSense uses observed *loot windows*, not every kill. Server drop tables and exact per-mob loot chances are not exposed. MacroForge only designs macros: it does not automate rotations or bypass GCDs.

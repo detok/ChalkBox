@@ -2,6 +2,10 @@
 
 > **Brand artwork completed in vector format on this branch.** The project icon, wordmark, hero, banner, GitHub header and editorial feature overview are checked into `curseforge/artwork/`. PNG exports are included in the separately delivered branding ZIP; live in-client screenshots remain pending.
 
+## 2.0 editorial status (current)
+
+**The six original ChalkBox vector assets are already completed.** Do not regenerate the logo or claim the existing editorial feature grid is a real client capture. The next visual work is **authentic 2.0 gameplay screenshots**, prioritizing **Map Discoveries**, **MacroForge**, **The Bar**, **LootSense**, and **Session Journal**. The current [screenshot capture plan](artwork/SCREENSHOT_PLAN.md) supersedes old v1.9 screenshot priorities below. CurseForge artwork upload format and dimensions must be verified in the live portal.
+
 ## Art direction — recognizable and distinct
 
 **Product:** ChalkBox  

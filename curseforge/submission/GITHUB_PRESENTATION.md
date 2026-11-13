@@ -1,55 +1,43 @@
-# GitHub repository presentation — ChalkBox
+# ChalkBox 2.0 — GitHub landing page and owner setup
 
-The front-page `README.md` has been redesigned to be the **primary public product landing page** and **direct GitHub Releases download hub**. The CurseForge listing is an optional additional place to discover ChalkBox.
+**Front-page README updated for a 2.0 developer-test release.** It is designed to make the addon understandable at a glance: brand → direct download → feature overview → practical details → real limits → install → support. GitHub Releases remains the primary install path.
 
-## Front-page structure
+## Live README structure
 
-1. Product name, tagline and badges (build, license, version, Forever)
-2. **Direct GitHub download** prominently at the top — versioned current ZIP
-3. Feature grid and honest scope (no invented gameplay)
-4. Product deep dives: native-styled LootSense/known recipe highlights, configurable TrailBar editor, native/compact combat meters, QuestSense, Emota racial behavior and camping
-5. Screenshots area — deliberately text-only **until genuine assets exist**
-6. Direct install steps; explicit `_forever_/Interface/AddOns/ChalkBox/`
-7. Commands and expandable FAQ
-8. Issues/support, developers, MIT/third-party credit
+1. Original [ChalkBox header artwork](../artwork/chalkbox-github-header-1600x470.svg), 2.0 prerelease/test badge, Lua CI badge, MIT and Forever badges.
+2. **Prominent versioned download** linking directly to the installable `ChalkBox-2.0.0.zip` asset.
+3. One-addon positioning and **honest pre-release / map visibility** notice.
+4. Current module catalog: Map Discoveries, DropSense, MacroForge, LootSense, professions, The Bar, repair learning, Session Journal, combat, quests, camp, theme, QuietGuard, Emota and bags.
+5. Feature stories explained in plain language. No official drop-rate claims, no macro rotation automation, no claimed live-client screenshots.
+6. Original feature-grid SVG clearly marked as **editorial artwork**.
+7. Installation, first-five-minutes checklist, command table, compatibility, credits, and issue links.
 
-## GitHub About panel settings (owner actions)
+## Owner-only metadata — still to be done in GitHub UI
 
-These aren't changed by the readme; edit from the repository home page **About → gear icon** as repository owner.
+These settings **cannot be changed by editing README.md**, and the connected GitHub editor doesn't expose a repository-metadata mutation. On https://github.com/detok/ChalkBox use **About → gear icon**:
 
-- **Description:** `A quieter WoW Forever companion: LootSense, TrailBar, QuestSense, camping reminders, native DPS tools & UI helpers.`
-- **Website:** `https://github.com/detok/ChalkBox/releases` (until a distinct site exists)
-- **Suggested topics:** `world-of-warcraft`, `wow-forever`, `wow-addon`, `lua`, `quest-tracker`, `professions`, `quality-of-life`, `ui`
-- Check **Releases** and **Issues** as active sidebar features.
-- Add no CurseForge URL until the project actually exists and is approved.
-- Later, when approved, place the CurseForge link *after* GitHub Releases in the readme as an alternate installer.
+- **Description:** `The quiet WoW Forever companion: MacroForge, Map Discoveries, LootSense, The Bar, quest, combat, camp and session tools.`
+- **Website:** `https://github.com/detok/ChalkBox/releases`
+- **Topics:** `world-of-warcraft`, `wow-forever`, `wow-addon`, `macro-builder`, `lua`, `map`, `quality-of-life`, `quest-tracker`
+- Enable **Releases** and **Issues** in sidebar navigation.
 
-## Recommended GitHub safety rules
+Then go to **Settings → General → Social preview** and upload a PNG of the existing original [1200×630 banner](../artwork/chalkbox-banner-1200x630.svg) or branded social preview. GitHub does not automatically use the README hero as a social card. Do not upload any proprietary fonts.
 
-**Current status when first planned:** `main` was unprotected. Repo settings must be applied by an owner or GitHub integration with administrative ruleset permissions; the current connected actions only allow repository file editing and PRs, **not** ruleset modification.
+## Green CI and branch protection
 
-Go to **Settings → Rules → Rulesets → New branch ruleset**, target **main**, set:
-- Block deletions
-- Block force pushes / non-fast-forward changes
-- Require pull request before merging (approvals 0 while solo-maintained)
-- Require status checks; choose the observed CI job **`Lua tests and installable ZIP`** once available in GitHub's status-check picker
-- Require conversation resolution (optional, recommended)
-- Avoid making owner/admin bypass completely unrestricted if you want this protection to be meaningful
+The workflow `Lua tests and installable ZIP` is the minimum merge gate. For optional branch protection, use **Settings → Rules → Rulesets** and require PRs + this observed check while avoiding accidental admin-only deadlocks in a solo project. The current integration cannot change repository rulesets.
 
-**Important:** A ruleset can prevent a PR from merging if a required check's name or workflow is wrong. Verify one green pull-request test under new rules before tightening more. A solo-maintainer workflow can use zero required peer approvals.
+## Media policy
 
-The automated main workflow still **publishes versioned GitHub Releases**, preserving a tag if it already exists. Protecting `main` does not mean users have to download from CurseForge.
+The branding assets are real, original and committed. **Gameplay screenshots are still pending**. Capture them in the actual Forever client before adding a gallery. Use the [screenshot plan](../artwork/SCREENSHOT_PLAN.md). Never portray an illustration or mock map as a tested screen.
 
-## Future artwork integration (next pass)
+## Pre-2.0 public testing message
 
-Place genuine files in `curseforge/artwork/` following `../ARTWORK_TO_CREATE.md`.
+> ChalkBox 2.0.0 is ready to test on WoW Forever. The new build revises Map Discoveries loading and placement, brings MacroForge and automatic loot history together with The Bar and Session Journal, and keeps the whole install in one addon. Try it in the actual client; report map button visibility and macro spellbook behavior so the full public launch is grounded in real gameplay.
 
-- Put the finished **hero** under the top intro/badges in the README, using a relative image link.
-- Add screenshot triptych/carousel alternatives under **See it in action**, starting with **LootSense**, **TrailBar**, **Blizzard meter PRINT**.
-- Keep alt text descriptive and mobile layout legible.
-- Do not remove direct GitHub download links when adding images.
-- Do not link to `sandbox:/` images or invented image paths; only commit and reference real files.
+## Distribution rules
 
-## Release-document rules
-
-The primary direct download currently points to **ChalkBox 1.9.0**. When a newer version is published, update the versioned top README link. The **[Releases index](https://github.com/detok/ChalkBox/releases)** is always available. Do **not** rely on GitHub's `/releases/latest` route for a repository whose releases are all marked **prerelease**; that route can skip prereleases.
+- GitHub **Releases asset** is the download; don't link to a source-code archive as an installation file.
+- GitHub automatically marks these workflow releases **prerelease**. Keep that accurate until client validation is complete.
+- CurseForge is optional future distribution; **no approved project URL exists yet**.
+- Publishing documentation does not mean uploading to CurseForge.

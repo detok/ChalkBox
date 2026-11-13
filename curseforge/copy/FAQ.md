@@ -1,93 +1,46 @@
-# ChalkBox FAQ
+# ChalkBox 2.0 — FAQ
 
-### What is ChalkBox?
+## What is ChalkBox?
+An all-in-one quality-of-life addon built for **World of Warcraft: Forever**. It includes loot insights, a personal map discoveries journal, MacroForge, The Bar, QuestSense, camping reminders, meter extras, optional personality and persistent session history.
 
-An all-in-one quality-of-life addon focused on **WoW Forever**. It combines item/recipe hints, XP and gold tracking, accepted-quest watches, camping reminders, optional combat meters, invite protections and character emotes.
+## Is everything in one ZIP?
+Yes. Extract one `ChalkBox/` folder into `Interface/AddOns`. Its profession recipe database and support libraries are already included.
 
-### Is it compatible with Retail or Classic?
+## Do I need CurseForge to install it?
+No. GitHub Releases offers the installable ZIP. A separate CurseForge project has not been claimed or approved.
 
-**WoW Forever / Camelot** is the current supported target. Do not assume compatibility with other flavors. The package includes a Forever-specific `ChalkBox_Camelot.toc`.
+## Is 2.0 a finished, fully tested public release?
+**2.0.0 is a prerelease for Forever-client testing.** The Lua tests and ZIP packaging run in GitHub CI; placement of the updated map button and details of protected Forever APIs still need in-client acceptance tests.
 
-### Does it need a second recipe addon?
+## I don't see Discoveries on my map. Is it broken?
+The button was changed for Forever's load-on-demand world map and upper-left canvas in 2.0. Open your regular world map once; if the button is still not visible, type **/chalk drops map**. If that opens the journal, type **/chalk drops map status** and include the output plus a screenshot in a GitHub bug report. Under **ChalkBox → DropSense**, ensure **Show Discoveries button** is enabled.
 
-No. The download includes a credited **2,511-recipe Forever catalog** and its supporting libraries. A catalog recipe is a *potential use*; learned-recipe claims come from the character's actual profession data.
+## Why doesn't the map show everything I previously looted?
+DropSense only knows locations recorded **when it observed the loot window**. Older data collected before location tracking is preserved as unsited history. It cannot reconstruct past dungeons, zones or drop chances.
 
-### Does LootSense automatically sell or delete items?
+## Are the observed drop rates official?
+No. The addon measures *appearance among readable loot windows* attributed to a known creature source. It cannot see every killed/unlootable mob or Blizzard's internal loot table, and mixed-source loot never produces a fabricated per-creature percentage. The built-in drop calculator uses a rate **you** supply.
 
-No. It gives relevant tooltip advice and supports a personal keep list; unannotated items are not guaranteed safe to sell.
+## Does MacroForge let me run a whole rotation with one button?
+No. Blizzard macros cannot bypass the GCD, automatically inspect procs/cooldowns for conditional casts or execute secure combat actions without appropriate player input. MacroForge teaches legitimate modifier branches, one-spell openers, trinket attempts and manual sequences.
 
-### Why does an item say POTENTIAL USE?
+## Does MacroForge change my macros automatically?
+No. **Select Text** highlights generated macro text to Ctrl+C, then you paste in `/macro`. **Install New** is an optional explicit click outside combat that refuses to overwrite a same-named existing macro. Saved recipes are distinct from your native WoW macros.
 
-That comes from the bundled catalog and is **not proof** you learned the recipe. Open your profession UI and try `/chalk loot scan` and `/chalk loot status`.
+## Why does the repair number sometimes show ~ or --?
+The exact vendor repair-all quote is only available at a repair merchant. Away from one, ChalkBox can estimate from real quotes your character previously observed and labels it **~**. When there isn't a trustworthy calibration, it displays **--**. Damage inside bags and merchant discounts can make estimates differ.
 
-### Does QuestSense include quest arrows, map pins or navigation?
+## Will ChalkBox sell my trash or spend gold for me?
+No. LootSense's **Junk/Total** bag value is a vendor resale *estimate*, not an action. CampSense and repairs are advisory. There are no automatic sells or purchases.
 
-No. It helps manage accepted-quest watches in Blizzard's built-in tracker. It doesn't invent route coordinates or accept/complete quests for you.
+## Does QuestSense draw invented quest markers?
+No. It manages supported watches in Blizzard's original quest tracker. It doesn't supply its own guessed quest coordinates or routes.
 
-### Can I use Blizzard's damage meter instead of the ChalkBox window?
+## Will the toast or combat meter constantly interrupt?
+They are optional. The compact camping toast suppresses repeated unchanged alerts by default. Combat PARTY printing is manual. Native settings let you adjust display, opacity and position.
 
-Yes. Type `/chalk meter hide` to hide ChalkBox's own meter. In compatible Forever clients, the Blizzard meter's gear menu gains **ChalkBox: PRINT top 3 to PARTY**.
+## Where is my saved history?
+ChalkBox stores its own account/character SavedVariables using WoW's local addon persistence. Session history is per character; no cloud sync is used. Avoid deleting SavedVariables if you want to keep it.
 
-### Why didn't PRINT send a message?
-
-It is manual, available after combat in a **normal party**, and refuses reports when combat names/totals remain protected by the client. It never redirects to public chat or raids. Try `/chalk meter native status` and read the local error feedback.
-
-### Does RESET affect Blizzard's meter history?
-
-Yes. Reset in ChalkBox's compact meter requests confirmation before resetting **shared Blizzard combat sessions**. The native gear-menu PRINT does **not** reset anything.
-
-### Does ChalkBox replace my bags or action bars?
-
-No. The optional **vertical −120..+120-point separate-bag offset** merely nudges Blizzard's regular bag layout; combined bags stay normal. Native Edit Mode's **Always Show Buttons** toggle for Action Bar 2 is a **WoW feature**, not a ChalkBox feature.
-
-### Can TrailBar show free slots, gear durability, rested XP, latency and pet health?
-
-**Yes—expanded in v1.8.6.** Open **ChalkBox → TrailBar Stats** to toggle nine optional widgets or choose Balanced / Minimal / All. Bag data includes specialized bag space, gear is weighted durability, and rested XP is a percent of one level. Hunter pet health shows unavailable instead of reading secret combat data. Some stats automatically hide on narrow screens and reappear when there is room.
-
-### Can I drag stats within TrailBar or remove its background?
-
-Yes—new in **v1.9**. Go to **ChalkBox → TrailBar Appearance → Edit Bar** to drag modules into left/center/right sections, reorder them and right-click to change text alignment. Layout is saved per character; Reset Layout restores stock. Background opacity can be **0–100%** without fading the text.
-
-### Can ChalkBox highlight ingredients for recipes I know?
-
-Yes. **LootSense Appearance** adds subtle green insets on Blizzard bag buttons **only** for ingredients in recipes the current character has actually learned. It does not mark catalog-only potential uses, replace item icons or change rarities. You can disable it or adjust the strength.
-
-### How do I configure Emota's race personality?
-
-Open **Emota Race Behavior** to choose a race and adjust **Off / Subtle / Default / Expressive** weighting for live racial profiles. Other races appear as **planned** placeholders, not working feature claims. Emota's automatic master switch still starts off.
-
-### How does the vertical separate-bag slider work?
-
-The midpoint, **0**, is Blizzard's original bag position. Thumb up gives a negative offset to raise individual bags; thumb down gives positive offsets to lower them. Try `/chalk bags offset -35` or `/chalk bags offset 40`. Reset Bags restores 0.
-
-### Why is one of my TrailBar stats hidden?
-
-It's either disabled in settings, there isn't enough room for it at your current UI width, or the client hasn't provided readable data. Run `/chalk bar stats` to check enabled versus visible modules.
-
-### Does a Camp Tent keep the Camp Benefits buff active?
-
-No. Forever's Camp Tent can grant a rested-XP refill independently of ongoing camp buffs. ChalkBox handles those indicators separately where available and has a manual acknowledgement option.
-
-### Does Emota randomly emote out of the box?
-
-The automatic-emote master option defaults **off**. Enable it in settings and adjust which emotes are allowed.
-
-### Does QuietGuard block my friends' party invites?
-
-Party invites are **opt-in**; guild and duel protections are on by default. Check individual settings, which may also depend on Forever client APIs.
-
-### Does ChalkBox need an account, external service or AI?
-
-No. ChalkBox runs locally as a Lua addon and stores preferences in the game SavedVariables. It doesn't require a separate account or internet-based AI inference.
-
-### Do I have to download it from CurseForge?
-
-**No. GitHub is the primary direct download home:** https://github.com/detok/ChalkBox/releases. A CurseForge page is an additional discovery and installation option, not an exclusive download host.
-
-### Where can I report a bug?
-
-https://github.com/detok/ChalkBox/issues — include version, Forever build, reproduction steps, exact Lua error/tooltip text and relevant screenshot.
-
-### Is the addon stable?
-
-It is marked a **public prerelease**. Automated Lua 5.1 tests run on GitHub, and in-game behaviors relying on protected Forever APIs may need further testing.
+## Where do I report a bug?
+https://github.com/detok/ChalkBox/issues/new/choose — include ChalkBox version, Forever build, exact commands, Lua errors and screenshots where possible. Never share account credentials.

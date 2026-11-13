@@ -2,12 +2,23 @@
 
 Welcome! ChalkBox is a single addon; all sections live in **Esc → Options → AddOns → ChalkBox**. Type `/chalk` to open the main page.
 
+## 2.0 — What's new and what to test
+
+**This is a Forever-client prerelease for testing, not a claim that every layout has been confirmed in-game.**
+
+- **Discoveries on the normal world map:** the **Discoveries** button now attaches after the map frame finishes loading and uses Forever's upper-left canvas instead of a hard-coded top-right location. If absent, **/chalk drops map** opens the same standalone journal and **/chalk drops map status** reports whether it attached and is visible. Neither option alters WoW's quest pins or map zoom.
+- **Automatic DropSense:** when enabled, it records items in readable loot windows and associates observations with outdoor zones, known source types or separate recorded dungeons. Only known, unambiguous creature windows receive a personal observed frequency; it is **not an official drop chance**. Under **DropSense** you can toggle recording, loot-window tooltip details and the map button separately.
+- **MacroForge:** use **/chalk macro** to open a character-aware wizard; build from learned abilities, review validation and use **Select Text → Ctrl+C** or deliberately create a new native macro when allowed.
+- **Session Journal:** **/chalk session** for current activity and **/chalk session last** for the previous session; local per-character history persists across logins.
+- **The Bar + repair learning:** right-click stat modules; choose Junk/Total vendor value and inspect learned repair estimates marked **~**.
+- **Launch testing:** check map button appearance, MacroForge spells/icons, drop source classification, small-UI readability and preserving prior saved settings. See [2.0 troubleshooting and smoke tests](TROUBLESHOOTING.md).
+
 ## First five minutes
 
 1. Verify the addon appears on your character's AddOns screen.
 2. Open your **profession windows** (e.g. Leatherworking, Cooking) once. ChalkBox observes recipes and materials as the client exposes them.
 3. Hover over useful items in your bags. Quest protections, your personal keep list and learned-recipe uses take precedence over generic hints.
-4. Type `/chalk prep test` to check the center-screen reminder.
+4. Type `/chalk prep test` to check the movable top-screen reminder.
 5. Check **QuietGuard** if you want to accept guild/duel invitations. The guild/duel filters start on; other social declines start off.
 
 ## LootSense and ProfessionSense
