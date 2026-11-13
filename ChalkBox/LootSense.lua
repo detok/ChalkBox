@@ -112,15 +112,20 @@ local function OnItemTooltip(tooltip)
     if not Public(name) or type(name) ~= "string" then return end
     if not Public(link) then link = nil end
 
-    local itemInfo = C_Item and C_Item.GetItemInfo or GetItemInfo
-    if type(itemInfo) ~= "function" then return end
-    local infoName, _, quality, _, _, itemType, itemSubType, _,
-        equipLoc, _, sellPrice, classID, _, bindType, _, _, isCraftingReagent =
-        itemInfo(link or name)
-    -- Known camp tools and personal protection are still actionable even if
-    -- the item cache hasn't populated rarity/class metadata yet.
-    if not Public(infoName) then
-        quality,classID,itemSubType=nil,nil,nil
+    -- A cached item link and tooltip name are already enough to identify
+    -- learned-recipe reagents. Never reject all advice just because Forever's
+    -- async GetItemInfo cache hasn't populated rarity/subtype yet.
+    local infoName,quality,itemType,itemSubType,equipLoc,sellPrice,classID
+    local bindType,isCraftingReagent
+    local itemInfo=C_Item and C_Item.GetItemInfo or GetItemInfo
+    if type(itemInfo)=="function" then
+        local ok,n,_,q,_,_,typ,sub,_,loc,_,price,cls,_,bind,_,_,reagent=
+            pcall(itemInfo,link or name)
+        if ok and Public(n) then
+            infoName,quality,itemType,itemSubType,equipLoc,sellPrice,classID=
+                n,q,typ,sub,loc,price,cls
+            bindType,isCraftingReagent=bind,reagent
+        end
     end
     local message, r, g, b = Classify(name, link, quality, itemType, itemSubType,
         equipLoc, sellPrice, classID, bindType, isCraftingReagent)
@@ -179,7 +184,12 @@ SlashCmdList.CHALKBOX = function(input)
     elseif command=="loot" and argument=="scan" then
         if type(ChalkBox_ProfessionRefresh)=="function" then ChalkBox_ProfessionRefresh() end
         if type(ChalkBox_RecipeAdvisorRescan)=="function" then ChalkBox_RecipeAdvisorRescan() end
-        Note("Learned recipe scan refreshed; open your profession windows for complete results.")
+        local source,window,knownCount="unavailable","none",0
+        if type(ChalkBox_ProfessionDiagnostics)=="function" then
+            source,window,knownCount=ChalkBox_ProfessionDiagnostics()
+        end
+        Note("Scan: "..tostring(source)..", profession "..tostring(window)..
+            ", "..tostring(knownCount).." learned recipes seen. Re-hover items to refresh their tooltips.")
     elseif command=="loot" and argument=="status" then
         local prof,materials="unavailable",0
         if type(ChalkBox_ProfessionSummary)=="function" then
@@ -189,9 +199,20 @@ SlashCmdList.CHALKBOX = function(input)
         if type(ChalkBox_RecipeAdvisorStatus)=="function" then
             state,recipes,reagents=ChalkBox_RecipeAdvisorStatus()
         end
-        Note("Professions: "..tostring(prof).."; observed reagents: "..tostring(materials)..
-            "; offline recipe library: "..tostring(state)..
-            " ("..tostring(recipes).." indexed recipes).")
+        local scanSource,window,learnedCount,reagentCount="unavailable","none",0,0
+        if type(ChalkBox_ProfessionDiagnostics)=="function" then
+            scanSource,window,learnedCount,reagentCount=ChalkBox_ProfessionDiagnostics()
+        end
+        Note("LootSense advice: "..(db.lootAdvice~=false and "ON" or "OFF")..
+            ". If OFF, use /chalk loot on.")
+        Note("Professions: "..tostring(prof).."; saved reagent keys: "..tostring(materials)..
+            "; learned this scan: "..tostring(learnedCount)..
+            "; active profession: "..tostring(window)..".")
+        Note("Scanner: "..tostring(scanSource).."; bundled recipe catalog: "..
+            tostring(state).." ("..tostring(recipes).." indexed recipes).")
+        if tonumber(learnedCount)==0 then
+            Note("Open a crafting window, let its recipe list load, and /chalk loot scan. Then re-hover the item.")
+        end
     elseif command == "loot" and (argument == "on" or argument == "off") then
         db.lootAdvice = (argument == "on")
         Note("Extra item advice: " .. (db.lootAdvice and "ON" or "OFF") ..
