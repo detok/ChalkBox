@@ -2,6 +2,15 @@
 
 All notable changes to the public ChalkBox addon are documented here.
 
+## 1.7.0 — Built-in native DPS and combat meter
+
+- Added a compact, class-colored, draggable ChalkBox combat meter with an obvious marker for your own character.
+- Modes: DPS, Damage Done, HPS, Healing Done, Damage Taken and Interrupts. Sessions: Current Fight, Last Fight and Overall.
+- Added show/hide, lock, 5/8/12 rows, 85/100/115% scaling, position reset and deliberate reset confirmation in native AddOns settings.
+- Uses Blizzard's native `C_DamageMeter` API and event-driven updates. Secret values are passed directly to protected-safe text/status bar UI setters, never processed in Lua.
+- Preserved working LootSense with 2,511 bundled Forever recipes, CampSense, TrailBar, QuestSense, QuietGuard and Emota.
+- New Lua 5.1 tests cover native combat API, protected values, modes, visibility and resetting; one ChalkBox ZIP still ships.
+
 ## 1.6.1 — Forever profession scan and tooltip fixes
 
 - Let `C_TradeSkillUI` establish an active owned profession when legacy profession APIs are unavailable, instead of blocking recipe scans.
