@@ -314,7 +314,10 @@ local function MakeButton(parent,title,width,offset,action)
     local text=Font(button,"GameFontHighlightSmall",0.96,0.90,0.75)
     text:SetAllPoints(button)
     if text.SetJustifyH then text:SetJustifyH("CENTER") end
-    function button:SetText(v) text:SetText(v) end
+    function button:SetText(v)
+        self.caption=v
+        text:SetText(v)
+    end
     button:SetText(title)
     button:SetScript("OnClick",action)
     return button
