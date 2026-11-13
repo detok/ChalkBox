@@ -6,7 +6,10 @@ local addonName = ...
 local learned = {}
 local recipeUses = {}
 local available = {}
+local seenWindow = {}
 local loaded = false
+local scan = {source="not scanned", recipes=0, reagents=0, lastWindow="none", retries=0}
+local scanScheduled = false
 
 local ids = {
     [171]="Alchemy", [164]="Blacksmithing", [165]="Leatherworking",
@@ -21,6 +24,8 @@ local craft = {
     ["engineering"]="Engineering", ["enchanting"]="Enchanting",
     ["cooking"]="Cooking", ["first aid"]="First Aid",
     ["jewelcrafting"]="Jewelcrafting", ["inscription"]="Inscription",
+    ["herbalism"]="Herbalism", ["mining"]="Mining",
+    ["skinning"]="Skinning", ["fishing"]="Fishing",
 }
 local function Safe(value)
     return value ~= nil and (type(issecretvalue) ~= "function" or not issecretvalue(value))
@@ -35,36 +40,62 @@ local function Normalize(name, skill)
     return nil
 end
 
+-- Professions in Forever can be visible through the modern trade UI even
+-- when Classic's GetProfessions / skill-list endpoints do not expose them.
+-- Treat a real opened profession as positive evidence; do not require an
+-- unrelated legacy API to grant permission to scan its recipes.
 local function ReadProfessions()
     local found = {}
-    if type(GetProfessions) == "function" and type(GetProfessionInfo) == "function" then
-        local p1,p2,arch,fish,cook = GetProfessions()
-        for _,idx in ipairs({p1 or false,p2 or false,arch or false,fish or false,cook or false}) do
-            if idx and Safe(idx) then
-                local name, _, _, _, _, _, skillID = GetProfessionInfo(idx)
-                local normalized = Normalize(name, skillID)
-                if normalized then found[normalized] = true end
-            end
-        end
-    end
-    -- Classic-era clients may supply profession names through the skill tab.
-    if type(GetNumSkillLines) == "function" and type(GetSkillLineInfo) == "function" then
-        local n = GetNumSkillLines()
-        if Safe(n) and type(n) == "number" then
-            for i=1,math.min(400,n) do
-                local name,header,_,_,_,_,_,_,_,_,_,_,skillID = GetSkillLineInfo(i)
-                if not header then
-                    local normalized = Normalize(name, skillID)
-                    if normalized then found[normalized] = true end
+    if type(GetProfessions)=="function" and type(GetProfessionInfo)=="function" then
+        local ok,p1,p2,arch,fish,cook=pcall(GetProfessions)
+        if ok then
+            for _,idx in ipairs({p1 or false,p2 or false,arch or false,
+                fish or false,cook or false}) do
+                if idx and Safe(idx) then
+                    local infoOK,name,icon,rank,maxRank,_,_,skillID=
+                        pcall(GetProfessionInfo,idx)
+                    if infoOK then
+                        local normalized=Normalize(name,skillID)
+                        if normalized then found[normalized]=true end
+                    end
                 end
             end
         end
     end
-    available = found
+    if type(GetNumSkillLines)=="function" and type(GetSkillLineInfo)=="function" then
+        local ok,n=pcall(GetNumSkillLines)
+        if ok and Safe(n) and type(n)=="number" then
+            for i=1,math.min(n,400) do
+                local lineOK,name,isHeader,_,_,_,_,_,_,_,_,_,_,skillID=
+                    pcall(GetSkillLineInfo,i)
+                if lineOK then
+                    -- Classic puts professions under headers, and some builds
+                    -- report the profession itself as a header. Check both.
+                    local normalized=Normalize(name,skillID)
+                    if normalized then found[normalized]=true end
+                end
+            end
+        end
+    end
+    local sawAny=next(found)~=nil
+    if not sawAny then
+        for name in pairs(seenWindow) do found[name]=true end
+    else
+        -- An actual profession API enumerating currently owned skills wins.
+        -- It also avoids showing a removed profession indefinitely.
+        for name in pairs(seenWindow) do
+            if not found[name] then seenWindow[name]=nil end
+        end
+    end
+    available=found
 end
 
 local function AddReagent(profession, link, name, recipeName, quantity)
-    if not profession or not available[profession] then return end
+    if not profession then return end
+    available[profession]=true
+    seenWindow[profession]=true
+    if type(link)=="number" then link="item:"..tostring(link) end
+    scan.reagents=scan.reagents+1
     local keys={}
     if Safe(link) and type(link)=="string" then
         local id=link:match("item:(%d+)")
