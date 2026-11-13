@@ -52,4 +52,4 @@ Place genuine files in `curseforge/artwork/` following `../ARTWORK_TO_CREATE.md`
 
 ## Release-document rules
 
-The primary direct download currently points to **ChalkBox 1.8.5**. When a newer version is published, update the versioned top README link. The **[Releases index](https://github.com/detok/ChalkBox/releases)** is always available. Do **not** rely on GitHub's `/releases/latest` route for a repository whose releases are all marked **prerelease**; that route can skip prereleases.
+The primary direct download currently points to **ChalkBox 1.8.6**. When a newer version is published, update the versioned top README link. The **[Releases index](https://github.com/detok/ChalkBox/releases)** is always available. Do **not** rely on GitHub's `/releases/latest` route for a repository whose releases are all marked **prerelease**; that route can skip prereleases.

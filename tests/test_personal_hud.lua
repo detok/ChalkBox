@@ -41,6 +41,15 @@ _G.UnitXP = function(unit) assert(unit=="player"); return playerXP end
 _G.UnitXPMax = function(unit) assert(unit=="player"); return xpMax end
 _G.UnitLevel = function(unit) assert(unit=="player"); return playerLevel end
 _G.GetMoney = function() return money end
+_G.ChalkBox_BarReadStats=function()
+    return {
+        bags={free=12,total=96,general=7,special=5},
+        gear={percent=87,worst=76,items=9},
+        rested={percent=42,xp=420},
+        latency={home=21,world=63},
+        pet={state="ready",percent=95},
+    }
+end
 _G.IsInGroup = function() return false end
 _G.IsInRaid = function() return false end
 _G.UnitGUID = function() return nil end
@@ -156,6 +165,76 @@ assert(FindText("XP/h 3.6k"),"XP gained over elapsed seconds becomes XP/hour")
 assert(FindText("To level 11m"),"time-to-level estimate uses session average")
 assert(FindText("Gold 17g"),"current gold is visible")
 assert(FindText("Time 1m"),"session runtime is visible")
+local function FindMetric(prefix)
+    for _,frame in ipairs(frames) do
+        if frame.parent==bar and frame.font and frame.font.value
+            and frame.font.value:find(prefix,1,true)==1 then
+            return frame
+        end
+    end
+end
+assert(FindText("Bags 12 free"),"free slots appear in the actual TrailBar widgets")
+assert(FindText("Gear 87%"),"durability appears in the actual TrailBar widgets")
+assert(FindText("Rest 42%"),"rested XP appears as a level percent")
+assert(FindText("Pet 95%"),"Hunter pet status is available when readable")
+assert(FindMetric("Bags ").visible and FindMetric("Gear ").visible
+    and FindMetric("Rest ").visible,
+    "new priority widgets appear on a normal screen")
+assert(ChalkBoxDB.barStats.bags and ChalkBoxDB.barStats.gear
+    and ChalkBoxDB.barStats.rested and not ChalkBoxDB.barStats.latency,
+    "balanced defaults feature bags/gear/rest while opt-in latency saves space")
+ChalkBox_BarCommand("stat latency on")
+assert(ChalkBoxDB.barStats.latency==true,"optional latency switch persists")
+ChalkBox_BarCommand("stat gear off")
+assert(not ChalkBoxDB.barStats.gear and not FindMetric("Gear ").visible,
+    "turning a stat off must hide it immediately without clearing data")
+ChalkBox_BarCommand("stats minimal")
+assert(not ChalkBoxDB.barStats.rate and ChalkBoxDB.barStats.bags
+    and not ChalkBoxDB.barStats.rested and ChalkBoxDB.barStats.gold,
+    "minimal preset keeps only level, bag space and gold")
+ChalkBox_BarCommand("stats all")
+assert(ChalkBoxDB.barStats.latency and ChalkBoxDB.barStats.pet,
+    "all preset enables the full supported inventory and status data")
+bar.width=520
+bar.scripts.OnSizeChanged(bar)
+local n=0
+for _,frame in ipairs(frames) do
+    if frame.parent==bar and frame.font and frame.visible then n=n+1 end
+end
+assert(n>=2 and n<=5,"narrow bar must hide lower-priority metrics")
+assert(FindMetric("Lv ").visible,"level metric must survive narrow widths")
+assert(FindMetric("Gold ").visible,"gold metric survives normal narrow layouts")
+local segments={}
+for _,frame in ipairs(frames) do
+    if frame.parent==bar and frame.font and frame.visible then
+        local p=frame.points[1]
+        assert(p and (p[1]=="LEFT" or p[1]=="CENTER" or p[1]=="RIGHT"),
+            "visible metrics must have one of the allowed native group anchors")
+        local x=p[4]
+        if p[1]=="CENTER" then x=x-frame.width/2
+        elseif p[1]=="RIGHT" then x=bar.width+x-frame.width end
+        segments[#segments+1]={from=x,to=x+frame.width}
+    end
+end
+table.sort(segments,function(a,b) return a.from<b.from end)
+for i,segment in ipairs(segments) do
+    assert(segment.from>=0 and segment.to<=bar.width,
+        "no visible TrailBar text widget may extend off-screen")
+    if i>1 then assert(segments[i-1].to<=segment.from,
+        "adaptive modules must never overlap at narrow widths") end
+end
+bar.width=1440
+bar.scripts.OnSizeChanged(bar)
+assert(FindMetric("World ").visible and FindMetric("Pet ").visible,
+    "wider UI restores all configured latency and Hunter status metrics")
+bar.width=1024
+bar.scripts.OnSizeChanged(bar)
+ChalkBox_BarCommand("stats balanced")
+assert(not ChalkBoxDB.barStats.latency,"balanced preset restores intentional defaults")
+assert(FindMetric("Gear ").visible,"preset restores previously hidden durability widget")
+local state=ChalkBox_BarStatus()
+assert(type(state.enabled)=="table" and type(state.visible)=="table",
+    "native status gives enabled vs currently fitting modules")
 -- A normal UIParent-anchored widget keeps its own offset; by shrinking the
 -- root, every such widget follows the inset without being named by the addon.
 local anchoredChild=CreateFrame("Frame","NeverWhitelisted",UIParent)

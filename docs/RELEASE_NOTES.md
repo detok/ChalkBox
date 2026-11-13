@@ -1,33 +1,40 @@
-# ChalkBox 1.8.5 — PRINT from Blizzard's own damage meter
+# ChalkBox 1.8.6 — TrailBar's full adventure dashboard
 
-No need for two combat meters: **ChalkBox can now add a PRINT entry to the built-in WoW Forever damage meter's gear menu.**
+**The TrailBar stats previously discussed are finally implemented.** The same tiny **18px** top/bottom strip now has more useful, independently configurable metrics — without turning into another large UI window.
 
-## Blizzard damage meter integration
-1. Open Blizzard's original damage meter.
-2. Select the statistic (DPS, Damage Done, HPS, Healing, etc.) and the fight (Current, Overall, or a saved fight).
-3. After combat, open that damage-meter window's **gear/settings menu**.
-4. Click **ChalkBox: PRINT top 3 to PARTY**.
+## Brand-new TrailBar stats
 
-ChalkBox sends one compact top-three report based on **that specific built-in meter window's selection**, e.g. `CB DPS (Fight 5): 1 Detok 555 | 2 Friend 423 | 3 Companion 318`. If the Current session is empty and Forever exposes an Expired/Last session, it tries that completed fight.
+- **Free bag slots:** `Bags 12 free` (example). Includes equipped backpack/bags, including profession-specialized bags. Mouseover separates ordinary free slots from specialized ones.
+- **Gear durability:** `Gear 87%` (example). Uses a weighted average of equipped repairable item durability; mouseover lists the **worst item** percentage. Warns when equipment is near breaking.
+- **Rested XP:** `Rest 42%` (example). Bonus rested XP divided by your current level's total XP requirement; mouseover provides the raw rested XP. This is not Camp Benefits.
+- **Home/world latency:** `World 63ms` (example), mouseover details both latency sources. Starts off by default.
+- **Hunter pet health:** `Pet 95%` or `Pet none`. If Forever hides pet health as a secret during combat, shows `Pet --` rather than evaluating protected data. Does not appear on non-Hunters.
+- The existing **level/XP, XP/hour, time to level, session time and gold/net** displays remain.
 
-The new item uses Blizzard's **`MENU_DAMAGE_METER_WINDOW_SETTINGS`** menu extension rather than covering or modifying Blizzard's damage-meter graphics, layout, sort order or protected combat UI.
+## Adaptive 18px layout and new settings
 
-## One meter or two — your choice
-- To use **only Blizzard's meter**, hide ChalkBox's own window with `/chalk meter hide` or turn off **Show compact DPS meter window** under ChalkBox → Combat Meter. The Blizzard gear-menu PRINT remains.
-- To use both windows, leave ChalkBox's meter enabled. Its own PRINT and RESET controls are unchanged.
-- The new Blizzard menu entry starts enabled. Disable or re-enable via `/chalk meter native off` / `/chalk meter native on`; inspect with `/chalk meter native status`.
+- New native **Esc → Options → AddOns → ChalkBox → TrailBar Stats** category with nine independently saved on/off controls.
+- **Balanced** (recommended/default): existing stats, plus bags, gear and rested, with Hunter pet when applicable. World latency is optional.
+- **Minimal:** only level, free bag slots and gold.
+- **All:** enables all optional modules.
+- The bar automatically hides lower-priority widgets when your screen is too narrow, avoiding collisions. These are temporary display choices, not edits to saved settings.
+- Mouseover tooltips explain specialty bag restrictions, weighted durability, rested XP and home/world ping.
+- More responsive updates via bag, equipment and resting events, plus the existing periodic 5-second update.
+- Text becomes caution-colored for nearly broken gear, almost full general bags, low pet health and high world latency, when the client permits the data.
 
-## Safety limits
-- Manual click only; no automatic chat messages or automatic damage parsing.
-- **PARTY only**: won't send solo or in raids and never redirects to SAY, RAID or instance chat.
-- Refuses reports during combat or Edit Mode. Won't read or serialize values that Forever still marks secret after combat.
-- Sanitizes names, honors 255-character chat limit, and prevents rapid repeats.
-- Reports why no message was sent locally when blocked.
+## Commands
 
-## Preserved
-ChalkBox's existing compact combat meter (including class icons, PRINT, RESET and opacity), the 1.8.4 separate-bag downward slider, LootSense and its 1.8.3 First Aid fix, QuestSense, TrailBar, CampSense, Emota and every other module.
+- `/chalk bar stats` — enabled vs. currently visible fields.
+- `/chalk bar stats balanced`, `/chalk bar stats minimal`, `/chalk bar stats all`.
+- `/chalk bar stat bags|gear|rested|latency|pet|rate|eta|time|gold on|off`.
+- Existing `/chalk bar top|bottom|off`, `reserve on|off`, `reset`, `status`, and separate-bag slider/commands remain.
+
+## No regression to existing features
+
+LootSense and 2,511 bundled Forever recipes, QuestSense, CampSense, Emota, QuietGuard, compact DPS meter with PRINT/RESET, Blizzard native meter PARTY PRINT and the v1.8.4 separate-bag position adjustment are preserved. The CurseForge planning folder and polished GitHub documentation remain unchanged as player-install ZIP content.
 
 ## Install
-Download **ChalkBox-1.8.5.zip**, replace your `Interface/AddOns/ChalkBox` folder, and `/reload`. All existing settings are retained.
 
-**Public prerelease:** Lua 5.1 automated tests exercise the integration and existing features. Actual server permissions and native menu behavior still require in-game verification in WoW Forever.
+Download **ChalkBox-1.8.6.zip** from the GitHub Releases page and replace your existing `Interface/AddOns/ChalkBox` directory. Don't delete your WoW `WTF` SavedVariables. Run `/reload` or restart the game.
+
+**Public prerelease / verification note:** Lua 5.1 regression tests validate the data and layout logic, but actual UI appearance, pet secrecy and Native client APIs should be checked in World of Warcraft: Forever. New readings never guess missing values.

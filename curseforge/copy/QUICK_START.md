@@ -16,7 +16,7 @@
 1. **Open settings** with `/chalk`; see the module categories.
 2. **Enable relevant crafting hints** by opening your Leatherworking/Cooking/etc. profession panel, waiting for recipes to load, and running `/chalk loot scan`. Hover a material to see why it matters.
 3. **Protect favorite items** with `/chalk keep [item]` (exact name or shift-clicked link).
-4. **Inspect TrailBar** at the screen edge for XP and gold. Use `/chalk bar status` if something overlays it.
+4. **Inspect TrailBar** at the screen edge for XP, gold, free bag slots, gear durability and rested XP. Open **TrailBar Stats** for Balanced / Minimal / All layouts. Use `/chalk bar status` if something overlays it.
 5. **Preview a reminder** with `/chalk prep test`; move it via Adventure Prep → Toast Appearance.
 6. **Inspect quest watches** with `/chalk quests status`; Smart mode is the default.
 7. **Pick a meter:** keep ChalkBox's compact window or `/chalk meter hide` and use the Blizzard native meter's **ChalkBox: PRINT top 3 to PARTY** gear-menu entry after combat (client permitting).

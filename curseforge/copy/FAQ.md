@@ -40,9 +40,13 @@ Yes. Reset in ChalkBox's compact meter requests confirmation before resetting **
 
 No. The optional **0–80-point separate-bag offset** merely nudges Blizzard's regular bag layout; combined bags stay normal. Native Edit Mode's **Always Show Buttons** toggle for Action Bar 2 is a **WoW feature**, not a ChalkBox feature.
 
-### Why doesn't TrailBar show free bag slots or durability?
+### Can TrailBar show free slots, gear durability, rested XP, latency and pet health?
 
-Those are **ideas**, not implemented TrailBar features. The current strip shows level/XP information, session XP rate and ETA, time and gold.
+**Yes—new in v1.8.6.** Open **ChalkBox → TrailBar Stats** to toggle nine optional widgets or choose Balanced / Minimal / All. Bag data includes specialized bag space, gear is weighted durability, and rested XP is a percent of one level. Hunter pet health shows unavailable instead of reading secret combat data. Some stats automatically hide on narrow screens and reappear when there is room.
+
+### Why is one of my TrailBar stats hidden?
+
+It's either disabled in settings, there isn't enough room for it at your current UI width, or the client hasn't provided readable data. Run `/chalk bar stats` to check enabled versus visible modules.
 
 ### Does a Camp Tent keep the Camp Benefits buff active?
 

@@ -12,6 +12,9 @@
 | `/chalk bar top` / `bottom` / `off` | Move, show or hide TrailBar |
 | `/chalk bar reserve on` / `off` | Toggle bar space reservation |
 | `/chalk bar reset` / `status` | Reset session stats or inspect bar state |
+| `/chalk bar stats` | List configured and currently visible TrailBar modules |
+| `/chalk bar stats balanced` / `minimal` / `all` | Apply a responsive bar profile |
+| `/chalk bar stat bags on` / `gear off` / `latency on` | Enable or disable individual TrailBar stats |
 | `/chalk bags offset 30` / `reset` | Nudge separate bag group downward, or restore default |
 | `/chalk bags status` | Bag layout hook and offset diagnostic |
 | `/chalk meter show` / `hide` | Show or hide ChalkBox's separate combat window |

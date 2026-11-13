@@ -42,6 +42,7 @@ FILES = (
     "PersonalityContext.lua",
     "Emota.lua",
     "QuestSense.lua",
+    "TrailBarStats.lua",
     "TrailBar.lua",
     "BagLayout.lua",
     "CombatMeter.lua",

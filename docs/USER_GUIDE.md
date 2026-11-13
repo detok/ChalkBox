@@ -68,9 +68,39 @@ Set the Blizzard meter to your preferred DPS/damage/healing statistic and Curren
 
 To keep only Blizzard's meter, turn off **Show compact DPS meter window** under ChalkBox → Combat Meter or type `/chalk meter hide`. The built-in gear menu still works. Use `/chalk meter native off` to remove the extra gear-menu entry, `/chalk meter native on` to restore it, or `/chalk meter native status` to diagnose support. This feature relies on the Forever `MENU_DAMAGE_METER_WINDOW_SETTINGS` menu extension and will quietly do nothing when that API is missing.
 
-## TrailBar
+## TrailBar — customizable adventure dashboard (v1.8.6)
 
-A slim top/bottom strip shows adventuring metrics. Screen-space reservation is **on** by default. Move the strip in **TrailBar** options. Run `/chalk bar status` to check whether the reserved space was applied, or `/chalk bar reserve off` to disable it if another UI conflicts. Some custom frames or Blizzard Edit Mode layouts may ignore the parent inset.
+The same **18px** strip now supports XP, XP/hour, estimated time to level, session time, gold/net change, **free equipped-bag slots, equipment durability, rested XP, home/world latency and Hunter pet health**. No new floating bar or additional screen height.
+
+### The new stats
+
+- **Bags:** `Bags 12 free` (example). Tooltip separates **general-purpose free slots** from **profession/specialized free slots**, since a skinning or herb bag can't hold everything. The count is for your backpack and equipped bags, not the bank.
+- **Gear:** `Gear 87%` (example). A **weighted average** of equipped repairable item durability, with the lowest-condition equipped item in the tooltip. Warns with a colored number when any equipped item is very low.
+- **Rested:** `Rest 42%` (example) means the available rested bonus equals **42% of one level's XP**, not that your camp buff is at 42%. Tooltip has the bonus XP value.
+- **World latency:** `World 63ms` (example), with home/world latency in the tooltip. Off by default to keep the bar slim.
+- **Pet:** `Pet 95%` or `Pet none` for Hunters; if the Forever client marks pet health secret (especially in combat), it shows `Pet --` without attempting to calculate it. Hidden for non-Hunters.
+
+Values use **Forever's real APIs** and are never invented. If the client lacks the relevant API, that widget automatically stays hidden. The bar refreshes at least every five seconds and on bag, equipment and rest events where the client provides them.
+
+### Change the layout
+
+Open **Esc → Options → AddOns → ChalkBox → TrailBar Stats**. Nine switches independently control XP/hour, level ETA, session time, gold, bags, gear, rested XP, latency and Hunter pet status. Level/XP always remains visible.
+
+Choose one of three quick profiles:
+
+| Profile | Default selections |
+| --- | --- |
+| **Balanced** (default) | All former stats + bags, gear, rested XP and Hunter pet; latency off |
+| **Minimal** | Level/XP, free bag slots and gold |
+| **All** | Enable every supported module, including world latency |
+
+The strip **automatically hides lower-priority widgets** when the UI width gets too small, while preserving your saved choices. Increasing the display width brings the fields back. This avoids text overlapping on narrow screens. Use `/chalk bar stats` to compare enabled vs. currently shown modules.
+
+Commands: `/chalk bar stats balanced`, `/chalk bar stats all`, `/chalk bar stats minimal`, and `/chalk bar stat bags|gear|rested|pet|latency|rate|eta|time|gold on|off`. Existing bar placement, reserved screen space, session reset and diagnostics commands remain unchanged.
+
+### Existing screen layout and bag shift
+
+Screen-space reservation is **on** by default. Move the strip in **TrailBar** options. Run `/chalk bar status` to check whether the reserved space was applied, or `/chalk bar reserve off` to disable it if another UI conflicts. Some custom frames or Blizzard Edit Mode layouts may ignore the parent inset.
 
 ### Separate bag windows clipping off the top?
 
