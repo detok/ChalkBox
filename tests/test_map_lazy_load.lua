@@ -72,6 +72,7 @@ end
 assert(loader and loader.scripts.OnEvent,
     "map initialization has a retry until the load-on-demand frame exists")
 local map=Frame("Frame","WorldMapFrame",UIParent)
+_G.WorldMapFrame=map -- Blizzard assigns this global when loading its map addon
 local canvas=Frame("Frame","Canvas",map)
 function map:GetCanvasContainer() return canvas end
 function map:GetMapID() return 1436 end
