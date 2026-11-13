@@ -106,6 +106,36 @@ local function Classify(name,link,quality,itemType,itemSubType,equipLoc,
     end
 end
 
+-- Presentation is its own layer: reason/classification still comes from
+-- unchanged LootSense and learned-profession evidence, not string guesswork.
+local TIP_HEADER="CHALKBOX  |  ITEM INSIGHT"
+function ChalkBox_LootPresentation(message)
+    if type(message)~="string" then return end
+    local prefix,body=message:match("^([^:]+):%s*(.*)$")
+    if prefix=="KEEP" then
+        return "Keep this item",body,0.43,0.93,0.56
+    elseif prefix=="KNOWN RECIPE" then
+        return "Used in a learned recipe",body,0.43,0.93,0.56
+    elseif prefix=="POTENTIAL USE" then
+        return "Possible crafting use",body,0.91,0.75,0.39
+    elseif prefix=="OTHER PROFESSION" then
+        return "Other profession recipe",body,0.68,0.76,0.89
+    elseif prefix=="PROFESSION" then
+        local confirmed=body and body:find("used in a learned",1,true)
+        return confirmed and "Learned profession use" or "Possible profession material",
+            body,confirmed and 0.43 or 0.91,
+            confirmed and 0.93 or 0.75,
+            confirmed and 0.56 or 0.39
+    elseif prefix=="CAMP SUPPLY" then
+        return "Camp supply",body,0.48,0.86,0.72
+    elseif prefix=="CAMP TOOL" then
+        return "Reusable camp tool",body,0.48,0.86,0.72
+    elseif prefix=="CAMP" or prefix=="CAMP REAGENT" then
+        return "Camping utility",body,0.48,0.86,0.72
+    end
+    return "Item insight",message,0.78,0.84,0.88
+end
+
 local function OnItemTooltip(tooltip)
     if not db or db.lootAdvice == false or not tooltip or not tooltip.GetItem or IsVendorOffer(tooltip) then return end
     local name, link = tooltip:GetItem()
@@ -137,14 +167,22 @@ local function OnItemTooltip(tooltip)
         and ChalkBox_IsTrackedQuestItem(name) then
         return
     end
-    local line = "LootSense: " .. message
-    if not HasLine(tooltip, line) then
-        tooltip:AddLine(line,r,g,b,true)
+    -- Match the game's tooltip hierarchy: a muted gold section header,
+    -- a short colored status, then the exact evidence on a separate line.
+    -- No debug-style "LootSense: blah" prefix and no full item reskin.
+    if not HasLine(tooltip,TIP_HEADER) then
+        local label,details,cr,cg,cb=ChalkBox_LootPresentation(message)
+        tooltip:AddLine(" ",1,1,1)
+        tooltip:AddLine(TIP_HEADER,0.85,0.69,0.39)
+        tooltip:AddLine(label,cr or r,cg or g,cb or b,true)
+        if details and details~="" then
+            tooltip:AddLine(details,0.92,0.91,0.84,true)
+        end
         if type(IsShiftKeyDown)=="function" and IsShiftKeyDown()
             and type(ChalkBox_RecipeDetails)=="function" then
             local id=Public(link) and type(link)=="string" and link:match("item:(%d+)") or nil
             local detail=ChalkBox_RecipeDetails(id,name)
-            if detail then tooltip:AddLine(detail,0.62,0.78,0.90,true) end
+            if detail then tooltip:AddLine(detail,0.65,0.78,0.93,true) end
         end
         tooltip:Show()
     end
