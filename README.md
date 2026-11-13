@@ -13,7 +13,7 @@
 [![MIT](https://img.shields.io/badge/license-MIT-67C6B7.svg)](LICENSE)
 [![Forever](https://img.shields.io/badge/WoW-Forever-203342.svg)](https://github.com/detok/ChalkBox)
 
-### [⬇ Download ChalkBox 1.9.0](https://github.com/detok/ChalkBox/releases/download/v1.9.0/ChalkBox-1.9.0.zip)
+### [⬇ Download ChalkBox 1.9.1](https://github.com/detok/ChalkBox/releases/download/v1.9.1/ChalkBox-1.9.1.zip)
 
 [**All GitHub Releases**](https://github.com/detok/ChalkBox/releases) · [**Install Guide**](#-install-in-one-minute) · [**Features**](#-what-chalkbox-does) · [**Help & Bugs**](https://github.com/detok/ChalkBox/issues)
 
@@ -42,7 +42,7 @@ It adds **small, genuinely useful information** while keeping Blizzard's familia
 | :--- | :--- | :--- |
 | **📦 LootSense** | Native-styled item insights, verified **learned-recipe bag highlights**, and quest/crafting/camp hints | Know *why* loot matters and spot the reagents you actually use |
 | **🧪 ProfessionSense** | Learned-recipe reagent scans, quantities where the client allows, 2,511 bundled Forever recipes | No separate crafting database download |
-| **📈 TrailBar** | Adaptive **18px** XP/bag/gear/rested/pet dashboard with **drag-to-reorder edit mode** and 0–100% backdrop opacity | Arrange every stat where you want it without an extra window |
+| **📈 TrailBar** | Adaptive **18px** XP/bag/gear/rested/pet dashboard with **drag-to-reorder edit mode**, optional Junk/Total bag resale and 0–100% backdrop opacity | Arrange every stat where you want it without an extra window |
 | **⚔️ Combat Meter** | Compact DPS/DMG/HPS/HEAL/TAKEN/INT, class icons, draggable window, PRINT/RESET | A readable optional meter using Blizzard's own data |
 | **💬 Blizzard meter PRINT** | A new **PRINT top 3 to PARTY** entry in Blizzard's existing damage-meter gear menu | Keep the **native** meter and still share a concise fight report |
 | **📜 QuestSense** | Smart / Nearby / All accepted-quest watch modes in the native tracker | Stay focused without inventing map pins or quest arrows |
@@ -126,6 +126,14 @@ The strip still supports **top / bottom / hidden**, 18px **Reserve screen space*
 
 If separate bags stack too high, **ChalkBox → TrailBar** now has a proper **vertical position slider**: **Blizzard's original anchor is at the midpoint (0)**. Drag the thumb **down** to lower bags (+120 maximum), or **up** to lift bags (−120 minimum). **Reset Bags** returns to Blizzard's default instantly. Combined bags, slots and sorting remain untouched. Slash alternatives: `/chalk bags offset 40` (down), `/chalk bags offset -35` (up), `/chalk bags reset`.
 
+### New in 1.9.1 — Bag resale value: Junk / Total
+
+Enable **Bag vendor value** in **ChalkBox → TrailBar Stats**, or use `/chalk bar stat bagvalue on`. The compact bar now shows **Value 18g** for the known resale total of all equipped bag items. **Left-click the number** (outside Edit Mode) to switch it to **Junk 1g** — only grey/poor-quality items. Left-click again to return to total. There is also a **Value: Total / Value: Junk** toggle right in TrailBar Stats; the selected view persists across logins.
+
+Hover either mode for exact gold/silver/copper values for **both** totals, stack-aware calculations and explanations of any uncached item data. An incomplete total is marked `>=`: that means **at least** this much, not a guaranteed exact figure. This is vendor resale money, **not auction-house value**, and does not include bank items, equipment you are wearing or gold you already carry. ChalkBox never sells anything.
+
+`/chalk bar bagvalue junk`, `/chalk bar bagvalue total`, or `/chalk bar bagvalue toggle` also switch the selected display.
+
 ## ⚔️ Combat: your choice of meter
 
 ### Prefer Blizzard's built-in damage meter?
@@ -161,7 +169,7 @@ That's included too:
 
 ## 🚀 Install in one minute
 
-**Direct download:** [**ChalkBox 1.9.0 ZIP**](https://github.com/detok/ChalkBox/releases/download/v1.9.0/ChalkBox-1.9.0.zip)  
+**Direct download:** [**ChalkBox 1.9.1 ZIP**](https://github.com/detok/ChalkBox/releases/download/v1.9.1/ChalkBox-1.9.1.zip)  
 **Newer versions:** [**GitHub Releases**](https://github.com/detok/ChalkBox/releases)
 
 1. Download **`ChalkBox-<version>.zip`** from GitHub Releases — *not* the GitHub “Source code” archives.

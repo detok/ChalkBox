@@ -7,6 +7,7 @@ local db
 local bar
 local widgets = {}
 local ticker
+local Refresh -- forward declaration: mode controls update TrailBar immediately
 local session = {
     started = nil, level = nil, xp = nil, maxXP = nil,
     xpGained = 0, goldStart = nil, money = nil
@@ -131,11 +132,13 @@ end
 local statDefaults={
     rate=true,eta=true,time=true,gold=true,
     bags=true,gear=true,rested=true,latency=false,pet=true,
+    bagvalue=false, -- opt-in: preserves existing users' TrailBar layout
 }
 local specs={
     level={width=98,group="left"},
     rate={width=104,group="left"},
     bags={width=90,group="left"},
+    bagvalue={width=125,group="right"},
     gear={width=82,group="left"},
     eta={width=128,group="center"},
     rested={width=92,group="center"},
@@ -147,9 +150,9 @@ local specs={
 local groups={
     left={"level","rate","bags","gear"},
     center={"eta","rested","pet"},
-    right={"time","latency","gold"},
+    right={"time","latency","bagvalue","gold"},
 }
-local dropPriority={"latency","time","pet","eta","rate","rested","gear","bags","gold"}
+local dropPriority={"latency","time","pet","eta","rate","rested","gear","bagvalue","bags","gold"}
 local displayed={}
 local latest={}
 local lastLayout=""
@@ -193,6 +196,34 @@ function ChalkBox_BarEditSet(on)
     EditDecorations()
     return true
 end
+function ChalkBox_BarBagValueModeGet()
+    return db and db.barBagValueMode=="junk" and "junk" or "total"
+end
+function ChalkBox_BarBagValueModeSet(mode)
+    if not db or (mode~="junk" and mode~="total") then return false end
+    db.barBagValueMode=mode
+    if Refresh then Refresh() end
+    return true
+end
+function ChalkBox_BarBagValueModeToggle()
+    return ChalkBox_BarBagValueModeSet(
+        ChalkBox_BarBagValueModeGet()=="junk" and "total" or "junk")
+end
+local function Coins(copper)
+    if type(copper)~="number" then return "--" end
+    copper=math.floor(math.max(0,copper))
+    return ("%dg %ds %dc"):format(
+        math.floor(copper/10000),math.floor(copper%10000/100),copper%100)
+end
+local function BagValueText(data)
+    if not data then return "Value --" end
+    local junk=ChalkBox_BarBagValueModeGet()=="junk"
+    local value=junk and data.junkCopper or data.totalCopper
+    local complete=junk and data.junkComplete or data.totalComplete
+    return (junk and "Junk " or "Value ")..
+        (complete and "" or ">=")..Money(value)
+end
+
 local function ConfigureStats()
     if not db then return end
     if type(db.barStats)~="table" then db.barStats={} end
@@ -316,6 +347,23 @@ local function CreateBar()
         {"rate","Session XP per hour",function()
             return {"XP gained this session: "..Number(session.xpGained),
                 "Average XP/hour includes idle time since login or reset."}
+        end},
+        {"bagvalue","Bag vendor resale value",function()
+            local v=latest.bagvalue
+            if not v then return {"Bag valuation unavailable in this client."} end
+            local junk=(v.junkComplete and "" or "At least ")..Coins(v.junkCopper)
+            local total=(v.totalComplete and "" or "At least ")..Coins(v.totalCopper)
+            local detail={}
+            detail[#detail+1]="Junk (gray/poor-quality items): "..junk
+            detail[#detail+1]="All equipped bag contents: "..total
+            if v.totalUnknown>0 or v.junkUnknown>0 then
+                detail[#detail+1]=("Unresolved slots: %d total, %d junk."):format(
+                    v.totalUnknown,v.junkUnknown)
+            end
+            detail[#detail+1]="Stacks counted at actual vendor sell price, not auction price."
+            detail[#detail+1]="Excludes bank, worn equipment and your current gold."
+            detail[#detail+1]="Left-click to flip Junk / Total; no items are sold."
+            return detail
         end},
         {"bags","Free bag slots",function()
             local a=latest.bags
@@ -451,6 +499,15 @@ local function CreateBar()
             end
         end)
         Hint(widget,name,details)
+        if key=="bagvalue" then
+            -- Direct user interaction only. Dragging in Edit Mode never changes
+            -- the display mode or triggers any inventory transaction.
+            widget:SetScript("OnMouseUp",function(_,button)
+                if button=="LeftButton" and not editMode then
+                    ChalkBox_BarBagValueModeToggle()
+                end
+            end)
+        end
     end
     bar:SetScript("OnSizeChanged",function() Reflow() end)
     EditDecorations()
@@ -614,14 +671,15 @@ local function PlaceBar()
     if db.bar=="off" then bar:Hide() else bar:Show() end
 end
 
-local function Refresh()
+Refresh=function()
     if not db or not bar then return end
     CaptureXP()
     CaptureMoney()
     local xpPerHour,eta,goldPerHour,elapsed=GetRates()
     local stats={}
     if type(ChalkBox_BarReadStats)=="function" then
-        local ok,value=pcall(ChalkBox_BarReadStats,session.maxXP)
+        local ok,value=pcall(ChalkBox_BarReadStats,session.maxXP,
+            StatEnabled("bagvalue"))
         if ok and type(value)=="table" then stats=value end
     end
     latest=stats
@@ -642,6 +700,7 @@ local function Refresh()
         Money(session.money and session.goldStart and session.money-session.goldStart
             or nil,true)..")")
     widgets.time.text:SetText("Time "..Duration(elapsed))
+    widgets.bagvalue.text:SetText(BagValueText(stats.bagvalue))
     widgets.bags.text:SetText(stats.bags and
         ("Bags "..stats.bags.free.." free") or "Bags --")
     widgets.gear.text:SetText(stats.gear and
@@ -739,7 +798,14 @@ function ChalkBox_BarCommand(message)
         else Note("Unknown TrailBar module.") end
     else
         local stat,choice=action:match("^stat%s+(%a+)%s+(%a+)$")
-    if stat and specs[stat] and stat~="level"
+    if action=="bagvalue junk" or action=="bagvalue total"
+        or action=="bagvalue toggle" then
+        local mode=action:match("bagvalue%s+(%a+)")
+        if mode=="toggle" then ChalkBox_BarBagValueModeToggle()
+        else ChalkBox_BarBagValueModeSet(mode) end
+        Note("Bag resale mode: "..ChalkBox_BarBagValueModeGet()..
+            ". Click the value in TrailBar to switch.")
+    elseif stat and specs[stat] and stat~="level"
         and (choice=="on" or choice=="off") then
         ConfigureStats()
         db.barStats[stat]=(choice=="on")
@@ -796,6 +862,7 @@ function ChalkBox_BarCommand(message)
         Note("Stats: /chalk bar stat <module> on/off | stats all|balanced|minimal")
         Note("Layout: /chalk bar edit on/off | layout reset | move <module> <left|center|right> [index]")
         Note("Text alignment: /chalk bar align <module> <left|center|right> | opacity 0-100")
+        Note("Vendor value: /chalk bar stat bagvalue on | bagvalue junk|total|toggle")
     end
     end
 end
@@ -807,7 +874,8 @@ events:RegisterEvent("PLAYER_XP_UPDATE")
 events:RegisterEvent("PLAYER_LEVEL_UP")
 events:RegisterEvent("PLAYER_MONEY")
 for _,event in ipairs({
-    "BAG_UPDATE_DELAYED","PLAYER_EQUIPMENT_CHANGED","UPDATE_INVENTORY_DURABILITY",
+    "BAG_UPDATE_DELAYED","GET_ITEM_INFO_RECEIVED","ITEM_DATA_LOAD_RESULT",
+    "PLAYER_EQUIPMENT_CHANGED","UPDATE_INVENTORY_DURABILITY",
     "UPDATE_EXHAUSTION","PLAYER_UPDATE_RESTING","UNIT_PET","UNIT_HEALTH",
     "UNIT_MAXHEALTH",
 }) do events:RegisterEvent(event) end
@@ -825,6 +893,7 @@ events:SetScript("OnEvent", function(_, event, name)
         -- uses a real UIParent safe-area inset and defaults ON for all users.
         if db.barReserve==nil then db.barReserve=true end
         ConfigureStats()
+        if db.barBagValueMode~="junk" then db.barBagValueMode="total" end
         ApplyAppearance()
     elseif event == "PLAYER_ENTERING_WORLD" then
         if not session.started then ResetSession() end

@@ -6,6 +6,11 @@ local function PublicNumber(value)
         not issecretvalue(value)) and type(value)=="number"
         and value==value and value>=0 and value<1e12
 end
+local function Public(value)
+    return value~=nil and (type(issecretvalue)~="function" or
+        not issecretvalue(value))
+end
+
 local function Call(method,...)
     if type(method)~="function" then return end
     local ok,a,b,c,d=pcall(method,...)
@@ -92,9 +97,123 @@ local function Pet()
     return {state="ready",percent=math.floor(100*math.min(health,max)/max+0.5)}
 end
 
-function ChalkBox_BarReadStats(maxXP)
+-- Reusable resale valuation for equipped bags only (0 through 4).
+-- Grey/poor quality (quality=0) is "junk"; "total" counts every item.
+-- Unknown cache entries lower confidence instead of silently becoming zero.
+local function BagVendorValue()
+    local api=C_Container
+    local slots=api and api.GetContainerNumSlots or GetContainerNumSlots
+    local slotInfo=api and api.GetContainerItemInfo or GetContainerItemInfo
+    local slotID=api and api.GetContainerItemID or GetContainerItemID
+    local itemInfo=(C_Item and C_Item.GetItemInfo) or GetItemInfo
+    if type(slots)~="function" or type(slotInfo)~="function"
+        or type(itemInfo)~="function" then return end
+    local backpack=PublicNumber(BACKPACK_CONTAINER) and BACKPACK_CONTAINER or 0
+    local last=PublicNumber(NUM_BAG_SLOTS) and NUM_BAG_SLOTS or 4
+    if last<backpack or last>8 then last=4 end
+    local total,junk=0,0
+    local unknown,unknownJunk=0,0
+    local priced,junkStacks,zeroStacks,observed=0,0,0,0
+    local function Unknown()
+        unknown=unknown+1
+        unknownJunk=unknownJunk+1
+    end
+    for bag=backpack,last do
+        local count=Call(slots,bag)
+        -- A missing empty equipped bag can be nil on some clients.
+        -- Secret or invalid bag sizes are unknown, not a presumed zero.
+        if count~=nil and not PublicNumber(count) then
+            Unknown()
+        elseif PublicNumber(count) and (count>500 or count%1~=0) then
+            Unknown()
+        elseif PublicNumber(count) then
+            observed=observed+1
+            for slot=1,count do
+                local success,raw,oldCount,_,oldQuality,_,_,oldLink,_,
+                    oldNoValue,oldID=pcall(slotInfo,bag,slot)
+                local item,quantity,quality,noValue,identity
+                if not success or (type(issecretvalue)=="function"
+                    and issecretvalue(raw)) then
+                    Unknown()
+                elseif raw==nil then
+                    -- Empty slots are not "unknown"; an actual pending item
+                    -- ID is unresolved until its full container data arrives.
+                    if type(slotID)=="function" then
+                        local ok,id=pcall(slotID,bag,slot)
+                        if not ok or (type(issecretvalue)=="function"
+                            and issecretvalue(id)) then Unknown()
+                        elseif id~=nil then Unknown() end
+                    end
+                else
+                    item=raw
+                    local fieldsOK=true
+                    if type(item)=="table" then
+                        local link,id
+                        fieldsOK,quantity,quality,noValue,link,id=
+                            pcall(function()
+                                return item.stackCount,item.quality,
+                                    item.hasNoValue,item.hyperlink,item.itemID
+                            end)
+                        identity=Public(link) and link or (Public(id) and id or nil)
+                    else
+                        quantity,quality,noValue=oldCount,oldQuality,oldNoValue
+                        identity=Public(oldLink) and oldLink or
+                            (Public(oldID) and oldID or nil)
+                    end
+                    if not fieldsOK or not PublicNumber(quantity) or
+                        quantity<1 or quantity>100000 or quantity%1~=0 or
+                        (type(issecretvalue)=="function" and
+                            issecretvalue(noValue)) then
+                        Unknown()
+                    else
+                        if not Public(identity) or
+                            (type(identity)~="string" and
+                                type(identity)~="number") then
+                            identity=nil
+                        end
+                        if identity==nil then
+                            Unknown()
+                        else
+                            local ok,q,price=pcall(function()
+                                local _,_,qValue,_,_,_,_,_,_,_,sell=itemInfo(identity)
+                                return qValue,sell
+                            end)
+                            if not ok then q,price=nil,nil end
+                            if not PublicNumber(quality) then quality=q end
+                            -- noValue is verified by Blizzard as 0 copper;
+                            -- don't mistake an absent item cache for zero.
+                            if noValue==true then price=0 end
+                            if not PublicNumber(price) or price>1000000000 or
+                                total+price*quantity>=1e12 then
+                                Unknown()
+                            else
+                                total=total+price*quantity
+                                if price==0 then zeroStacks=zeroStacks+1
+                                else priced=priced+1 end
+                                if PublicNumber(quality) and quality==0 then
+                                    junk=junk+price*quantity
+                                    junkStacks=junkStacks+1
+                                elseif not PublicNumber(quality) then
+                                    unknownJunk=unknownJunk+1
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    if observed==0 then return end
+    return {totalCopper=total,junkCopper=junk,
+        totalUnknown=unknown,junkUnknown=unknownJunk,
+        totalComplete=unknown==0,junkComplete=unknownJunk==0,
+        priced=priced,junkStacks=junkStacks,zeroStacks=zeroStacks}
+end
+
+function ChalkBox_BarReadStats(maxXP, includeBagValue)
     return {
         bags=Bags(),gear=Gear(),rested=Rested(maxXP),
         latency=Latency(),pet=Pet(),
+        bagvalue=includeBagValue==true and BagVendorValue() or nil,
     }
 end

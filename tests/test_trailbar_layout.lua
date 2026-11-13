@@ -43,7 +43,7 @@ ChalkBoxZoneDB.trailLayout={
 }
 result=ChalkBox_BarLayoutGet()
 assert(IsListed(result,"bags")==1 and IsListed(result,"gold")==1
-    and IsListed(result,"level")==1 and IsListed(result,"pet")==1,
+    and IsListed(result,"level")==1 and IsListed(result,"pet")==1 and IsListed(result,"bagvalue")==1,
     "malformed SavedVariables must normalize all modules exactly once")
 assert(result.align.bags=="right" and result.align.gold==nil,
     "invalid text alignment is ignored")
