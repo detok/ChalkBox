@@ -11,7 +11,7 @@
 [![MIT](https://img.shields.io/badge/license-MIT-67C6B7.svg)](LICENSE)
 [![Forever](https://img.shields.io/badge/WoW-Forever-203342.svg)](https://github.com/detok/ChalkBox)
 
-### [⬇ Download ChalkBox 1.8.6](https://github.com/detok/ChalkBox/releases/download/v1.8.6/ChalkBox-1.8.6.zip)
+### [⬇ Download ChalkBox 1.9.0](https://github.com/detok/ChalkBox/releases/download/v1.9.0/ChalkBox-1.9.0.zip)
 
 [**All GitHub Releases**](https://github.com/detok/ChalkBox/releases) · [**Install Guide**](#-install-in-one-minute) · [**Features**](#-what-chalkbox-does) · [**Help & Bugs**](https://github.com/detok/ChalkBox/issues)
 
@@ -38,16 +38,16 @@ It adds **small, genuinely useful information** while keeping Blizzard's familia
 
 | Module | What you get | Why it matters |
 | :--- | :--- | :--- |
-| **📦 LootSense** | Contextual **KEEP**, **KNOWN RECIPE**, **POTENTIAL USE**, camping and profession hints | Understand *why* an item could matter before selling it |
+| **📦 LootSense** | Native-styled item insights, verified **learned-recipe bag highlights**, and quest/crafting/camp hints | Know *why* loot matters and spot the reagents you actually use |
 | **🧪 ProfessionSense** | Learned-recipe reagent scans, quantities where the client allows, 2,511 bundled Forever recipes | No separate crafting database download |
-| **📈 TrailBar** | Adaptive **18px** strip for XP, gold, **free bag slots, gear durability, rested XP, latency and Hunter pet health** | All the stats you actually want—without another window |
+| **📈 TrailBar** | Adaptive **18px** XP/bag/gear/rested/pet dashboard with **drag-to-reorder edit mode** and 0–100% backdrop opacity | Arrange every stat where you want it without an extra window |
 | **⚔️ Combat Meter** | Compact DPS/DMG/HPS/HEAL/TAKEN/INT, class icons, draggable window, PRINT/RESET | A readable optional meter using Blizzard's own data |
 | **💬 Blizzard meter PRINT** | A new **PRINT top 3 to PARTY** entry in Blizzard's existing damage-meter gear menu | Keep the **native** meter and still share a concise fight report |
 | **📜 QuestSense** | Smart / Nearby / All accepted-quest watch modes in the native tracker | Stay focused without inventing map pins or quest arrows |
 | **⛺ Adventure Prep** | Camping aura/tent awareness, optional movable top-screen toast, class/pet reminders | Useful reminders with less nagging |
 | **🛡️ QuietGuard** | Guild/duel invite protection; other restrictions optional | Less invite spam while keeping ordinary party play available |
-| **🎭 Emota** | Opt-in contextual idle emotes and emote catalog | A little personality when *you* want it |
-| **🎒 Bag position helper** | Optional 0–80-point downward offset for separate bags | Helps when large profession bags stack above the screen |
+| **🎭 Emota** | Opt-in contextual emotes, **race behavior selector**, adjustable racial flavor and emote catalog | A little personality, now configurable by race |
+| **🎒 Bag position helper** | Vertical **−120 to +120** offset, with Blizzard's original position at the midpoint | Move individual bag windows up or down intuitively |
 
 Every module has native in-game options. **No automated item selling, no fabricated quest locations, no automatic PARTY combat spam.**
 
@@ -61,17 +61,25 @@ Artwork specification and game-capture shot list: [CurseForge / GitHub media pla
 
 These screenshots will be added when we have verified captures of LootSense, TrailBar, Blizzard's meter gear-menu PRINT, QuestSense and the settings pages.
 
+## ✨ New in 1.9: real in-game polish
+
+**ChalkBox now feels more like part of WoW's interface.** TrailBar modules can be dragged between left, center and right with saved personal ordering; the bar's background fades independently of its text; LootSense now uses a restrained **Item Insight** tooltip instead of a technical prefix; real learned-recipe ingredients receive subtle green inventory insets; Emota offers configurable racial flavor; and Blizzard's separate-bag adjustment finally has a vertical, centered control.
+
+Everything is optional or reversible. Existing modules, presets, screen-space reservation and combat safeguards stay intact.
+
 ## 📦 LootSense: a reason to keep it
 
 Some items belong to a quest. Some are ingredients in **recipes your character knows**. Some have real camp utility. And some have only a **potential recipe use** according to the bundled Forever catalog.
 
-ChalkBox tries to explain the difference on the item's tooltip:
+ChalkBox now explains that difference through a subtle **CHALKBOX | ITEM INSIGHT** section using native tooltip text instead of `LootSense: ...`:
 
-- **KEEP** — personal protected list or verified quest relevance
-- **KNOWN RECIPE** — an observed learned recipe uses this reagent
-- **POTENTIAL USE** — a recipe exists in the bundled catalog, but isn't verified as learned
-- **PROFESSION: possible** — cautious ingredient-family match; double-check the crafting UI
-- **No added line** — ChalkBox has no strong reason to annotate the item; **that does not mean safe to sell**
+- **Keep this item** — a personal protected item or verified quest relevance
+- **Used in a learned recipe** — an observed learned recipe uses this reagent
+- **Possible crafting use** — the bundled catalog found a recipe, but it's **not verified as learned**
+- **Possible profession material** — a cautious craft-family match, not a promise
+- **No extra section** — no strong evidence; **that does not mean safe to sell**
+
+**New in v1.9:** a restrained green inset highlights eligible ingredients right in Blizzard's bag icons **only** when the character's actual learned-recipe scan proves a use. Unlearned/offline-catalog possibilities never glow. Turn this on/off or adjust the marker strength in **ChalkBox → LootSense Appearance**. It never replaces a bag slot or item rarity border.
 
 **There are 2,511 Forever recipes included in the ZIP.** The optional hints and character-specific learned-recipe scanner are deliberately distinguished. Open your crafting profession window once and use `/chalk loot scan` if you want to refresh its knowledge.
 
@@ -79,7 +87,7 @@ ChalkBox **never** sells, buys, deletes, trades or uses items for you.
 
 ## 📈 TrailBar: more information, same 18 pixels
 
-**This is new in v1.8.6.** TrailBar now shows far more than XP and gold, yet stays the **same 18 pixels tall**. It's a customizable status dashboard—not a big floating window.
+**Expanded in v1.8.6 and customizable in v1.9.0.** TrailBar shows far more than XP and gold, yet stays the **same 18 pixels tall**. It's a customizable status dashboard—not a big floating window.
 
 | Module | What you see | Mouseover detail | Default |
 | --- | --- | --- | --- |
@@ -100,9 +108,17 @@ In **Esc → Options → AddOns → ChalkBox → TrailBar Stats**, turn each mod
 
 Try `/chalk bar stats` to inspect enabled vs. currently visible modules. `/chalk bar stats all` turns everything on; `/chalk bar stat latency on` enables the world ping field. A metric whose Forever API is unavailable stays hidden rather than making up a number.
 
+### Drag-and-drop edit mode (v1.9)
+
+Open **ChalkBox → TrailBar Appearance → Edit Bar**. The modules gain small edit highlights. Drag any stat to another position inside the **Left / Center / Right** third of the strip; dropping over an existing module reorders the current section. **Right-click while editing** to cycle the module's own left/center/right text alignment. Click **Done Editing** to relock; **Reset Layout** restores the stock order. Each character saves its own layout.
+
+The bar background is now **Blizzard-inspired neutral charcoal**, with a live **0–100% opacity slider** on the same page. At **0%**, only your information and XP underline remain visible. This slider does **not** fade text.
+
+Advanced commands: `/chalk bar edit on`, `/chalk bar edit off`, `/chalk bar move bags right 1`, `/chalk bar align gold center`, `/chalk bar layout reset`, `/chalk bar opacity 0`.
+
 The strip still supports **top / bottom / hidden**, 18px **Reserve screen space** (default), and a tiny XP progress line. Use `/chalk bar status` for layout diagnostics.
 
-If separate bags stack too high, **ChalkBox → TrailBar** also has a **Separate bags: move down** slider. It starts at zero, only affects individually opened bags, and doesn't replace Blizzard's containers or inventory sorting. Try `/chalk bags offset 30`.
+If separate bags stack too high, **ChalkBox → TrailBar** now has a proper **vertical position slider**: **Blizzard's original anchor is at the midpoint (0)**. Drag the thumb **down** to lower bags (+120 maximum), or **up** to lift bags (−120 minimum). **Reset Bags** returns to Blizzard's default instantly. Combined bags, slots and sorting remain untouched. Slash alternatives: `/chalk bags offset 40` (down), `/chalk bags offset -35` (up), `/chalk bags reset`.
 
 ## ⚔️ Combat: your choice of meter
 
@@ -133,13 +149,13 @@ That's included too:
 
 **Adventure Prep** checks supported **Camp Benefits**, **Welcoming Campfire**, Camp Tent/rested-XP indicators and relevant supplies. Optional top-screen notifications fade automatically. You can move the toast, set its opacity and lock it to avoid stealing game clicks. Test it with `/chalk prep test`.
 
-**QuietGuard** helps against unwanted guild invitations and duels, with party/trade/channel filtering **off by default**. **Emota** offers optional randomized character emotes and an emote catalog; automatic idle behavior starts **disabled**.
+**QuietGuard** helps against unwanted guild invitations and duels, with party/trade/channel filtering **off by default**. **Emota** offers optional randomized character emotes and an emote catalog; automatic idle behavior starts **disabled**. The new **Emota Race Behavior** page lets you inspect existing racial presets and choose **Off / Subtle / Default / Expressive** flavor intensity. Races without their own weighted profiles are visibly marked **planned**, never advertised as working.
 
 ---
 
 ## 🚀 Install in one minute
 
-**Direct download:** [**ChalkBox 1.8.6 ZIP**](https://github.com/detok/ChalkBox/releases/download/v1.8.6/ChalkBox-1.8.6.zip)  
+**Direct download:** [**ChalkBox 1.9.0 ZIP**](https://github.com/detok/ChalkBox/releases/download/v1.9.0/ChalkBox-1.9.0.zip)  
 **Newer versions:** [**GitHub Releases**](https://github.com/detok/ChalkBox/releases)
 
 1. Download **`ChalkBox-<version>.zip`** from GitHub Releases — *not* the GitHub “Source code” archives.
@@ -186,6 +202,10 @@ Your settings live in WoW SavedVariables; you don't need to delete `WTF` when up
 | `/chalk bar top` / `bottom` / `off` | Place or hide the status strip |
 | `/chalk bar stats all` / `balanced` / `minimal` | Set TrailBar information density |
 | `/chalk bar stat gear off` / `latency on` | Control individual widgets |
+| `/chalk bar edit on` / `off` | Drag/reorder bar modules, then lock the layout |
+| `/chalk bar opacity 0` / `100` | Adjust only the neutral charcoal background |
+| `/chalk bar layout reset` | Restore the current character's default stat positions |
+| `/chalk bags offset -35` | Move separate bags upward relative to Blizzard's anchor |
 | `/chalk bags offset 30` / `reset` | Reposition individual bag windows or restore default |
 | `/chalk meter hide` / `show` | Toggle the extra ChalkBox combat meter |
 | `/chalk meter print` | Manually report top-three compact-meter results to PARTY after combat |
