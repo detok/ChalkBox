@@ -2,6 +2,15 @@
 
 All notable changes to the public ChalkBox addon are documented here.
 
+## 1.6.1 — Forever profession scan and tooltip fixes
+
+- Let `C_TradeSkillUI` establish an active owned profession when legacy profession APIs are unavailable, instead of blocking recipe scans.
+- Listen to `TRADE_SKILL_LIST_UPDATE` and `TRADE_SKILL_DATA_SOURCE_CHANGED`, plus a short delayed scan, so recipes loading after the panel opens are captured.
+- Fall back to alternate reagent APIs when a modern recipe schematic is missing or empty.
+- Continue LootSense tooltip advice when `GetItemInfo` has not cached an item yet.
+- Add actionable `/chalk loot status` diagnostics for enabled state, active profession, scanner backend, and learned-recipe count.
+- Preserve one-ZIP bundle, exact MIT notices, and all other gameplay modules.
+
 ## 1.6.0 — Complete offline Forever recipes in one download
 
 - **Bundled the MIT-licensed LibProfessionDB 1.9.1 Forever-only database** (2,511 recipes), with original Pimptasty copyright/license and the public-domain LibStub loader.

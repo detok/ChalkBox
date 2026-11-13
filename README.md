@@ -39,7 +39,7 @@ An item can be important because it belongs to an active quest, is in your perso
 LootSense: KNOWN RECIPE: Camp Tent (Leatherworking) - 3/5 in bags
 ```
 
-Open your crafting profession windows once after installing. `/chalk loot scan` refreshes scans, and `/chalk loot status` explains what's available. Hold **Shift** over an ingredient for more learned recipe uses, when detected.
+Open a crafting profession window until the recipe list loads; ChalkBox detects both modern Forever updates and legacy profession windows. **`/chalk loot status`** now shows the active profession, which scanner worked, and the learned-recipe count. Use **`/chalk loot scan`** if needed, then re-hover the material for a refreshed tooltip. Hold **Shift** over an ingredient for more learned recipe uses, when detected.
 
 **No additional download needed:** ChalkBox now **includes LibProfessionDB's 2,511 WoW Forever recipes** and its required LibStub support inside the one ZIP. The library is credited to **Pimptasty**, and the original MIT copyright/license is preserved. ChalkBox's own code decides item relevance. The bundled database tells us what recipes *exist*, not what your character knows. Your profession-window scan is still the only proof of learned recipes. See [recipe data and licensing](docs/RECIPE_DATA.md).
 

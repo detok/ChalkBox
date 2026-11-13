@@ -6,7 +6,11 @@ local addonName = ...
 local learned = {}
 local recipeUses = {}
 local available = {}
+local seenWindow = {}
+local authoritativeProfessions = false
 local loaded = false
+local scan = {source="not scanned", recipes=0, reagents=0, lastWindow="none", retries=0}
+local scanScheduled = false
 
 local ids = {
     [171]="Alchemy", [164]="Blacksmithing", [165]="Leatherworking",
@@ -21,6 +25,8 @@ local craft = {
     ["engineering"]="Engineering", ["enchanting"]="Enchanting",
     ["cooking"]="Cooking", ["first aid"]="First Aid",
     ["jewelcrafting"]="Jewelcrafting", ["inscription"]="Inscription",
+    ["herbalism"]="Herbalism", ["mining"]="Mining",
+    ["skinning"]="Skinning", ["fishing"]="Fishing",
 }
 local function Safe(value)
     return value ~= nil and (type(issecretvalue) ~= "function" or not issecretvalue(value))
@@ -35,36 +41,63 @@ local function Normalize(name, skill)
     return nil
 end
 
+-- Professions in Forever can be visible through the modern trade UI even
+-- when Classic's GetProfessions / skill-list endpoints do not expose them.
+-- Treat a real opened profession as positive evidence; do not require an
+-- unrelated legacy API to grant permission to scan its recipes.
 local function ReadProfessions()
     local found = {}
-    if type(GetProfessions) == "function" and type(GetProfessionInfo) == "function" then
-        local p1,p2,arch,fish,cook = GetProfessions()
-        for _,idx in ipairs({p1 or false,p2 or false,arch or false,fish or false,cook or false}) do
-            if idx and Safe(idx) then
-                local name, _, _, _, _, _, skillID = GetProfessionInfo(idx)
-                local normalized = Normalize(name, skillID)
-                if normalized then found[normalized] = true end
-            end
-        end
-    end
-    -- Classic-era clients may supply profession names through the skill tab.
-    if type(GetNumSkillLines) == "function" and type(GetSkillLineInfo) == "function" then
-        local n = GetNumSkillLines()
-        if Safe(n) and type(n) == "number" then
-            for i=1,math.min(400,n) do
-                local name,header,_,_,_,_,_,_,_,_,_,_,skillID = GetSkillLineInfo(i)
-                if not header then
-                    local normalized = Normalize(name, skillID)
-                    if normalized then found[normalized] = true end
+    if type(GetProfessions)=="function" and type(GetProfessionInfo)=="function" then
+        local ok,p1,p2,arch,fish,cook=pcall(GetProfessions)
+        if ok then
+            for _,idx in ipairs({p1 or false,p2 or false,arch or false,
+                fish or false,cook or false}) do
+                if idx and Safe(idx) then
+                    local infoOK,name,icon,rank,maxRank,_,_,skillID=
+                        pcall(GetProfessionInfo,idx)
+                    if infoOK then
+                        local normalized=Normalize(name,skillID)
+                        if normalized then found[normalized]=true end
+                    end
                 end
             end
         end
     end
-    available = found
+    if type(GetNumSkillLines)=="function" and type(GetSkillLineInfo)=="function" then
+        local ok,n=pcall(GetNumSkillLines)
+        if ok and Safe(n) and type(n)=="number" then
+            for i=1,math.min(n,400) do
+                local lineOK,name,isHeader,_,_,_,_,_,_,_,_,_,_,skillID=
+                    pcall(GetSkillLineInfo,i)
+                if lineOK then
+                    -- Classic puts professions under headers, and some builds
+                    -- report the profession itself as a header. Check both.
+                    local normalized=Normalize(name,skillID)
+                    if normalized then found[normalized]=true end
+                end
+            end
+        end
+    end
+    local sawAny=next(found)~=nil
+    authoritativeProfessions=sawAny
+    if not sawAny then
+        for name in pairs(seenWindow) do found[name]=true end
+    else
+        -- An actual profession API enumerating currently owned skills wins.
+        -- It also avoids showing a removed profession indefinitely.
+        for name in pairs(seenWindow) do
+            if not found[name] then seenWindow[name]=nil end
+        end
+    end
+    available=found
 end
 
 local function AddReagent(profession, link, name, recipeName, quantity)
-    if not profession or not available[profession] then return end
+    if not profession then return end
+    available[profession]=true
+    seenWindow[profession]=true
+    if type(link)=="number" then link="item:"..tostring(link) end
+    scan.reagents=scan.reagents+1
     local keys={}
     if Safe(link) and type(link)=="string" then
         local id=link:match("item:(%d+)")
@@ -104,7 +137,10 @@ local function ReadLegacyTrade()
         or type(GetTradeSkillInfo) ~= "function" then return end
     local name = GetTradeSkillLine()
     local profession = Normalize(name)
-    if not profession or not available[profession] then return end
+    if not profession or (authoritativeProfessions and not available[profession]) then return end
+    available[profession]=true
+    seenWindow[profession]=true
+    scan.lastWindow=profession
     local count = GetNumTradeSkills()
     if not Safe(count) or type(count) ~= "number" then return end
     for i=1,math.min(count,1200) do
@@ -112,6 +148,9 @@ local function ReadLegacyTrade()
         if kind ~= "header" and kind ~= "subheader" and kind ~= "unavailable" then
             local n = type(GetTradeSkillNumReagents) == "function" and GetTradeSkillNumReagents(i) or 0
             if Safe(n) and type(n) == "number" then
+                if n>0 and Safe(recipeName) and type(recipeName)=="string" then
+                    scan.recipes=scan.recipes+1
+                end
                 for j=1,math.min(n,25) do
                     local reagent,link
                     local required
@@ -129,7 +168,10 @@ end
 local function ReadLegacyCraft()
     if type(GetCraftDisplaySkillLine) ~= "function" or type(GetNumCrafts) ~= "function" then return end
     local profession = Normalize(GetCraftDisplaySkillLine())
-    if not profession or not available[profession] then return end
+    if not profession or (authoritativeProfessions and not available[profession]) then return end
+    available[profession]=true
+    seenWindow[profession]=true
+    scan.lastWindow=profession
     local count = GetNumCrafts()
     if not Safe(count) or type(count) ~= "number" then return end
     for i=1,math.min(count,1200) do
@@ -141,6 +183,9 @@ local function ReadLegacyCraft()
         if kind ~= "header" and kind ~= "subheader" then
             local n = type(GetCraftNumReagents) == "function" and GetCraftNumReagents(i) or 0
             if Safe(n) and type(n) == "number" then
+                if n>0 and Safe(recipeName) and type(recipeName)=="string" then
+                    scan.recipes=scan.recipes+1
+                end
                 for j=1,math.min(n,25) do
                     local reagent,link
                     local required
@@ -155,43 +200,104 @@ local function ReadLegacyCraft()
     end
 end
 
+local function OpenProfession(api)
+    if type(api.GetBaseProfessionInfo)~="function" then return end
+    local ok,base=pcall(api.GetBaseProfessionInfo)
+    if not ok or type(base)~="table" then return end
+    local profession=Normalize(base.professionName or base.name,
+        base.professionID or base.skillLineID)
+    if not profession and type(api.GetChildProfessionInfo)=="function" then
+        local childOK,child=pcall(api.GetChildProfessionInfo)
+        if childOK and type(child)=="table" then
+            profession=Normalize(child.professionName or child.name,
+                child.professionID or child.skillLineID)
+        end
+    end
+    return profession
+end
+
+local function RecipeName(info,spellID)
+    if Safe(info.name) and type(info.name)=="string" and info.name~="" then
+        return info.name
+    end
+    if type(GetSpellInfo)=="function" then
+        local ok,name=pcall(GetSpellInfo,spellID)
+        if ok and Safe(name) and type(name)=="string" then return name end
+    end
+    if C_Spell and type(C_Spell.GetSpellName)=="function" then
+        local ok,name=pcall(C_Spell.GetSpellName,spellID)
+        if ok and Safe(name) and type(name)=="string" then return name end
+    end
+end
+
 local function ReadModernTrade()
-    local api = C_TradeSkillUI
-    if not api or type(api.GetAllRecipeIDs) ~= "function"
-        or type(api.GetRecipeInfo) ~= "function" then return end
-    local base = type(api.GetBaseProfessionInfo) == "function" and api.GetBaseProfessionInfo()
-    local profession = base and Normalize(base.professionName,base.professionID)
-    if not profession or not available[profession] then return end
-    local recipes = api.GetAllRecipeIDs()
-    if type(recipes) ~= "table" then return end
-    for i=1,math.min(#recipes,1600) do
-        local id = recipes[i]
-        if Safe(id) and type(id) == "number" then
-            local info = api.GetRecipeInfo(id)
-            if type(info) == "table" and info.learned == true then
-                if type(api.GetRecipeSchematic) == "function" then
-                    local schematic = api.GetRecipeSchematic(id,false)
-                    if type(schematic) == "table" and type(schematic.reagentSlotSchematics) == "table" then
+    local api=C_TradeSkillUI
+    if type(api)~="table" or type(api.GetAllRecipeIDs)~="function"
+        or type(api.GetRecipeInfo)~="function" then return false end
+    local profession=OpenProfession(api)
+    if not profession then
+        scan.source="waiting for modern profession identity"
+        return false
+    end
+    local ok,recipes=pcall(api.GetAllRecipeIDs)
+    if not ok or type(recipes)~="table" or #recipes==0 then
+        scan.source="waiting for profession recipes"
+        return false
+    end
+    -- The actual active profession window is proof the player owns this
+    -- profession on builds where GetProfessions() is missing or incomplete.
+    available[profession]=true
+    seenWindow[profession]=true
+    scan.lastWindow=profession
+    local known=0
+    local before=scan.reagents
+    for i=1,math.min(#recipes,2500) do
+        local id=recipes[i]
+        if Safe(id) and type(id)=="number" then
+            local infoOK,info=pcall(api.GetRecipeInfo,id)
+            if infoOK and type(info)=="table"
+                and (info.learned==true or info.isLearned==true) then
+                known=known+1
+                local recipeName=RecipeName(info,id)
+                local added=false
+                if type(api.GetRecipeSchematic)=="function" then
+                    local schematicOK,schematic=pcall(api.GetRecipeSchematic,id,false)
+                    if schematicOK and type(schematic)=="table"
+                        and type(schematic.reagentSlotSchematics)=="table" then
                         for _,slot in ipairs(schematic.reagentSlotSchematics) do
-                            if type(slot) == "table" and type(slot.reagents) == "table" then
+                            if type(slot)=="table" and type(slot.reagents)=="table" then
                                 for _,reagent in ipairs(slot.reagents) do
-                                    if type(reagent) == "table" and Safe(reagent.itemID)
-                                        and type(reagent.itemID) == "number" then
-                                        AddReagent(profession,"item:"..reagent.itemID,nil,info.name,
-                                            slot.quantityRequired or reagent.quantityRequired)
+                                    if type(reagent)=="table" then
+                                        local itemID=reagent.itemID or reagent.itemId
+                                        local itemLink=reagent.itemLink
+                                        if not itemID and type(itemLink)=="string" then
+                                            itemID=tonumber(itemLink:match("item:(%d+)"))
+                                        end
+                                        if Safe(itemID) and tonumber(itemID) then
+                                            AddReagent(profession,tonumber(itemID),
+                                                reagent.name,recipeName,
+                                                slot.quantityRequired or reagent.quantityRequired)
+                                            added=true
+                                        end
                                     end
                                 end
                             end
                         end
                     end
-                elseif type(api.GetRecipeNumReagents) == "function"
-                    and type(api.GetRecipeReagentInfo) == "function" then
-                    local n = api.GetRecipeNumReagents(id)
-                    if Safe(n) and type(n) == "number" then
+                end
+                -- Some Forever builds have a partial or empty schematic API.
+                -- Use their older reagent-reader API instead of silently
+                -- recording zero materials for an otherwise known recipe.
+                if not added and type(api.GetRecipeNumReagents)=="function"
+                    and type(api.GetRecipeReagentInfo)=="function" then
+                    local numberOK,n=pcall(api.GetRecipeNumReagents,id)
+                    if numberOK and type(n)=="number" then
                         for j=1,math.min(n,25) do
-                            local reagent = api.GetRecipeReagentInfo(id,j)
-                            if type(reagent) == "table" then
-                                AddReagent(profession,reagent.itemLink,reagent.name,info.name,
+                            local reagentOK,reagent=pcall(api.GetRecipeReagentInfo,id,j)
+                            if reagentOK and type(reagent)=="table" then
+                                local itemID=reagent.itemID or reagent.itemId
+                                AddReagent(profession,itemID or reagent.itemLink,
+                                    reagent.name,recipeName,
                                     reagent.quantityRequired or reagent.quantity)
                             end
                         end
@@ -200,6 +306,10 @@ local function ReadModernTrade()
             end
         end
     end
+    scan.source="modern C_TradeSkillUI"
+    scan.recipes=known
+    scan.reagents=scan.reagents-before
+    return true
 end
 
 local function Refresh()
@@ -298,24 +408,63 @@ function ChalkBox_ProfessionSummary()
     return #names>0 and table.concat(names,", ") or "None detected",recipes
 end
 
+function ChalkBox_ProfessionDiagnostics()
+    return scan.source,scan.lastWindow,scan.recipes,scan.reagents
+end
+
 function ChalkBox_ProfessionRefresh()
     Refresh()
+    scan.reagents=0
+    scan.recipes=0
+    local before=scan.reagents
     ReadLegacyTrade()
     ReadLegacyCraft()
-    ReadModernTrade()
+    local legacyCount=scan.reagents-before
+    local modern=ReadModernTrade()
+    if not modern and legacyCount>0 then
+        scan.source="legacy trade/craft"
+        scan.reagents=legacyCount
+    elseif not modern and scan.source=="not scanned" then
+        scan.source="no learned recipes scanned; open a profession window"
+    end
+    return scan.recipes,scan.reagents
+end
+
+local function ScanAfterWindowOpens()
+    if type(C_Timer)=="table" and type(C_Timer.After)=="function" then
+        if scanScheduled then return end
+        scanScheduled=true
+        C_Timer.After(0.4,function()
+            scanScheduled=false
+            if loaded then ChalkBox_ProfessionRefresh() end
+        end)
+    elseif loaded then
+        ChalkBox_ProfessionRefresh()
+    end
 end
 
 local events=CreateFrame("Frame")
 for _,event in ipairs({"ADDON_LOADED","PLAYER_ENTERING_WORLD","SKILL_LINES_CHANGED",
-    "TRADE_SKILL_SHOW","TRADE_SKILL_UPDATE","CRAFT_SHOW","CRAFT_UPDATE",
-    "NEW_RECIPE_LEARNED"}) do events:RegisterEvent(event) end
+    "TRADE_SKILL_SHOW","TRADE_SKILL_UPDATE","TRADE_SKILL_LIST_UPDATE",
+    "TRADE_SKILL_DATA_SOURCE_CHANGED","CRAFT_SHOW","CRAFT_UPDATE",
+    "NEW_RECIPE_LEARNED"}) do
+    -- An event only exists in some client branches; don't fail addon loading
+    -- merely because a Classic/Forever version doesn't expose that event.
+    pcall(events.RegisterEvent,events,event)
+end
 events:SetScript("OnEvent",function(_,event,name)
     if event=="ADDON_LOADED" then
         if name~=addonName then return end
         Refresh()
-    elseif event=="SKILL_LINES_CHANGED" or event=="PLAYER_ENTERING_WORLD" then
+    elseif event=="PLAYER_ENTERING_WORLD" then
         ReadProfessions()
+    elseif event=="SKILL_LINES_CHANGED" then
+        ReadProfessions()
+        ScanAfterWindowOpens()
     elseif loaded then
+        -- Forever may expose an empty recipe list at SHOW, populating it
+        -- after TRADE_SKILL_LIST_UPDATE or DATA_SOURCE_CHANGED.
         ChalkBox_ProfessionRefresh()
+        ScanAfterWindowOpens()
     end
 end)
