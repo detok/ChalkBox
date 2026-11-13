@@ -135,7 +135,10 @@ local function ReadLegacyTrade()
         or type(GetTradeSkillInfo) ~= "function" then return end
     local name = GetTradeSkillLine()
     local profession = Normalize(name)
-    if not profession or not available[profession] then return end
+    if not profession then return end
+    available[profession]=true
+    seenWindow[profession]=true
+    scan.lastWindow=profession
     local count = GetNumTradeSkills()
     if not Safe(count) or type(count) ~= "number" then return end
     for i=1,math.min(count,1200) do
@@ -160,7 +163,10 @@ end
 local function ReadLegacyCraft()
     if type(GetCraftDisplaySkillLine) ~= "function" or type(GetNumCrafts) ~= "function" then return end
     local profession = Normalize(GetCraftDisplaySkillLine())
-    if not profession or not available[profession] then return end
+    if not profession then return end
+    available[profession]=true
+    seenWindow[profession]=true
+    scan.lastWindow=profession
     local count = GetNumCrafts()
     if not Safe(count) or type(count) ~= "number" then return end
     for i=1,math.min(count,1200) do
@@ -394,24 +400,63 @@ function ChalkBox_ProfessionSummary()
     return #names>0 and table.concat(names,", ") or "None detected",recipes
 end
 
+function ChalkBox_ProfessionDiagnostics()
+    return scan.source,scan.lastWindow,scan.recipes,scan.reagents
+end
+
 function ChalkBox_ProfessionRefresh()
     Refresh()
+    scan.reagents=0
+    scan.recipes=0
+    local before=scan.reagents
     ReadLegacyTrade()
     ReadLegacyCraft()
-    ReadModernTrade()
+    local legacyCount=scan.reagents-before
+    local modern=ReadModernTrade()
+    if not modern and legacyCount>0 then
+        scan.source="legacy trade/craft"
+        scan.reagents=legacyCount
+    elseif not modern and scan.source=="not scanned" then
+        scan.source="no learned recipes scanned; open a profession window"
+    end
+    return scan.recipes,scan.reagents
+end
+
+local function ScanAfterWindowOpens()
+    if type(C_Timer)=="table" and type(C_Timer.After)=="function" then
+        if scanScheduled then return end
+        scanScheduled=true
+        C_Timer.After(0.4,function()
+            scanScheduled=false
+            if loaded then ChalkBox_ProfessionRefresh() end
+        end)
+    elseif loaded then
+        ChalkBox_ProfessionRefresh()
+    end
 end
 
 local events=CreateFrame("Frame")
 for _,event in ipairs({"ADDON_LOADED","PLAYER_ENTERING_WORLD","SKILL_LINES_CHANGED",
-    "TRADE_SKILL_SHOW","TRADE_SKILL_UPDATE","CRAFT_SHOW","CRAFT_UPDATE",
-    "NEW_RECIPE_LEARNED"}) do events:RegisterEvent(event) end
+    "TRADE_SKILL_SHOW","TRADE_SKILL_UPDATE","TRADE_SKILL_LIST_UPDATE",
+    "TRADE_SKILL_DATA_SOURCE_CHANGED","CRAFT_SHOW","CRAFT_UPDATE",
+    "NEW_RECIPE_LEARNED"}) do
+    -- An event only exists in some client branches; don't fail addon loading
+    -- merely because a Classic/Forever version doesn't expose that event.
+    pcall(events.RegisterEvent,events,event)
+end
 events:SetScript("OnEvent",function(_,event,name)
     if event=="ADDON_LOADED" then
         if name~=addonName then return end
         Refresh()
-    elseif event=="SKILL_LINES_CHANGED" or event=="PLAYER_ENTERING_WORLD" then
+    elseif event=="PLAYER_ENTERING_WORLD" then
         ReadProfessions()
+    elseif event=="SKILL_LINES_CHANGED" then
+        ReadProfessions()
+        ScanAfterWindowOpens()
     elseif loaded then
+        -- Forever may expose an empty recipe list at SHOW, populating it
+        -- after TRADE_SKILL_LIST_UPDATE or DATA_SOURCE_CHANGED.
         ChalkBox_ProfessionRefresh()
+        ScanAfterWindowOpens()
     end
 end)
