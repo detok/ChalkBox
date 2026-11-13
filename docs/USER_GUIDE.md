@@ -46,9 +46,11 @@ Forever camping has special uses beyond classic's cooking fire. CampSense can id
 
 The built-in ChalkBox Combat Meter is a **small window** that uses WoW Forever's native damage tracking. It's visible by default and does **not** need a second addon, internet access or a combat log.
 
-**At a glance:** each row shows a class-colored bar, the player name and a native damage/healing number. Your own row has a gold marker. The two title-bar buttons cycle:
+**At a glance:** each row shows a genuine **WoW class icon**, a class-colored bar, the player name and a native damage/healing number. Your own row has a gold marker. Under **Combat Meter** settings, choose **Class** for familiar emblems (default), **Spec** for specialization artwork where the game provides an icon ID, or **Off** for extra name width. Unknown/pet sources get a neutral icon rather than a guessed player class. The two title-bar buttons cycle:
 - Statistic: **DPS, Damage Done, HPS, Healing Done, Damage Taken, Interrupts**.
 - Scope: **Fight, Last, Overall**.
+
+You can also type `/chalk meter icons class`, `/chalk meter icons spec`, or `/chalk meter icons off`. Icons use textures already installed in WoW, with no additional downloads.
 
 **Move and resize:** drag the title bar, then use the bottom-right grip to resize width and height. Click **LOCK** directly on the meter to protect its position, or click **UNLOCK** to move it again. Change transparency with the on-window **Opacity** slider (35–100%), or the native `/chalk → Combat Meter` slider. Show 5, 8 or 12 rows and choose 85, 100 or 115% UI scale in settings. Click **X** to hide; `/chalk meter` shows it again.
 
