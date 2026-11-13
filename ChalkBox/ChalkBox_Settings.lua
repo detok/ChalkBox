@@ -564,14 +564,25 @@ local function MakeMeter()
             return status and status.locked==true
         end,
         function(on) Run(on and "lock" or "unlock") end)
-    Label(panel,"Rows visible","GameFontNormalLarge",30,-224,340)
+    Label(panel,"Icons","GameFontNormal",220,-179,51)
+    Button(panel,"Class",276,-171,67,function() Run("icons class") end)
+    Button(panel,"Spec",351,-171,67,function() Run("icons spec") end)
+    Button(panel,"Off",426,-171,67,function() Run("icons off") end)
+    local iconInfo=Label(panel,"","GameFontHighlightSmall",30,-207,460)
+    panel:AddRefresh(function()
+        local st=ChalkBox_MeterStatus and ChalkBox_MeterStatus()
+        local current=st and st.iconMode or "class"
+        iconInfo:SetText("Icon style: "..current..
+            "  |  Spec uses Blizzard's icon ID when available.")
+    end)
+    Label(panel,"Rows visible","GameFontNormalLarge",30,-235,340)
     for i,n in ipairs({5,8,12}) do
-        Button(panel,tostring(n).." rows",27+(i-1)*138,-247,120,
+        Button(panel,tostring(n).." rows",27+(i-1)*138,-259,120,
             function() Run("rows "..n) end)
     end
-    Label(panel,"Window size","GameFontNormalLarge",30,-284,340)
+    Label(panel,"Window size","GameFontNormalLarge",30,-295,340)
     for i,n in ipairs({85,100,115}) do
-        Button(panel,tostring(n).."%",27+(i-1)*138,-305,120,
+        Button(panel,tostring(n).."%",27+(i-1)*138,-318,120,
             function() Run("scale "..n) end)
     end
     Label(panel,"Transparency","GameFontNormalLarge",30,-355,132)
