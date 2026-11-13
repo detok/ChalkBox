@@ -26,6 +26,7 @@ This directory contains the working content and production plan for a polished C
 | [SCREENSHOT_PLAN.md](artwork/SCREENSHOT_PLAN.md) | Capture instructions and per-shot visual storyboards |
 | [ARTWORK_FOLDER.md](artwork/ARTWORK_FOLDER.md) | Eventual asset directory naming/organization, no fake files |
 | [PUBLISH_CHECKLIST.md](submission/PUBLISH_CHECKLIST.md) | CurseForge UI workflow and gates |
+| [GITHUB_PRESENTATION.md](submission/GITHUB_PRESENTATION.md) | GitHub landing page, primary download links, About metadata, optional branch-protection steps |
 | [QA_AND_POLICY.md](submission/QA_AND_POLICY.md) | Accuracy, moderation, file packaging and screenshot QA |
 
 ## Editorial source of truth
