@@ -5,6 +5,7 @@ _G.ChalkBoxZoneDB={}
 _G.ChalkBox_ThemeBackground=function() return 0.12,0.15,0.18,0 end
 _G.ChalkBox_ThemeAccent=function() return 0.2,0.8,0.7 end
 local frames={}
+local fonts={}
 local function Frame(kind,name,parent)
     local f={kind=kind,name=name,parent=parent,shown=false,text=""}
     function f:SetSize(w,h) self.w=w;self.h=h end
@@ -53,10 +54,31 @@ local function Frame(kind,name,parent)
         function t:SetTexture(value) self.texture=value end
         return t
     end
-    function f:CreateFontString()
-        return {SetPoint=function() end,SetWidth=function() end,
-            SetJustifyH=function() end,
-            SetText=function(self,t) self.text=t end}
+    function f:CreateFontString(_,layer,style)
+        assert(layer=="OVERLAY" and type(style)=="string"
+            and style:find("^GameFont"),
+            "font templates must be actual Blizzard font styles, never label text")
+        local fs={style=style,parent=self}
+        function fs:SetPoint(_,_,_,x,y)
+            assert(type(x)=="number" and type(y)=="number",
+                "font x/y coordinates must be numeric")
+            self.x,self.y=x,y
+        end
+        function fs:SetWidth(width)
+            assert(type(width)=="number" and width>0,
+                "font widths must be positive numbers")
+            self.width=width
+        end
+        function fs:SetJustifyH() end
+        function fs:SetText(value)
+            assert(type(value)=="string")
+            self.text=value
+        end
+        function fs:SetTextColor(r,g,b,a) self.color={r,g,b,a} end
+        function fs:SetShadowColor() end
+        function fs:SetShadowOffset() end
+        fonts[#fonts+1]=fs
+        return fs
     end
     frames[#frames+1]=f
     return f
@@ -171,6 +193,26 @@ button.OnClick(button,"LeftButton")
 local journal=Find("ChalkBoxMapDiscoveries")
 assert(journal and journal:IsShown() and journal.w==660 and journal.h==616,
     "Discoveries journal opens at the expected size")
+-- Previously this passed despite the real client aborting halfway through
+-- construction: static heading text was incorrectly passed as a font style.
+local headings={
+    ["AREA / DUNGEON"]=true,["CREATURE SOURCE"]=true,
+    ["SORT BY"]=true,["SEARCH ITEMS"]=true,ITEM=true,
+    COLLECTED=true,APPEARED=true,["RATE*"]=true,
+}
+local foundHeadings={}
+for _,fs in ipairs(fonts) do
+    if headings[fs.text] then
+        assert(fs.style=="GameFontNormal" and fs.color and
+            fs.color[4]==1 and fs.width>0, "header must render readably")
+        foundHeadings[fs.text]=true
+    end
+end
+for label in pairs(headings) do
+    assert(foundHeadings[label],"missing Discoveries heading: "..label)
+end
+assert(#fonts>=30,"full journal and its rows must finish constructing")
+assert(journal.OnUpdate,"full journal must finish initialization")
 assert(journal.strata=="FULLSCREEN_DIALOG" and journal.level>=200
     and journal.toplevel==true,
     "journal frame and all children must sit above the native map")

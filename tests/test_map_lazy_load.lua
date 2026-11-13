@@ -3,6 +3,7 @@
 _G.ChalkBoxZoneDB={}
 _G.UIParent={}
 local frames={}
+local journalFonts={}
 local allowed={PLAYER_LOGIN=true,PLAYER_ENTERING_WORLD=true,
     ADDON_LOADED=true}
 local function Frame(kind,name,parent)
@@ -32,9 +33,22 @@ local function Frame(kind,name,parent)
             SetHeight=function() end,SetSize=function() end,
             SetTexture=function() end,SetColorTexture=function() end}
     end
-    function f:CreateFontString()
-        return {SetPoint=function() end,SetWidth=function() end,
-            SetJustifyH=function() end,SetText=function(self,t) self.text=t end}
+    function f:CreateFontString(_,layer,style)
+        assert(layer=="OVERLAY" and type(style)=="string" and
+            style:find("^GameFont"), "invalid font style")
+        local fs={style=style,parent=self}
+        function fs:SetPoint(_,_,_,x,y)
+            assert(type(x)=="number" and type(y)=="number",
+                "font coordinates must be numeric")
+        end
+        function fs:SetWidth(w)
+            assert(type(w)=="number" and w>0,
+                "font width must be positive")
+        end
+        function fs:SetText(value) self.text=value end
+        function fs:SetJustifyH() end
+        journalFonts[#journalFonts+1]=fs
+        return fs
     end
     frames[#frames+1]=f
     return f
@@ -66,6 +80,8 @@ assert(ChalkBox_OpenMapDiscoveries(),
     "standalone journal is accessible even if Blizzard map hasn't loaded")
 assert(Find("ChalkBoxMapDiscoveries"):IsShown(),
     "direct access never depends on the map button being visible")
+assert(#journalFonts>=30 and Find("ChalkBoxMapDiscoveries").scripts.OnUpdate,
+    "standalone journal must fully build even before the native map loads")
 local loader
 for _,f in ipairs(frames) do
     if f.scripts.OnEvent and f.scripts.OnUpdate then loader=f end
