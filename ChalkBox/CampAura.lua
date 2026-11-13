@@ -3,7 +3,7 @@
 local CAMP_BENEFITS=1229741
 local WELCOMING=1229739
 local function Visible(v)
-    return v~=nil and (type(issecretvalue)~="function" or not issecretvalue(v))
+    return (type(issecretvalue)~="function" or not issecretvalue(v)) and v~=nil
 end
 local function Clock()
     if type(GetTime)=="function" then
@@ -89,6 +89,9 @@ local function TentDebuff()
             local aura
             ok,aura=pcall(modern,"player",i,"HARMFUL")
             if not ok then return nil,"restricted" end
+            if type(issecretvalue)=="function" and issecretvalue(aura) then
+                return nil,"restricted"
+            end
             if aura==nil then return false end
             if not Visible(aura) or type(aura)~="table" then return nil,"restricted" end
             name,spellID,expires=aura.name,aura.spellId,aura.expirationTime
@@ -97,6 +100,9 @@ local function TentDebuff()
             ok,name,icon,count,kind,duration,expires,source,stealable,plate,spellID=
                 pcall(legacy,"player",i,"HARMFUL")
             if not ok then return nil,"restricted" end
+            if type(issecretvalue)=="function" and issecretvalue(name) then
+                return nil,"restricted"
+            end
             if name==nil then return false end
         end
         if not Visible(name) and not Visible(spellID) then return nil,"restricted" end
@@ -120,6 +126,7 @@ local function RestedPercent()
     if not okMax or not okRest or not Visible(maxXP) or type(maxXP)~="number"
         or maxXP<=0 then return nil end
     -- GetXPExhaustion() returns nil when no rested XP is stored.
+    if type(issecretvalue)=="function" and issecretvalue(restXP) then return nil end
     if restXP==nil then restXP=0 end
     if not Visible(restXP) or type(restXP)~="number" or restXP<0 then return nil end
     return restXP/maxXP
