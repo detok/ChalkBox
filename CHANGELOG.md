@@ -2,6 +2,17 @@
 
 All notable changes to the public ChalkBox addon are documented here.
 
+## 1.8.6 — Adaptive rich-stat TrailBar
+
+- **Actually implemented** new TrailBar readings: equipped bag free/total slots (ordinary vs specialized in tooltip), weighted equipment durability and lowest-condition warning, rested bonus XP as % of one level, optional home/world latency and optional Hunter pet health.
+- Guard all readings against missing Forever APIs, protected/secret combat values and invalid data. Never infer pet health or count unavailable items as free.
+- Add **TrailBar Stats** to native ChalkBox options, with nine switches and working Balanced, Minimal and All presets. Defaults feature bags, gear and rested XP; latency starts off.
+- Rebuild the 18px widget layout to fit left/center/right groups without overlap and hide lower-priority fields on narrow displays without changing saved choices.
+- Add `/chalk bar stat <module> on|off`, `/chalk bar stats <preset>` and `/chalk bar stats` diagnostics.
+- Retain the existing XP progress line, money, session time, UIParent screen-space reservation, separate-bag offset, DPS features and all other ChalkBox modules.
+- Extend Lua 5.1 regression tests for native readings, specialty bag counts, weighted durability, rested XP, secret Hunter health, native settings, profiles and adaptive layout.
+- Refresh GitHub README, user guide and CurseForge listing draft for the real release.
+
 ## 1.8.5 — Blizzard damage-meter PRINT integration
 
 - Add **ChalkBox: PRINT top 3 to PARTY** to the gear/settings menu of Blizzard Forever's built-in damage meter, using its supported `MENU_DAMAGE_METER_WINDOW_SETTINGS` extension point.
