@@ -222,6 +222,9 @@ SlashCmdList.CHALKBOX = function(input)
     elseif command=="loot" and argument=="scan" then
         if type(ChalkBox_ProfessionRefresh)=="function" then ChalkBox_ProfessionRefresh() end
         if type(ChalkBox_RecipeAdvisorRescan)=="function" then ChalkBox_RecipeAdvisorRescan() end
+        if type(ChalkBox_BagHighlightsRefresh)=="function" then
+            ChalkBox_BagHighlightsRefresh()
+        end
         local source,window,knownCount="unavailable","none",0
         if type(ChalkBox_ProfessionDiagnostics)=="function" then
             source,window,knownCount=ChalkBox_ProfessionDiagnostics()
