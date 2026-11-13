@@ -77,9 +77,17 @@ Set the Blizzard meter to your preferred DPS/damage/healing statistic and Curren
 
 To keep only Blizzard's meter, turn off **Show compact DPS meter window** under ChalkBox → Combat Meter or type `/chalk meter hide`. The built-in gear menu still works. Use `/chalk meter native off` to remove the extra gear-menu entry, `/chalk meter native on` to restore it, or `/chalk meter native status` to diagnose support. This feature relies on the Forever `MENU_DAMAGE_METER_WINDOW_SETTINGS` menu extension and will quietly do nothing when that API is missing.
 
-## The Bar — customizable adventure dashboard (v1.9.2)
+## The Bar — customizable adventure dashboard (v1.9.3)
 
 The same **18px** strip now supports XP, XP/hour, estimated time to level, session time, gold/net change, **free equipped-bag slots, equipment durability, rested XP, home/world latency and Hunter pet health**. No new floating bar or additional screen height.
+
+### New in v1.9.3 — Self-learning repair estimates
+
+**The Bar now remembers multiple real repair merchant quotes instead of a single price per durability point.** It stores up to 32 distinct observations in per-character SavedVariables. On the road, the estimator favors previous merchant prices for the same equipped items (where the client exposes their IDs), then falls back to similar sets of equipment. An outlier-resistant estimate adjusts as it sees more valid samples. Different gear may need another merchant visit.
+
+Hover the Repair stat to see **observations recorded, estimate source, a rough confidence stage**, and, after it has made a prediction and checked against a later quote, its **last prediction error**. This is a simple on-device statistical model, not AI or guaranteed actual cost. A merchant's repair-all total may also include damaged bag items and discounts, so `~` continues to mean estimate.
+
+Use `/chalk bar repair status` to see how many examples the character knows. Use `/chalk bar repair reset` to clear the history and start from zero. Existing single-reference calibration from 1.9.2 remains as a temporary fallback until the first new sample. No automatic repairs or extra addons.
 
 ### New in v1.9.2 — Repair and the right-click menu
 

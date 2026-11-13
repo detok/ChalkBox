@@ -54,6 +54,7 @@ _G.C_Item={GetItemInfo=function(id)
     return "Item "..id,"item:"..id,value.quality,nil,nil,nil,nil,nil,nil,nil,
         value.price
 end}
+assert(loadfile("RepairLearning.lua"))("ChalkBox")
 assert(loadfile("TrailBarStats.lua"))("ChalkBox")
 
 assert(ChalkBox_BarReadStats(playerMax).bagvalue==nil,
@@ -94,8 +95,9 @@ repair=ChalkBox_BarReadStats(playerMax,false,true).repair
 assert(repair.state=="exact" and repair.copper==30000 and
     repair.missing==150,
     "real repair-all quote is shown only at a real repair vendor")
-assert(ChalkBoxZoneDB.repairReference.rate==200,
-    "per-character calibration is derived from observed bill and worn durability")
+assert(ChalkBox_RepairLearningStatus().samples==1 and
+    ChalkBoxZoneDB.repairLearning.samples[1].cost==30000,
+    "actual merchant quote becomes a saved character-specific training sample")
 merchantOpen=false
 items[1][1]=70
 repair=ChalkBox_BarReadStats(playerMax,false,true).repair
