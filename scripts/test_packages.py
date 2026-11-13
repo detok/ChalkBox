@@ -26,7 +26,7 @@ def test() -> None:
     assert "ChalkBoxDB" in toc and "ChalkBoxProfessionDB" in toc
     assert version_of(SOURCE / "ChalkBox.toc") == version_of(
         SOURCE / "ChalkBox_Camelot.toc")
-    listed = [line.strip().replace("\\\\", "/") for line in toc.splitlines()
+    listed = [line.strip().replace("\\", "/") for line in toc.splitlines()
               if line.strip() and not line.startswith("##")]
     expected_lua = {name for name in FILES if name.endswith(".lua")}
     assert set(listed) == expected_lua, "Manifest and packaging disagree"
@@ -55,7 +55,7 @@ def test() -> None:
         assert "ChalkBox/Libs/LibStub/LibStub.lua" in archive.namelist()
         def github_blob_sha(data: bytes) -> str:
             return hashlib.sha1(
-                b"blob " + str(len(data)).encode() + b"\\0" + data
+                b"blob " + str(len(data)).encode() + b"\0" + data
             ).hexdigest()
         assert github_blob_sha(archive.read(
             "ChalkBox/Libs/LibProfessionDB-1.0/LibProfessionDB-1.0.lua"
