@@ -19,13 +19,14 @@
 - [ ] Choose categories offered by the portal that match the addon.
 - [ ] Use **ChalkBox-2.0.5.zip** as the **game file**. Never upload the media kit ZIP as the playable addon.
 - [ ] Paste [FILE_CHANGELOG_2.0.5.md](../copy/FILE_CHANGELOG_2.0.5.md) for the file changelog.
-- [ ] Add authentic in-game screenshots following the [screenshot plan](../artwork/SCREENSHOT_PLAN.md). Don't use editorial art as gameplay captures.
+- [x] Select and crop authentic in-game screenshots; the [real screenshot gallery](../screenshots/README.md) is bundled separately from editorial art.
+- [ ] Upload the 10 JPG files from `Screenshots/` to the CurseForge project gallery.
 - [ ] Verify the license, third-party acknowledgments, supported versions and project links.
 - [ ] Submit to moderation; share the listing URL only once it exists and is approved.
 
 ## GitHub presentation
 
-- [ ] README points to the current release and both ZIPs.
+- [x] README points to the current release and both ZIPs and shows the real gameplay gallery.
 - [ ] Repository About description and topics reflect the current feature set.
 - [ ] Upload a branded social-preview PNG in GitHub Settings separately if desired.
 - [ ] Leave unshipped features and concept screenshots out of release claims.

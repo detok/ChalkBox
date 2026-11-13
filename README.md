@@ -14,6 +14,20 @@ ChalkBox adds small improvements around the parts of the game you use every day:
 
 It installs as **one addon**, including its profession recipe data. You don't need to download any companion packages.
 
+## Screenshots from WoW Forever
+
+These are real in-game captures, cropped around the addon controls. Character nameplates and chat are left out.
+
+![ChalkBox Discoveries journal alongside the native world map](curseforge/screenshots/10-discoveries.jpg)
+
+*Discoveries lets you browse the loot you've personally observed by area and creature source.*
+
+| ChalkBox settings | LootSense |
+| :---: | :---: |
+| ![ChalkBox grouped settings menu](curseforge/screenshots/01-settings-overview.jpg) | ![LootSense profession and item settings](curseforge/screenshots/02-lootsense.jpg) |
+
+[See all 10 screenshots](docs/SCREENSHOT_GALLERY.md), including MacroForge, The Bar, Combat Meter, Adventure Prep, and Item Insight.
+
 ## What's included
 
 | Module | What it does |
@@ -40,13 +54,7 @@ The optional ChalkBox DPS meter **starts closed each time you log in**. Open it 
 
 ### Map Discoveries
 
-**2.0.5 journal fix:** Corrects a window-initialization bug that left only the first buttons visible. All headings, item filters, search and journal text now complete construction and have readable colors.
-
-**2.0.5 fixes:** The standalone Discoveries journal now uses a native background and foreground layer so Blizzard's map cannot cover its panel. Bag highlighting and bag-value displays now combine rapid inventory events instead of repeatedly scanning during bag opening.
-
-
-**2.0.5 visibility fix:** The journal's dark panel and border remain visible even when Global Appearance background strength is set to zero. Saved discoveries and map-button placement are unchanged.
-
+**Updated in 2.0.5:** The Discoveries journal now builds and renders its complete text, filters, search and item list over the native map. Bag highlighting and vendor-value updates also avoid repeated work when opening bags.
 
 Open the normal world map and click **Discoveries**. You can drag the map button wherever you prefer; right-click it to reset the position. In the Discoveries window, use the Area/Dungeon, Creature Source and Sort menus, or search for an item by name or ID.
 
@@ -88,6 +96,8 @@ Updating from a previous release? Replace the addon folder, but **keep your Save
 [Complete command reference](curseforge/copy/COMMANDS.md) · [Troubleshooting](docs/TROUBLESHOOTING.md)
 
 ## CurseForge publishing assets
+
+The media kit now includes the real cropped gameplay gallery under `Screenshots/`. The original SVG/PNG illustrations are labeled separately and should not be presented as gameplay.
 
 The **[CurseForge folder](curseforge/)** contains the current project description, short summary, FAQ, changelog and submission checklist, along with the original ChalkBox artwork.
 

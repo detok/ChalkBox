@@ -11,11 +11,11 @@ This is the source for the separate **ChalkBox-CurseForge-Media-2.0.5.zip**. It 
 | Main listing description | Copy-and-Checklist/copy/PROJECT_DESCRIPTION.md |
 | Short summary and metadata | Copy-and-Checklist/copy/PROJECT_FIELDS.md |
 | Current file changelog | Copy-and-Checklist/copy/FILE_CHANGELOG_2.0.5.md |
-| In-game screenshots | Capture them from WoW Forever. None are bundled. |
+| In-game screenshots | Screenshots/ — 10 real client JPGs; see Copy-and-Checklist/screenshots/README.md |
 
 **For the actual addon file**, use **ChalkBox-2.0.5.zip** from the GitHub Releases page. The media package is a separate download.
 
-All six original SVG designs are included under Artwork/SVG. The media ZIP provides nine rendered PNGs, including three additional icon sizes. Hero and feature-grid illustrations are organized under **Editorial-Only**, not the screenshot gallery.
+All six original SVG designs are included under Artwork/SVG. The media ZIP provides nine rendered artwork PNGs and ten real-gameplay screenshots, including the fixed Discoveries journal. Three extra sizes of the project icon are also provided. Hero and feature-grid illustrations are organized under **Editorial-Only**, not the screenshot gallery.
 
 ## Credit and compatibility
 
@@ -29,7 +29,7 @@ The addon targets WoW Forever. Verify whether CurseForge offers a suitable game 
 - [ ] Confirm nested settings pages expand and the optional DPS meter starts closed.
 - [ ] Confirm Discoveries search, dungeon/source dropdowns, and map-button dragging.
 - [ ] Confirm MacroForge detects spells, validates and copies macros.
-- [ ] Capture real client screenshots after testing (no concept mockups).
+- [x] Review and crop real client screenshots (the gallery is included).
 - [ ] Check compatible game versions in the CurseForge author form.
 - [ ] Upload the addon ZIP under Files and the 512px PNG under Project Logo.
 - [ ] Wait for moderation approval before sharing a CurseForge listing URL.

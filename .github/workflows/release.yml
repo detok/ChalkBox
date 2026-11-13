@@ -54,7 +54,8 @@ jobs:
           test -n "$version"
           tag="v$version"
           if gh release view "$tag" >/dev/null 2>&1; then
-            echo "$tag already exists: preserving the original release."
+            echo "$tag already exists: preserving the addon and refreshing the media kit."
+            gh release upload "$tag" "dist/ChalkBox-CurseForge-Media-$version.zip" --clobber
           else
             gh release create "$tag" "dist/ChalkBox-$version.zip" \
               "dist/ChalkBox-CurseForge-Media-$version.zip" \
