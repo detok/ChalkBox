@@ -319,6 +319,67 @@ local function MakeButton(parent,title,width,offset,action)
     button:SetScript("OnClick",action)
     return button
 end
+-- Print is an explicit LOCAL-chat snapshot, not a party broadcast.
+-- Never read/process the protected fields during combat.
+local function PrintFight()
+    if type(InCombatLockdown)=="function" and InCombatLockdown() then
+        Chat("Finish combat before printing the fight; live totals are protected.")
+        return false
+    end
+    local available,reason=IsAvailable()
+    if not available then Chat(reason);return false end
+    local mode=Choice()
+    local session=Session()
+    local modeID=EnumValue("DamageMeterType",mode.enum,
+        ({Dps=1,DamageDone=0,Hps=3,HealingDone=2,DamageTaken=7,Interrupts=5})[mode.enum])
+    local requested=EnumValue("DamageMeterSessionType",session.enum,
+        ({Current=1,Expired=2,Overall=0})[session.enum])
+    local function Fetch(sessionID)
+        local ok,record=pcall(C_DamageMeter.GetCombatSessionFromType,sessionID,modeID)
+        if not ok or not Safe(record) or type(record)~="table" then return end
+        local sources=record.combatSources
+        if not Safe(sources) or type(sources)~="table" then return end
+        return sources
+    end
+    local sources=Fetch(requested)
+    local title=session.label
+    if (not sources or #sources==0) and db.session=="current" then
+        sources=Fetch(EnumValue("DamageMeterSessionType","Expired",2))
+        title="Last"
+    end
+    if not sources or #sources==0 then
+        Chat("No completed fight data to print yet.")
+        return false
+    end
+    -- Scan first. If ANY selected number/name is protected, do not print a
+    -- misleading, incomplete ranking or try a forbidden Lua conversion.
+    local entries={}
+    for i=1,math.min(#sources,db.rows) do
+        local source=sources[i]
+        if not Safe(source) or type(source)~="table" then
+            Chat("The fight contains protected data. Try again after combat.")
+            return false
+        end
+        local name=source.name
+        local amount=mode.perSecond and source.amountPerSecond or source.totalAmount
+        if not Safe(name) or type(name)~="string" or
+            not Safe(amount) or type(amount)~="number" then
+            Chat("Some fight values are still protected. Try again after combat.")
+            return false
+        end
+        entries[#entries+1]={name=name,amount=amount}
+    end
+    Chat(mode.label.." | "..title.." | "..#entries.." players (local chat)")
+    for i,entry in ipairs(entries) do
+        Chat(string.format("%d. %s - %.0f",i,entry.name,entry.amount))
+    end
+    return true
+end
+function ChalkBox_MeterPrintFight()
+    if not db then db=Settings() end
+    return PrintFight()
+end
+
 local function CreateWindow()
     if window or not UIParent then return end
     window=CreateFrame("Frame","ChalkBoxCombatMeterFrame",UIParent)
