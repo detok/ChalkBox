@@ -321,7 +321,7 @@ edit:SetText("New Item")
 Control("Keep Item"):Click()
 assert(ChalkBoxDB.keep["name:new"],"Keep Item must call original protection logic")
 categories["LootSense"].panel:Show()
-Control("Remove"):Click() -- sorts by key; first is id:11
+ControlIn("LootSense","Remove"):Click() -- sorts by key; first is id:11
 assert(ChalkBoxDB.keep["id:11"]==nil,"Remove must use the exact protected key")
 Control("LootSense Appearance"):Click()
 assert(opened[#opened]==categories["LootSense Appearance"].ID)
