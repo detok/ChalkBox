@@ -270,6 +270,14 @@ local function Control(caption)
     for _,f in ipairs(widgets) do if f.text==caption then return f end end
     error("Missing native option button: "..caption)
 end
+local function ControlIn(categoryName,caption)
+    local category=categories[categoryName]
+    assert(category,categoryName)
+    for _,frame in ipairs(widgets) do
+        if frame.parent==category.panel and frame.text==caption then return frame end
+    end
+    error("Missing native control "..categoryName.."/"..caption)
+end
 local function FindCheckByParentTitle(title)
     local category = categories[title]
     assert(category,title)
@@ -473,7 +481,7 @@ assert(ChalkBoxDB.meter.locked,"lock switch is active")
 assert(ChalkBoxDB.meter.iconMode=="class","WoW class badges are shown by default")
 Control("Spec"):Click()
 assert(ChalkBoxDB.meter.iconMode=="spec","users can prefer WoW specialization art")
-Control("Off"):Click()
+ControlIn("Combat Meter","Off"):Click()
 assert(ChalkBoxDB.meter.iconMode=="off","icons can be hidden to save space")
 Control("Class"):Click()
 assert(ChalkBoxDB.meter.iconMode=="class","easy one-click return to class icons")
