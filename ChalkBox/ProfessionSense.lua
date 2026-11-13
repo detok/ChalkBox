@@ -326,7 +326,7 @@ end
 
 local families = {
     {match={"leather","hide","scale"}, professions={"Leatherworking"}},
-    {match={"cloth"},professions={"Tailoring","First Aid"}},
+    {match={"cloth"},professions={"Tailoring"}},
     {match={"herb"},professions={"Alchemy","Inscription"}},
     {match={"metal","stone","ore","bar"},professions={"Blacksmithing","Engineering","Jewelcrafting"}},
     {match={"enchant"},professions={"Enchanting"}},
@@ -334,12 +334,48 @@ local families = {
     {match={"gem"},professions={"Jewelcrafting"}},
     {match={"parts","device"},professions={"Engineering"}},
 }
+-- First Aid is not a generic trade-goods or cloth category. Validate saved
+-- First Aid associations against the bundled Forever recipe ingredients so
+-- stale/misidentified profession scans cannot call pearls bandage materials.
+local firstAidIDs
+local function IsFirstAidReagent(id)
+    local itemID=Safe(id) and tonumber(id) or nil
+    if not itemID then return false end
+    if not firstAidIDs then
+        local stub=LibStub
+        if type(stub)~="function" and
+            not (type(stub)=="table" and type(stub.GetLibrary)=="function") then
+            return false
+        end
+        local ok,lib=pcall(stub,"LibProfessionDB-1.0",true)
+        if not ok or type(lib)~="table" or type(lib.GetRecipes)~="function" then
+            return false
+        end
+        local recipesOK,recipes=pcall(lib.GetRecipes,lib,129)
+        if not recipesOK or type(recipes)~="table" then return false end
+        local valid={}
+        for _,recipe in pairs(recipes) do
+            if type(recipe)=="table" and type(recipe.reagents)=="table" then
+                for reagentID,quantity in pairs(recipe.reagents) do
+                    if tonumber(reagentID) and type(quantity)=="number" and quantity>0 then
+                        valid[tonumber(reagentID)]=true
+                    end
+                end
+            end
+        end
+        firstAidIDs=valid
+    end
+    return firstAidIDs[itemID]==true
+end
+
 local function Known(id,name)
     local result = {}
     local function Collect(key)
         if learned[key] then
             for prof in pairs(learned[key]) do
-                if available[prof] then result[prof]=true end
+                if available[prof] and (prof~="First Aid" or IsFirstAidReagent(id)) then
+                    result[prof]=true
+                end
             end
         end
     end
@@ -378,7 +414,9 @@ function ChalkBox_LearnedRecipeUses(itemID,itemName)
         if type(set)~="table" then return end
         for id,entry in pairs(set) do
             if type(entry)=="table" and type(entry.profession)=="string"
-                and available[entry.profession] and type(entry.recipe)=="string"
+                and available[entry.profession] and
+                (entry.profession~="First Aid" or IsFirstAidReagent(itemID))
+                and type(entry.recipe)=="string"
                 and not seen[id] then
                 entries[#entries+1]=entry
                 seen[id]=true

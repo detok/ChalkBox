@@ -2,6 +2,14 @@
 
 All notable changes to the public ChalkBox addon are documented here.
 
+## 1.8.3 — LootSense First Aid material accuracy
+
+- Prevent broad Cloth item-subclass guesses from being labeled as First Aid materials; First Aid now needs recipe evidence.
+- Validate saved First Aid ingredient and learned-recipe claims against the bundled Forever First Aid recipe data, filtering stale or mismatched profession scan records.
+- Preserve Leatherworking recipes using Small Lustrous Pearl and correctly recognize actual First Aid ingredients such as Linen Cloth.
+- Add a targeted Lua 5.1 regression test for mismatched saved pearl data and valid Leatherworking and First Aid cases.
+- All DPS meter, party PRINT, RESET, custom layout, QuestSense, camping and other ChalkBox features remain unchanged.
+
 ## 1.8.2 — One-line party DPS report and on-window reset
 
 - PRINT sends a **single, manual top-three summary to PARTY chat** after combat, for the meter's selected statistic and fight scope; fallback to last fight when current is empty.
