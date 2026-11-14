@@ -84,8 +84,8 @@ Fire("PLAYER_REGEN_ENABLED")
 assert(MinimapCluster.y==-8 and BuffFrame.y==-90,
     "after-combat restore honors other addons' moved frames")
 ChalkBox_ScreenLayoutSet(true)
-assert(BuffFrame.y==-108,
-    "a later explicit re-enable can shift a new safe default anchor")
+assert(BuffFrame.y==-90,
+    "externally owned frames stay untouched for the rest of the session")
 -- The bottom Bar should never push top UI around.
 ChalkBoxDB.bar="bottom"
 ChalkBox_ScreenLayoutAdjust()
