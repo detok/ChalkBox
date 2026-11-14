@@ -421,13 +421,18 @@ local function SourceOptions()
         {text=(not selectedSource and "✓ " or "").."All creatures",
             action=function() selectedSource=nil;page=1;refresh() end}
     }
-    for _,entry in ipairs(Sources()) do
+    local sources=Sources()
+    for _,entry in ipairs(sources) do
         local item=entry
         list[#list+1]={text=(selectedSource==item.key and "✓ " or "")..
             item.name.." · "..tostring(item.windows).." loots",
             action=function()
                 selectedSource=item.key;page=1;refresh()
             end}
+    end
+    if #sources==0 then
+        list[#list+1]={text="No identified creatures in this area",
+            title=true,tone="muted"}
     end
     return list
 end
@@ -659,7 +664,13 @@ local function ToggleQuickPopup(kind)
     quickPicker.kind=kind
     quickPicker.page=1
     quickPicker:ClearAllPoints()
-    quickPicker:SetPoint("TOPLEFT",controls[kind],"BOTTOMLEFT",0,-2)
+    if kind=="source" then
+        -- The source button sits on the right of the compact sidecar.
+        -- Right-align the popup to keep it inside the map-side panel.
+        quickPicker:SetPoint("TOPRIGHT",controls[kind],"BOTTOMRIGHT",0,-2)
+    else
+        quickPicker:SetPoint("TOPLEFT",controls[kind],"BOTTOMLEFT",0,-2)
+    end
     QuickPopupPage(0)
     quickPicker:Show()
     if type(quickPicker.Raise)=="function" then quickPicker:Raise() end
@@ -781,6 +792,7 @@ refresh=function()
         if s.key==selectedSource then sourceName=s.name;break end
     end
     if sourceName:len()>18 then sourceName=sourceName:sub(1,15).."..." end
+    if #sources==0 then sourceName="No creatures recorded" end
     controls.source:SetText(sourceName.."  ▾")
     local sortName="Quantity"
     for _,s in ipairs(sorting) do
