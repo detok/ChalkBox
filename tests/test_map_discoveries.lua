@@ -366,8 +366,10 @@ assert(not browser.followMap and browser.mode=="outdoor"
 assert(viewed==1436 and ChalkBoxZoneDB.mapDiscoveryUI.browseArea=="z:1437"
     and ChalkBoxZoneDB.mapDiscoveryUI.followMap==false,
     "manual location is saved per character while the native world map stays put")
-assert(#ChalkBox_DiscoveriesDropdownItems("source")==2,
-    "area switching works and clears unrelated creature filters")
+assert(#ChalkBox_DiscoveriesDropdownItems("source")==3
+    and ChalkBox_DiscoveriesDropdownItems("source")[3].text==
+        "No identified creatures in this area",
+    "area switching clears the old creature and explains missing source data")
 viewed=1436
 journal.OnUpdate(journal,0.8)
 assert(ChalkBox_DiscoveriesBrowserStatus().selectedArea=="z:1437",
