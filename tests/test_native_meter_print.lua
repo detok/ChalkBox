@@ -96,7 +96,7 @@ assert(eventFrame.registered.PLAYER_REGEN_DISABLED and
     eventFrame.registered.PLAYER_REGEN_ENABLED,
     "after-combat automation uses client combat state transitions")
 MenuOpen()
-assert(#calls==10 and calls[2].name=="ChalkBox  |  Combat reports")
+assert(#calls==10 and calls[2].name=="Combat reports")
 Button("Print top 3 to PARTY")()
 assert(#sends==1 and sends[1].channel=="PARTY")
 assert(sends[1].text==
