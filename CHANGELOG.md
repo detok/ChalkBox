@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.1 — AuctionSense item-use taint safety hotfix (test release)
+- Fix a concrete high-risk taint path: the Market tab called Blizzard `AuctionHouseFrame:SetDisplayMode()` with an addon-owned mode. Forever's protected bag-item click path consults `AuctionHouseFrame:IsListingAuctions()`, which reads that state and can block using a soulbound item such as the Cozy Sleeping Bag until `/reload`.
+- Market now displays as the same native-looking auction inset and index artwork while *only* temporarily hiding the unprotected frames of the currently active Blizzard AH page. It restores those frames on returning to the native tab, without modifying Blizzard's trading display mode or adding custom data to AuctionHouseFrame.
+- Do not modify the AH's native tab registry or its trading state. Keep Market scans, item rows, price history, auction buttons and normal Buy/Sell/Auctions available.
+- Add a regression mimicking the protected usable-item path and asserting Market never calls `SetDisplayMode` or changes `GetDisplayMode`, including repeated tab switches.
+- Preserve saved data, full-width Bar, bag position slider, map-owned Discoveries and all other modules. The user's exact blocked-function trace is not yet available, so the identified AH taint route is highly plausible, not independently proven as the only cause.
+
+
 ## 2.2.0 — Discoveries becomes a World Map extension (test release)
 - Dock Discoveries to the World Map as a compact 488px side panel instead of an independent draggable 660px popup. Prefer the available right side, then left, with an in-map edge fallback when the map fills the screen. Never alter Blizzard's own map position, size, zoom or textures.
 - Parent Discoveries to the existing WorldMapFrame and close it when the map closes. Refuse opening the browser while the World Map is hidden. Preserve the map button and its saved independent position.

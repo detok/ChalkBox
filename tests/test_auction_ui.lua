@@ -37,6 +37,7 @@ local function Element(kind,parent,name,template)
     function f:Hide() self.shown=false end
     function f:Show() self.shown=true end
     function f:IsShown() return self.shown end
+    function f:IsProtected() return self.protected==true end
     function f:CreateTexture()
         local t=Element("Texture",self)
         function t:SetAllPoints() end
@@ -102,7 +103,17 @@ _G.hooksecurefunc=function(parent,method,callback)
     assert(parent==AuctionHouseFrame and method=="SetDisplayMode")
     parent.modeHook=callback
 end
+-- The Forever item-use pathway checks AH:IsListingAuctions() while the
+-- Auction House is open. A custom addon call to SetDisplayMode contaminates
+-- that security-sensitive state and can block using a Cozy Sleeping Bag.
+-- Enforce Blizzard-only modes; Market must never call SetDisplayMode.
+local nativeModeWrites=0
 AuctionHouseFrame.SetDisplayMode=function(self,mode)
+    assert(mode==AuctionHouseFrameDisplayMode.Buy
+        or mode==AuctionHouseFrameDisplayMode.Sell
+        or mode==AuctionHouseFrameDisplayMode.Auctions,
+        "addon must never write its own market mode into Blizzard state")
+    nativeModeWrites=nativeModeWrites+1
     if self.displayMode==mode then return end
     self.displayMode=mode
     -- Simulated native behavior: this does not modify the native
@@ -116,6 +127,24 @@ AuctionHouseFrame.SetDisplayMode=function(self,mode)
     end
     if self.modeHook then self.modeHook(self,mode) end
 end
+AuctionHouseFrame.GetDisplayMode=function(self)
+    return self.displayMode
+end
+AuctionHouseFrame.IsListingAuctions=function(self)
+    return self:GetDisplayMode()==AuctionHouseFrameDisplayMode.Sell
+end
+-- Actual right-clicks of soulbound/usable items read this first, then
+-- ultimately call the protected C_Container.UseContainerItem API.
+local protectedItemUses=0
+local function UseSoulboundBagItem()
+    assert(not AuctionHouseFrame:IsListingAuctions(),
+        "not attempting to post a soulbound Cozy Sleeping Bag")
+    assert(AuctionHouseFrame:GetDisplayMode()==
+        AuctionHouseFrameDisplayMode.Buy,
+        "market browsing must not change the AH trading state")
+    protectedItemUses=protectedItemUses+1
+end
+AuctionHouseFrame:SetDisplayMode(AuctionHouseFrameDisplayMode.Buy)
 local function FindFrame(name)
     for _,v in ipairs(allFrames) do
         if v.name==name then return v end
@@ -170,9 +199,9 @@ local tab=FindFrame("ChalkBoxAuctionSenseTab")
 local pane=FindFrame("ChalkBoxAuctionSensePane")
 assert(tab and pane and pane.parent==AuctionHouseFrame,
     "AuctionSense is built directly inside Blizzard's auction house")
-assert(AuctionHouseFrame.ChalkBoxAuctionSensePane==pane
+assert(AuctionHouseFrame.ChalkBoxAuctionSensePane==nil
     and pane.template=="InsetFrameTemplate",
-    "native Blizzard display mode owns a matching inset pane")
+    "Market uses native-looking art without writing custom data on AH")
 local matchingAtlas=false
 for _,v in ipairs(allFrames) do
     if v.kind=="Texture" and v.parent==pane and
@@ -227,10 +256,14 @@ local function VisibleRows()
     return n
 end
 assert(nativeRegistryEdits==0,"never touch protected Blizzard tab registry")
+local modeWritesBeforeMarket=nativeModeWrites
 assert(ChalkBox_AuctionOpen() and pane.shown and tab.selected)
-assert(AuctionHouseFrame.displayMode
-    and AuctionHouseFrame.displayMode[1]=="ChalkBoxAuctionSensePane",
-    "Market uses Blizzard's native SetDisplayMode lifecycle")
+assert(AuctionHouseFrame:GetDisplayMode()==AuctionHouseFrameDisplayMode.Buy
+    and nativeModeWrites==modeWritesBeforeMarket,
+    "Market must NOT call native SetDisplayMode or alter AH displayMode")
+UseSoulboundBagItem()
+assert(protectedItemUses==1,
+    "using Cozy Sleeping Bag while AH is open remains permitted after Market")
 assert(not AuctionHouseFrame.BrowseResultsFrame.shown
     and not AuctionHouseFrame.SearchBar.shown
     and not AuctionHouseFrame.CategoriesList.shown,
@@ -332,19 +365,35 @@ assert(fullScans==1,"advanced full scan is a separate explicit action")
 buy:Click()
 assert(not pane.shown and not tab.selected
     and AuctionHouseFrame.BrowseResultsFrame.shown
-    and AuctionHouseFrame.SearchBar.shown,
-    "native Buy returns the original Blizzard browsing interface")
+    and AuctionHouseFrame.SearchBar.shown
+    and AuctionHouseFrame:GetDisplayMode()==AuctionHouseFrameDisplayMode.Buy,
+    "clicking native Buy restores the same display mode's hidden frames")
+UseSoulboundBagItem()
+assert(protectedItemUses==2,
+    "bag use remains permitted after visiting and leaving Market")
 tab:Click()
 assert(pane.shown and not AuctionHouseFrame.BrowseResultsFrame.shown,
     "returning to Market hides the native Buy screen again")
+assert(nativeModeWrites==modeWritesBeforeMarket+1,
+    "opening Market does not call SetDisplayMode after native Buy click")
 sell:Click()
-assert(not pane.shown and AuctionHouseFrame.ItemSellFrame.shown,
-    "native Sell shows its own real auction controls")
+assert(not pane.shown and AuctionHouseFrame.ItemSellFrame.shown
+    and AuctionHouseFrame:GetDisplayMode()==AuctionHouseFrameDisplayMode.Sell,
+    "native Sell owns its untainted mode and shows real auction controls")
 tab:Click()
+assert(pane.shown and not AuctionHouseFrame.ItemSellFrame.shown
+    and AuctionHouseFrame:GetDisplayMode()==AuctionHouseFrameDisplayMode.Sell,
+    "Market safely overlays Sell without changing native Sell state")
 auctions:Click()
-assert(not pane.shown and AuctionHouseFrame.AuctionsFrame.shown,
-    "native Auctions tab is never blocked by our market mode")
-assert(nativeRegistryEdits==0,"no protected PanelTemplates mutations")
+assert(not pane.shown and AuctionHouseFrame.AuctionsFrame.shown
+    and AuctionHouseFrame:GetDisplayMode()==AuctionHouseFrameDisplayMode.Auctions,
+    "native Auctions tab retains Blizzard's state and visible controls")
+-- Opening and closing Market within the SAME native mode restores frames
+-- even when SetDisplayMode short-circuits because the mode is unchanged.
+tab:Click()
+assert(pane.shown and not AuctionHouseFrame.AuctionsFrame.shown)
 ChalkBox_AuctionHide()
-assert(not pane.shown)
-print("PASS: native Market display mode, Browse artwork, full-width pricing columns, independent native Buy/Sell/Auctions and safe scanner behavior")
+assert(not pane.shown and AuctionHouseFrame.AuctionsFrame.shown,
+    "closing Market restores Blizzard native subframes without changing mode")
+assert(nativeRegistryEdits==0,"no protected PanelTemplates mutations")
+print("PASS: Market never writes AH displayMode; Cozy Sleeping Bag item-use path safe, native tabs restore, real AH artwork, market scans and responsive table")
