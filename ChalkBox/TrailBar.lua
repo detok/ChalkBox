@@ -6,6 +6,7 @@ local addonName = ...
 local db
 local bar
 local widgets = {}
+local latest = {} -- shared with hover color roles and live stat refresh
 local ticker
 local Refresh -- forward declaration: mode controls update TrailBar immediately
 local session = {
@@ -112,17 +113,78 @@ local function GetRates()
     return xpPerHour, eta, net * 3600 / elapsed, elapsed
 end
 
-local function Hint(widget, label, details)
+-- The top bar stays monochrome; hover values get meaning, not branding.
+local function TipRole(key,line)
+    if line=="Unavailable" or line=="No quote"
+        or line:find("^Unknown") or line:find("unavailable") then
+        return "muted"
+    end
+    if key=="repair" then
+        if line:find("^Estimate") then return "warning" end
+        if line=="No damage" then return "good" end
+        return "value"
+    elseif key=="gear" then
+        local gear=latest and latest.gear
+        if gear and type(gear.percent)=="number" and gear.percent<40 then
+            return "danger"
+        end
+        if line:find("^Lowest") and gear and
+            type(gear.worst)=="number" and gear.worst<40 then
+            return "danger"
+        end
+        return "good"
+    elseif key=="pet" then
+        local pet=latest and latest.pet
+        if pet and type(pet.percent)=="number" and pet.percent<40 then
+            return "danger"
+        end
+        return "good"
+    elseif key=="bags" then
+        local bags=latest and latest.bags
+        if bags and type(bags.free)=="number" and bags.free<=4 then
+            return "warning"
+        end
+        return "count"
+    elseif key=="gold" then
+        if line:find("^Net: %-") or line:find("^Per hour: %-") then
+            return "danger"
+        end
+        return "value"
+    elseif key=="bagvalue" then
+        return "value"
+    elseif key=="rate" or key=="rested" then
+        return "good"
+    elseif key=="level" or key=="latency" or key=="eta" then
+        return "count"
+    end
+    return "text"
+end
+local tipFallback={
+    good={0.39,0.94,0.62},value={0.98,0.79,0.39},
+    count={0.51,0.76,0.98},warning={0.98,0.66,0.33},
+    danger={0.98,0.45,0.40},muted={0.65,0.70,0.73},
+    text={0.85,0.87,0.88},
+}
+local function Hint(widget,label,details,key)
     widget:EnableMouse(true)
-    widget:SetScript("OnEnter", function(self)
+    widget:SetScript("OnEnter",function(self)
         if not GameTooltip then return end
-        GameTooltip:SetOwner(self, db and db.bar == "bottom" and "ANCHOR_TOP" or "ANCHOR_BOTTOM")
+        GameTooltip:SetOwner(self,db and db.bar=="bottom" and
+            "ANCHOR_TOP" or "ANCHOR_BOTTOM")
         GameTooltip:ClearLines()
-        GameTooltip:AddLine(label, 1, 0.82, 0.35)
-        for _, line in ipairs(details()) do GameTooltip:AddLine(line, 0.9, 0.9, 0.9, true) end
+        GameTooltip:AddLine(label,1,0.82,0.35)
+        for _,line in ipairs(details()) do
+            local role=TipRole(key,line)
+            local c=tipFallback[role] or tipFallback.text
+            local r,g,b=c[1],c[2],c[3]
+            if type(ChalkBox_TipColor)=="function" then
+                r,g,b=ChalkBox_TipColor(role)
+            end
+            GameTooltip:AddLine(line,r,g,b,true)
+        end
         GameTooltip:Show()
     end)
-    widget:SetScript("OnLeave", function()
+    widget:SetScript("OnLeave",function()
         if GameTooltip then GameTooltip:Hide() end
     end)
 end
@@ -156,7 +218,6 @@ local groups={
 }
 local dropPriority={"latency","time","pet","eta","rate","rested","gear","bagvalue","bags","repair","gold"}
 local displayed={}
-local latest={}
 local lastLayout=""
 local editMode=false
 local backgroundOpacity=70
@@ -712,7 +773,7 @@ local function CreateBar()
                 ChalkBox_BarBagValueModeToggle()
             end
         end)
-        Hint(widget,name,details)
+        Hint(widget,name,details,key)
     end
     bar:SetScript("OnSizeChanged",function() Reflow() end)
     EditDecorations()

@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.1.4 — Clear, consistent in-game tooltips (test release)
+- Make the existing item insight status the only header; compact the learned-recipe, possible-use, camp tool and bonus-XP explanations into one useful evidence line.
+- Unify add-on tooltip colors: green useful/known values, gold costs/values, blue counts, amber cautions and red urgent warnings. Leave Blizzard quality colors alone.
+- Shorten AuctionSense item summaries, identify per-unit prices and market source, and remove its repeated module banner.
+- Tighten Drop Journal annotations and Discoveries map hints; keep personal loot sampling distinct from official drop odds.
+- Make Bar hover numbers more readable through semantic colors without changing stat calculations, layout or number of rows.
+- Shorten camp tool notes and reminder toasts; make warnings visibly amber. Remove internal-brand preview captions and redundant MacroForge window branding.
+- Keep shop quest warnings unmistakable with short BUY FOR QUEST / DO NOT SELL labels.
+- Preserve the 2.1.3 Blizzard-native combat print options, auction scans, SavedVariables and other modules. Extend regression coverage.
+
+
 ## 2.1.3 — Native meter report controls and clean item tooltips (test release)
 - Expand Blizzard's original damage meter gear menu with direct **Print to PARTY**, **Print to SAY**, and **Top 3/5/10** rank controls, always using the selected native meter stat and session.
 - Add opt-in reports after combat, with configurable PARTY/SAY channel, DPS/damage/healing stat, minimum combat length (0/10/20/30s), and cooldown (30/60/120s). Auto reporting defaults OFF; failed/secret/incomplete combat data is never sent.

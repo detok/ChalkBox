@@ -156,15 +156,21 @@ assert(ChalkBox_DropCalculate(5,10)>40 and
     ChalkBox_DropCalculate(5,10)<41 and
     ChalkBox_DropCalculate(0,10)==0 and
     ChalkBox_DropCalculate(100,1)==100)
-local captured={}
+local captured,colors={},{}
 local button={GetName=function() return "LootButton1" end}
 local tooltip={
     GetOwner=function() return button end,
-    AddLine=function(_,line) captured[#captured+1]=line end,
+    AddLine=function(_,line,r,g,b)
+        captured[#captured+1]=line
+        colors[#colors+1]={r,g,b}
+    end,
     Show=function() end}
 -- Last drop was in dungeon; global count remains valid without claiming a
 -- percentage for current unrelated loot source.
 assert(ChalkBox_DropTooltip(tooltip,"item:500"))
+assert(captured[1]=="Drop Journal" and colors[2]
+    and colors[2][2]>colors[2][1],
+    "personal loot count has a clear informational color")
 assert(table.concat(captured," "):find("not official odds",1,true),
     "short loot tooltip labels still identify personal rather than official data")
 tooltip.GetOwner=function()

@@ -145,14 +145,14 @@ local function OnItemTooltip(tooltip)
         -- No false buying recommendation when hovering buyback items or
         -- items for already-completed objectives.
         if not entry.purchase or GetVendorName(slot) ~= itemName then return end
-        message = "BUY THIS FOR QUEST: " .. entry.purchase.quest
+        message = "BUY FOR QUEST  ·  " .. entry.purchase.quest
         if entry.purchase.remaining and entry.purchase.remaining > 0 then
-            message = message .. " (need " .. entry.purchase.remaining .. " more)"
+            message = message .. " (" .. entry.purchase.remaining .. " more)"
         end
-        r, g, b = 1, 0.28, 0.17
+        r, g, b = 0.98, 0.45, 0.40
     elseif entry.protect then
-        message = "Don't sell: needed for " .. entry.protect
-        r, g, b = 1, 0.32, 0.12
+        message = "DO NOT SELL  ·  " .. entry.protect
+        r, g, b = 0.98, 0.45, 0.40
     else
         return
     end

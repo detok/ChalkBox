@@ -10,6 +10,34 @@ local accents={
     teal={0.40,0.79,0.72},
     neutral={0.76,0.78,0.80},
 }
+-- One restrained semantic palette for our tooltips. Blizzard rarity/text
+-- colors remain untouched; only ChalkBox-added lines use these roles.
+local tooltipColors={
+    title={0.94,0.76,0.42},
+    good={0.39,0.94,0.62},
+    info={0.40,0.83,0.78},
+    value={0.98,0.79,0.39},
+    count={0.51,0.76,0.98},
+    warning={0.98,0.66,0.33},
+    danger={0.98,0.45,0.40},
+    muted={0.65,0.70,0.73},
+    text={0.85,0.87,0.88},
+}
+function ChalkBox_TipColor(role)
+    local rgb=tooltipColors[role] or tooltipColors.text
+    return rgb[1],rgb[2],rgb[3]
+end
+function ChalkBox_TipMetric(tooltip,label,value,role)
+    if not tooltip or type(tooltip.AddLine)~="function" then return false end
+    local r,g,b=ChalkBox_TipColor(role)
+    if type(tooltip.AddDoubleLine)=="function" then
+        tooltip:AddDoubleLine(label,tostring(value),0.81,0.84,0.85,r,g,b)
+    else
+        tooltip:AddLine(label..": "..tostring(value),r,g,b)
+    end
+    return true
+end
+
 local function Number(v)
     return type(v)=="number" and v==v and
         (type(issecretvalue)~="function" or not issecretvalue(v))

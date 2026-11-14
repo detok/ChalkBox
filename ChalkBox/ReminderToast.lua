@@ -133,12 +133,22 @@ end
 function ChalkBox_ShowReminder(message,title,preview)
     if type(message)~="string" or message=="" or not Ensure() then return false end
     if type(InCombatLockdown)=="function" and InCombatLockdown() then return false end
-    local heading=title or "ADVENTURE TIP"
+    local heading=title or "Camp prep"
     if heading:find("CHALKBOX",1,true) or
         heading:find("CAMP REMINDER",1,true) then
-        heading="ADVENTURE TIP"
+        heading="Camp prep"
     end
     headline:SetText(heading)
+    local urgent=heading:lower():find("missing",1,true) or
+        heading:lower():find("fading",1,true) or
+        heading:lower():find("needed",1,true) or
+        heading:lower():find("low",1,true)
+    local r,g,b=urgent and 0.98 or 0.40,
+        urgent and 0.66 or 0.83,urgent and 0.33 or 0.78
+    if type(ChalkBox_TipColor)=="function" then
+        r,g,b=ChalkBox_TipColor(urgent and "warning" or "info")
+    end
+    if headline.SetTextColor then headline:SetTextColor(r,g,b,1) end
     body:SetText(message)
     shownAt=Clock()
     untilSeconds=preview==true and 25 or duration
@@ -170,9 +180,9 @@ function ChalkBox_ToastCommand(command)
         end
     elseif command=="preview" then
         return ChalkBox_ShowReminder(
-            d.locked and "Unlock in Adventure Prep to drag this notice, then lock it again."
-                or "Drag this notice to your preferred position. It saves when released.",
-            "CAMP REMINDER  -  POSITION PREVIEW",true)
+            d.locked and "Unlock in settings to move this toast."
+                or "Drag to move  ·  Position saved",
+            "Position preview",true)
     else
         return false
     end

@@ -623,7 +623,7 @@ local function Row(parent,index)
                     item.hits or item.windows,item.attempts,item.rate),
                     0.7,0.9,0.8)
             else
-                GameTooltip:AddLine("Choose a creature to see its drop rate.",
+                GameTooltip:AddLine("Select a creature for drop rate.",
                     0.75,0.75,0.8)
             end
             GameTooltip:Show()
@@ -968,7 +968,7 @@ function ChalkBox_MapDiscoveriesButtonPosition()
 end
 local function OnButtonMenu(self)
     local options={
-        {text="ChalkBox Discoveries",title=true},
+        {text="Discoveries",title=true},
         {text="Open loot journal",action=function()
             ChalkBox_OpenMapDiscoveries() end},
         {text="Reset button position",action=function()
@@ -1024,12 +1024,12 @@ local function InstallButton()
     b:SetScript("OnEnter",function(self)
         if GameTooltip then
             GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
-            GameTooltip:SetText("ChalkBox · Discoveries")
-            GameTooltip:AddLine("Click: browse observed loot and dungeons.",
+            GameTooltip:SetText("Discoveries")
+            GameTooltip:AddLine("Left click  ·  Open journal",
                 0.8,0.82,0.85,true)
-            GameTooltip:AddLine("Drag: reposition this button on the map.",
+            GameTooltip:AddLine("Drag  ·  Move button",
                 0.7,0.85,0.75,true)
-            GameTooltip:AddLine("Right-click: reset button position.",
+            GameTooltip:AddLine("Right click  ·  Reset position",
                 0.75,0.75,0.8,true)
             GameTooltip:Show()
         end

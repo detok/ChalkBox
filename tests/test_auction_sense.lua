@@ -95,9 +95,11 @@ function tip:GetName() return "AuctionSenseTest" end
 function tip:NumLines() return #self.lines end
 function tip:Show() end
 assert(ChalkBox_AuctionTooltip(tip,"item:2589"))
-assert(table.concat(tip.lines," "):find("Low ask: 50s",1,true)
-    and table.concat(tip.lines," "):find("Avg ask: 67s 86c",1,true),
+assert(table.concat(tip.lines," "):find("Low / unit: 50s",1,true)
+    and table.concat(tip.lines," "):find("Avg / unit: 67s 86c",1,true),
     "item tooltip clearly labels stack-normalized asking prices")
+assert(not table.concat(tip.lines," "):find("AUCTIONSENSE",1,true),
+    "market tooltip shows data source, not repeated branding")
 assert(not ChalkBox_AuctionTooltip(tip,"item:2589"),
     "repeat OnTooltipSetItem calls never duplicate the price block")
 -- Native tooltips get separate, semantically colored value columns.
@@ -108,11 +110,11 @@ function tip:AddDoubleLine(label,value,lr,lg,lb,vr,vg,vb)
 end
 tip.lines={}
 assert(ChalkBox_AuctionTooltip(tip,"item:2589"))
-assert(colors["Low ask"] and
-    colors["Low ask"][2]>colors["Low ask"][1],
+assert(colors["Low / unit"] and
+    colors["Low / unit"][2]>colors["Low / unit"][1],
     "lowest asking price is green and visually distinct")
-assert(colors["Avg ask"] and
-    colors["Avg ask"][1]>colors["Avg ask"][3],
+assert(colors["Avg / unit"] and
+    colors["Avg / unit"][1]>colors["Avg / unit"][3],
     "average asking price uses a warm amber color")
 assert(colors["Listings"] and colors["Units"],
     "coverage data uses separate labeled fields")

@@ -8,19 +8,20 @@ local tentAcknowledgedUntil=nil
 local frame=CreateFrame("Frame")
 local ticker
 local utility={
-    [2318]={label="Light Leather",text="CAMP REAGENT: 5 for Camp Tent (Leatherworking 20); 3 + 2 Simple Wood for Camp Chair (Skinning 20)."},
-    [2319]={label="Medium Leather",text="CAMP REAGENT: 5 for Tanning Rack (Leatherworking 140); 3 for Field Guide (Skinning 140)."},
-    [2321]={label="Fine Thread",text="CAMP REAGENT: 3 for Tanning Rack; 1 for Field Guide. Higher-tier campsite crafting."},
-    [4234]={label="Heavy Leather",text="CAMP REAGENT: 4 for Trapper's Workbench (Skinning 300)."},
-    [4470]={label="Simple Wood",text="CAMP REAGENT: 1 for Basic Campfire Kit; 2 for Camp Chair, Tanning Rack or Trapper's Workbench."},
-    [4471]={label="Flint and Tinder",text="CAMP TOOL: reusable tool for making campfire kits. Keep one handy."},
-    [279981]={label="Basic Campfire Kit",text="CAMP: deploy a campsite; sit or craft near features for about 1 minute."},
-    [279978]={label="Camp Tent",text="CAMP: Leatherworking feature; can restore rested XP up to 5% of a level."},
-    [279979]={label="Camp Chair",text="CAMP: Skinning feature; increases crit chance by 2% while camp benefit is active."},
-    [11291]={label="Star Wood",text="CAMP SUPPLY: used in Journeyman Campfire crafting (Cooking)."},
-    [272941]={label="Thick Logs",text="CAMP SUPPLY: higher-tier Cooking campfire reagent."},
-    [211527]={label="Cozy Sleeping Bag",text="XP UTILITY: rest on the bag for up to 3% bonus XP for 2 hours."},
+    [2318]={label="Light Leather",text="CAMP REAGENT: Tent: 5 (Leatherworking 20); Chair: 3 + 2 wood (Skinning 20)."},
+    [2319]={label="Medium Leather",text="CAMP REAGENT: Tanning Rack: 5 (Leatherworking 140); Field Guide: 3 (Skinning 140)."},
+    [2321]={label="Fine Thread",text="CAMP REAGENT: Tanning Rack: 3; Field Guide: 1."},
+    [4234]={label="Heavy Leather",text="CAMP REAGENT: Trapper's Workbench: 4 (Skinning 300)."},
+    [4470]={label="Simple Wood",text="CAMP REAGENT: Campfire kit: 1; Chair / Rack / Workbench: 2."},
+    [4471]={label="Flint and Tinder",text="CAMP TOOL: reusable · makes campfire kits."},
+    [279981]={label="Basic Campfire Kit",text="CAMP: Deploy campsite · sit or craft ~1m for benefits."},
+    [279978]={label="Camp Tent",text="CAMP: Rested XP · up to 5% of a level."},
+    [279979]={label="Camp Chair",text="CAMP: +2% crit while camp benefit is active."},
+    [11291]={label="Star Wood",text="CAMP SUPPLY: Journeyman Campfire crafting."},
+    [272941]={label="Thick Logs",text="CAMP SUPPLY: higher-tier Cooking campfire crafting."},
+    [211527]={label="Cozy Sleeping Bag",text="XP UTILITY: Rest for up to +3% XP (2h)."},
 }
+
 local function Safe(value)
     return (type(issecretvalue)~="function" or not issecretvalue(value)) and value~=nil
 end
@@ -142,39 +143,34 @@ local function MeaningfulHint(buffs,tent)
     if db.buffs~=false and buffs.state=="expiring" then
         local mins=math.max(1,math.ceil((buffs.seconds or 0)/60))
         return "Camp Benefits expire in "..mins..
-            " min. Rest at a campsite soon.",
+            "m  ·  Rest at camp.",
             "Camp Benefits fading","camp-expiring"
     end
     if db.buffs~=false and tent.state=="ready" and tentCount and
         tentCount>0 then
-        return "Rested XP is below 5%. You have a Camp Tent; sit by it "..
-            "at a campfire for about 1 minute.",
+        return "Rested XP below 5%  ·  Camp Tent ready. Rest by fire ~1m.",
             "Tent refill available","tent-ready"
     end
     if db.buffs~=false and buffs.state=="missing" then
         if kit and kit>0 then
-            return "Camp Benefits missing. You have "..kit..
-                " Campfire Kit(s); set up camp and rest for 1 minute.",
+            return "Camp Benefits missing  ·  "..kit..
+                " kit(s) ready. Camp and rest ~1m.",
                 "Ready to make camp","camp-missing-kit"
         elseif wood and wood>0 and flint and flint>0 then
-            return "Camp Benefits missing. You have Simple Wood and Flint "..
-                "and Tinder to prepare a Campfire Kit.",
+            return "Camp Benefits missing  ·  Wood + Flint ready. Craft a kit.",
                 "Prepare a campfire","camp-missing-craft"
         else
-            return "Camp Benefits missing. Visit a campsite and rest "..
-                "for about 1 minute; check supplies first.",
+            return "Camp Benefits missing  ·  Rest at campsite ~1m.",
                 "Camp Benefits missing","camp-missing"
         end
     end
     if Forever() and db.supplies~=false and kit~=nil and kit==0 then
         if wood==0 then
-            return "No Campfire Kits or Simple Wood in your bags. "..
-                "Restock before your next camp.",
+            return "No kits or Simple Wood  ·  Restock before camping.",
                 "Restock camp supplies","supplies-empty"
         end
         if flint==0 then
-            return "You have wood but no Flint and Tinder. "..
-                "Carry the reusable tool to make campfire kits.",
+            return "Flint and Tinder missing  ·  Bring reusable tool.",
                 "Flint and Tinder needed","supplies-flint"
         end
     end
@@ -182,8 +178,7 @@ local function MeaningfulHint(buffs,tent)
     -- not a false claim that the character cannot camp right now.
     if Forever() and db.supplies~=false and kit==0 and wood and
         wood<2 then
-        return "Low on camp supplies. Carry Basic Campfire Kits or "..
-            "Simple Wood for your next trip.",
+        return "Camp supplies low  ·  Restock kits or Simple Wood.",
             "Camp supplies running low","supplies-low"
     end
     if db.classCare~=false and CurrentClass()=="HUNTER" then
@@ -250,7 +245,7 @@ end
 function ChalkBox_CampTestToast()
     local msg=MeaningfulHint() or "Take a moment to check your food, camping and class buffs."
     if type(ChalkBox_ShowReminder)=="function" and
-        ChalkBox_ShowReminder(msg,"CHALKBOX  -  TEST REMINDER") then return true end
+        ChalkBox_ShowReminder(msg,"Camp preview") then return true end
     Note("Reminder preview: "..msg)
     return false
 end
