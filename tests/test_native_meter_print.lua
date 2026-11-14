@@ -115,7 +115,6 @@ Button("Print top 5 to PARTY")()
 assert(#sends==3 and sends[3].text:find("5 Fifth 101",1,true),
     "user-selected Top 5 ranks use the native meter")
 Button("Report size: Top 5")()
-Button("Report size: Top 5")() -- Menu action retains the same callback
 assert(ChalkBox_NativeMeterStatus().rows==10)
 MenuOpen()
 assert(Button("Print top 10 to SAY"))
