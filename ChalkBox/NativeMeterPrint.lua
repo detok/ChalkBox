@@ -283,7 +283,7 @@ local function Install()
             local db=Settings()
             if type(root.CreateDivider)=="function" then root:CreateDivider() end
             if type(root.CreateTitle)=="function" then
-                root:CreateTitle("ChalkBox  |  Combat reports")
+                root:CreateTitle("Combat reports")
             end
             root:CreateButton("Print top "..db.nativeReportRows.." to PARTY",
                 function() SendReport(frame,"PARTY",false) end)
