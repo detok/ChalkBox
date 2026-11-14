@@ -1,6 +1,6 @@
 # ChalkBox User Guide
 
-**Version 2.1.0 · World of Warcraft: Forever**
+**Version 2.1.1 · World of Warcraft: Forever**
 
 ChalkBox puts several small tools in one addon. Everything is managed from **Options → AddOns → ChalkBox**, or **/chalk**. Choose the modules you want; the rest can stay out of sight.
 
@@ -27,7 +27,15 @@ Select the module first, then its child page. The same top heading and return-to
 
 When a character opens their bank for the first time, ChalkBox no longer decorates bank item buttons or runs bag-anchor moves while Blizzard's bank interface is initializing. The bank stays native, and normal bag highlighting and configured separate-bag positioning resume after it closes. If a blocked-action dialog still occurs, record the exact blocked function or screenshot (and any Lua error stack), since a live-client trace is required to confirm its cause.
 
-## AuctionSense (2.1.0 test release)
+## AuctionSense (2.1.1 test release)
+
+Open Blizzard's Auction House and click the **AuctionSense** tab alongside the native Buy/Sell/Auctions tabs. The addon panel is embedded in Blizzard's AH, rather than opening a second window.
+
+**Scan Market** (recommended) runs a full browse query and gathers the lowest per-unit asking price and available quantity for each item. It loads additional browse pages when the server is ready. *Avg Ask* and lot counts are shown only for actual full-listing snapshots; browse summaries cannot establish them. **Full listings (15m)** requests the more expensive ReplicateItems data and may be unavailable or server-throttled on Forever. Neither scan happens automatically.
+
+If the server doesn't answer a browse request within 12 seconds, AuctionSense shows a clear failure. If a scan fails or the AH closes, your previous complete prices remain intact. Prices are local observations of asking prices, not confirmed sales.
+
+ (2.1.0 test release)
 
 AuctionSense is a separate ChalkBox module for reading auction *asking prices*. Open **Options → AddOns → ChalkBox → AuctionSense** or type `/chalk auction`. Visit an auctioneer, then click **Scan Market**. This manually requests a full snapshot from Forever's `C_AuctionHouse` API. The server may enforce an account-wide cooldown of around 15 minutes between successful requests.
 
@@ -145,7 +153,7 @@ Recorded details include observed XP, levels, net gold, quest turn-ins, sampled 
 
 ## Install, updates and troubleshooting
 
-Download the installable **ChalkBox-2.1.0.zip** from the [release page](https://github.com/detok/ChalkBox/releases/tag/v2.1.0). Extract the single ChalkBox folder into **Interface/AddOns**. Don't extract an extra nested ChalkBox folder.
+Download the installable **ChalkBox-2.1.1.zip** from the [release page](https://github.com/detok/ChalkBox/releases/tag/v2.1.1). Extract the single ChalkBox folder into **Interface/AddOns**. Don't extract an extra nested ChalkBox folder.
 
 When updating, **keep your SavedVariables**. Use **/chalk** to check preferences and **/chalk update** to see the installed version.
 

@@ -6,7 +6,7 @@
 
 **A collection of useful tools for World of Warcraft: Forever.**
 
-[Download 2.1.0 — Test release](https://github.com/detok/ChalkBox/releases/tag/v2.1.0) · [Report a bug](https://github.com/detok/ChalkBox/issues/new/choose) · [User guide](docs/USER_GUIDE.md)
+[Download 2.1.1 — Test release](https://github.com/detok/ChalkBox/releases/tag/v2.1.1) · [Report a bug](https://github.com/detok/ChalkBox/issues/new/choose) · [User guide](docs/USER_GUIDE.md)
 
 </div>
 
@@ -68,7 +68,11 @@ The optional ChalkBox DPS meter **starts closed each time you log in**. Open it 
 
 **2.0.11:** On a character's first bank visit, ChalkBox now leaves the bank's native container UI alone while Blizzard loads it. Ingredient markers never touch bank item buttons, and separate-bag position adjustments wait until after the bank closes. Your regular bags, layouts and reagent highlights resume normally. This is a preventive fix for a reported addon-block warning; live-client confirmation remains important.
 
-### AuctionSense — personal auction market
+### AuctionSense
+
+**2.1.1 — Auction House integration:** AuctionSense now opens **as a tab in Blizzard's Auction House**, not a floating window. Click AuctionSense beside the native auction tabs. **Scan Market** uses the Forever browse-results API to obtain lowest unit asking prices and quantity, including page updates. This API does not provide listing-by-listing average prices, so those fields show a dash instead of invented values. **Full listings (15m)** is a separate advanced request for the replicate API, still subject to a server-wide cooldown. The new scan state machine handles synchronous responses, errors and timeouts and retains prior valid snapshots on failure. Real-client validation is still required.
+
+ — personal auction market
 
 **2.1.0 (test release):** AuctionSense is a new, original ChalkBox module. Visit an auctioneer and open **AuctionSense** from the AddOns settings or `/chalk auction`. Click **Scan Market** to request one full-market snapshot (never scans automatically). The browser displays your **lowest buyout per item**, **quantity-weighted average asking price**, listing counts, scan age and current market. Use search to find items. Market values can also appear on item tooltips, independently of LootSense advice.
 
@@ -102,7 +106,7 @@ MacroForge doesn't automate rotations or bypass the global cooldown. Installing 
 
 ## Install
 
-1. Download **[ChalkBox-2.1.0.zip](https://github.com/detok/ChalkBox/releases/download/v2.1.0/ChalkBox-2.1.0.zip)** from the GitHub release. Don't use the automatically generated "Source code" ZIP.
+1. Download **[ChalkBox-2.1.1.zip](https://github.com/detok/ChalkBox/releases/download/v2.1.1/ChalkBox-2.1.1.zip)** from the GitHub release. Don't use the automatically generated "Source code" ZIP.
 2. Extract the single **ChalkBox** folder into your Forever client's **Interface/AddOns** directory.
 3. Check that **Interface/AddOns/ChalkBox/ChalkBox.toc** exists. Avoid an extra nested ChalkBox folder.
 4. Launch the game and type **/chalk**.
@@ -133,7 +137,7 @@ The media kit now includes the real cropped gameplay gallery under `Screenshots/
 
 The **[CurseForge folder](curseforge/)** contains the current project description, short summary, FAQ, changelog and submission checklist, along with the original ChalkBox artwork.
 
-The release also includes a separate **[CurseForge media kit ZIP](https://github.com/detok/ChalkBox/releases/download/v2.1.0/ChalkBox-CurseForge-Media-2.1.0.zip)** with six SVG originals, PNG exports, and ready-to-use listing copy. It is **not an addon installation file**.
+The release also includes a separate **[CurseForge media kit ZIP](https://github.com/detok/ChalkBox/releases/download/v2.1.1/ChalkBox-CurseForge-Media-2.1.1.zip)** with six SVG originals, PNG exports, and ready-to-use listing copy. It is **not an addon installation file**.
 
 The illustrations are promotional graphics, not in-game screenshots. Real screenshots should be captured from the running Forever client before being used in a gallery.
 
@@ -141,7 +145,7 @@ The illustrations are promotional graphics, not in-game screenshots. Real screen
 
 ChalkBox targets **WoW Forever**. Retail and Classic Era compatibility have not been verified. Some client APIs may expose limited data, particularly for combat, loot sources and map layout.
 
-**2.1.0 is a test release** until the reorganized options and meter startup have been checked in-game. Automated Lua 5.1 tests and ZIP packaging run through [GitHub Actions](.github/workflows/release.yml).
+**2.1.1 is a test release** until the reorganized options and meter startup have been checked in-game. Automated Lua 5.1 tests and ZIP packaging run through [GitHub Actions](.github/workflows/release.yml).
 
 Report issues through [GitHub Issues](https://github.com/detok/ChalkBox/issues) with the ChalkBox version, Forever client build, steps to reproduce and any Lua error.
 

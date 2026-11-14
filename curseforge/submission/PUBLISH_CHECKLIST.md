@@ -1,9 +1,9 @@
-# ChalkBox — publication checklist (2.1.0)
+# ChalkBox — publication checklist (2.1.1)
 
 ## Build and verify
 
 - [ ] GitHub Actions passes Lua syntax, module tests, addon packaging and the media-kit artwork checks.
-- [ ] Both TOCs declare version 2.1.0 and the addon ZIP contains one ChalkBox folder.
+- [ ] Both TOCs declare version 2.1.1 and the addon ZIP contains one ChalkBox folder.
 - [ ] Open WoW Forever after upgrading: the settings hierarchy expands as intended.
 - [ ] Confirm the optional compact meter is hidden at login; show it manually.
 - [ ] Verify opening the bank on a fresh character doesn't cause an addon-block warning; regular bag highlighting and offsets still work afterward.
@@ -24,8 +24,8 @@
 - [ ] Use the current [project fields](../copy/PROJECT_FIELDS.md), [description](../copy/PROJECT_DESCRIPTION.md) and [short summary](../copy/SHORT_COPY.md).
 - [ ] Upload **Project-Icon-512.png** from the separate media kit as the avatar (512px square).
 - [ ] Choose categories offered by the portal that match the addon.
-- [ ] Use **ChalkBox-2.1.0.zip** as the **game file**. Never upload the media kit ZIP as the playable addon.
-- [ ] Paste [FILE_CHANGELOG_2.1.0.md](../copy/FILE_CHANGELOG_2.1.0.md) for the file changelog.
+- [ ] Use **ChalkBox-2.1.1.zip** as the **game file**. Never upload the media kit ZIP as the playable addon.
+- [ ] Paste [FILE_CHANGELOG_2.1.1.md](../copy/FILE_CHANGELOG_2.1.1.md) for the file changelog.
 - [x] Select and crop authentic in-game screenshots; the [real screenshot gallery](../screenshots/README.md) is bundled separately from editorial art.
 - [ ] Upload the 10 JPG files from `Screenshots/` to the CurseForge project gallery.
 - [ ] Verify the license, third-party acknowledgments, supported versions and project links.
@@ -40,10 +40,19 @@
 
 Official submission guidance: https://support.curseforge.com/support/solutions/articles/9000199552-project-submission-guide-and-tips
 
-## AuctionSense 2.1.0 verification
+## AuctionSense 2.1.1 verification
 
 - [ ] At an auctioneer, click **Scan Market** and verify the account-wide cooldown and scan progress.
 - [ ] Confirm stack-normalized asking prices, quantity and listing counts against a few known AH lots.
 - [ ] Confirm mixed gear variants, stale prices, per-faction separation and saved price history after a relog.
 - [ ] Close the AH mid-scan; prior prices must survive and there must be no protected action warning.
 - [ ] Confirm item tooltip toggle, clean searchable window and no unrequested scan, bid, purchase or posting.
+
+## AuctionSense native-tab acceptance (2.1.1)
+
+- [ ] With the AH open, verify AuctionSense appears alongside Blizzard's native tabs and the panel is clickable.
+- [ ] Switch to Buy, Sell, Auctions and back; no panel remains over Blizzard's transaction interface.
+- [ ] Click Scan Market and verify browse-results events, incrementally loaded item counts and an eventual saved snapshot.
+- [ ] Verify incomplete browse data never creates an invented average ask or listing count.
+- [ ] Test advanced Full listings request (15-minute server limit), no-response diagnostics and recovery without /reload.
+- [ ] Verify no protected-action blocking, including when closing the AH and reopening bags.

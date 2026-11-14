@@ -14,7 +14,7 @@ Quality-of-life tools for WoW Forever: MacroForge, DropSense, LootSense, The Bar
 
 **Release announcement**
 
-ChalkBox 2.1.0 adds AuctionSense, an original, independent market tracker. Open it at the Auction House, manually start a full scan, then search your local market snapshot by item. It shows the lowest and average asking price per item, scan age, listing counts and clear stale/variant warnings. Prices can appear on tooltips and feed other ChalkBox modules later. No automatic trading, no fabricated sale prices, and no third-party addon code.
+ChalkBox 2.1.1 moves AuctionSense directly into Blizzard's Auction House tab row and repairs the scanner. Scan Market uses the Forever browse-results API for lowest asking prices and listed quantity; optional Full listings uses the account-throttled replicate API. Unanswered scans now report errors rather than waiting forever, and missing price statistics are never invented. The rest of ChalkBox stays unchanged.
 
 **Screenshot captions (for actual in-game images only)**
 

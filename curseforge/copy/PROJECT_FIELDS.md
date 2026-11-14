@@ -15,8 +15,8 @@ Use these values when creating the project. Check the current CurseForge upload 
 | Source | https://github.com/detok/ChalkBox |
 | Issues | https://github.com/detok/ChalkBox/issues |
 | Description | PROJECT_DESCRIPTION.md |
-| File changelog | FILE_CHANGELOG_2.1.0.md |
-| File upload | **ChalkBox-2.1.0.zip** from GitHub Releases |
+| File changelog | FILE_CHANGELOG_2.1.1.md |
+| File upload | **ChalkBox-2.1.1.zip** from GitHub Releases |
 | Project avatar | **Artwork/PNG/Upload-Ready/Project-Icon-512.png** from the separate media kit |
 | Release type | Beta/test until current-client acceptance tests are complete |
 

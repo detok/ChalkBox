@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.1.1 — AuctionSense native AH tab and scan repair (test release)
+- Move AuctionSense into Blizzard's actual Auction House as a tab; no floating window or hidden settings-only interface.
+- Read all-market browse results through the current Forever browse API, including incremental pages and server throttle readiness. Show lowest asking prices and total units; leave unsupported averages and listing counts blank.
+- Separate full replicate requests behind **Full listings (15m)**; fix synchronous event race by registering the job before requesting.
+- Detect missing browse responses within 12 seconds, handle browse failures, bound page reads and preserve the previous complete snapshot.
+- Keep tooltip integration, realm/faction prices, saved loot data and other ChalkBox modules intact.
+- Test AH tab switching without protected PanelTemplates manipulation, browse pagination, real versus unavailable price fields, failed requests and full-scan events.
+
+
 ## 2.1.0 — AuctionSense foundation (test release)
 - New original, read-only AuctionSense module with native AddOns settings and a searchable market browser.
 - Explicit user-initiated WoW Forever full-market scans. Scan in frame-budgeted batches with a conservative 15-minute cooldown, no automated retries or transactions.
