@@ -14,7 +14,7 @@ Quality-of-life tools for WoW Forever: MacroForge, DropSense, LootSense, The Bar
 
 **Release announcement**
 
-ChalkBox 2.0.12 fixes the Discoveries Area / Dungeon zone picker appearing behind other menus in WoW Forever. The direct zone list now opens as a proper clickable overlay above the journal, keeping all browsing and map sync controls intact. The game's AddOns selection icon has also been refreshed to match the newer ChalkBox project artwork. All recorded loot, characters' settings, and prior fixes are preserved.
+ChalkBox 2.1.0 adds AuctionSense, an original, independent market tracker. Open it at the Auction House, manually start a full scan, then search your local market snapshot by item. It shows the lowest and average asking price per item, scan age, listing counts and clear stale/variant warnings. Prices can appear on tooltips and feed other ChalkBox modules later. No automatic trading, no fabricated sale prices, and no third-party addon code.
 
 **Screenshot captions (for actual in-game images only)**
 
