@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.7 — Compact Bar hover tooltips (prerelease)
+- Replace lengthy stat hover explanations with 1–2 essential detail lines.
+- Keep live values and data distinctions for XP, bags, vendor value, repairs, gear, ETA, rested XP, pets, session, latency and gold.
+- Regression-test real hover events, color, text length and data accuracy.
+- Preserve right-click menus, layout, saved data, bag performance and Discoveries.
+
+
 ## 2.0.6 — The Bar menu cleanup (prerelease)
 - Right-click a stat for only its relevant controls: Show/Hide, Move, Align, and Bar settings, with contextual vendor-value and repair options.
 - Right-click empty bar space for Modules, Position, Edit layout, Reset layout, Stat settings, and Appearance.

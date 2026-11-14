@@ -168,8 +168,17 @@ local function FindMenu(items,label)
 end
 local openedPage
 _G.ChalkBox_OpenSettings=function(page) openedPage=page end
-_G.GameTooltip = {SetOwner=function() end,ClearLines=function() end,
-    AddLine=function() end,Show=function() end,Hide=function() end}
+_G.GameTooltip = {
+    lines={},shown=false,
+    SetOwner=function() end,
+    ClearLines=function(self) self.lines={} end,
+    AddLine=function(self,txt,r,g,b)
+        assert(type(txt)=="string" and #txt>0,"empty hover text")
+        self.lines[#self.lines+1]={text=txt,color={r,g,b}}
+    end,
+    Show=function(self) self.shown=true end,
+    Hide=function(self) self.shown=false end,
+}
 
 local function Fire(event,...)
     for _,frame in ipairs(frames) do
@@ -248,6 +257,44 @@ assert(FindText("Pet 95%"),"Hunter pet status is available when readable")
 assert(ChalkBoxDB.barStats.repair==true,
     "repair module is enabled on Balanced by default")
 assert(FindText("Repair ~74s"),"Bar labels calibrated costs as estimates")
+-- Hover details should be short status readouts, not documentation.
+local function HoverStat(prefix,expectedLines,expectedValue)
+    local frame=FindMetric(prefix)
+    assert(frame and frame.scripts.OnEnter and frame.scripts.OnLeave,
+        "missing hover handler for "..prefix)
+    frame.scripts.OnEnter(frame)
+    assert(GameTooltip.shown,"hover must open for "..prefix)
+    local lines=GameTooltip.lines
+    assert(#lines==expectedLines,"verbose or missing hover lines for "..prefix..
+        ": "..#lines)
+    assert(lines[1].color[1]==1 and lines[1].color[2]==0.82,
+        "hover title keeps the gold header")
+    for index,line in ipairs(lines) do
+        assert(#line.text<=48,"hover text must be short: "..line.text)
+        if index>1 then assert(not line.text:find("ChalkBox") and
+            not line.text:find("Click") and
+            not line.text:find("Estimate vs") and
+            not line.text:find("equipped items"),
+            "hover must not include help documentation")
+        end
+    end
+    assert(lines[2] and lines[2].text:find(expectedValue,1,true),
+        "hover must retain relevant data for "..prefix)
+    frame.scripts.OnLeave(frame)
+    assert(not GameTooltip.shown,"tooltip closes on leave")
+end
+HoverStat("Lv ",2,"300 / 1000 XP")
+HoverStat("XP/h ",2,"Gained: 100 XP")
+HoverStat("To level ",2,"XP left: 700")
+HoverStat("Repair ",3,"Estimate: ~0g 74s 0c")
+HoverStat("Bags ",3,"Free: 12 / 96")
+HoverStat("Gear ",3,"Overall: 87%")
+HoverStat("Rest ",2,"420 XP (42%)")
+HoverStat("Pet ",2,"Health: 95%")
+HoverStat("Time ",2,"Elapsed: 1m")
+HoverStat("World ",3,"Home: 21 ms")
+HoverStat("Gold ",3,"Net: +2g 20s")
+HoverStat("Value ",3,"Junk: 1g 25s 25c")
 local repairMenuData=ChalkBox_BarContextItems("repair")
 assert(type(repairMenuData)=="table",
     "repair cost is a real customizable stat, not a hardcoded label")

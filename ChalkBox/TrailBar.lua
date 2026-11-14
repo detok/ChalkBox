@@ -531,118 +531,94 @@ local function CreateBar()
     progress:SetHeight(1)
     progress:SetColorTexture(0.19,0.64,0.93,0.85)
     bar.xpProgress=progress
+    -- Hover details are a quick readout, not a help article.
+    -- Keep each metric to one or two useful values; guidance belongs in settings.
     local blocks={
-        {"level","Level & XP",function()
-            return {"XP: "..tostring(session.xp or "--").." / "..tostring(session.maxXP or "--"),
-                "Level: "..tostring(session.level or "--")}
+        {"level","Level / XP",function()
+            return {tostring(session.xp or "--").." / "..
+                tostring(session.maxXP or "--").." XP"}
         end},
-        {"rate","Session XP per hour",function()
-            return {"XP gained this session: "..Number(session.xpGained),
-                "Average XP/hour includes idle time since login or reset."}
+        {"rate","XP / hour",function()
+            return {"Gained: "..Number(session.xpGained).." XP"}
         end},
-        {"bagvalue","Bag vendor resale value",function()
+        {"bagvalue","Bag value",function()
             local v=latest.bagvalue
-            if not v then return {"Bag valuation unavailable in this client."} end
-            local junk=(v.junkComplete and "" or "At least ")..Coins(v.junkCopper)
-            local total=(v.totalComplete and "" or "At least ")..Coins(v.totalCopper)
-            local detail={}
-            detail[#detail+1]="Junk (gray/poor-quality items): "..junk
-            detail[#detail+1]="All equipped bag contents: "..total
-            if v.totalUnknown>0 or v.junkUnknown>0 then
-                detail[#detail+1]=("Unresolved slots: %d total, %d junk."):format(
-                    v.totalUnknown,v.junkUnknown)
+            if not v then return {"Unavailable"} end
+            local junk=(v.junkComplete and "" or ">= ")..Coins(v.junkCopper)
+            local total=(v.totalComplete and "" or ">= ")..Coins(v.totalCopper)
+            local lines={"Junk: "..junk,"Total: "..total}
+            if (v.totalUnknown or 0)>0 then
+                lines[#lines+1]="Unknown: "..v.totalUnknown
             end
-            detail[#detail+1]="Stacks counted at actual vendor sell price, not auction price."
-            detail[#detail+1]="Excludes bank, worn equipment and your current gold."
-            detail[#detail+1]="Left-click to flip Junk / Total; no items are sold."
-            return detail
-        end},
-        {"repair","Repair cost",function()
-            local r=latest.repair
-            if not r then return {"Current repair information unavailable."} end
-            local lines={}
-            if r.state=="exact" then
-                lines[#lines+1]="Exact repair-all quote at this merchant: "..
-                    Coins(r.copper)
-            elseif r.state=="estimate" then
-                lines[#lines+1]="Learned estimate: about "..Coins(r.copper)
-                if r.source=="same-gear" then
-                    lines[#lines+1]="Based on actual quotes for this equipment."
-                elseif r.source=="similar-gear" then
-                    lines[#lines+1]="Based on quotes from similar equipment."
-                else
-                    lines[#lines+1]="Using your previous 1.9.2 calibration."
-                end
-                lines[#lines+1]="Confidence: "..(r.confidence or "early")..
-                    ". Still approximate."
-            elseif r.state=="no-damage" then
-                lines[#lines+1]="No damage detected on equipped repairable gear."
-            else
-                lines[#lines+1]="No reliable estimate yet. Visit a repair merchant"
-                lines[#lines+1]="with damaged equipment to teach the estimator."
-            end
-            lines[#lines+1]="Learned from "..tostring(r.samples or 0)..
-                " distinct merchant quote(s)."
-            if type(r.lastError)=="number" then
-                lines[#lines+1]="Last estimate vs actual vendor quote: "..
-                    tostring(r.lastError).."% difference."
-            end
-            lines[#lines+1]="Equipped durability lost: "..
-                (r.missing or "--").." / "..(r.max or "--").."."
-            lines[#lines+1]="Estimates use equipped wear; vendor bills also"
-            lines[#lines+1]="include damaged items in bags and may vary by discounts."
-            lines[#lines+1]="No auto repair or payment is performed."
-            lines[#lines+1]="/chalk bar repair status | repair reset"
             return lines
         end},
-        {"bags","Free bag slots",function()
-            local a=latest.bags
-            if not a then return {"Inventory slot data unavailable."} end
-            return {a.free.." free of "..a.total.." equipped bag slots.",
-                a.general.." general free, "..a.special.." profession-specialized free."..
-                ((a.unknown or 0)>0 and (" "..a.unknown.." unclassified free.") or ""),
-                "Specialty slots may only accept their matching items."}
-        end},
-        {"gear","Equipped item durability",function()
-            local a=latest.gear
-            if not a then return {"Durability unavailable."} end
-            return {"Weighted condition: "..a.percent.."% across "..a.items.." repairable items.",
-                "Lowest equipped item: "..a.worst.."%.",
-                "Only equipment with durability contributes."}
-        end},
-        {"eta","Time to next level",function()
-            return {"Estimated from XP/hour; requires earned session XP.",
-                "Use /chalk bar reset to start a fresh session."}
-        end},
-        {"rested","Rested experience",function()
-            local a=latest.rested
-            if not a then return {"Rested XP data unavailable."} end
-            return {Number(a.xp).." bonus XP, "..a.percent.."% of one level.",
-                "Rested XP is separate from the Camp Benefits aura."}
-        end},
-        {"pet","Hunter pet status",function()
-            local a=latest.pet
-            if not a then return {"Hunter pet data unavailable."} end
-            if a.state=="none" then return {"No active pet."} end
-            if a.state=="protected" or a.state=="unknown" then
-                return {"Pet health protected or unavailable in this client."}
+        {"repair","Repair",function()
+            local r=latest.repair
+            if not r then return {"Unavailable"} end
+            local lines={}
+            if r.state=="exact" then
+                lines[1]="Quote: "..Coins(r.copper)
+            elseif r.state=="estimate" then
+                lines[1]="Estimate: ~"..Coins(r.copper)
+            elseif r.state=="no-damage" then
+                lines[1]="No damage"
+            else
+                lines[1]="No quote"
             end
-            return {"Active pet health: "..a.percent.."%."}
+            if r.missing and r.max then
+                lines[#lines+1]="Wear: "..r.missing.." / "..r.max
+            end
+            return lines
         end},
-        {"time","Session time",function()
-            return {"Online time since login or last session reset."}
+        {"bags","Bag space",function()
+            local a=latest.bags
+            if not a then return {"Unavailable"} end
+            local lines={"Free: "..a.free.." / "..a.total}
+            if (a.special or 0)>0 then
+                lines[#lines+1]="General: "..a.general.."  Specialty: "..a.special
+            end
+            if (a.unknown or 0)>0 then
+                lines[#lines+1]="Unknown: "..a.unknown
+            end
+            return lines
         end},
-        {"latency","Home / world latency",function()
+        {"gear","Durability",function()
+            local a=latest.gear
+            if not a then return {"Unavailable"} end
+            return {"Overall: "..a.percent.."%","Lowest: "..a.worst.."%"}
+        end},
+        {"eta","Level ETA",function()
+            local remaining=session.maxXP and session.xp and
+                math.max(0,session.maxXP-session.xp)
+            return {"XP left: "..(remaining and Number(remaining) or "--")}
+        end},
+        {"rested","Rested XP",function()
+            local a=latest.rested
+            if not a then return {"Unavailable"} end
+            return {Number(a.xp).." XP ("..a.percent.."%)"}
+        end},
+        {"pet","Pet",function()
+            local a=latest.pet
+            if not a then return {"Unavailable"} end
+            if a.state=="none" then return {"No pet"} end
+            if a.state=="protected" or a.state=="unknown" then
+                return {"Health unavailable"}
+            end
+            return {"Health: "..a.percent.."%"}
+        end},
+        {"time","Session",function()
+            return {"Elapsed: "..Duration(ReadElapsed())}
+        end},
+        {"latency","Latency",function()
             local a=latest.latency
-            if not a then return {"Latency API unavailable."} end
-            return {"Home: "..a.home.." ms", "World: "..a.world.." ms",
-                "Current network latency is not your frame rate."}
+            if not a then return {"Unavailable"} end
+            return {"Home: "..a.home.." ms","World: "..a.world.." ms"}
         end},
-        {"gold","Gold & net earnings",function()
+        {"gold","Gold",function()
             local _,_,perHour=GetRates()
-            return {"Net gold/hour: "..Money(perHour,true),
-                "Current gold and net change since login or reset.",
-                "Spending can make net gold negative; not gross loot value."}
+            local net=session.money and session.goldStart and
+                session.money-session.goldStart or nil
+            return {"Net: "..Money(net,true),"Per hour: "..Money(perHour,true)}
         end},
     }
     for _,item in ipairs(blocks) do
