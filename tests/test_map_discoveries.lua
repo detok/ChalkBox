@@ -284,7 +284,7 @@ assert(not journal.movable and not journal.OnDragStart,
 local headings={
     ["AREA / DUNGEON"]=true,CREATURE=true,
     SORT=true,["SEARCH ITEMS"]=true,ITEM=true,
-    FOUND=true,DROPS=true,["RATE*"]=true,
+    FOUND=true,LOOTS=true,["RATE*"]=true,
 }
 local foundHeadings={}
 for _,fs in ipairs(fonts) do
