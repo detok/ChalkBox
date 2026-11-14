@@ -5,12 +5,32 @@ local addonName=...
 local db
 local last={marked=0,visible=0,reason="not initialized"}
 local queued=false
+local bankOpen=false
 local learnedForRefresh
 local hooked={all=false,items=false}
 local stripColor={0.24,0.94,0.57}
 
 local function Public(v)
     return v~=nil and (type(issecretvalue)~="function" or not issecretvalue(v))
+end
+-- Never decorate or inspect bank item buttons while Blizzard initializes
+-- its bank panel. BANKFRAME_OPENED can arrive before every bank frame is ready.
+local function BankVisible()
+    if bankOpen then return true end
+    local frame=BankFrame
+    if frame and type(frame.IsShown)=="function" then
+        local ok,shown=pcall(frame.IsShown,frame)
+        if ok and Public(shown) and shown then return true end
+    end
+    return false
+end
+local function PlayerBag(bag)
+    if not Public(bag) or type(bag)~="number" then return false end
+    local backpack=type(BACKPACK_CONTAINER)=="number" and
+        BACKPACK_CONTAINER or 0
+    local lastBag=type(NUM_BAG_SLOTS)=="number" and
+        NUM_BAG_SLOTS or 4
+    return bag>=backpack and bag<=lastBag
 end
 local function Enabled()
     return db and db.lootHighlightKnown~=false
@@ -70,8 +90,8 @@ end
 local function ItemID(button)
     if not button or not button.GetBagID or not button.GetID then return end
     local ok,bag,slot=pcall(function() return button:GetBagID(),button:GetID() end)
-    if not ok or not Public(bag) or not Public(slot) or
-        type(bag)~="number" or type(slot)~="number" then return end
+    if not ok or not PlayerBag(bag) or not Public(slot)
+        or type(slot)~="number" then return end
     local api=C_Container and C_Container.GetContainerItemID or GetContainerItemID
     if type(api)~="function" then return end
     local status,value=pcall(api,bag,slot)
@@ -94,7 +114,13 @@ local function Learned(itemID)
     return ok and type(recipes)=="table" and #recipes>0
 end
 local function UpdateButton(button)
-    if not button then return end
+    if not button or BankVisible() then return end
+    -- The native container iterator can include character-bank, reagent-bank
+    -- and account-bank item buttons. Do not attach our overlay textures to
+    -- those protected Blizzard controls, even after the bank closes.
+    if type(button.GetBagID)~="function" then return end
+    local ok,bag=pcall(button.GetBagID,button)
+    if not ok or not PlayerBag(bag) then return end
     local shown=not button.IsShown or button:IsShown()
     if not Public(shown) or not shown then ShowMarker(button,false);return end
     last.visible=last.visible+1
@@ -123,6 +149,10 @@ local function UpdateFrame(frame)
     if not ok then last.reason="A client bag frame could not be scanned." end
 end
 local function Refresh()
+    if BankVisible() then
+        last.reason="bank UI active; inventory scan deferred"
+        return
+    end
     last={visible=0,marked=0,reason="ready"}
     learnedForRefresh={}
     if type(ContainerFrameUtil_EnumerateContainerFrames)=="function" then
@@ -159,7 +189,7 @@ function ChalkBox_BagHighlightStatus()
         marked=last.marked,visible=last.visible,reason=last.reason}
 end
 local function QueueRefresh()
-    if queued or not db then return end
+    if queued or not db or BankVisible() then return end
     if type(C_Timer)=="table" and type(C_Timer.After)=="function" then
         queued=true
         -- Blizzard can update individual bag slots many times per opening.
@@ -171,7 +201,7 @@ local function QueueRefresh()
     else Refresh() end
 end
 local function HookBagUpdates()
-    if type(hooksecurefunc)~="function" then return end
+    if BankVisible() or type(hooksecurefunc)~="function" then return end
     -- A bag can update individually without ContainerFrame_UpdateAll firing.
     -- Hook both safe native extension points as they become available.
     if not hooked.all and type(ContainerFrame_UpdateAll)=="function" then
@@ -186,10 +216,20 @@ end
 local events=CreateFrame("Frame")
 for _,event in ipairs({"ADDON_LOADED","PLAYER_ENTERING_WORLD","BAG_UPDATE_DELAYED",
     "TRADE_SKILL_LIST_UPDATE","TRADE_SKILL_DATA_SOURCE_CHANGED",
-    "NEW_RECIPE_LEARNED","PLAYER_REGEN_ENABLED","BAG_OPEN","BANKFRAME_OPENED"}) do
+    "NEW_RECIPE_LEARNED","PLAYER_REGEN_ENABLED","BAG_OPEN",
+    "BANKFRAME_OPENED","BANKFRAME_CLOSED"}) do
     pcall(events.RegisterEvent,events,event)
 end
 events:SetScript("OnEvent",function(_,event,name)
+    if event=="BANKFRAME_OPENED" then
+        bankOpen=true
+        return -- Do not touch first-use bank frames during Blizzard initialization.
+    elseif event=="BANKFRAME_CLOSED" then
+        bankOpen=false
+        HookBagUpdates()
+        QueueRefresh()
+        return
+    end
     if event=="ADDON_LOADED" then
         if name==addonName then
             if type(ChalkBoxDB)~="table" then ChalkBoxDB={} end

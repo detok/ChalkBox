@@ -1,6 +1,6 @@
-# Install and first run — ChalkBox 2.0.9
+# Install and first run — ChalkBox 2.0.10
 
-1. Download **ChalkBox-2.0.9.zip** from https://github.com/detok/ChalkBox/releases/tag/v2.0.9.
+1. Download **ChalkBox-2.0.10.zip** from https://github.com/detok/ChalkBox/releases/tag/v2.0.10.
 2. Extract its single **ChalkBox** folder into your Forever client's **Interface/AddOns** directory. The correct file path ends in **ChalkBox/ChalkBox.toc**.
 3. Start the game and type **/chalk**.
    - Choose **QuestSense → Nearby only** to keep the visible tracker zone-focused automatically; prior manual selections return when you revisit their zone. The main settings page is grouped by module, with related settings nested beneath each heading.

@@ -26,6 +26,17 @@ end
 local bag={shown=true}
 function bag:IsShown() return self.shown end
 function bag:EnumerateValidItems() return ipairs(buttons) end
+local bankButton={
+    GetBagID=function() return -1 end,
+    GetID=function() return 1 end,
+    IsShown=function() return true end,
+    CreateTexture=function() error("must not decorate protected bank items") end,
+}
+local bank={shown=true}
+function bank:IsShown() return self.shown end
+function bank:EnumerateValidItems() return ipairs({bankButton}) end
+local bankVisible=false
+_G.BankFrame={IsShown=function() return bankVisible end}
 _G.ChalkBoxDB={}
 _G.CreateFrame=function()
     local f={events={}}
@@ -114,4 +125,39 @@ pending[1].callback()
 hooks[1]()
 assert(#pending==2,"later bag changes still trigger an independent refresh")
 pending[2].callback()
+-- Reproduce the first bank open on a fresh character. The bank may
+-- lazily create secure item buttons after the BANKFRAME_OPENED notification;
+-- ChalkBox must leave those buttons alone until the panel closes.
+local beforeTextures=#textures
+local callsBefore=#pending
+bankVisible=true
+eventFrame.onEvent(eventFrame,"BANKFRAME_OPENED")
+eventFrame.onEvent(eventFrame,"BAG_OPEN")
+eventFrame.onEvent(eventFrame,"BAG_UPDATE_DELAYED")
+hooks[1]()
+assert(#pending==callsBefore,"opening the bank must not schedule bag overlays")
+assert(ChalkBox_BagHighlightsRefresh().reason:find("bank UI",1,true),
+    "direct refresh also avoids Blizzard bank initialization")
+assert(#textures==beforeTextures,"no new marker textures during first bank open")
+-- A client bank frame can appear in the regular container enumeration.
+-- Never touch its item button even when the bank is no longer visible.
+ContainerFrameUtil_EnumerateContainerFrames=function()
+    return ipairs({bag,bank})
+end
+bankVisible=false
+eventFrame.onEvent(eventFrame,"BANKFRAME_CLOSED")
+assert(#pending==callsBefore+1 and pending[#pending].delay>=0.18,
+    "after bank closes regular bag scanning resumes in a coalesced pass")
+pending[#pending].callback()
+assert(not bankButton.ChalkBoxReagentBorder and
+    ChalkBox_BagHighlightStatus().reason=="ready",
+    "bank items stay untouched; normal bag highlights still work")
+assert(#textures==beforeTextures,
+    "bank visit creates no unintended decoration on protected buttons")
+-- Even if the close event is delayed, the actual BankFrame visibility wins.
+bankVisible=true
+eventFrame.onEvent(eventFrame,"BAG_UPDATE_DELAYED")
+assert(#pending==callsBefore+1,
+    "BankFrame visibility also blocks unsafe early scans")
+bankVisible=false
 print("PASS: native learned-only bag markers, legacy name lookup, opacity, coalesced refresh and secret IDs")

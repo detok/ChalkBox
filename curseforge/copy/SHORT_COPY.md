@@ -14,7 +14,7 @@ Quality-of-life tools for WoW Forever: MacroForge, DropSense, LootSense, The Bar
 
 **Release announcement**
 
-ChalkBox 2.0.9 adds a smarter Discoveries location browser. The existing Area / Dungeon dropdown now lists every recorded outdoor zone and dungeon, grouped and alphabetized, with a clear Follow world map option. Choose any saved location to browse independently or return to map sync, with your preference and last manual location remembered. Existing loot observations, filters, QuestSense, The Bar and other tools are preserved.
+ChalkBox 2.0.10 improves compatibility when a character opens their bank for the first time. The addon now avoids scanning bank item buttons or moving Blizzard's container frames while the bank UI initializes, then safely resumes normal bag highlights and saved bag positioning after closing it. All existing Discoveries browser, QuestSense Nearby, Bar, and loot features remain unchanged.
 
 **Screenshot captions (for actual in-game images only)**
 

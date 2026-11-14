@@ -4,6 +4,13 @@ local parent={}
 local stockY=85
 local combined=false
 local combat=false
+local bankVisible=false
+_G.BankFrame={IsShown=function() return bankVisible end}
+local waiting={ }
+_G.C_Timer={After=function(delay,fn)
+    assert(delay>=0.1)
+    waiting[#waiting+1]=fn
+end}
 local frame={shown=true,point=nil,relative=nil,relativePoint=nil,x=0,y=0}
 function frame:GetParent() return parent end
 function frame:IsShown() return self.shown end
@@ -96,4 +103,34 @@ assert(frame.y==55,"slash command uses same safe slider path")
 ChalkBox_BagCommand("status")
 ChalkBox_BagCommand("not a command")
 assert(frame.y==55,"unrecognized commands do not move bags")
+-- Opening the bank for the very first time must not let a Blizzard
+-- container-anchor hook shift any secure bank UI during lazy initialization.
+local beforeBank=updateCalls
+local oldY=frame.y
+bankVisible=true
+eventFrame.callback(eventFrame,"BANKFRAME_OPENED")
+UpdateContainerFrameAnchors()
+assert(frame.y==stockY and ChalkBox_BagStatus().pending,
+    "bank opening skips ChalkBox anchor offsets without blocking stock layout")
+assert(updateCalls==beforeBank+1,"Blizzard layout remains in charge")
+ChalkBox_BagOffsetSet(45)
+assert(updateCalls==beforeBank+1,
+    "user offset changes defer, instead of forcing layouts while bank is open")
+eventFrame.callback(eventFrame,"BANKFRAME_CLOSED")
+assert(#waiting==1,"bank close schedules a safe post-bank layout refresh")
+bankVisible=false
+waiting[1]()
+assert(frame.y==stockY-45 and not ChalkBox_BagStatus().pending,
+    "after the bank closes, normal bag offsets safely resume")
+
+-- A reported bank container frame is never moved even if no bank panel
+-- is visible; only character bag IDs are eligible for repositioning.
+frame.GetBagID=function() return -1 end
+UpdateContainerFrameAnchors()
+assert(frame.y==stockY and ChalkBox_BagStatus().applied==0,
+    "an actual bank container ID is never repositioned")
+frame.GetBagID=nil
+UpdateContainerFrameAnchors()
+assert(frame.y==stockY-45,"regular bag behavior returns after bank")
+
 print("PASS: signed separate-bag offset -120..120, no stacking, combined bags untouched, combat deferral, and stock reset")
