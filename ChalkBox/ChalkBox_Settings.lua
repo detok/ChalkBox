@@ -728,16 +728,10 @@ local function MakeBar()
             function() local db=DB(); return db and db.bar==entry[1] end,
             function() if ChalkBox_BarCommand then ChalkBox_BarCommand(entry[1]) end end)
     end
-    Toggle(panel,"Reserve screen space (18px)",
-        "Recommended: keeps Blizzard's UI out of the bar's screen strip.",-284,
-        function() local db=DB(); return db and db.barReserve~=false end,
-        function(on)
-            if ChalkBox_BarCommand then
-                ChalkBox_BarCommand(on and "reserve on" or "reserve off")
-            end
-        end)
+    Label(panel,"SAFE OVERLAY  |  Blizzard frames untouched",
+        "GameFontHighlight",28,-285,470)
     Label(panel,"SEPARATE BAG POSITION","GameFontNormalLarge",28,-335,300)
-    Label(panel,"Move bags relative to Blizzard's original anchor.",
+    Label(panel,"Offset paused to protect combat item use.",
         "GameFontHighlightSmall",28,-360,315)
     local current=Label(panel,"0  —  Blizzard default",
         "GameFontHighlight",28,-385,318)
@@ -746,6 +740,7 @@ local function MakeBar()
     bagSlider:SetPoint("TOPLEFT",panel,"TOPLEFT",363,-312)
     if bagSlider.SetOrientation then bagSlider:SetOrientation("VERTICAL") end
     bagSlider:SetMinMaxValues(-120,120)
+    if type(bagSlider.Disable)=="function" then bagSlider:Disable() end
     if bagSlider.SetValueStep then bagSlider:SetValueStep(5) end
     if bagSlider.SetThumbTexture then
         bagSlider:SetThumbTexture("Interface\\Buttons\\UI-SliderBar-Button-Vertical")
@@ -760,6 +755,8 @@ local function MakeBar()
     local updating=false
     bagSlider:SetScript("OnValueChanged",function(_,value)
         if updating or type(value)~="number" then return end
+        -- Custom bag placement is disabled until a secure Blizzard API exists.
+        return
         -- Vertical sliders put their maximum at the top. Negate to make the
         -- top move bags UP and bottom move bags DOWN, with Blizzard 0 centered.
         local offset=math.floor(-value+0.5)
@@ -782,7 +779,7 @@ local function MakeBar()
         if ChalkBox_BarCommand then ChalkBox_BarCommand("reset") end
     end)
     Button(panel,"Reset Bags",172,-416,112,function()
-        if ChalkBox_BagOffsetSet then ChalkBox_BagOffsetSet(0) end
+        if ChalkBox_BagCommand then ChalkBox_BagCommand("reset") end
         if panel.OnRefresh then panel.OnRefresh() end
     end)
     return panel
