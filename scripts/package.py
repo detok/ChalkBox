@@ -57,6 +57,7 @@ FILES = (
     "RepairLearning.lua",
     "TrailBarStats.lua",
     "TrailBarLayout.lua",
+    "ScreenLayout.lua",
     "TrailBar.lua",
     "BagLayout.lua",
     "CombatMeter.lua",

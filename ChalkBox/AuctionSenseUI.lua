@@ -1,6 +1,8 @@
 -- AuctionSense market browser: clear prices with source, age and scan state.
 -- Separate from Blizzard's trading controls: display only, never transact.
-local PER_PAGE=7
+local MAX_ROWS=7
+local visibleRows=4
+-- The actual AH content height varies across Forever UI scales.
 local frame,tab,host,labels=nil,nil,nil,{}
 local searchText,page="",1
 local seconds=0
@@ -131,11 +133,17 @@ local function Refresh()
             ChalkBox_AuctionRows(searchText,12000) or {}
     end
     local entries=cachedRows
-    local maxPages=math.max(1,math.ceil(#entries/PER_PAGE))
+    local height=type(frame.GetHeight)=="function" and frame:GetHeight() or 345
+    if type(height)~="number" or height~=height then height=345 end
+    -- Header + tools occupy 157px. Keep pager and footer entirely inside
+    -- the native AH body, regardless of actual window size/UI scale.
+    visibleRows=math.max(1,math.min(MAX_ROWS,
+        math.floor((height-220)/24)))
+    local maxPages=math.max(1,math.ceil(#entries/visibleRows))
     page=math.max(1,math.min(page,maxPages))
-    local start=(page-1)*PER_PAGE
+    local start=(page-1)*visibleRows
     for i,row in ipairs(labels.rows) do
-        local item=entries[start+i]
+        local item=(i<=visibleRows) and entries[start+i] or nil
         if item then
             row.name:SetText(item.name or ("Item #"..tostring(item.itemID)))
             row.low:SetText(Coin(item.low))
@@ -172,12 +180,14 @@ local function Ensure()
     if not ah then return false end
     host=ah
     local f=CreateFrame("Frame","ChalkBoxAuctionSensePane",ah)
+    -- The stock AH has a title, decorative frame edge and bottom tabs.
+    -- Confine our content to its inner body; never cover the footer/tabs.
     f:SetPoint("TOPLEFT",ah,"TOPLEFT",13,-56)
-    f:SetPoint("BOTTOMRIGHT",ah,"BOTTOMRIGHT",-13,39)
+    f:SetPoint("BOTTOMRIGHT",ah,"BOTTOMRIGHT",-13,68)
     if f.SetFrameLevel then
         local base=type(ah.GetFrameLevel)=="function" and
             ah:GetFrameLevel() or 20
-        f:SetFrameLevel(base+45)
+        f:SetFrameLevel(base+20)
     end
     if f.EnableMouse then f:EnableMouse(true) end
     local background=f:CreateTexture(nil,"BACKGROUND")
@@ -190,14 +200,14 @@ local function Ensure()
             background:SetVertexColor(0.11,0.085,0.061,0.985)
         end
     end
-    labels.title=Font(f,"GameFontNormalHuge",20,-12,410)
+    labels.title=Font(f,"GameFontNormalHuge",20,-9,410)
     labels.title:SetText("AuctionSense")
-    labels.market=Font(f,"GameFontHighlightSmall",21,-42,425)
-    labels.status=Font(f,"GameFontNormal",20,-72,560)
-    labels.progress=Font(f,"GameFontHighlight",21,-98,270)
-    labels.cooldown=Font(f,"GameFontHighlight",313,-98,295)
-    labels.details=Font(f,"GameFontHighlight",21,-124,545)
-    labels.scan=Button(f,"Scan Market",21,-146,140,function()
+    labels.market=Font(f,"GameFontHighlightSmall",21,-31,425)
+    labels.status=Font(f,"GameFontNormal",20,-49,550)
+    labels.progress=Font(f,"GameFontHighlight",21,-67,252)
+    labels.cooldown=Font(f,"GameFontHighlight",296,-67,275)
+    labels.details=Font(f,"GameFontHighlight",21,-87,520)
+    labels.scan=Button(f,"Scan Market",21,-106,125,function()
         if type(ChalkBox_AuctionScan)=="function" then
             local ok,reason=ChalkBox_AuctionScan()
             if not ok then labels.status:SetText(reason or "Browse unavailable") end
@@ -205,7 +215,7 @@ local function Ensure()
         end
     end)
     Hint(labels.scan,"Scan Market","Browse asking prices","No full-scan cooldown")
-    labels.fullscan=Button(f,"Full listings (15m)",172,-146,167,function()
+    labels.fullscan=Button(f,"Full listings (15m)",154,-106,153,function()
         if type(ChalkBox_AuctionFullScan)=="function" then
             local ok,reason=ChalkBox_AuctionFullScan()
             if not ok then labels.status:SetText(reason or "Full scan unavailable") end
@@ -215,8 +225,8 @@ local function Ensure()
     Hint(labels.fullscan,"Full listings","Complete auction listing snapshot",
         "Server limit: once every 15 minutes")
     local input=CreateFrame("EditBox",nil,f,"InputBoxTemplate")
-    input:SetSize(224,24)
-    input:SetPoint("TOPLEFT",f,"TOPLEFT",386,-147)
+    input:SetSize(199,24)
+    input:SetPoint("TOPLEFT",f,"TOPLEFT",367,-107)
     if input.SetAutoFocus then input:SetAutoFocus(false) end
     if input.SetMaxLetters then input:SetMaxLetters(70) end
     input:SetScript("OnTextChanged",function(self)
@@ -226,28 +236,28 @@ local function Ensure()
     input:SetScript("OnEscapePressed",function(self)
         if self.ClearFocus then self:ClearFocus() end
     end)
-    Font(f,"GameFontNormal",345,-153,45):SetText("Find")
-    Font(f,"GameFontNormal",21,-184,255):SetText("ITEM")
-    local lowHeader=Font(f,"GameFontNormal",316,-184,102)
+    Font(f,"GameFontNormal",324,-113,41):SetText("Find")
+    Font(f,"GameFontNormal",21,-138,230):SetText("ITEM")
+    local lowHeader=Font(f,"GameFontNormal",281,-138,91)
     lowHeader:SetText("LOW / UNIT")
     Tint(lowHeader,COLOR.low)
-    local averageHeader=Font(f,"GameFontNormal",428,-184,104)
+    local averageHeader=Font(f,"GameFontNormal",388,-138,91)
     averageHeader:SetText("AVG ASK")
     Tint(averageHeader,COLOR.average)
-    local listingHeader=Font(f,"GameFontNormal",541,-184,92)
+    local listingHeader=Font(f,"GameFontNormal",495,-138,81)
     listingHeader:SetText("LISTINGS")
     Tint(listingHeader,COLOR.counts)
     labels.rows={}
-    for i=1,PER_PAGE do
-        local y=-206-(i-1)*29
+    for i=1,MAX_ROWS do
+        local y=-157-(i-1)*24
         local row=CreateFrame("Frame",nil,f)
-        row:SetSize(610,28)
+        row:SetSize(560,22)
         row:SetPoint("TOPLEFT",f,"TOPLEFT",17,y)
-        local name=Font(row,"GameFontHighlight",4,-1,287)
-        local low=Font(row,"GameFontHighlight",299,-1,102)
-        local average=Font(row,"GameFontHighlight",411,-1,102)
-        local listings=Font(row,"GameFontHighlightSmall",524,-1,85)
-        local note=Font(row,"GameFontHighlightSmall",4,-15,588)
+        local name=Font(row,"GameFontHighlight",4,-1,240)
+        local low=Font(row,"GameFontHighlight",264,-1,89)
+        local average=Font(row,"GameFontHighlight",371,-1,89)
+        local listings=Font(row,"GameFontHighlightSmall",478,-1,78)
+        local note=Font(row,"GameFontHighlightSmall",4,-12,540)
         Tint(low,COLOR.low)
         Tint(average,COLOR.average)
         Tint(listings,COLOR.counts)
@@ -292,14 +302,24 @@ local function Ensure()
         labels.rows[#labels.rows+1]={frame=row,name=name,low=low,
             average=average,listings=listings,note=note}
     end
-    Button(f,"Previous",21,-413,111,function()
+    local previous=Button(f,"Previous",21,-10,104,function()
         page=math.max(1,page-1);Refresh()
     end)
-    labels.page=Font(f,"GameFontHighlightSmall",281,-419,106)
-    Button(f,"Next",500,-413,111,function()
+    -- Anchor pager and disclaimer to the BOTTOM of the actual AH content
+    -- instead of assuming every client has 450px of vertical room.
+    if previous.ClearAllPoints then previous:ClearAllPoints() end
+    previous:SetPoint("BOTTOMLEFT",f,"BOTTOMLEFT",21,34)
+    labels.page=Font(f,"GameFontHighlightSmall",251,-10,120)
+    if labels.page.ClearAllPoints then labels.page:ClearAllPoints() end
+    labels.page:SetPoint("BOTTOMLEFT",f,"BOTTOMLEFT",251,41)
+    local nextButton=Button(f,"Next",462,-10,104,function()
         page=page+1;Refresh()
     end)
-    labels.info=Font(f,"GameFontHighlightSmall",21,-446,594)
+    if nextButton.ClearAllPoints then nextButton:ClearAllPoints() end
+    nextButton:SetPoint("BOTTOMLEFT",f,"BOTTOMLEFT",462,34)
+    labels.info=Font(f,"GameFontHighlightSmall",21,-10,540)
+    if labels.info.ClearAllPoints then labels.info:ClearAllPoints() end
+    labels.info:SetPoint("BOTTOMLEFT",f,"BOTTOMLEFT",21,12)
     frame=f
     f:SetScript("OnUpdate",function(self,elapsed)
         seconds=seconds+(type(elapsed)=="number" and elapsed or 0)
@@ -343,8 +363,9 @@ function ChalkBox_AuctionAttach()
                 host,"UIPanelButtonTemplate")
         end
         tab=button
-        tab:SetText("AuctionSense")
-        if tab.SetWidth then tab:SetWidth(116) end
+        -- Short tab label fits Blizzard's tab strip at normal UI scale.
+        tab:SetText("Market")
+        if tab.SetWidth then tab:SetWidth(92) end
         if previous then
             tab:SetPoint("LEFT",previous,"RIGHT",-3,0)
         else

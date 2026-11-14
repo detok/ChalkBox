@@ -1,21 +1,24 @@
-# ChalkBox 2.1.5 — Combat-safety hotfix
+# ChalkBox 2.1.6 — Coordinated UI layout repair
 
-A priority fix for addon-blocked actions during combat, unexpected Bar disappearance and Emota protected-chat activity.
+### Full-width Bar + top UI spacing
+- Restore the Bar's original edge-to-edge 18px design (no artificial right-hand gap).
+- A dedicated top-UI controller shifts **eligible unprotected, default-positioned Blizzard frames** 18px downward, including the minimap and buff groups where the client exposes safe anchors.
+- Custom-positioned or protected frames are not moved. Adjustments are deferred during combat, restored when the option is turned off, and do not stack on reload or scale changes.
+- The Bar **never** resizes or reanchors Blizzard's `UIParent`. The old root-reservation mechanism stays retired to protect combat and item actions.
+- Options > The Bar > **Shift top UI below the Bar** is enabled by default and can be turned off if another UI addon manages those frames.
 
-### Changes
-- **The Bar:** Always an independent 18px top/bottom overlay. No `UIParent:ClearAllPoints`, `UIParent:SetPoint` or root resizing. Bar placement and session stats remain available; the old full-screen push-down/reserved strip is removed until we can implement it without Blizzard taint.
-- **Emota:** Nothing is sent through the native emote API during combat, including mana reactions or manual previews. Out-of-combat cosmetic reactions continue to work. Automatic SIT/SLEEP/LAYDOWN/STAND posing is paused; manual previews remain available.
-- **Bags:** The earlier vertical-offset hook was reanchoring Blizzard container frames that hold clickable items. This is suspended. Stock Blizzard bags work normally; existing offset preferences are retained but not applied and the slider is disabled.
-- **Reagent outlines:** Green reagent textures previously attached directly to Blizzard bag item buttons. Those outlines are also temporarily paused. Learned-recipe Item Insight tooltips stay active, and marker preferences remain saved.
-- **Other modules:** Preserve the native DPS reports, auction scans, quest tracking, item insights, Drop Journal, and existing SavedVariables.
+### AuctionSense / Market
+- The tab is shortened to **Market** to fit alongside native Buy, Sell, and Auctions.
+- The AuctionSense pane stays inside the Auction House's actual inner content area, above the native tabs and frame border.
+- A compact header and controls free space for a **height-aware list**: 1–7 visible results per page, depending on your AH window size. Pager and disclaimer are anchored to the actual pane bottom.
+- Market scans, prices, realm/faction separation, row hover details, and SavedVariables are unchanged.
 
-### Why
-Blizzard's secure action system can propagate addon taint from global UI layout changes or protected container anchors into later combat interactions. These are concrete unsafe paths found in the addon; the exact user's blocked-function trace has not been captured. The safety release removes both paths rather than attempting to bypass protected actions.
+### Kept from 2.1.5
+- Emota does not call native emote functions during combat.
+- Bag offset and the reagent outlines that modified protected item buttons remain paused. Item Insight and recipe data still work.
+- Native DPS meter PARTY/SAY/after-combat reports are preserved.
 
 ### Install
-Replace the old ChalkBox addon directory with `ChalkBox-2.1.5.zip` and type `/reload` or relaunch WoW. A full reload is necessary to clear taint from the previous session.
+Replace the ChalkBox addon folder with `ChalkBox-2.1.6.zip`. Preserve SavedVariables and type `/reload`.
 
-### Notes
-Ordinary food/drink cannot be used *while combat is active* in standard WoW Classic; that restriction is game-side. However ChalkBox must not independently cause protected-action errors when using usable items. If a blocked-action error persists after updating and reloading, capture the exact blocked function name for targeted diagnosis.
-
-Automated Lua 5.1 regression tests and ZIP validation run in GitHub Actions. Live testing on WoW Forever remains necessary.
+This changes how optional Blizzard top frames are positioned and needs **in-client testing on WoW Forever**. Some protected or customized frames cannot safely be shifted by an addon.
