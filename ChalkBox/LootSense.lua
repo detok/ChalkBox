@@ -116,31 +116,54 @@ end
 
 -- Presentation is its own layer: reason/classification still comes from
 -- unchanged LootSense and learned-profession evidence, not string guesswork.
+-- The category carries the meaning; the second line is only evidence.
+-- Avoid repeating "Item Insight", the module name, or the category itself.
+local function Insight(label,details,role,red,green,blue)
+    if type(ChalkBox_TipColor)=="function" then
+        red,green,blue=ChalkBox_TipColor(role)
+    end
+    if type(details)=="string" then
+        details=details:gsub(" %- ","  ·  ")
+            :gsub("^protected by you$","Personal protection")
+            :gsub("^accepted quest needs this$","Needed for active quest")
+            :gsub("^possible ","Possible ")
+            :gsub("not confirmed learned","learning unverified")
+    end
+    return label,details,red,green,blue
+end
 function ChalkBox_LootPresentation(message)
     if type(message)~="string" then return end
     local prefix,body=message:match("^([^:]+):%s*(.*)$")
     if prefix=="KEEP" then
-        return "Keep this item",body,0.43,0.93,0.56
+        local quest=body=="quest item" or body=="accepted quest needs this"
+        return Insight("KEEP",body,quest and "warning" or "good",
+            0.39,0.94,0.62)
     elseif prefix=="KNOWN RECIPE" then
-        return "Used in a learned recipe",body,0.43,0.93,0.56
+        return Insight("LEARNED RECIPE",body,"good",0.39,0.94,0.62)
     elseif prefix=="POTENTIAL USE" then
-        return "Possible crafting use",body,0.91,0.75,0.39
+        return Insight("POSSIBLE RECIPE",body,"warning",0.98,0.66,0.33)
     elseif prefix=="OTHER PROFESSION" then
-        return "Other profession recipe",body,0.68,0.76,0.89
+        return Insight("OTHER PROFESSION",body,"count",0.51,0.76,0.98)
     elseif prefix=="PROFESSION" then
         local confirmed=body and body:find("used in a learned",1,true)
-        return confirmed and "Learned profession use" or "Possible profession material",
-            body,confirmed and 0.43 or 0.91,
-            confirmed and 0.93 or 0.75,
-            confirmed and 0.56 or 0.39
+        if confirmed then
+            body=body:gsub("^used in a learned ","")
+        end
+        return Insight(confirmed and "LEARNED USE" or "POSSIBLE MATERIAL",
+            body,confirmed and "good" or "warning",
+            confirmed and 0.39 or 0.98,
+            confirmed and 0.94 or 0.66,
+            confirmed and 0.62 or 0.33)
     elseif prefix=="CAMP SUPPLY" then
-        return "Camp supply",body,0.48,0.86,0.72
+        return Insight("CAMP SUPPLY",body,"info",0.40,0.83,0.78)
     elseif prefix=="CAMP TOOL" then
-        return "Reusable camp tool",body,0.48,0.86,0.72
+        return Insight("CAMP TOOL",body,"info",0.40,0.83,0.78)
     elseif prefix=="CAMP" or prefix=="CAMP REAGENT" then
-        return "Camping utility",body,0.48,0.86,0.72
+        return Insight("CAMP USE",body,"info",0.40,0.83,0.78)
+    elseif prefix=="XP UTILITY" then
+        return Insight("BONUS XP",body,"good",0.39,0.94,0.62)
     end
-    return "Item insight",message,0.78,0.84,0.88
+    return Insight("ITEM NOTE",message,"text",0.85,0.87,0.88)
 end
 
 local function OnItemTooltip(tooltip)
