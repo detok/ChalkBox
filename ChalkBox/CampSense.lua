@@ -166,7 +166,7 @@ local function MeaningfulHint(buffs,tent)
     end
     if Forever() and db.supplies~=false and kit~=nil and kit==0 then
         if wood==0 then
-            return "No kits or Simple Wood  ·  Restock before camping.",
+            return "No Campfire Kits or Simple Wood  ·  Restock before camping.",
                 "Restock camp supplies","supplies-empty"
         end
         if flint==0 then
