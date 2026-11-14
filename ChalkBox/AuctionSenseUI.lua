@@ -4,10 +4,13 @@ local MAX_ROWS=7
 local visibleRows=4
 -- The actual AH content height varies across Forever UI scales.
 local frame,tab,host,labels=nil,nil,nil,{}
--- A local display mode uses Blizzard's existing SetDisplayMode lifecycle
--- to hide the other AH pages. It is NOT inserted into Blizzard's global
--- display-mode table or the protected native tab registry.
-local marketMode={"ChalkBoxAuctionSensePane"}
+-- NEVER call AuctionHouseFrame:SetDisplayMode from addon code.
+-- Forever's secure bag-item path reads the frame's displayMode; writing it
+-- from our tab can taint item use (including the Cozy Sleeping Bag) until /reload.
+-- Preserve the Market UI by temporarily hiding only safe native content
+-- frames, without changing the Blizzard-owned auction/trading state.
+local hiddenMode=nil
+local hiddenNative={}
 local searchText,page="",1
 local seconds=0
 local cachedRows,cachedMarket,cachedTime,cachedSearch={},"",0,nil
@@ -190,8 +193,7 @@ local function Ensure()
         "InsetFrameTemplate")
     f:SetPoint("TOPLEFT",ah,"TOPLEFT",13,-56)
     f:SetPoint("BOTTOMRIGHT",ah,"BOTTOMRIGHT",-13,68)
-    ah.ChalkBoxAuctionSensePane=f
-    if f.SetFrameLevel then
+     if f.SetFrameLevel then
         local base=type(ah.GetFrameLevel)=="function" and
             ah:GetFrameLevel() or 20
         f:SetFrameLevel(base+20)
@@ -348,8 +350,60 @@ local function Ensure()
     f:Hide()
     return true
 end
+local function CombatLocked()
+    return type(InCombatLockdown)=="function" and InCombatLockdown()
+end
+local function NativeMode()
+    if not host or type(host.GetDisplayMode)~="function" then return nil end
+    local ok,value=pcall(host.GetDisplayMode,host)
+    if ok and type(value)=="table" then return value end
+end
+local function CanChangeNativeVisibility(widget)
+    if not widget or type(widget.Show)~="function" or
+        type(widget.Hide)~="function" or
+        type(widget.IsShown)~="function" or
+        type(widget.IsProtected)~="function" then return false end
+    local ok,isProtected=pcall(widget.IsProtected,widget)
+    return ok and isProtected==false
+end
+local function HideNativeContent()
+    if hiddenMode or CombatLocked() then return end
+    local mode=NativeMode()
+    if not mode then return end
+    hiddenMode=mode
+    hiddenNative={}
+    -- Blizzard owns the displayMode and trading actions. We only hide the
+    -- unprotected subframes of the currently displayed page while Market is
+    -- visible. They can be restored without asking Blizzard to switch mode.
+    for _,name in ipairs(mode) do
+        local widget=type(name)=="string" and host[name] or nil
+        if widget~=frame and CanChangeNativeVisibility(widget) then
+            local ok,shown=pcall(widget.IsShown,widget)
+            if ok and shown then
+                local hidden=pcall(widget.Hide,widget)
+                if hidden then hiddenNative[#hiddenNative+1]=widget end
+            end
+        end
+    end
+end
+local function RestoreNativeContent()
+    if not hiddenMode then return end
+    if CombatLocked() then return end
+    -- If Blizzard has switched to another tab, don't reopen an old page.
+    local same=NativeMode()==hiddenMode
+    if same then
+        for _,widget in ipairs(hiddenNative) do
+            if CanChangeNativeVisibility(widget) then
+                pcall(widget.Show,widget)
+            end
+        end
+    end
+    hiddenMode=nil
+    hiddenNative={}
+end
 local function HidePane()
     if frame then frame:Hide() end
+    RestoreNativeContent()
     if tab and type(PanelTemplates_DeselectTab)=="function" then
         pcall(PanelTemplates_DeselectTab,tab)
     end
@@ -394,14 +448,10 @@ function ChalkBox_AuctionAttach()
         tab:SetScript("OnClick",function()
             if type(InCombatLockdown)=="function" and
                 InCombatLockdown() then return end
-            -- Blizzard closes its own Browse/Search/Sell/Auctions panes.
-            -- This keeps the market screen a native AH display mode rather
-            -- than a full-size overlay obscuring live controls underneath.
-            local switched=false
-            if host and type(host.SetDisplayMode)=="function" then
-                switched=pcall(host.SetDisplayMode,host,marketMode)
-            end
-            if not switched then frame:Show() end
+            -- Do not call SetDisplayMode: Blizzard's bag-use path consults
+            -- that native state. Market has its own cosmetic presentation.
+            HideNativeContent()
+            frame:Show()
             if type(PanelTemplates_DeselectTab)=="function" then
                 local nativeTabs=type(host.Tabs)=="table" and host.Tabs or
                     {host.BuyTab,host.SellTab,host.AuctionsTab}
@@ -422,8 +472,9 @@ function ChalkBox_AuctionAttach()
         end
         if type(hooksecurefunc)=="function" and
             type(host.SetDisplayMode)=="function" then
-            pcall(hooksecurefunc,host,"SetDisplayMode",function(_,mode)
-                if mode~=marketMode then HidePane() end
+            pcall(hooksecurefunc,host,"SetDisplayMode",function()
+                if frame and type(frame.IsShown)=="function" and
+                    frame:IsShown() then HidePane() end
             end)
         end
     end
@@ -445,7 +496,10 @@ function ChalkBox_AuctionOpen()
     if tab and tab.Click then
         tab:Click()
     elseif frame then
-        frame:Show()
+        if not CombatLocked() then
+            HideNativeContent()
+            frame:Show()
+        end
     end
     Refresh()
     return true
