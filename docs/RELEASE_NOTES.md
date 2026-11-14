@@ -1,21 +1,20 @@
-# ChalkBox 2.1.5 — Combat-safety hotfix
+# ChalkBox 2.1.6 — Native UI fit corrections
 
-A priority fix for addon-blocked actions during combat, unexpected Bar disappearance and Emota protected-chat activity.
+### AuctionSense / Market
+- The Auction House's fourth tab is now labeled **Market**, sized to fit the Blizzard tab row. The module's panel retains the AuctionSense title.
+- The market browser is contained within the auctioneer's inner panel instead of crowding the native frame border and bottom tab controls.
+- Prices, status, filters, seven result rows, Previous/Next and scan disclaimer are spaced vertically without list/footer collisions.
+- Browse and Full listings scanners, realm/faction data separation, and results are unchanged.
 
-### Changes
-- **The Bar:** Always an independent 18px top/bottom overlay. No `UIParent:ClearAllPoints`, `UIParent:SetPoint` or root resizing. Bar placement and session stats remain available; the old full-screen push-down/reserved strip is removed until we can implement it without Blizzard taint.
-- **Emota:** Nothing is sent through the native emote API during combat, including mana reactions or manual previews. Out-of-combat cosmetic reactions continue to work. Automatic SIT/SLEEP/LAYDOWN/STAND posing is paused; manual previews remain available.
-- **Bags:** The earlier vertical-offset hook was reanchoring Blizzard container frames that hold clickable items. This is suspended. Stock Blizzard bags work normally; existing offset preferences are retained but not applied and the slider is disabled.
-- **Reagent outlines:** Green reagent textures previously attached directly to Blizzard bag item buttons. Those outlines are also temporarily paused. Learned-recipe Item Insight tooltips stay active, and marker preferences remain saved.
-- **Other modules:** Preserve the native DPS reports, auction scans, quest tracking, item insights, Drop Journal, and existing SavedVariables.
+### The Bar
+- The 2.1.5 safety overlay no longer stretches underneath top-right buffs or bag windows.
+- It automatically reserves the right-hand UI corner and compresses its own optional metrics at smaller widths.
+- No Blizzard UIParent, bag buttons, frame geometry or protected action controls are modified.
+- Existing XP, gold, pet, repair, gear and bag statistics remain available.
 
-### Why
-Blizzard's secure action system can propagate addon taint from global UI layout changes or protected container anchors into later combat interactions. These are concrete unsafe paths found in the addon; the exact user's blocked-function trace has not been captured. The safety release removes both paths rather than attempting to bypass protected actions.
+### Important
+The 2.1.5 combat-safety restrictions remain: bag offset and reagent outlines touching native item controls are suspended; Emota never dispatches emotes during combat.
 
 ### Install
-Replace the old ChalkBox addon directory with `ChalkBox-2.1.5.zip` and type `/reload` or relaunch WoW. A full reload is necessary to clear taint from the previous session.
-
-### Notes
-Ordinary food/drink cannot be used *while combat is active* in standard WoW Classic; that restriction is game-side. However ChalkBox must not independently cause protected-action errors when using usable items. If a blocked-action error persists after updating and reloading, capture the exact blocked function name for targeted diagnosis.
-
-Automated Lua 5.1 regression tests and ZIP validation run in GitHub Actions. Live testing on WoW Forever remains necessary.
+Replace the ChalkBox addon folder using `ChalkBox-2.1.6.zip`. Preserve SavedVariables, and type `/reload`.
+GitHub Actions checks Lua 5.1, regression tests and packaging. In-client Forever UI verification remains necessary.
