@@ -6,7 +6,7 @@
 
 **A collection of useful tools for World of Warcraft: Forever.**
 
-[Download 2.1.2 — Test release](https://github.com/detok/ChalkBox/releases/tag/v2.1.2) · [Report a bug](https://github.com/detok/ChalkBox/issues/new/choose) · [User guide](docs/USER_GUIDE.md)
+[Download 2.1.3 — Test release](https://github.com/detok/ChalkBox/releases/tag/v2.1.3) · [Report a bug](https://github.com/detok/ChalkBox/issues/new/choose) · [User guide](docs/USER_GUIDE.md)
 
 </div>
 
@@ -39,7 +39,7 @@ These are real in-game captures, cropped around the addon controls. Character na
 | **Repair Learning** | Remembers real repair quotes and uses them to estimate the cost of damaged gear away from a merchant. An estimated price is marked with a tilde. |
 | **Session Journal** | Keeps a recap of the current session and up to 20 previous sessions: XP, gold changes, quest turn-ins, sampled loot, and other recorded events. |
 | **QuestSense** | Manages accepted-quest watches in Blizzard's native tracker. |
-| **Combat Meter** | A small optional DPS/healing/interrupt meter, with a manual PARTY report. ChalkBox also adds a separate report action to Blizzard's meter where supported. |
+| **Combat Meter** | A small optional DPS/healing/interrupt meter, with a manual PARTY report. ChalkBox expands Blizzard's native meter gear menu with PARTY/SAY reports, Top 3/5/10 ranks, and optional post-combat reporting. |
 | **Adventure Prep** | Short reminders for supported camping, rested-XP, supplies, buffs and pet-care signals. |
 | **Appearance, Emota, QuietGuard & Bags** | Shared ChalkBox colors and transparency; optional character emotes, invite filtering and bag-window positioning. |
 | **Updates** | Shows the installed addon version and a copyable GitHub Releases link. An optional group-version comparison can flag newer versions seen among other ChalkBox users. |
