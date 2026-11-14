@@ -154,6 +154,11 @@ local function OnItemTooltip(tooltip)
     if type(ChalkBox_DropTooltip)=="function" then
         pcall(ChalkBox_DropTooltip,tooltip,link)
     end
+    -- AuctionSense offers a separate, read-only market insight even when
+    -- general LootSense classification advice has been disabled.
+    if type(ChalkBox_AuctionTooltip)=="function" then
+        pcall(ChalkBox_AuctionTooltip,tooltip,link)
+    end
     if db.lootAdvice==false then return end
 
     -- A cached item link and tooltip name are already enough to identify
@@ -268,6 +273,10 @@ SlashCmdList.CHALKBOX = function(input)
         if tonumber(learnedCount)==0 then
             Note("Open a crafting window, let its recipe list load, and /chalk loot scan. Then re-hover the item.")
         end
+    elseif command=="auction" or command=="auctions" or command=="ah" then
+        if type(ChalkBox_AuctionCommand)=="function" then
+            ChalkBox_AuctionCommand(argument)
+        else Note("AuctionSense isn't available on this client.") end
     elseif command=="update" or command=="updates" then
         if type(ChalkBox_UpdateCommand)=="function" then
             ChalkBox_UpdateCommand()
@@ -348,6 +357,7 @@ SlashCmdList.CHALKBOX = function(input)
         Note("LootSense shows quest protections and your character's possible/known profession uses. No automatic selling.")
         Note("Explore: /chalk drops map | map status | map on|off | /chalk drops status | chance 5 20")
         Note("Build: /chalk macro opens MacroForge | /chalk forge rescan refreshes your spellbook.")
+        Note("Auctions: /chalk auction opens AuctionSense | /chalk auction scan requests a market snapshot at an auctioneer.")
         Note("Updates: /chalk update shows your installed version and GitHub Releases link.")
     end
 end

@@ -510,8 +510,20 @@ function ChalkBox_DropAreaItems(key,sourceKey,search)
                     end
                 end
             end
+            -- Optional read-only AuctionSense bridge. Never infer sale values
+            -- from old scans or from equipment with mixed variants.
+            local auctionTotal,auctionDetail
+            if type(ChalkBox_AuctionValue)=="function" then
+                local ok,value,detail=pcall(ChalkBox_AuctionValue,id,
+                    counts.quantity or 0)
+                if ok and Number(value) and type(detail)=="table" then
+                    auctionTotal,auctionDetail=value,detail
+                end
+            end
             result[#result+1]={
                 id=id,name=item.name,
+                marketEstimateCopper=auctionTotal,
+                marketScanAge=auctionDetail and auctionDetail.age or nil,
                 quantity=counts.quantity or 0,
                 windows=counts.windows or 0,
                 hits=hits,rate=rate,attempts=attempts,
