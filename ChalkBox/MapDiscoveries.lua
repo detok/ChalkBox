@@ -693,9 +693,9 @@ local function Dropdown(parent,label,width,x,y,kind)
     return b
 end
 local function Row(parent,index)
-    local y=-291-(index-1)*38
+    local y=-291-(index-1)*36
     local frame=CreateFrame("Frame",nil,parent)
-    frame:SetSize(PANEL_W-36,36)
+    frame:SetSize(PANEL_W-36,34)
     frame:SetPoint("TOPLEFT",parent,"TOPLEFT",18,y)
     local back=frame:CreateTexture(nil,"BACKGROUND")
     back:SetAllPoints(frame)
@@ -822,6 +822,53 @@ refresh=function()
         "* Personal loot rates only  ·  Unlooted kills not counted."..
         (opts.limitReached and "  ·  Storage limit reached." or ""))
 end
+-- Attach to Blizzard's map without mutating its points/scale/size.
+-- Prefer a sidecar outside the right edge, use left if needed, and keep
+-- a deliberate in-map side attachment for maximized map layouts.
+local dockGeometry
+local function DockPanel()
+    if not panel or not WorldMapFrame then return false end
+    local world=WorldMapFrame
+    local worldLeft=Call(world.GetLeft,world)
+    local worldRight=Call(world.GetRight,world)
+    local worldTop=Call(world.GetTop,world)
+    local rootLeft=UIParent and Call(UIParent.GetLeft,UIParent)
+    local rootRight=UIParent and Call(UIParent.GetRight,UIParent)
+    local rootTop=UIParent and Call(UIParent.GetTop,UIParent)
+    local rootBottom=UIParent and Call(UIParent.GetBottom,UIParent)
+    local gap=8
+    local side="right"
+    if type(worldRight)=="number" and type(rootRight)=="number"
+        and rootRight-worldRight<PANEL_W+gap then
+        side="inside"
+        if type(worldLeft)=="number" and type(rootLeft)=="number"
+            and worldLeft-rootLeft>=PANEL_W+gap then
+            side="left"
+        end
+    end
+    local y=0
+    if type(worldTop)=="number" and type(rootTop)=="number"
+        and type(rootBottom)=="number" then
+        local minY=rootBottom+PANEL_H-worldTop+10
+        local maxY=rootTop-worldTop-10
+        if minY<=maxY then y=math.max(minY,math.min(0,maxY)) end
+    end
+    local key=tostring(side)..":"..tostring(y)..":"..
+        tostring(worldLeft)..":"..tostring(worldRight)..":"..
+        tostring(worldTop)..":"..tostring(rootRight)
+    if key==dockGeometry then return true end
+    dockGeometry=key
+    dockSide=side
+    panel:ClearAllPoints()
+    if side=="right" then
+        panel:SetPoint("TOPLEFT",world,"TOPRIGHT",gap,y)
+    elseif side=="left" then
+        panel:SetPoint("TOPRIGHT",world,"TOPLEFT",-gap,y)
+    else
+        panel:SetPoint("TOPRIGHT",world,"TOPRIGHT",-10,y)
+    end
+    return true
+end
 local function EnsurePanel()
     if panel or not UIParent then return end
     local template=type(BackdropTemplateMixin)=="table" and
@@ -947,6 +994,7 @@ local function EnsurePanel()
         if type(self.IsShown)=="function" and not self:IsShown() then
             return
         end
+        DockPanel()
         elapsed=elapsed+(type(dt)=="number" and dt or 0)
         if elapsed<0.7 then return end
         elapsed=0
@@ -961,12 +1009,18 @@ local function EnsurePanel()
     end)
 end
 function ChalkBox_OpenMapDiscoveries()
+    if not WorldMapFrame or
+        (type(WorldMapFrame.IsShown)=="function" and
+        not WorldMapFrame:IsShown()) then
+        return false -- Discoveries is not an independent standalone window.
+    end
     RestoreBrowser()
     if type(ChalkBox_MapDiscoveriesEnsure)=="function" then
         ChalkBox_MapDiscoveriesEnsure()
     end
     EnsurePanel()
     if not panel then return false end
+    DockPanel()
     local id=MapID()
     if id then currentMap=id;lastMap=id end
     if not selectedArea or followMap then
@@ -981,7 +1035,7 @@ function ChalkBox_OpenMapDiscoveries()
         local level=WorldMapFrame and
             Call(WorldMapFrame.GetFrameLevel,WorldMapFrame) or 0
         if type(level)~="number" then level=0 end
-        panel:SetFrameLevel(math.max(200,level+100))
+        panel:SetFrameLevel(math.max(200,level+20))
     end
     return true
 end
@@ -1133,7 +1187,14 @@ local function InstallButton()
     if type(world.HookScript)=="function" then
         world:HookScript("OnShow",function()
             PositionButton()
+            dockGeometry=nil
+            if panel and type(panel.IsShown)=="function"
+                and panel:IsShown() then DockPanel() end
             ChalkBox_MapDiscoveriesRefresh()
+        end)
+        world:HookScript("OnHide",function()
+            ClosePickers()
+            if panel and panel.Hide then panel:Hide() end
         end)
     end
     if type(hooksecurefunc)=="function" and
@@ -1155,7 +1216,8 @@ end
 function ChalkBox_DiscoveriesBrowserStatus()
     RestoreBrowser()
     return {followMap=followMap,mode=mode,selectedArea=selectedArea,
-        browseArea=browseArea,mapID=currentMap}
+        browseArea=browseArea,mapID=currentMap,dock=dockSide,
+        selectedSource=selectedSource}
 end
 function ChalkBox_MapDiscoveriesStatus()
     local opt=type(ChalkBox_DropOptions)=="function" and
