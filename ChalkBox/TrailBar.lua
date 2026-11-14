@@ -332,115 +332,155 @@ local function Reflow()
     Arrange("right",rightStart)
 end
 
--- Right-click menus belong to The Bar. Prefer Blizzard_Menu, fall back to
--- the legacy dropdown on compatible clients. Edit Mode retains its old
--- right-click alignment gesture for existing users.
+-- The stat menu controls only that stat. Right-click empty bar space for
+-- global controls. WoW color codes also work with the legacy menu fallback.
 local menuNames={
-    level="Level & XP",rate="XP per hour",bags="Bag slots",
-    bagvalue="Bag resale",repair="Repair cost",gear="Durability",
-    eta="Time to level",rested="Rested XP",pet="Hunter pet",
-    time="Session timer",latency="Latency",gold="Gold",
+    level="Level / XP",rate="XP/hr",bags="Bags",
+    bagvalue="Bag value",repair="Repair",gear="Durability",
+    eta="Level ETA",rested="Rested XP",pet="Pet",
+    time="Session",latency="Latency",gold="Gold",
 }
 local menuOrder={"rate","bags","bagvalue","repair","gear","eta",
     "rested","pet","time","latency","gold"}
+local menuColors={
+    title="ffffd36a",    -- gold: headings
+    group="ff79d4e9",    -- cyan: navigation
+    enabled="ff74d99b",  -- green: enabled
+    disabled="ff9ba2ad", -- gray: disabled
+    selected="ffffd36a", -- gold: current position
+    warning="ffffb76f",  -- amber: hide / reset
+    normal="ffe5e8ee",   -- neutral actions
+}
 local fallbackMenu
-local function AddMenuEntry(list,label,callback,children)
-    list[#list+1]={text=label,func=callback,children=children}
+local function AddMenuEntry(list,label,callback,children,tone)
+    list[#list+1]={text=label,func=callback,children=children,tone=tone or "normal"}
+end
+local function MenuText(item)
+    return "|c"..(menuColors[item.tone] or menuColors.normal)..item.text.."|r"
+end
+local sectionNames={left="Left",center="Center",right="Right"}
+local sections={"left","center","right"}
+local function CurrentSection(layout,key)
+    for _,section in ipairs(sections) do
+        for _,module in ipairs(layout[section] or {}) do
+            if module==key then return section end
+        end
+    end
+    return specs[key] and specs[key].group or "left"
+end
+local function DirectionMenu(key,command,current)
+    local items={}
+    for _,section in ipairs(sections) do
+        local choice=section
+        local selected=choice==current
+        AddMenuEntry(items,(selected and "* " or "")..sectionNames[choice],
+            function() ChalkBox_BarCommand(command.." "..key.." "..choice) end,
+            nil,selected and "selected" or "normal")
+    end
+    return items
 end
 function ChalkBox_BarContextItems(key)
     if key and not specs[key] then return end
     local result={}
     if key then
-        AddMenuEntry(result,menuNames[key] or key)
+        AddMenuEntry(result,menuNames[key],nil,nil,"title")
         if key~="level" then
-            AddMenuEntry(result,(StatEnabled(key) and "Hide " or "Show ")..
-                (menuNames[key] or key),function()
+            local enabled=StatEnabled(key)
+            AddMenuEntry(result,enabled and "Hide" or "Show",function()
                 ChalkBox_BarCommand("stat "..key.." "..
                     (StatEnabled(key) and "off" or "on"))
-            end)
+            end,nil,enabled and "warning" or "enabled")
         end
-        if key=="repair" then
-            AddMenuEntry(result,"Repair learning status",function()
+        if key=="bagvalue" then
+            AddMenuEntry(result,ChalkBox_BarBagValueModeGet()=="junk"
+                and "Total value" or "Junk only",
+                function() ChalkBox_BarBagValueModeToggle() end)
+        elseif key=="repair" then
+            AddMenuEntry(result,"Repair stats",function()
                 ChalkBox_BarCommand("repair status")
             end)
         end
-        if key=="bagvalue" then
-            AddMenuEntry(result,"Switch to "..
-                (ChalkBox_BarBagValueModeGet()=="junk" and "Total" or "Junk")..
-                " value",function() ChalkBox_BarBagValueModeToggle() end)
-        end
-        local move={}
-        for _,section in ipairs({"left","center","right"}) do
-            local zone=section
-            AddMenuEntry(move,string.upper(section:sub(1,1))..section:sub(2),
-                function() ChalkBox_BarCommand("move "..key.." "..zone) end)
-        end
-        AddMenuEntry(result,"Move to",nil,move)
-        local align={}
-        for _,mode in ipairs({"left","center","right"}) do
-            local target=mode
-            AddMenuEntry(align,string.upper(mode:sub(1,1))..mode:sub(2),
-                function() ChalkBox_BarCommand("align "..key.." "..target) end)
-        end
-        AddMenuEntry(result,"Text alignment",nil,align)
-    else
-        AddMenuEntry(result,"The Bar")
+        local layout=type(ChalkBox_BarLayoutGet)=="function"
+            and ChalkBox_BarLayoutGet() or groups
+        local section=CurrentSection(layout,key)
+        local alignment=layout.align and layout.align[key] or section
+        AddMenuEntry(result,"Move",nil,DirectionMenu(key,"move",section),"group")
+        AddMenuEntry(result,"Align",nil,DirectionMenu(key,"align",alignment),"group")
+        AddMenuEntry(result,"Bar settings",function()
+            if type(ChalkBox_OpenSettings)=="function" then
+                ChalkBox_OpenSettings("barstats")
+            end
+        end,nil,"group")
+        return result
     end
+
+    AddMenuEntry(result,"THE BAR",nil,nil,"title")
     local modules={}
     for _,module in ipairs(menuOrder) do
         local selected=module
-        AddMenuEntry(modules,(StatEnabled(selected) and "[x] " or "[ ] ")..
+        local enabled=StatEnabled(selected)
+        AddMenuEntry(modules,(enabled and "ON  " or "OFF ")..
             menuNames[selected],function()
             ChalkBox_BarCommand("stat "..selected.." "..
                 (StatEnabled(selected) and "off" or "on"))
-        end)
+        end,nil,enabled and "enabled" or "disabled")
     end
-    AddMenuEntry(result,"Show / hide modules",nil,modules)
-    AddMenuEntry(result,editMode and "Finish editing" or "Edit The Bar",
-        function() ChalkBox_BarCommand(editMode and "edit off" or "edit on") end)
-    AddMenuEntry(result,"Reset module positions",
-        function() ChalkBox_BarCommand("layout reset") end)
+    AddMenuEntry(result,"Modules",nil,modules,"group")
     local positions={}
-    AddMenuEntry(positions,"Top",function() ChalkBox_BarCommand("top") end)
-    AddMenuEntry(positions,"Bottom",function() ChalkBox_BarCommand("bottom") end)
-    AddMenuEntry(positions,"Hide The Bar",function() ChalkBox_BarCommand("off") end)
-    AddMenuEntry(result,"Bar position",nil,positions)
-    AddMenuEntry(result,"Module settings...",function()
+    for _,position in ipairs({"top","bottom","off"}) do
+        local choice=position
+        local label=choice=="off" and "Hidden" or
+            (choice=="top" and "Top" or "Bottom")
+        local current=db and db.bar==choice
+        AddMenuEntry(positions,(current and "* " or "")..label,
+            function() ChalkBox_BarCommand(choice) end,nil,
+            current and "selected" or "normal")
+    end
+    AddMenuEntry(result,"Position",nil,positions,"group")
+    AddMenuEntry(result,editMode and "Done editing" or "Edit layout",
+        function() ChalkBox_BarCommand(editMode and "edit off" or "edit on") end,
+        nil,editMode and "enabled" or "normal")
+    AddMenuEntry(result,"Reset layout",function()
+        ChalkBox_BarCommand("layout reset")
+    end,nil,"warning")
+    AddMenuEntry(result,"Stat settings",function()
         if type(ChalkBox_OpenSettings)=="function" then
             ChalkBox_OpenSettings("barstats")
         end
-    end)
-    AddMenuEntry(result,"Appearance & layout...",function()
+    end,nil,"group")
+    AddMenuEntry(result,"Appearance",function()
         if type(ChalkBox_OpenSettings)=="function" then
             ChalkBox_OpenSettings("barappearance")
         end
-    end)
+    end,nil,"group")
     return result
 end
 local function BuildNativeMenu(root,items)
     for _,item in ipairs(items) do
+        local label=MenuText(item)
         if item.children then
-            local submenu=root:CreateButton(item.text)
+            local submenu=root:CreateButton(label)
             if submenu and submenu.CreateButton then
                 BuildNativeMenu(submenu,item.children)
             end
         elseif item.func then
-            root:CreateButton(item.text,function() item.func() end)
+            root:CreateButton(label,function() item.func() end)
         elseif type(root.CreateTitle)=="function" then
-            root:CreateTitle(item.text)
+            root:CreateTitle(label)
         end
     end
 end
 local function BuildLegacyMenu(items)
     local output={}
     for _,item in ipairs(items) do
+        local label=MenuText(item)
         if item.children then
-            output[#output+1]={text=item.text,hasArrow=true,
+            output[#output+1]={text=label,hasArrow=true,
                 notCheckable=true,menuList=BuildLegacyMenu(item.children)}
         elseif item.func then
-            output[#output+1]={text=item.text,func=item.func,notCheckable=true}
+            output[#output+1]={text=label,func=item.func,notCheckable=true}
         else
-            output[#output+1]={text=item.text,isTitle=true,notCheckable=true}
+            output[#output+1]={text=label,isTitle=true,notCheckable=true}
         end
     end
     return output
@@ -968,7 +1008,7 @@ function ChalkBox_BarCommand(message)
         local on=action=="edit on" or
             ((action=="edit" or action=="edit toggle") and not editMode)
         if ChalkBox_BarEditSet(on) then
-            Note("TrailBar edit "..(on and "ON: drag stats between thirds and reorder; right-click to cycle text alignment." or "OFF: layout saved per character."))
+            Note("Bar editing: "..(on and "ON." or "OFF."))
         else Note("Cannot edit TrailBar while in combat.") end
     elseif action=="layout reset" then
         if type(ChalkBox_BarLayoutReset)=="function" then
@@ -976,7 +1016,7 @@ function ChalkBox_BarCommand(message)
             lastLayout=""
             Reflow()
         end
-        Note("TrailBar positions and text alignment reset for this character.")
+        Note("Bar layout reset.")
     elseif action=="layout" or action=="layout status" then
         Note(type(ChalkBox_BarLayoutDescription)=="function"
             and ChalkBox_BarLayoutDescription() or "Layout module unavailable.")
@@ -985,14 +1025,14 @@ function ChalkBox_BarCommand(message)
             ChalkBox_BarLayoutMove(module,section,tonumber(index)) then
             lastLayout=""
             Reflow()
-            Note(module.." moved to "..section.." and saved per character.")
+            Note((menuNames[module] or module).." moved to "..section..".")
         else Note("Unknown TrailBar module or section.") end
     elseif aligned and (mode=="left" or mode=="center" or mode=="right") then
         if type(ChalkBox_BarLayoutAlign)=="function" and
             ChalkBox_BarLayoutAlign(aligned,mode) then
             lastLayout=""
             Reflow()
-            Note(aligned.." text aligned "..mode..".")
+            Note((menuNames[aligned] or aligned).." aligned "..mode..".")
         else Note("Unknown TrailBar module.") end
     else
         local stat,choice=action:match("^stat%s+(%a+)%s+(%a+)$")
@@ -1024,8 +1064,7 @@ function ChalkBox_BarCommand(message)
         ConfigureStats()
         db.barStats[stat]=(choice=="on")
         Refresh()
-        Note("TrailBar "..stat.." "..string.upper(choice)..
-            ". Narrow displays may hide low-priority modules.")
+        Note((menuNames[stat] or stat)..": "..string.upper(choice)..".")
     elseif action=="stats balanced" or action=="stats all"
         or action=="stats minimal" then
         ConfigureStats()

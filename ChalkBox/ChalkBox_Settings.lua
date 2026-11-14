@@ -665,7 +665,7 @@ end
 
 local function MakeBar()
     local panel=Panel("The Bar",
-        "Keep the 18px bar clean. Set placement and adjust Blizzard's separate bags.")
+        "Bar position, screen space, and bag placement.")
     Label(panel,"BAR POSITION","GameFontNormalLarge",28,-108)
     Button(panel,"Stats & Presets",282,-100,126,function() Activate("barstats") end)
     Button(panel,"Appearance",416,-100,112,function() Activate("barappearance") end)
@@ -741,7 +741,7 @@ end
 
 local function MakeBarStats()
     local panel=Panel("The Bar Stats",
-        "Choose visible stats. The 18px strip automatically fits the screen width.")
+        "Choose the stats you want on the bar.")
     local options={
         {"bags","Free bag slots","Includes profession-bag free slots"},
         {"gear","Gear durability","Weighted repair condition; warns when low"},
@@ -774,7 +774,7 @@ local function MakeBarStats()
                 end
             end,x,214)
     end
-    Label(panel,"Right-click any visible stat for its menu.",
+    Label(panel,"Right-click a stat for its controls.",
         "GameFontHighlightSmall",28,-325,490)
     Label(panel,"Bag resale display:","GameFontHighlightSmall",28,-352,260)
     local modeButton=Button(panel,"Value: Total",303,-340,199,function()
@@ -790,7 +790,7 @@ local function MakeBarStats()
             ChalkBox_BarBagValueModeGet() or "total"
         modeButton:SetText("Value: "..(mode=="junk" and "Junk" or "Total"))
     end)
-    Label(panel,"Quick layouts","GameFontNormalLarge",28,-380)
+    Label(panel,"PRESETS","GameFontNormalLarge",28,-380)
     local function Choose(preset)
         if ChalkBox_BarCommand then ChalkBox_BarCommand("stats "..preset) end
         if panel.OnRefresh then panel.OnRefresh() end
@@ -805,7 +805,7 @@ end
 
 local function MakeBarAppearance()
     local panel=Panel("The Bar Appearance",
-        "Blizzard-inspired charcoal, transparent background and a per-character drag layout.")
+        "Opacity and a layout saved for each character.")
     Label(panel,"BACKGROUND","GameFontNormalLarge",28,-111,370)
     Label(panel,"Only the panel fades. Text, hover details and the XP line remain clear.",
         "GameFontHighlightSmall",28,-145,500)

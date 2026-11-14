@@ -154,9 +154,12 @@ _G.MenuUtil={
         lastNativeMenu=root.entries
     end,
 }
+local function MenuPlain(text)
+    return (text or ""):gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r","")
+end
 local function FindMenu(items,label)
     for _,entry in ipairs(items or {}) do
-        if entry.text==label then return entry end
+        if MenuPlain(entry.text)==label then return entry end
         if entry.children then
             local result=FindMenu(entry.children,label)
             if result then return result end
@@ -251,15 +254,24 @@ assert(type(repairMenuData)=="table",
 local gearContext=FindMetric("Gear ")
 assert(gearContext and gearContext.scripts.OnMouseUp)
 gearContext.scripts.OnMouseUp(gearContext,"RightButton")
-assert(FindMenu(lastNativeMenu,"Hide Durability"),
-    "right-click outside Edit Mode opens native item menu")
-FindMenu(lastNativeMenu,"Hide Durability").func()
+assert(FindMenu(lastNativeMenu,"Hide"),
+    "right-click outside Edit Mode shows compact per-stat controls")
+assert(#lastNativeMenu==5 and not FindMenu(lastNativeMenu,"Modules"),
+    "stat menu excludes the full bar settings menu")
+assert(lastNativeMenu[1].isTitle and
+    lastNativeMenu[1].text:find("|cffffd36a",1,true),
+    "stat heading is clearly gold, not another white action")
+FindMenu(lastNativeMenu,"Hide").func()
 assert(not ChalkBoxDB.barStats.gear,"menu action hides clicked module")
 bar.scripts.OnMouseUp(bar,"RightButton")
-local allModules=FindMenu(lastNativeMenu,"Show / hide modules")
-assert(allModules and FindMenu(allModules.children,"[ ] Durability"),
-    "background menu can restore hidden modules")
-FindMenu(allModules.children,"[ ] Durability").func()
+local allModules=FindMenu(lastNativeMenu,"Modules")
+assert(#lastNativeMenu==7 and allModules and
+    FindMenu(allModules.children,"OFF Durability"),
+    "background menu has compact, categorized controls")
+assert(FindMenu(allModules.children,"OFF Durability").text:
+    find("|cff9ba2ad",1,true),
+    "disabled stats are muted gray instead of a sea of white")
+FindMenu(allModules.children,"OFF Durability").func()
 assert(ChalkBoxDB.barStats.gear,"module restored through bar background menu")
 local gearMove=ChalkBox_BarContextItems("gear")
 FindMenu(gearMove,"Right").func()
@@ -268,11 +280,11 @@ for _,key in ipairs(ChalkBox_BarLayoutGet().right) do
     if key=="gear" then moved=true end
 end
 assert(moved,"context menu moves modules to another third")
-FindMenu(FindMenu(gearMove,"Text alignment").children,"Center").func()
+FindMenu(FindMenu(gearMove,"Align").children,"Center").func()
 assert(ChalkBox_BarLayoutGet().align.gear=="center",
     "context menu applies per-module text alignment")
 ChalkBox_BarCommand("layout reset")
-FindMenu(lastNativeMenu,"Module settings...").func()
+FindMenu(lastNativeMenu,"Stat settings").func()
 assert(openedPage=="barstats","context menu navigates into native Settings")
 local valueWidget=FindMetric("Value ")
 assert(valueWidget and valueWidget.scripts.OnMouseUp,
@@ -293,11 +305,31 @@ assert(not ChalkBoxDB.barStats.bagvalue,
 -- Crucial regression: Bag Value left click still flips modes; its right
 -- click now opens the native menu without killing Edit Mode alignment.
 valueWidget.scripts.OnMouseUp(valueWidget,"RightButton")
-assert(FindMenu(lastNativeMenu,"Switch to Junk value"),
-    "bag value context menu supports its own Junk/Total switch")
-FindMenu(lastNativeMenu,"Switch to Junk value").func()
+assert(FindMenu(lastNativeMenu,"Junk only"),
+    "bag value context menu keeps a short value-mode switch")
+FindMenu(lastNativeMenu,"Junk only").func()
 assert(ChalkBox_BarBagValueModeGet()=="junk")
 ChalkBox_BarBagValueModeSet("total")
+-- Legacy dropdown fallback must be equally legible, and actions must remain
+-- wired even when the modern MenuUtil API is absent.
+local modernMenu=MenuUtil
+local capturedLegacy
+_G.MenuUtil=nil
+_G.EasyMenu=function(items)
+    capturedLegacy=items
+    return true
+end
+assert(ChalkBox_BarOpenMenu("gear",gearContext),
+    "legacy right-click menu opens without MenuUtil")
+assert(capturedLegacy and #capturedLegacy==5 and
+    capturedLegacy[1].isTitle and
+    capturedLegacy[1].text:find("|cffffd36a",1,true),
+    "legacy menu keeps gold headings and a compact stat-only layout")
+assert(capturedLegacy[3].hasArrow and
+    capturedLegacy[3].text:find("|cff79d4e9",1,true),
+    "legacy submenu headings keep the cyan navigation color")
+_G.MenuUtil=modernMenu
+_G.EasyMenu=nil
 assert(FindMetric("Bags ").visible and FindMetric("Gear ").visible
     and FindMetric("Rest ").visible,
     "new priority widgets appear on a normal screen")
