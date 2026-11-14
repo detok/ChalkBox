@@ -118,7 +118,7 @@ local function Refresh()
     labels.info:SetText(status.error or
         (status.age and status.age>86400 and
             "OLD SCAN  |  Refresh before buying" or
-            "UNIT ASKING PRICES  |  Not completed sales"))
+            "Asking prices  ·  not sales"))
     Tint(labels.info,status.error and COLOR.error or
         (status.age and status.age>86400 and COLOR.warning or COLOR.muted))
     if cachedSearch~=searchText or
