@@ -634,7 +634,7 @@ local sliders={}
 for _,frame in ipairs(frames) do
     if frame.kind=="Slider" then sliders[#sliders+1]=frame end
 end
-assert(#sliders==10,"six existing sliders plus four global appearance controls")
+assert(#sliders==9,"the retired bag offset slider cannot appear in the native options UI")
 local appearanceSlider,highlightSlider
 for _,frame in ipairs(sliders) do
     if frame.parent==categories["The Bar Appearance"].panel then
@@ -661,16 +661,12 @@ local meterSlider
 for _,frame in ipairs(sliders) do
     if frame.parent==categories["Combat Meter"].panel then meterSlider=frame end
 end
-local bagSlider
 for _,frame in ipairs(sliders) do
-    if frame.parent==categories["The Bar"].panel then bagSlider=frame end
+    assert(frame.parent~=categories["The Bar"].panel,
+        "Bar settings cannot offer a fake or insecure bag-offset slider")
 end
-assert(bagSlider and bagSlider.value==0,"safe bag placement starts at stock")
-bagSlider:SetValue(-30)
-bagSlider:SetValue(35)
-bagSlider:SetValue(0)
 assert(ChalkBoxDB.bagOffsetY==nil,
-    "disabled bag slider never alters protected container positions")
+    "opening Bar settings must not alter Blizzard bag positions")
 assert(meterSlider,"native meter opacity slider belongs to Combat Meter page")
 meterSlider:SetValue(65)
 assert(ChalkBoxDB.meter.opacity==0.65,
