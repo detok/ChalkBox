@@ -149,18 +149,22 @@ _G.ChalkBox_DropAreaItems=function(key,source,search)
 end
 _G.C_Item={GetItemIconByID=function(id) return 100000+id end}
 local menuEntries={}
+local function MenuRoot(entries)
+    return {
+        CreateTitle=function(_,label)
+            entries[#entries+1]={label=label,title=true}
+        end,
+        CreateButton=function(_,label,fn)
+            local item={label=label,action=fn,children={}}
+            entries[#entries+1]=item
+            return MenuRoot(item.children)
+        end,
+    }
+end
 _G.MenuUtil={
     CreateContextMenu=function(owner,callback)
         menuEntries={}
-        local root={
-            CreateTitle=function(_,label)
-                menuEntries[#menuEntries+1]={label=label,title=true}
-            end,
-            CreateButton=function(_,label,fn)
-                menuEntries[#menuEntries+1]={label=label,action=fn}
-            end
-        }
-        callback(owner,root)
+        callback(owner,MenuRoot(menuEntries))
     end
 }
 local function Find(name)
@@ -176,13 +180,18 @@ local function ClickButton(pattern)
     end
     error("Missing button containing "..pattern)
 end
-local function ChooseMenu(pattern)
-    for _,v in ipairs(menuEntries) do
-        if v.action and v.label:find(pattern,1,true) then
-            v.action()
-            return true
+local function FindMenu(entries,pattern)
+    for _,v in ipairs(entries) do
+        if v.label:find(pattern,1,true) then return v end
+        if v.children then
+            local found=FindMenu(v.children,pattern)
+            if found then return found end
         end
     end
+end
+local function ChooseMenu(pattern)
+    local entry=FindMenu(menuEntries,pattern)
+    if entry and entry.action then entry.action();return true end
     error("Missing menu choice "..pattern)
 end
 assert(loadfile("MapDiscoveries.lua"))("ChalkBox")
@@ -238,13 +247,41 @@ for _,f in ipairs(frames) do
         f.text:find("▾",1,true) then filterCount=filterCount+1 end
 end
 assert(filterCount==3,"visible Area/Source/Sort dropdown selectors")
-assert(#ChalkBox_DiscoveriesDropdownItems("area")>=3)
+local areaMenu=ChalkBox_DiscoveriesDropdownItems("area")
+assert(#areaMenu==4 and areaMenu[1].text:find("Follow world map",1,true),
+    "area dropdown combines map following with every recorded location")
+assert(areaMenu[3].text:find("Outdoor zones (2)",1,true) and
+    areaMenu[4].text:find("Dungeons (1)",1,true) and
+    #areaMenu[3].children==2 and #areaMenu[4].children==1,
+    "locations are grouped by type, not restricted to the current tab")
+assert(areaMenu[3].children[1].text:find("Redridge",1,true) and
+    areaMenu[3].children[2].text:find("Westfall",1,true),
+    "recorded outdoor zones are presented alphabetically")
+assert(ChalkBox_DiscoveriesBrowserStatus().followMap,
+    "fresh characters continue following the current world map")
+assert(ChalkBoxZoneDB.mapDiscoveryUI.followMap==nil,
+    "opening the journal does not mutate original follow-map defaults")
 assert(#ChalkBox_DiscoveriesDropdownItems("source")>=3)
 assert(#ChalkBox_DiscoveriesDropdownItems("sort")==5)
 ClickButton("Westfall")
 ChooseMenu("Redridge Mountains")
+local browser=ChalkBox_DiscoveriesBrowserStatus()
+assert(not browser.followMap and browser.mode=="outdoor"
+    and browser.selectedArea=="z:1437",
+    "choosing a recorded zone turns map following off without moving Blizzard's map")
+assert(viewed==1436 and ChalkBoxZoneDB.mapDiscoveryUI.browseArea=="z:1437"
+    and ChalkBoxZoneDB.mapDiscoveryUI.followMap==false,
+    "manual location is saved per character while the native world map stays put")
 assert(#ChalkBox_DiscoveriesDropdownItems("source")==2,
     "area switching works and clears unrelated creature filters")
+viewed=1436
+journal.OnUpdate(journal,0.8)
+assert(ChalkBox_DiscoveriesBrowserStatus().selectedArea=="z:1437",
+    "browsing a remote zone survives map movement and updates")
+journal:Hide()
+assert(ChalkBox_OpenMapDiscoveries())
+assert(ChalkBox_DiscoveriesBrowserStatus().selectedArea=="z:1437",
+    "manual browse choice survives closing and reopening")
 ClickButton("Redridge Mountains")
 ChooseMenu("Westfall")
 ClickButton("All sources")
@@ -263,15 +300,44 @@ end
 assert(#inputs==1)
 inputs[1]:SetText("Linen")
 ClickButton("Clear")
-ClickButton("Dungeons")
-assert(#ChalkBox_DiscoveriesDropdownItems("area")>=2)
-ClickButton("The Deadmines")
+-- Choose a dungeon directly from the same area dropdown without switching tabs.
+ClickButton("Westfall")
 ChooseMenu("The Deadmines")
+browser=ChalkBox_DiscoveriesBrowserStatus()
+assert(browser.mode=="dungeon" and browser.selectedArea=="d:36:1"
+    and not browser.followMap,
+    "cross-category selection automatically selects Dungeons")
+assert(ChalkBoxZoneDB.mapDiscoveryUI.browseArea=="d:36:1" and
+    ChalkBoxZoneDB.mapDiscoveryUI.browseMode=="dungeon",
+    "dungeon selection is persisted independently from map following")
 viewed=1437
 journal.OnUpdate(journal,0.8)
-assert(journal:IsShown(),
-    "map changing does not close the standalone browser")
-ClickButton("Use map zone")
+assert(journal:IsShown() and
+    ChalkBox_DiscoveriesBrowserStatus().selectedArea=="d:36:1",
+    "manual dungeon browsing is independent of map changes")
+-- Both existing top-right button and dropdown control the same sync state.
+ClickButton("Map sync: OFF")
+browser=ChalkBox_DiscoveriesBrowserStatus()
+assert(browser.followMap and browser.mode=="outdoor" and
+    browser.selectedArea=="z:1437",
+    "map sync immediately returns to the zone on Blizzard's map")
+assert(ChalkBoxZoneDB.mapDiscoveryUI.browseArea=="d:36:1",
+    "syncing does not destroy last deliberately browsed location")
+ClickButton("Redridge Mountains")
+ChooseMenu("Follow world map")
+assert(ChalkBox_DiscoveriesBrowserStatus().followMap,
+    "the area dropdown can explicitly enable following the world map")
+viewed=1436
+journal.OnUpdate(journal,0.8)
+assert(ChalkBox_DiscoveriesBrowserStatus().selectedArea=="z:1436",
+    "following updates the selected zone when the map changes")
+ClickButton("Map sync: ON")
+browser=ChalkBox_DiscoveriesBrowserStatus()
+assert(not browser.followMap and browser.mode=="dungeon" and
+    browser.selectedArea=="d:36:1",
+    "switching sync off restores the last manually browsed location")
+-- Switching to the Outdoor tab still works without replacing the main layout.
+ClickButton("Dungeons")
 ClickButton("Outdoor")
 -- Position persistence per character.
 assert(button.OnDragStart and button.OnDragStop)
