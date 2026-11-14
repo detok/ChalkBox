@@ -110,9 +110,13 @@ for _,item in ipairs(ambiguousArea) do
 end
 assert(ambiguousCloth and ambiguousCloth.rate==nil,
     "two identified mob types never produce a fake combined drop rate")
-local banditCloth=ChalkBox_DropAreaItems("z:1436","c:12345")
-assert(#banditCloth>=1 and banditCloth[1].rate==50 and
-    banditCloth[1].hits==1 and banditCloth[1].attempts==2,
+local banditItems=ChalkBox_DropAreaItems("z:1436","c:12345")
+local banditCloth
+for _,item in ipairs(banditItems) do
+    if item.id=="100" then banditCloth=item end
+end
+assert(banditCloth and banditCloth.rate==50 and
+    banditCloth.hits==1 and banditCloth.attempts==2,
     "specific creature filter reports exactly its own tracked 1/2 = 50%")
 handlers.event(nil,"LOOT_CLOSED")
 now=550
