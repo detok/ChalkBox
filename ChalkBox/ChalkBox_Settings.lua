@@ -1331,7 +1331,7 @@ local function MakeMeter()
     Button(panel,"Show Window",27,-396,133,function() Run("show") end)
     Button(panel,"Reset Position",172,-396,145,function() Run("position reset") end)
     Button(panel,"Reset Data...",328,-396,140,function() Run("reset") end)
-    Label(panel,"Blizzard meter gear menu: ChalkBox PRINT to PARTY. Hide this extra meter if preferred.",
+    Label(panel,"Blizzard meter gear: Party / Say / Top 3, 5, 10 / Auto after combat.",
         "GameFontHighlightSmall",28,-428,495)
     return panel
 end

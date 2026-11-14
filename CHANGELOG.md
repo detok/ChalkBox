@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.3 — Native meter report controls and clean item tooltips (test release)
+- Expand Blizzard's original damage meter gear menu with direct **Print to PARTY**, **Print to SAY**, and **Top 3/5/10** rank controls, always using the selected native meter stat and session.
+- Add opt-in reports after combat, with configurable PARTY/SAY channel, DPS/damage/healing stat, minimum combat length (0/10/20/30s), and cooldown (30/60/120s). Auto reporting defaults OFF; failed/secret/incomplete combat data is never sent.
+- Keep native WoW combat data as the source of truth, cap chat to one message, and avoid duplicate automatic reports.
+- Remove the redundant **CHALKBOX | ITEM INSIGHT** line from item tooltips; present only the useful classification and evidence. Shorten the **Drop Journal** tooltip heading without a repeated addon brand.
+- Preserve existing scanning, combat display and saved settings. Extend native meter and item tooltip regressions.
+
+
 ## 2.1.2 — AuctionSense quick-read tooltips (test release)
 - Use consistent green low ask, amber average ask, blue listing counts and red/amber warnings.
 - Present price facts on separate short lines, with clear missing values instead of invented browse statistics.

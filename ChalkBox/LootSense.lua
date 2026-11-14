@@ -116,7 +116,6 @@ end
 
 -- Presentation is its own layer: reason/classification still comes from
 -- unchanged LootSense and learned-profession evidence, not string guesswork.
-local TIP_HEADER="CHALKBOX  |  ITEM INSIGHT"
 function ChalkBox_LootPresentation(message)
     if type(message)~="string" then return end
     local prefix,body=message:match("^([^:]+):%s*(.*)$")
@@ -186,13 +185,11 @@ local function OnItemTooltip(tooltip)
         and ChalkBox_IsTrackedQuestItem(name) then
         return
     end
-    -- Match the game's tooltip hierarchy: a muted gold section header,
-    -- a short colored status, then the exact evidence on a separate line.
-    -- No debug-style "LootSense: blah" prefix and no full item reskin.
-    if not HasLine(tooltip,TIP_HEADER) then
-        local label,details,cr,cg,cb=ChalkBox_LootPresentation(message)
+    -- The meaningful classification IS the heading. Do not repeat
+    -- brand/module names inside Blizzard's item tooltip.
+    local label,details,cr,cg,cb=ChalkBox_LootPresentation(message)
+    if label and not HasLine(tooltip,label) then
         tooltip:AddLine(" ",1,1,1)
-        tooltip:AddLine(TIP_HEADER,0.85,0.69,0.39)
         tooltip:AddLine(label,cr or r,cg or g,cb or b,true)
         if details and details~="" then
             tooltip:AddLine(details,0.92,0.91,0.84,true)
