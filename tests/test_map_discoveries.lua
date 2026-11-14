@@ -242,7 +242,7 @@ assert(journal and journal:IsShown() and journal.w==660 and journal.h==616,
 local headings={
     ["AREA / DUNGEON"]=true,["CREATURE SOURCE"]=true,
     ["SORT BY"]=true,["SEARCH ITEMS"]=true,ITEM=true,
-    COLLECTED=true,APPEARED=true,["RATE*"]=true,
+    FOUND=true,DROPS=true,["RATE*"]=true,
 }
 local foundHeadings={}
 for _,fs in ipairs(fonts) do
