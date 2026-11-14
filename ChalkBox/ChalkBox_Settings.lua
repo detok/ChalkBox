@@ -627,22 +627,21 @@ end
 
 local function MakeQuests()
     local panel=Panel("QuestSense",
-        "WoW Forever C_QuestLog: track accepted quests without guessing map pins.")
+        "Keep your quest tracker focused without manual cleanup.")
     local function Run(command)
         if ChalkBox_QuestCommand then ChalkBox_QuestCommand(command) end
         if panel.OnRefresh then panel.OnRefresh() end
     end
-    Toggle(panel,"Auto-track accepted quests",
-        "Smart mode prefers nearby and new quests, with a reliable fallback.",-111,
+    Toggle(panel,"Automatic quest tracking",
+        "Nearby only stays updated as you travel.",-111,
         function() local d=ZoneDB();return d and d.enabled==true end,
         function(on) Run(on and "on" or "off") end)
     Label(panel,"Tracking mode","GameFontNormalLarge",28,-177,490)
     Button(panel,"Smart (recommended)",27,-208,160,function() Run("smart") end)
     Button(panel,"Nearby only",198,-208,145,function() Run("zone") end)
     Button(panel,"All accepted",354,-208,145,function() Run("all") end)
-    Label(panel,"Smart prioritizes nearby/new quests, then fills open watch slots from your",
-        "GameFontHighlightSmall",28,-247,502)
-    Label(panel,"accepted quest log. Nearby-only requires a zone match; All uses log order.",
+    local modeInfo=Label(panel,"Mode: Smart","GameFontNormal",28,-247,502)
+    Label(panel,"Nearby: hide other-area quests; restore them when relevant.",
         "GameFontHighlightSmall",28,-265,502)
     Label(panel,"Auto-watch limit","GameFontNormalLarge",28,-302,210)
     for i,n in ipairs({5,10,15,20}) do
@@ -655,10 +654,13 @@ local function MakeQuests()
     panel:AddRefresh(function()
         local st=ChalkBox_QuestStatus and ChalkBox_QuestStatus() or nil
         if not st then info:SetText("QuestSense not loaded yet.");return end
-        info:SetText((st.api and "Forever APIs ready" or "Quest APIs unavailable")..
-            " | "..tostring(st.mode).." | limit "..tostring(st.limit)..
-            " | active "..tostring(st.accepted).." | tracked "..tostring(st.tracked)..
-            " | "..tostring(st.reason))
+        modeInfo:SetText("ACTIVE: "..(st.mode=="zone" and "Nearby only" or
+            (st.mode=="all" and "All accepted" or "Smart")))
+        info:SetText((st.api and "API ready" or "API unavailable")..
+            "  |  "..tostring(st.tracked).." watched"..
+            "  |  "..tostring(st.hidden or 0).." hidden"..
+            "  |  limit "..tostring(st.limit)..
+            (st.pending and "  |  updating when safe" or ""))
     end)
     return panel
 end
