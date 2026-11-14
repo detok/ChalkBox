@@ -310,8 +310,8 @@ end
 
 local function MakeDrops()
     local panel=Panel("DropSense",
-        "Every observed loot-window item is recorded locally. Map Discoveries never invents official rates.")
-    Toggle(panel,"Automatically record every item (recommended)",nil,-105,
+        "Your drops by zone and creature.")
+    Toggle(panel,"Record drops automatically",nil,-105,
         function()
             local s=ChalkBox_DropOptions and ChalkBox_DropOptions()
             return s and s.enabled==true
@@ -319,7 +319,7 @@ local function MakeDrops()
         function(on)
             if ChalkBox_DropSetOption then ChalkBox_DropSetOption("enabled",on) end
         end)
-    Toggle(panel,"Show personal observations in native loot-window tooltips",
+    Toggle(panel,"Show drop stats in loot tooltips",
         nil,-146,
         function()
             local s=ChalkBox_DropOptions and ChalkBox_DropOptions()
@@ -328,7 +328,7 @@ local function MakeDrops()
         function(on)
             if ChalkBox_DropSetOption then ChalkBox_DropSetOption("tooltip",on) end
         end)
-    Toggle(panel,"Show Discoveries button on the World Map",
+    Toggle(panel,"Show Discoveries on world map",
         nil,-187,
         function()
             local s=ChalkBox_DropOptions and ChalkBox_DropOptions()
@@ -340,7 +340,7 @@ local function MakeDrops()
     local status=Label(panel,"","GameFontHighlightSmall",28,-236,500)
     panel:AddRefresh(function()
         local s=ChalkBox_DropOptions and ChalkBox_DropOptions() or {}
-        status:SetText(("%d unique items · %d loot windows · %d mapped areas"):format(
+        status:SetText(("%d items · %d loots tracked · %d areas"):format(
             s.watched or 0,s.windows or 0,s.areas or 0))
     end)
     Button(panel,"Open Map Discoveries",28,-267,224,function()
@@ -365,7 +365,7 @@ local function MakeDrops()
     attempts:SetPoint("TOPLEFT",panel,"TOPLEFT",334,-341)
     attempts:SetAutoFocus(false)
     local feedback=Label(panel,
-        "Rates are user-supplied; actual Forever drop probabilities are unknown.",
+        "Personal estimates only; official rates unknown.",
         "GameFontHighlightSmall",28,-395,495)
     Button(panel,"Calculate",411,-340,107,function()
         local result=ChalkBox_DropCalculate and
@@ -375,9 +375,9 @@ local function MakeDrops()
                 result,attempts:GetText())) or
             "Enter a rate from 0 to 100 and a whole number of attempts.")
     end)
-    Label(panel,"Outdoor loot and dungeons remain separate. Percentages require",
+    Label(panel,"Drop rates are calculated per creature, not per zone.",
         "GameFontHighlightSmall",28,-416,495)
-    Label(panel,"a known creature source; mixed-source loot shows counts only.",
+    Label(panel,"Loot attempts are tracked; unlooted kills are not.",
         "GameFontHighlightSmall",28,-431,495)
     return panel
 end

@@ -706,13 +706,12 @@ refresh=function()
     local opts=type(ChalkBox_DropOptions)=="function" and
         ChalkBox_DropOptions() or {}
     if not info then
-        controls.empty:SetText("Nothing recorded for this location yet.\n"..
-            "Loot here with DropSense tracking enabled to build your journal.")
+        controls.empty:SetText("No drops recorded here yet.")
     elseif #all==0 then
         controls.empty:SetText("No items match your search or source filter.")
     else controls.empty:SetText("") end
     controls.footer:SetText(
-        "Drop rate = item drops / looted corpses from that creature; not official odds."..
+        "* Personal loot rates only  ·  Unlooted kills not counted."..
         (opts.limitReached and "  ·  Storage limit reached." or ""))
 end
 local function EnsurePanel()
@@ -805,7 +804,7 @@ local function EnsurePanel()
     Heading(f,"CREATURE SOURCE","GameFontNormal",301,-124,212)
     Heading(f,"SORT BY","GameFontNormal",515,-124,116)
     Dropdown(f,"Choose area",265,22,-144,"area")
-    Dropdown(f,"All sources",205,301,-144,"source")
+    Dropdown(f,"All creatures",205,301,-144,"source")
     Dropdown(f,"Quantity",123,515,-144,"sort")
     Heading(f,"SEARCH ITEMS","GameFontNormal",22,-195,137)
     local input=CreateFrame("EditBox",nil,f,"InputBoxTemplate")

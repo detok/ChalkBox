@@ -566,24 +566,22 @@ function ChalkBox_DropTooltip(tooltip,link)
         end
     end
     tooltip:AddLine("CHALKBOX | DROP JOURNAL",0.86,0.66,0.38)
-    tooltip:AddLine(("%d collected in %d observed loot windows"):format(
+    tooltip:AddLine(("%d found  ·  %d loots"):format(
         item.quantity,item.windows),0.43,0.83,0.73,true)
     if item.rate then
-        tooltip:AddLine(("%s: %d/%d readable windows (%.1f%%)"):format(
+        tooltip:AddLine(("%s  ·  %d/%d drops  ·  %.1f%%"):format(
             item.sourceName or "Creature",item.hits,item.attempts,item.rate),
             0.72,0.82,0.74,true)
-        tooltip:AddLine(("95%% interval: %.1f–%.1f%%"):format(item.low,item.high),
-            0.72,0.76,0.79,true)
     end
     if item.legacy and item.legacy.quantity>0 then
-        tooltip:AddLine(("Earlier unsited observations: %d items"):format(
+        tooltip:AddLine(("Earlier: %d found"):format(
             item.legacy.quantity),0.72,0.76,0.79,true)
     end
     if item.reference then
-        tooltip:AddLine(("Your reference: %.2f%% (unverified)"):format(
+        tooltip:AddLine(("Manual reference: %.2f%%"):format(
             item.reference),0.90,0.74,0.42,true)
     end
-    tooltip:AddLine("Observed loot-window data; NOT official drop odds.",
+    tooltip:AddLine("Personal sample, not official odds.",
         0.72,0.76,0.79,true)
     if type(tooltip.Show)=="function" then tooltip:Show() end
     return true
@@ -640,10 +638,10 @@ function ChalkBox_DropCommand(input)
         else Note("Map Discoveries unavailable.") end
     elseif cmd=="status" or cmd=="" then
         local opt=ChalkBox_DropOptions()
-        Note(("%s: %d unique items, %d loot windows, %d mapped areas."):format(
+        Note(("%s: %d items, %d loots, %d zones."):format(
             opt.enabled and "ON" or "OFF",opt.watched,opt.windows,opt.areas))
         if opt.legacyWindows>0 then
-            Note(opt.legacyWindows.." older windows kept separately; no retroactive zones.")
+            Note(opt.legacyWindows.." earlier loots (zone unknown).")
         end
         if opt.limitReached then Note("Journal capacity reached for some new entries.") end
     else

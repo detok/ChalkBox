@@ -165,7 +165,8 @@ local tooltip={
 -- Last drop was in dungeon; global count remains valid without claiming a
 -- percentage for current unrelated loot source.
 assert(ChalkBox_DropTooltip(tooltip,"item:500"))
-assert(table.concat(captured," "):find("NOT official drop odds",1,true))
+assert(table.concat(captured," "):find("not official odds",1,true),
+    "short loot tooltip labels still identify personal rather than official data")
 tooltip.GetOwner=function()
     return {GetName=function() return "ContainerFrame1Item1" end}
 end
