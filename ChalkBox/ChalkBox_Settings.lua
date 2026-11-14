@@ -714,8 +714,17 @@ local function MakeBar()
             function() local db=DB(); return db and db.bar==entry[1] end,
             function() if ChalkBox_BarCommand then ChalkBox_BarCommand(entry[1]) end end)
     end
-    Label(panel,"SAFE OVERLAY  |  Blizzard frames untouched",
-        "GameFontHighlight",28,-285,470)
+    Toggle(panel,"Shift top UI below the Bar (18px)",
+        "Only default-positioned, unprotected Blizzard frames; combat-safe.",-284,
+        function()
+            local d=DB()
+            return d and d.barShiftChrome~=false
+        end,
+        function(on)
+            if ChalkBox_BarCommand then
+                ChalkBox_BarCommand(on and "reserve on" or "reserve off")
+            end
+        end)
     Label(panel,"SEPARATE BAG POSITION","GameFontNormalLarge",28,-335,300)
     Label(panel,"Offset paused to protect combat item use.",
         "GameFontHighlightSmall",28,-360,315)
