@@ -10,6 +10,13 @@ local function Element(kind,parent,name,template)
         self.points[#self.points+1]={...}
     end
     function f:SetWidth(w) self.w=w end
+    function f:ClearAllPoints() self.points={};self.point=nil end
+    function f:GetHeight()
+        if self.name=="ChalkBoxAuctionSensePane" then
+            return self.mockHeight or 316
+        end
+        return self.h or 440
+    end
     function f:SetText(v) self.text=v end
     function f:GetText() return self.text end
     function f:SetTextColor(...) self.color={...} end
@@ -152,30 +159,37 @@ for _,f in ipairs(allFrames) do
         if f.text=="Previous" then previousButton=f
         elseif f.text=="Next" then nextButton=f end
     end
-    if f.parent==pane and f.marketData==nil and f.kind=="Frame"
-        and f.w==610 and f.h==23 then rows[#rows+1]=f end
+    if f.parent==pane and f.kind=="Frame"
+        and f.w==560 and f.h==22 then rows[#rows+1]=f end
 end
 for _,font in ipairs(fonts) do
-    if font.parent==pane and font.point and font.point[5]==-392 then
+    if font.parent==pane and font.point and
+        font.point[1]=="BOTTOMLEFT" and font.point[5]==12 then
         footer=font
     end
 end
 assert(#rows==7 and footer and previousButton and nextButton,
-    "all seven result rows, pager and bottom disclaimer exist")
-assert(rows[1].point[5]==-179 and rows[7].point[5]==-323
-    and rows[7].h==23,
-    "rows are compact enough to leave a dedicated pager region")
-assert(previousButton.point[5]==-356 and
-    nextButton.point[5]==-356 and footer.point[5]==-392,
-    "pager and disclaimer stay above the native AH footer")
-assert(-rows[7].point[5]+rows[7].h<=-previousButton.point[5]-8
-    and -previousButton.point[5]+25<=-footer.point[5]-8,
-    "list and paging buttons never overlap vertically")
+    "rows, pager, and scan disclaimer all exist within the native pane")
+assert(rows[1].point[5]==-157 and rows[7].point[5]==-301,
+    "compact rows share a fixed 24px rhythm")
+assert(previousButton.point[1]=="BOTTOMLEFT"
+    and nextButton.point[1]=="BOTTOMLEFT"
+    and previousButton.point[5]==34 and nextButton.point[5]==34
+    and footer.point[5]==12,
+    "paging and notes anchor to the pane bottom, not a hard-coded height")
+local function VisibleRows()
+    local n=0
+    for _,row in ipairs(rows) do if row.shown then n=n+1 end end
+    return n
+end
 assert(nativeRegistryEdits==0,"never touch protected Blizzard tab registry")
 assert(ChalkBox_AuctionOpen() and pane.shown and tab.selected)
 assert(Text("AuctionSense") and Text("Whitemane / Alliance"))
 assert(Text("15s 0c") and Text("—"),
     "browse results have a low price but no fabricated average")
+assert(VisibleRows()==1 and rows[1].shown and
+    not rows[2].shown,
+    "only available entries show; unused rows never cover footer")
 assert(Text("24 units") and
     (function()
         for _,font in ipairs(fonts) do
@@ -184,6 +198,33 @@ assert(Text("24 units") and
         end
     end)(),"browse summaries label their source clearly")
 assert(fullScans==0 and browseScans==0)
+-- Size-aware pagination: the photographed 440px native AH leaves 316px
+-- for content after its title/footer; 4 result rows can fit without overlap.
+local items={}
+for i=1,9 do
+    items[i]={name="Item "..i,itemID=1000+i,low=1500+i,
+        average=nil,listings=nil,quantity=1}
+end
+_G.ChalkBox_AuctionRows=function()
+    reads=reads+1
+    return items
+end
+status.scannedAt=stamp+1
+pane.scripts.OnUpdate(pane,1.5)
+assert(VisibleRows()==4 and Text("Page 1 / 3"),
+    "short native pane uses four rows per page, never 7 overflowing rows")
+local row4Bottom=157+3*24+22
+local pagerTop=pane:GetHeight()-34-25
+assert(row4Bottom<=pagerTop,
+    "visible data stops above the bottom anchored pager")
+pane.mockHeight=410
+pane.scripts.OnUpdate(pane,1.5)
+assert(VisibleRows()==7 and Text("Page 1 / 2"),
+    "taller native AH uses seven rows without changing scan data")
+pane.mockHeight=316
+pane.scripts.OnUpdate(pane,1.5)
+assert(VisibleRows()==4 and Text("Page 1 / 3"),
+    "resizing smaller repaginates instead of clipping")
 local hoverRow
 for _,f in ipairs(allFrames) do
     if f.marketData and f.scripts.OnEnter then hoverRow=f;break end
