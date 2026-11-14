@@ -783,17 +783,8 @@ end
 -- Never reanchor, resize, or reset UIParent, Blizzard action buttons,
 -- or another addon's frames. Those mutations can taint protected actions.
 local reservation={active=false,pending=false,position=nil,issue=nil}
--- Buffs, quest buttons, map widgets and bag panels share the upper-right.
--- Our Bar must yield that corner instead of covering protected Blizzard UI.
--- This is a read-only screen measurement; only our own frame is anchored.
-local function SafeRightGutter()
-    local width=UIParent and type(UIParent.GetWidth)=="function"
-        and UIParent:GetWidth() or 0
-    if not Public(width) or type(width)~="number" or width<=0 then
-        return 320
-    end
-    return math.floor(math.min(480,math.max(250,width*0.23))+0.5)
-end
+-- Top chrome spacing is managed independently by ScreenLayout.lua.
+-- This Bar stays full-width, and never changes Blizzard's UIParent anchors.
 local function InCombat()
     return type(InCombatLockdown)=="function" and InCombatLockdown()
 end
@@ -808,17 +799,19 @@ local function PlaceBar()
     -- In overlay mode Blizzard owns its root layout at all times.
     -- This remains anchored to the requested edge after UI scale changes.
     bar:ClearAllPoints()
-    local gutter=SafeRightGutter()
     if db.bar=="bottom" then
         bar:SetPoint("BOTTOMLEFT",UIParent,"BOTTOMLEFT",0,0)
-        bar:SetPoint("BOTTOMRIGHT",UIParent,"BOTTOMRIGHT",-gutter,0)
+        bar:SetPoint("BOTTOMRIGHT",UIParent,"BOTTOMRIGHT",0,0)
     else
         bar:SetPoint("TOPLEFT",UIParent,"TOPLEFT",0,0)
-        bar:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",-gutter,0)
+        bar:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",0,0)
     end
     if db.bar=="off" then bar:Hide() else bar:Show() end
-    -- Anchors can change after scaling or loading screens. Relayout within
-    -- the actual shortened Bar width, never across the buff/bag corner.
+    -- ScreenLayout moves only safe, native top chrome once out of combat;
+    -- the Bar itself remains a full-width 18px strip.
+    if type(ChalkBox_ScreenLayoutAdjust)=="function" then
+        ChalkBox_ScreenLayoutAdjust()
+    end
     lastLayout=""
 end
 
@@ -1005,11 +998,16 @@ function ChalkBox_BarCommand(message)
             ". Visible at current width: "..table.concat(state.visible,", ")..".")
     elseif action == "reserve on" or action == "reserve off"
         or action == "dock on" or action == "dock off" then
-        -- Retained alias for old slash commands; the dangerous root inset
-        -- is deliberately retired. We never modify UIParent.
+        -- Preserve the old command syntax, but redirect to safe, selective
+        -- Blizzard chrome shifting. Never modify UIParent or action buttons.
         db.barReserve=false
+        if type(ChalkBox_ScreenLayoutSet)=="function" then
+            ChalkBox_ScreenLayoutSet(action=="reserve on"
+                or action=="dock on")
+        end
         PlaceBar()
-        Note("Safe overlay active. Blizzard's screen layout is untouched.")
+        Note("Safe top UI adjustment: " ..
+            ((db.barShiftChrome~=false) and "ON." or "OFF."))
     elseif action == "top" or action == "bottom" or action == "off" then
         db.bar = action
         PlaceBar()
@@ -1020,13 +1018,16 @@ function ChalkBox_BarCommand(message)
         Note("XP/hour and net-gold session reset.")
     elseif action == "status" then
         local xpPerHour, eta, goldPerHour = GetRates()
-        Note("Bar=" .. db.bar .. ", layout=safe overlay" ..
-            ", clear-right=" .. SafeRightGutter() .. "px" ..
-            ", pending=" .. tostring(reservation.pending) ..
+        local chrome=type(ChalkBox_ScreenLayoutStatus)=="function"
+            and ChalkBox_ScreenLayoutStatus() or {}
+        Note("Bar=" .. db.bar .. ", layout=full-width / safe chrome shift" ..
+            ", shifted=" .. tostring(chrome.moved or 0) ..
+            ", protected=" .. tostring(chrome.skippedProtected or 0) ..
+            ", pending=" .. tostring(reservation.pending or chrome.pending) ..
             ", XP/hr=" .. Number(xpPerHour) .. ", ETA=" .. Duration(eta) ..
             ", net gold/hr=" .. Money(goldPerHour, true))
     else
-        Note("The Bar: /chalk bar top|bottom|off | reset | status (safe overlay)")
+        Note("The Bar: /chalk bar top|bottom|off | reserve on/off | reset | status")
         Note("Stats: /chalk bar stat <module> on/off | stats all|balanced|minimal")
         Note("Layout: /chalk bar edit on/off | layout reset | move <module> <left|center|right> [index]")
         Note("Text alignment: /chalk bar align <module> <left|center|right> | opacity 0-100")
