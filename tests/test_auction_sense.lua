@@ -132,7 +132,7 @@ assert(ChalkBox_AuctionPrice(2589).stale and
     "stale data can be displayed with age, not promoted as current valuation")
 tip.lines={}
 assert(ChalkBox_AuctionTooltip(tip,"item:2589") and
-    table.concat(tip.lines," "):find("Old scan",1,true),
+    table.concat(tip.lines," "):find("OLD SCAN",1,true),
     "stale tooltip explicitly warns prices may have changed")
 assert(ChalkBox_AuctionFullScan())
 auctions={Listing("Linen Cloth",2589,1,9000)}
