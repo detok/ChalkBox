@@ -1,4 +1,4 @@
-# ChalkBox commands — 2.0.9
+# ChalkBox commands — 2.0.10
 
 | Command | Action |
 | --- | --- |

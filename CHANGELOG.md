@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.10 — First-bank-open safety (prerelease)
+- Stop BagReagents from scanning or creating overlays for character-bank, reagent-bank, and other non-inventory item buttons.
+- Defer bag highlighting and native bag layout hook setup while a bank is open, including the first time Blizzard lazily initializes its bank frame.
+- Do not reposition Blizzard's container frames on BANKFRAME_OPENED; restore configured player-bag positioning safely after closing the bank.
+- Add regressions for new-character first bank open, bank frames in container enumeration, bank close, and resuming regular bag behavior.
+- Preserve the native bank, all SavedVariables, UI preferences, and prior Discoveries/QuestSense fixes.
+
+
 ## 2.0.9 — Discoveries location browser (prerelease)
 - Extend the existing Area / Dungeon dropdown with a Follow world map choice and grouped Outdoor zones / Dungeons menus covering all places in the player's observed-loot history.
 - Alphabetize locations with item counts; selecting a zone or dungeon switches tabs automatically and does not move the native world map.

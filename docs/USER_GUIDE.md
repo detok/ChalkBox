@@ -1,6 +1,6 @@
 # ChalkBox User Guide
 
-**Version 2.0.9 · World of Warcraft: Forever**
+**Version 2.0.10 · World of Warcraft: Forever**
 
 ChalkBox puts several small tools in one addon. Everything is managed from **Options → AddOns → ChalkBox**, or **/chalk**. Choose the modules you want; the rest can stay out of sight.
 
@@ -22,6 +22,10 @@ The native sidebar contains related pages under their parent module:
 | **Emota** | Race Behavior, Emote Catalog |
 
 Select the module first, then its child page. The same top heading and return-to-ChalkBox navigation appear throughout. Older settings keys and SavedVariables are retained.
+
+## First bank visit (2.0.10)
+
+When a character opens their bank for the first time, ChalkBox no longer decorates bank item buttons or runs bag-anchor moves while Blizzard's bank interface is initializing. The bank stays native, and normal bag highlighting and configured separate-bag positioning resume after it closes. If a blocked-action dialog still occurs, record the exact blocked function or screenshot (and any Lua error stack), since a live-client trace is required to confirm its cause.
 
 ## DropSense and Map Discoveries
 
@@ -127,7 +131,7 @@ Recorded details include observed XP, levels, net gold, quest turn-ins, sampled 
 
 ## Install, updates and troubleshooting
 
-Download the installable **ChalkBox-2.0.9.zip** from the [release page](https://github.com/detok/ChalkBox/releases/tag/v2.0.9). Extract the single ChalkBox folder into **Interface/AddOns**. Don't extract an extra nested ChalkBox folder.
+Download the installable **ChalkBox-2.0.10.zip** from the [release page](https://github.com/detok/ChalkBox/releases/tag/v2.0.10). Extract the single ChalkBox folder into **Interface/AddOns**. Don't extract an extra nested ChalkBox folder.
 
 When updating, **keep your SavedVariables**. Use **/chalk** to check preferences and **/chalk update** to see the installed version.
 
