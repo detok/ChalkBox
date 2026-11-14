@@ -100,6 +100,10 @@ assert(ChalkBox_LootPresentation("KNOWN RECIPE: Example")=="Used in a learned re
     "the presentation layer provides a concise native tooltip heading")
 assert(Hover(102):find("Possible profession material",1,true) and
     Hover(102):find("possible Leatherworking",1,true),"character profession hint")
+local cleanInsight=Hover(102)
+assert(not cleanInsight:find("CHALKBOX",1,true) and
+    not cleanInsight:find("ITEM INSIGHT",1,true),
+    "item tooltip shows the classification without duplicate brand banner")
 recipeMode="known"
 assert(Hover(102):find("Used in a learned recipe",1,true) and
     Hover(102):find("Camp Tent",1,true),
@@ -137,8 +141,8 @@ assert(ChalkBoxDB.keep["id:101"] ~= nil,"keep command should use item ID")
 assert(Hover(101):find("Keep this item",1,true),"user protection overrides vendor advice")
 local before=#tip.lines
 onTooltip(tip)
-assert(#tip.lines==before and before>=4,
-    "hover refresh must not duplicate the styled multi-line section")
+assert(#tip.lines==before and before>=3,
+    "hover refresh must not duplicate the clean item summary")
 SlashCmdList.CHALKBOX("list")
 assert(messages[#messages]:find("Broken Fang",1,true),"list should show protected items")
 SlashCmdList.CHALKBOX("bags offset 30")
