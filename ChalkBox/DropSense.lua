@@ -571,13 +571,13 @@ function ChalkBox_DropTooltip(tooltip,link)
             for i=1,tooltip:NumLines() do
                 local row=_G[name.."TextLeft"..i]
                 if row and row.GetText and
-                    row:GetText()=="CHALKBOX | DROP JOURNAL" then
+                    row:GetText()=="Drop Journal" then
                     return false
                 end
             end
         end
     end
-    tooltip:AddLine("CHALKBOX | DROP JOURNAL",0.86,0.66,0.38)
+    tooltip:AddLine("Drop Journal",0.86,0.66,0.38)
     tooltip:AddLine(("%d found  ·  %d loots"):format(
         item.quantity,item.windows),0.43,0.83,0.73,true)
     if item.rate then
