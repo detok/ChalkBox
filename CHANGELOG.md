@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.6 — Auction and Bar layout repair (test release)
+- AuctionSense: keep seven results per page but tighten the table, move controls/footnote inside the native Auction House body and leave its bottom tabs unobstructed.
+- Rename the fourth Auction House tab to the shorter **Market** so the native tab strip fits cleanly. The panel still identifies itself as AuctionSense.
+- The Bar: keep a responsive right-side gutter for buffs, bag windows and minimap controls. Use only the Bar's own frame anchors; never resize or reposition `UIParent`.
+- Regression tests for auction footer/list/pager spacing, native tab behavior and Bar right-side clearance at multiple screen widths.
+- Preserve the 2.1.5 combat-protection changes (no protected bag item button mutations, no combat emotes), working auction scanners, saved data and Blizzard-native damage report features.
+
+
 ## 2.1.5 — Combat safety: protect Blizzard's UI and item actions (urgent hotfix)
 - Eliminate the UIParent screen-inset system. The Bar now anchors only its own non-protected overlay and never repositions or resizes Blizzard's root UI. Old saved `barReserve` settings migrate to safe overlay.
 - Block Emota native-emote attempts (automatic or manual) during combat, including reaction events. Sit/sleep/stand poses are manual previews only; no idle automation can interrupt food/drink.
