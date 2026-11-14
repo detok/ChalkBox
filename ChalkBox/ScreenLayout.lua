@@ -36,8 +36,10 @@ local function ReadAnchor(frame)
     if not ok or not Safe(count) or count~=1 then return nil end
     local success,point,relative,relativePoint,x,y=
         pcall(frame.GetPoint,frame,1)
-    if not success or not Safe(point) or not Safe(relative)
-        or not Safe(relativePoint) or not Safe(x) or not Safe(y) then return nil end
+    if not success or not Safe(point) or
+        (relative~=nil and not Safe(relative)) or
+        (relativePoint~=nil and not Safe(relativePoint))
+        or not Safe(x) or not Safe(y) then return nil end
     if relative~=UIParent and relative~="UIParent" and relative~=nil then
         return nil -- preserve addon-relative and Blizzard-managed anchors
     end
@@ -68,11 +70,20 @@ local function IsSafeFrame(frame)
 end
 local function Position(frame,anchor)
     if not Valid(anchor) then return false end
+    local original=ReadAnchor(frame)
     local success=pcall(function()
         frame:ClearAllPoints()
         frame:SetPoint(anchor.point,anchor.relative,anchor.relativePoint,
             anchor.x,anchor.y)
     end)
+    if not success and original then
+        -- A partial frame move must never leave an unanchored Blizzard widget.
+        pcall(function()
+            frame:ClearAllPoints()
+            frame:SetPoint(original.point,original.relative,
+                original.relativePoint,original.x,original.y)
+        end)
+    end
     return success
 end
 local function Offset(anchor)
