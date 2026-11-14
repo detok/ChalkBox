@@ -577,24 +577,30 @@ function ChalkBox_DropTooltip(tooltip,link)
             end
         end
     end
-    tooltip:AddLine("Drop Journal",0.86,0.66,0.38)
+    local function Color(role,r,g,b)
+        if type(ChalkBox_TipColor)=="function" then
+            return ChalkBox_TipColor(role)
+        end
+        return r,g,b
+    end
+    tooltip:AddLine("Drop Journal",Color("title",0.94,0.76,0.42))
     tooltip:AddLine(("%d found  ·  %d loots"):format(
-        item.quantity,item.windows),0.43,0.83,0.73,true)
+        item.quantity,item.windows),Color("info",0.40,0.83,0.78),true)
     if item.rate then
-        tooltip:AddLine(("%s  ·  %d/%d drops  ·  %.1f%%"):format(
+        tooltip:AddLine(("%s  ·  %d/%d  ·  %.1f%%"):format(
             item.sourceName or "Creature",item.hits,item.attempts,item.rate),
-            0.72,0.82,0.74,true)
+            Color("good",0.39,0.94,0.62),true)
     end
     if item.legacy and item.legacy.quantity>0 then
-        tooltip:AddLine(("Earlier: %d found"):format(
-            item.legacy.quantity),0.72,0.76,0.79,true)
+        tooltip:AddLine(("Earlier: %d"):format(item.legacy.quantity),
+            Color("muted",0.65,0.70,0.73),true)
     end
     if item.reference then
-        tooltip:AddLine(("Manual reference: %.2f%%"):format(
-            item.reference),0.90,0.74,0.42,true)
+        tooltip:AddLine(("Manual reference: %.2f%%"):format(item.reference),
+            Color("warning",0.98,0.66,0.33),true)
     end
-    tooltip:AddLine("Personal sample, not official odds.",
-        0.72,0.76,0.79,true)
+    tooltip:AddLine("Personal sample  ·  not official odds",
+        Color("muted",0.65,0.70,0.73),true)
     if type(tooltip.Show)=="function" then tooltip:Show() end
     return true
 end
