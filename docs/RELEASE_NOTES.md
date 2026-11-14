@@ -1,17 +1,24 @@
-# ChalkBox 2.1.3 — Native meter reports and cleaner item tooltips
+# ChalkBox 2.1.4 — Tooltip readability pass
 
-### Blizzard damage meter
-- Open the Blizzard damage meter's **gear menu → Combat reports**.
-- Print to **PARTY** or **SAY** from the selected native meter mode and session.
-- Choose **Top 3 / Top 5 / Top 10** players to include.
-- Optional **after-combat reports** are OFF by default. Customize channel (PARTY/SAY), stat (DPS/damage/healing), minimum fight duration (0/10/20/30 seconds) and cooldown (30/60/120 seconds).
-- Reports post a single compact message. Protected or incomplete data, invalid party channels, repetitive summaries and too-frequent automatic messages are suppressed. No automated trading or combat actions.
+### No more repeated branding
+- Item Insight now uses one meaningful status: KEEP, LEARNED RECIPE, POSSIBLE RECIPE, CAMP USE or BONUS XP.
+- The Cozy Sleeping Bag displays the XP benefit directly rather than a second generic item insight title.
+- Auction, map and macro interface helper text no longer repeats ChalkBox unnecessarily.
 
-### Tooltips
-- Remove repeated **CHALKBOX | ITEM INSIGHT** branding from item tooltips: just the colored status and supporting evidence.
-- Rename the loot annotation's heading to **Drop Journal**, without repeating the addon name.
+### Meaningful colors
+- **Green:** valuable/confirmed utility and healthy state.
+- **Gold:** prices, gold and exact values.
+- **Blue:** counts, quantities and progress.
+- **Amber:** uncertain, estimated, or attention-needed data.
+- **Red:** urgent warnings, stale auction snapshots, and quest item sale protection.
+- **Gray:** informational footnotes and unavailable values.
+
+### Short, factual details
+- Auction tooltips display unit low, unit average, listing/quantity coverage, source and age without promising completed sale prices.
+- Drop Journal shows observed items and loots, with any observed rate labeled as a personal sample, never official odds.
+- Top Bar hovers keep their existing concise metrics and add semantic colors; no changes to XP/repair/bag calculations.
+- Camp notifications are shorter and show the next action quickly.
+- Blizzard's native DPS meter still includes PARTY / SAY, Top 3/5/10 and opt-in after-combat reporting from v2.1.3.
 
 ### Install
-Install `ChalkBox-2.1.3.zip` as the single ChalkBox addon folder, replacing the old folder but keeping SavedVariables. Type `/reload`, then open Blizzard's damage meter and use the gear menu. No new standalone meter is needed.
-
-Automated CI covers Lua 5.1 syntax, module regressions and installable ZIP integrity. Check menu availability and chat permissions in a real WoW Forever client before assuming every option works on that server.
+Install `ChalkBox-2.1.4.zip` as the single ChalkBox folder. Preserve SavedVariables and type `/reload`. Automated Lua 5.1/ZIP checks are run by GitHub Actions. Verify the on-screen visuals in WoW Forever.
