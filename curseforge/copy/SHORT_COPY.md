@@ -14,7 +14,7 @@ Quality-of-life tools for WoW Forever: MacroForge, DropSense, LootSense, The Bar
 
 **Release announcement**
 
-ChalkBox 2.0.10 improves compatibility when a character opens their bank for the first time. The addon now avoids scanning bank item buttons or moving Blizzard's container frames while the bank UI initializes, then safely resumes normal bag highlights and saved bag positioning after closing it. All existing Discoveries browser, QuestSense Nearby, Bar, and loot features remain unchanged.
+ChalkBox 2.0.11 gives Discoveries a real, scrollable zone list with no nested submenus. Choose any recorded zone or dungeon directly, or follow the world map. Loot history now shows Found, Drops and source-specific Rate with simple numbers like 4 drops from 12 loots (33.3%). Counts are observed looted corpses, not all kills or official chances. Existing settings and modules are preserved.
 
 **Screenshot captions (for actual in-game images only)**
 

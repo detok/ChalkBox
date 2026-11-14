@@ -279,8 +279,8 @@ local function Items()
     end)
     return items
 end
--- Menus share the same hierarchy on modern and older Forever clients.
--- Keeping zone/dungeon submenus separate makes a long loot atlas navigable.
+-- Source and sort use Blizzard menus. Areas use a dedicated, scrollable
+-- dropdown because Forever can silently fail to open nested menus.
 local menuFrame
 local menuColors={
     title="ffffd36a",group="ff79d4e9",selected="ff79df9c",
@@ -373,62 +373,56 @@ local function BrowseLocation(entry)
     refresh()
 end
 local function AreaOptions()
-    local list={
-        {text=(followMap and "✓ " or "").."Follow world map",
-            tone=followMap and "selected" or "normal",
-            action=FollowWorldMap},
-        {text="BROWSE RECORDED LOCATIONS",title=true,tone="title"},
-    }
+    local list={{
+        text=(followMap and "✓ " or "").."Follow world map",
+        tone=followMap and "selected" or "normal",action=FollowWorldMap
+    }}
     local total=0
     for _,category in ipairs({
-        {kind="outdoor",name="Outdoor zones"},
-        {kind="dungeon",name="Dungeons"},
+        {kind="outdoor",name="OUTDOOR ZONES"},
+        {kind="dungeon",name="DUNGEONS"},
     }) do
         local entries=Areas(category.kind)
-        -- Explicit deterministic order even when an older DropSense build
-        -- returns the recorded-location index unsorted.
         table.sort(entries,function(a,b)
-            local an,bn=string.lower(tostring(a.name or a.key)),
-                string.lower(tostring(b.name or b.key))
+            local an=string.lower(tostring(a.name or a.key))
+            local bn=string.lower(tostring(b.name or b.key))
             if an==bn then return tostring(a.key)<tostring(b.key) end
             return an<bn
         end)
-        local children={}
-        for _,entry in ipairs(entries) do
-            local item=entry
-            local isSelected=not followMap and selectedArea==entry.key
-            children[#children+1]={
-                text=(isSelected and "✓ " or "")..
-                    tostring(entry.name or entry.key)..
-                    "  ·  "..tostring(entry.items or 0).." items",
-                tone=isSelected and "selected" or "normal",
-                action=function() BrowseLocation(item) end,
-            }
-            total=total+1
-        end
-        if #children>0 then
-            list[#list+1]={
-                text=category.name.." ("..#children..")",
-                children=children,tone="group",
-            }
+        if #entries>0 then
+            list[#list+1]={text=category.name.." ("..#entries..")",
+                title=true,tone="title"}
+            for _,entry in ipairs(entries) do
+                local item=entry
+                local selected=not followMap and selectedArea==entry.key
+                list[#list+1]={
+                    text=(selected and "✓ " or "")..
+                        tostring(entry.name or entry.key)..
+                        "  ·  "..tostring(entry.items or 0).." items",
+                    tone=selected and "selected" or "normal",
+                    action=function() BrowseLocation(item) end,
+                    areaKey=entry.key,
+                }
+                total=total+1
+            end
         end
     end
     if total==0 then
-        list[#list+1]={text="No recorded locations yet",
+        list[#list+1]={text="No recorded zones yet",
             title=true,tone="muted"}
     end
     return list
 end
 local function SourceOptions()
     local list={
-        {text="CREATURE / SOURCE FILTER",title=true},
-        {text=(not selectedSource and "✓ " or "").."All observed sources",
+        {text="CREATURE",title=true,tone="title"},
+        {text=(not selectedSource and "✓ " or "").."All creatures",
             action=function() selectedSource=nil;page=1;refresh() end}
     }
     for _,entry in ipairs(Sources()) do
         local item=entry
         list[#list+1]={text=(selectedSource==item.key and "✓ " or "")..
-            item.name.." · "..tostring(item.windows).." windows",
+            item.name.." · "..tostring(item.windows).." loots",
             action=function()
                 selectedSource=item.key;page=1;refresh()
             end}
@@ -439,7 +433,7 @@ local sorting={
     {key="quantity",name="Quantity"},
     {key="appearances",name="Appearances"},
     {key="name",name="Item name"},
-    {key="rate",name="Observed rate"},
+    {key="rate",name="Drop rate"},
 }
 local function SortOptions()
     local list={{text="SORT ITEMS",title=true}}
@@ -456,21 +450,129 @@ function ChalkBox_DiscoveriesDropdownItems(kind)
     elseif kind=="sort" then return SortOptions() end
     return {}
 end
+-- Unlike Forever's transient context menus, this picker is a full frame.
+-- It is visible immediately beneath the Area button, supports mouse wheel
+-- and paging, and puts every recorded zone one click away.
+local areaPopup
+local AREA_VISIBLE_ROWS=9
+local AREA_ROW_HEIGHT=26
+local function CloseAreaPopup()
+    if areaPopup and areaPopup.Hide then areaPopup:Hide() end
+end
+local function AreaPopupPage(delta)
+    if not areaPopup then return end
+    local options=AreaOptions()
+    local totalPages=math.max(1,math.ceil(#options/AREA_VISIBLE_ROWS))
+    areaPopup.page=math.max(1,math.min(totalPages,(areaPopup.page or 1)+delta))
+    -- Repaint just the visible row controls; no saved state changes.
+    local startIndex=((areaPopup.page or 1)-1)*AREA_VISIBLE_ROWS
+    for i,button in ipairs(areaPopup.rows) do
+        local entry=options[startIndex+i]
+        button.areaEntry=entry
+        if entry then
+            local text=tostring(entry.text or "")
+            if #text>47 then text=text:sub(1,44).."..." end
+            button.label:SetText(text)
+            local r,g,b=0.88,0.91,0.95
+            if entry.tone=="selected" then r,g,b=0.43,0.93,0.61
+            elseif entry.title then r,g,b=1,0.83,0.40
+            elseif entry.tone=="muted" then r,g,b=0.59,0.64,0.72 end
+            button.label:SetTextColor(r,g,b,1)
+            if button.back and button.back.SetColorTexture then
+                button.back:SetColorTexture(
+                    entry.title and 0.12 or 0.08,
+                    entry.title and 0.16 or 0.10,
+                    entry.title and 0.19 or 0.13,0.95)
+            end
+            button:SetScript("OnClick",entry.action and function()
+                entry.action()
+                CloseAreaPopup()
+            end or nil)
+            button:Show()
+        else
+            button:SetScript("OnClick",nil)
+            button:Hide()
+        end
+    end
+    areaPopup.pageLabel:SetText(
+        ("Page %d / %d"):format(areaPopup.page,totalPages))
+    areaPopup.previous:SetText(areaPopup.page>1 and "◀ Previous" or "◀")
+    areaPopup.next:SetText(areaPopup.page<totalPages and "Next ▶" or "▶")
+end
+local function EnsureAreaPopup()
+    if areaPopup or not panel then return end
+    local f=CreateFrame("Frame","ChalkBoxDiscoveriesAreaPicker",panel)
+    f:SetSize(310,314)
+    f:SetPoint("TOPLEFT",panel,"TOPLEFT",20,-170)
+    if type(f.SetFrameStrata)=="function" then
+        f:SetFrameStrata("FULLSCREEN_DIALOG")
+    end
+    if type(f.SetFrameLevel)=="function" then
+        local level=type(panel.GetFrameLevel)=="function" and
+            Call(panel.GetFrameLevel,panel) or 200
+        f:SetFrameLevel((type(level)=="number" and level or 200)+30)
+    end
+    if type(f.EnableMouse)=="function" then f:EnableMouse(true) end
+    if type(f.EnableMouseWheel)=="function" then f:EnableMouseWheel(true) end
+    local bg=f:CreateTexture(nil,"BACKGROUND")
+    bg:SetAllPoints(f)
+    Paint(bg,0.025,0.034,0.042,0.98)
+    f.back=bg
+    local edge=f:CreateTexture(nil,"BORDER")
+    edge:SetPoint("TOPLEFT",f,"TOPLEFT",0,0)
+    edge:SetPoint("TOPRIGHT",f,"TOPRIGHT",0,0)
+    edge:SetHeight(2)
+    local er,eg,eb=Accent()
+    Paint(edge,er,eg,eb,1)
+    f.rows={}
+    for i=1,AREA_VISIBLE_ROWS do
+        local b=CreateFrame("Button",nil,f)
+        b:SetSize(294,AREA_ROW_HEIGHT-1)
+        b:SetPoint("TOPLEFT",f,"TOPLEFT",8,-8-(i-1)*AREA_ROW_HEIGHT)
+        local back=b:CreateTexture(nil,"BACKGROUND")
+        back:SetAllPoints(b)
+        b.back=back
+        b.label=Font(b,"GameFontHighlight",7,-3,275)
+        b:SetScript("OnMouseWheel",function(_,delta)
+            AreaPopupPage(delta>0 and -1 or 1)
+        end)
+        f.rows[i]=b
+    end
+    f.previous=Button(f,"◀ Previous",98,8,-251,function()
+        AreaPopupPage(-1)
+    end)
+    f.pageLabel=Font(f,"GameFontHighlightSmall",119,-256,85)
+    f.next=Button(f,"Next ▶",98,207,-251,function()
+        AreaPopupPage(1)
+    end)
+    f:SetScript("OnMouseWheel",function(_,delta)
+        AreaPopupPage(delta>0 and -1 or 1)
+    end)
+    areaPopup=f
+    f:Hide()
+end
 local function Dropdown(parent,label,width,x,y,kind)
     local b=Button(parent,label,width,x,y,function(self)
+        if kind=="area" then
+            EnsureAreaPopup()
+            if not areaPopup then return end
+            if areaPopup:IsShown() then CloseAreaPopup()
+            else
+                areaPopup.page=1
+                AreaPopupPage(0)
+                areaPopup:Show()
+            end
+            return
+        end
+        CloseAreaPopup()
         local options=ChalkBox_DiscoveriesDropdownItems(kind)
         if not ShowMenu(self,options) then
             local actionable={}
-            local function Collect(entries)
-                for _,entry in ipairs(entries) do
-                    if entry.children then
-                        Collect(entry.children)
-                    elseif entry.action and not entry.title then
-                        actionable[#actionable+1]=entry
-                    end
+            for _,entry in ipairs(options) do
+                if entry.action and not entry.title then
+                    actionable[#actionable+1]=entry
                 end
             end
-            Collect(options)
             if #actionable>0 then
                 local pointer=controls[kind.."Cycle"] or 0
                 pointer=pointer%#actionable+1
@@ -507,13 +609,15 @@ local function Row(parent,index)
         GameTooltip:SetOwner(frame,"ANCHOR_RIGHT")
         local ok=pcall(GameTooltip.SetHyperlink,GameTooltip,"item:"..item.id)
         if ok then
-            GameTooltip:AddLine("ChalkBox · personal observation",
-                0.86,0.66,0.38)
-            if item.rate then
-                GameTooltip:AddLine(("%d in %d known-source windows (%.1f%%)"):format(
-                    item.windows,item.attempts,item.rate),0.7,0.9,0.8)
+            if item.rate and item.attempts then
+                GameTooltip:AddLine(item.sourceName or "Creature",
+                    0.86,0.66,0.38)
+                GameTooltip:AddLine(
+                    ("%d drops / %d loots  ·  %.1f%%"):format(
+                    item.hits or item.windows,item.attempts,item.rate),
+                    0.7,0.9,0.8)
             else
-                GameTooltip:AddLine("No comparable creature-specific odds.",
+                GameTooltip:AddLine("Choose a creature to see its drop rate.",
                     0.75,0.75,0.8)
             end
             GameTooltip:Show()
@@ -564,7 +668,7 @@ refresh=function()
             "OUTDOOR" or "DUNGEON"))
     controls.area:SetText(
         (zoneName:len()>25 and zoneName:sub(1,22).."..." or zoneName).."  ▾")
-    local sourceName="All sources"
+    local sourceName="All creatures"
     for _,s in ipairs(sources) do
         if s.key==selectedSource then sourceName=s.name;break end
     end
@@ -578,7 +682,7 @@ refresh=function()
     controls.outdoor:SetText(mode=="outdoor" and "● Outdoor" or "Outdoor")
     controls.dungeon:SetText(mode=="dungeon" and "● Dungeons" or "Dungeons")
     controls.map:SetText(followMap and "● Map sync: ON" or "○ Map sync: OFF")
-    controls.count:SetText(("%d items  ·  %d loot windows  ·  %d sources"):format(
+    controls.count:SetText(("%d items  ·  %d loots tracked  ·  %d creatures"):format(
         #all,info and info.windows or 0,#sources))
     for i,row in ipairs(rows) do
         local item=all[(page-1)*PER_PAGE+i]
@@ -588,13 +692,13 @@ refresh=function()
             SetItemIcon(row,item.id)
             row.name:SetText(item.name or ("Item #"..item.id))
             row.qty:SetText("x"..tostring(item.quantity or 0))
-            row.samples:SetText(tostring(item.windows or 0).." windows")
+            row.samples:SetText(tostring(item.windows or 0))
             row.rate:SetText(item.rate and
                 ("%.1f%%"):format(item.rate) or "—")
-            row.hint:SetText(item.rate and
-                ("Observed in %d of %d readable %s windows"):format(
-                    item.windows,item.attempts,sourceName) or
-                "Collected here · rate requires one known creature source")
+            row.hint:SetText(item.rate and item.attempts and
+                ("%s  ·  %d drops / %d loots"):format(
+                    item.sourceName or "Creature",item.hits or 0,item.attempts)
+                or "Choose a creature for its drop rate")
             if type(row.frame.Show)=="function" then row.frame:Show() end
         end
     end
@@ -602,13 +706,12 @@ refresh=function()
     local opts=type(ChalkBox_DropOptions)=="function" and
         ChalkBox_DropOptions() or {}
     if not info then
-        controls.empty:SetText("Nothing recorded for this location yet.\n"..
-            "Loot here with DropSense tracking enabled to build your journal.")
+        controls.empty:SetText("No drops recorded here yet.")
     elseif #all==0 then
         controls.empty:SetText("No items match your search or source filter.")
     else controls.empty:SetText("") end
     controls.footer:SetText(
-        "Rates are YOUR observed known-source loot windows, not official drop odds."..
+        "* Personal loot rates only  ·  Unlooted kills not counted."..
         (opts.limitReached and "  ·  Storage limit reached." or ""))
 end
 local function EnsurePanel()
@@ -646,6 +749,7 @@ local function EnsurePanel()
     if type(f.RegisterForDrag)=="function" then
         f:RegisterForDrag("LeftButton")
     end
+    f:SetScript("OnHide",CloseAreaPopup)
     f:SetScript("OnDragStart",function(self)
         if type(InCombatLockdown)~="function" or not InCombatLockdown() then
             if self.StartMoving then self:StartMoving() end
@@ -670,14 +774,17 @@ local function EnsurePanel()
     controls.subtitle=Font(f,"GameFontHighlightSmall",22,-51,594)
     Button(f,"Close",86,552,-20,function() f:Hide() end)
     controls.outdoor=Button(f,"Outdoor",128,22,-83,function()
+        CloseAreaPopup()
         mode="outdoor";selectedArea=DefaultArea()
         selectedSource=nil;page=1;SaveBrowser();refresh()
     end)
     controls.dungeon=Button(f,"Dungeons",128,160,-83,function()
+        CloseAreaPopup()
         mode="dungeon";selectedArea=DefaultArea()
         selectedSource=nil;page=1;SaveBrowser();refresh()
     end)
     controls.map=Button(f,"Map sync: ON",153,485,-83,function()
+        CloseAreaPopup()
         if followMap then
             followMap=false
             -- Return to the last location deliberately selected by the player.
@@ -697,7 +804,7 @@ local function EnsurePanel()
     Heading(f,"CREATURE SOURCE","GameFontNormal",301,-124,212)
     Heading(f,"SORT BY","GameFontNormal",515,-124,116)
     Dropdown(f,"Choose area",265,22,-144,"area")
-    Dropdown(f,"All sources",205,301,-144,"source")
+    Dropdown(f,"All creatures",205,301,-144,"source")
     Dropdown(f,"Quantity",123,515,-144,"sort")
     Heading(f,"SEARCH ITEMS","GameFontNormal",22,-195,137)
     local input=CreateFrame("EditBox",nil,f,"InputBoxTemplate")
@@ -723,8 +830,8 @@ local function EnsurePanel()
     end)
     controls.count=Font(f,"GameFontHighlightSmall",22,-230,610)
     Heading(f,"ITEM", "GameFontNormal",70,-257,260)
-    Heading(f,"COLLECTED", "GameFontNormal",348,-257,90)
-    Heading(f,"APPEARED", "GameFontNormal",425,-257,88)
+    Heading(f,"FOUND", "GameFontNormal",348,-257,90)
+    Heading(f,"DROPS", "GameFontNormal",425,-257,88)
     Heading(f,"RATE*", "GameFontNormal",542,-257,70)
     for i=1,PER_PAGE do rows[i]=Row(f,i) end
     controls.empty=Font(f,"GameFontHighlight",37,-311,575)

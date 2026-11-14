@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.11 — Direct zone browser and clearer drop stats (prerelease)
+- Replace nested Area / Dungeon menus with a visible, scrollable and paged list of every recorded zone and dungeon.
+- Browse locations independently of the world map or choose Follow world map; retain existing UI, saved preferences, search and filters.
+- Clean up Discoveries and DropSense wording: Found, Drops, Rate and specific mob drops / tracked loots.
+- Never pool unrelated mobs into one drop percentage or claim looted corpses are all kills.
+- Add regression checks for actual dropdown controls, paging and source-specific drop statistics.
+
+
 ## 2.0.10 — First-bank-open safety (prerelease)
 - Stop BagReagents from scanning or creating overlays for character-bank, reagent-bank, and other non-inventory item buttons.
 - Defer bag highlighting and native bag layout hook setup while a bank is open, including the first time Blizzard lazily initializes its bank frame.

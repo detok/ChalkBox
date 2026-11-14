@@ -480,19 +480,45 @@ function ChalkBox_DropAreaItems(key,sourceKey,search)
     local area=State().areas[key]
     if not area then return {} end
     local result={}
-    local from=sourceKey and area.sources[sourceKey]
-    local rows=from and from.items or area.items
+    local chosen=sourceKey and area.sources[sourceKey] or nil
+    local rows=chosen and chosen.items or area.items
     search=type(search)=="string" and search:lower() or ""
     for id,counts in pairs(rows or {}) do
         local item=ChalkBox_DropRead(id,key,sourceKey)
         if item and (search=="" or item.name:lower():find(
                 search,1,true) or id:find(search,1,true)) then
+            local sourceName,hits,attempts,rate=item.sourceName,
+                item.hits,item.attempts,item.rate
+            if not sourceKey then
+                -- A single identified mob provides a useful rate while
+                -- browsing the whole zone. With several mob types, NEVER
+                -- conflate their separate loot pools into one percentage.
+                local onlyKey,ambiguous
+                for mobKey,source in pairs(area.sources or {}) do
+                    if type(source)=="table" and source.items and
+                        source.items[id] then
+                        if onlyKey then ambiguous=true;break end
+                        onlyKey=mobKey
+                    end
+                end
+                if onlyKey and not ambiguous then
+                    local detail=ChalkBox_DropRead(id,key,onlyKey)
+                    if detail and detail.attempts then
+                        sourceName=detail.sourceName
+                        hits,attempts,rate=
+                            detail.hits,detail.attempts,detail.rate
+                    end
+                end
+            end
             result[#result+1]={
                 id=id,name=item.name,
                 quantity=counts.quantity or 0,
                 windows=counts.windows or 0,
-                rate=item.rate,attempts=item.attempts,low=item.low,
-                high=item.high,sourceName=item.sourceName}
+                hits=hits,rate=rate,attempts=attempts,
+                low=item.low,high=item.high,
+                sourceName=sourceName,
+                multipleSources=not sourceName,
+            }
         end
     end
     table.sort(result,function(a,b)
@@ -540,24 +566,22 @@ function ChalkBox_DropTooltip(tooltip,link)
         end
     end
     tooltip:AddLine("CHALKBOX | DROP JOURNAL",0.86,0.66,0.38)
-    tooltip:AddLine(("%d collected in %d observed loot windows"):format(
+    tooltip:AddLine(("%d found  ·  %d loots"):format(
         item.quantity,item.windows),0.43,0.83,0.73,true)
     if item.rate then
-        tooltip:AddLine(("%s: %d/%d readable windows (%.1f%%)"):format(
+        tooltip:AddLine(("%s  ·  %d/%d drops  ·  %.1f%%"):format(
             item.sourceName or "Creature",item.hits,item.attempts,item.rate),
             0.72,0.82,0.74,true)
-        tooltip:AddLine(("95%% interval: %.1f–%.1f%%"):format(item.low,item.high),
-            0.72,0.76,0.79,true)
     end
     if item.legacy and item.legacy.quantity>0 then
-        tooltip:AddLine(("Earlier unsited observations: %d items"):format(
+        tooltip:AddLine(("Earlier: %d found"):format(
             item.legacy.quantity),0.72,0.76,0.79,true)
     end
     if item.reference then
-        tooltip:AddLine(("Your reference: %.2f%% (unverified)"):format(
+        tooltip:AddLine(("Manual reference: %.2f%%"):format(
             item.reference),0.90,0.74,0.42,true)
     end
-    tooltip:AddLine("Observed loot-window data; NOT official drop odds.",
+    tooltip:AddLine("Personal sample, not official odds.",
         0.72,0.76,0.79,true)
     if type(tooltip.Show)=="function" then tooltip:Show() end
     return true
@@ -614,10 +638,10 @@ function ChalkBox_DropCommand(input)
         else Note("Map Discoveries unavailable.") end
     elseif cmd=="status" or cmd=="" then
         local opt=ChalkBox_DropOptions()
-        Note(("%s: %d unique items, %d loot windows, %d mapped areas."):format(
+        Note(("%s: %d items, %d loots, %d zones."):format(
             opt.enabled and "ON" or "OFF",opt.watched,opt.windows,opt.areas))
         if opt.legacyWindows>0 then
-            Note(opt.legacyWindows.." older windows kept separately; no retroactive zones.")
+            Note(opt.legacyWindows.." earlier loots (zone unknown).")
         end
         if opt.limitReached then Note("Journal capacity reached for some new entries.") end
     else
