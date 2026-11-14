@@ -1,21 +1,22 @@
-# ChalkBox 2.1.7 — Bar layering and bag UI cleanup
+# ChalkBox 2.1.8 — Bag position restored
 
-### The Bar
-- Preserve the original **full-width 18px** Titan-style strip and 2.1.6 top-UI spacing behavior.
-- Draw the Bar in **BACKGROUND** strata, frame level 1, below the normal Blizzard HUD. This lets the player portrait's resting ZZZ animation overlap the Bar instead of being covered by it.
-- Do not reposition Blizzard's player portrait or secure action controls to fix visual layering.
+### What happened
+The 2.1.5 safety update disabled the separate-bag correction but kept saved `bagOffsetY`. As a result, previously lowered bags began opening at Blizzard's higher default position. The earlier slider was disabled without a verified stack trace showing it caused the reported combat item-use error.
 
-### Bags
-- Remove the abandoned vertical-offset slider and its badly overlapping UP/DOWN labels from Options > The Bar.
-- Show a short, accurate note: separate Blizzard bags naturally stack upward from the lower-right when opened.
-- Existing bag-offset preferences remain saved but **are not applied**. Native bag reanchoring and protected item-button decoration remain suspended from 2.1.5 to avoid combat item-use errors.
-- Remove the misleading Reset Bags button from the Bar settings page; the underlying reset slash command remains if needed.
+### Restored
+- **Options → AddOns → ChalkBox → The Bar → Separate Bag Position:** real horizontal offset slider with a live position readout.
+- **Left (−120)** moves separate bags upward. **Right (+120)** lowers the bag column. **0** uses Blizzard's default. **Reset Bags** is functional.
+- Existing saved offsets are respected again upon login, including negative values.
+- Reuses the original native bag-layout hook and first-column correction, recalculating relative to Blizzard's latest anchor instead of stacking repeated offsets.
+- Keeps out-of-combat and bank-open safeguards. No item button clicks, item use, or protected combat actions are invoked by this control.
 
-### Unchanged
-- The Bar's stats, position, customization and safe top-UI push-down.
-- AuctionSense/Market scan logic and native Auction House integration.
-- Native DPS report choices, Emota safeguards, and all SavedVariables.
+### Still protected
+- Emota does not dispatch native emotes during combat.
+- Green reagent decorations that modified item buttons remain suspended.
+- Full-width 18px Bar, Blizzard portrait ZZZ layering, selective top-UI spacing, native DPS meter reports and AuctionSense remain unchanged.
+
+### Important
+A Blizzard message blaming ChalkBox for a protected action is not proof that the bag offset caused it. There is no verified blocked-function stack trace yet. If it happens again, please capture the exact **blocked function name**; the underlying cause needs to be diagnosed directly.
 
 ### Install
-Replace the old ChalkBox folder with `ChalkBox-2.1.7.zip` and type `/reload`.
-Lua 5.1 automated tests and ZIP packaging validate the change. Verify player portrait/ZZZ layering in the actual WoW Forever client.
+Replace the old ChalkBox addon folder with `ChalkBox-2.1.8.zip`; preserve SavedVariables and type `/reload`. The Lua 5.1 tests and build are automated; visual and combat-safety confirmation requires WoW Forever.
