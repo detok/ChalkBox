@@ -420,18 +420,13 @@ ChalkBox_OpenSettings("loothighlight")
 assert(opened[#opened]==categories["LootSense Appearance"].ID)
 categories["LootSense Appearance"].panel:Show()
 local lootCheck=FindCheckByParentTitle("LootSense Appearance")
-assert(#lootCheck==4 and lootCheck[4].checked,
-    "three independent LootSense detail filters plus learned-only bag markers")
+assert(#lootCheck==3,
+    "item insight filters remain; unsafe native bag button marker switch is retired")
 lootCheck[2]:Click(false)
 assert(ChalkBoxDB.lootCategories.potential==false,
     "potential use hints can be hidden without disabling verified recipe advice")
 lootCheck[2]:Click(true)
-lootCheck[4]:Click(false)
-assert(ChalkBoxDB.lootHighlightKnown==false,
-    "new bag highlight toggle is stored independently from tooltip hints")
-lootCheck[4]:Click(true)
-Control("Refresh Bag Markers"):Click()
-assert(printed[#printed]=="bag markers refresh")
+Control("Scan Open Profession"):Click()
 local questCheck=FindCheckByParentTitle("QuestSense")[1]
 categories["QuestSense"].panel:Show()
 questCheck:Click(false)
@@ -650,10 +645,10 @@ appearanceSlider:SetValue(100)
 assert(ChalkBoxDB.barBackgroundOpacity==100,
     "slider can produce an opaque Blizzard-charcoal background")
 assert(highlightSlider and highlightSlider.value==75,
-    "bag recipe insets have a separate 75% opacity default")
+    "previous border opacity stays stored, but safely read-only")
 highlightSlider:SetValue(40)
-assert(ChalkBoxDB.lootHighlightOpacity==40,
-    "reagent highlight strength is configurable in native settings")
+assert(ChalkBoxDB.lootHighlightOpacity==nil,
+    "suspended bag border controls cannot mutate secure bag presentation")
 local meterSlider
 for _,frame in ipairs(sliders) do
     if frame.parent==categories["Combat Meter"].panel then meterSlider=frame end
