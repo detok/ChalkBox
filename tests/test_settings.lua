@@ -634,7 +634,7 @@ local sliders={}
 for _,frame in ipairs(frames) do
     if frame.kind=="Slider" then sliders[#sliders+1]=frame end
 end
-assert(#sliders==9,"the retired bag offset slider cannot appear in the native options UI")
+assert(#sliders==10,"restored horizontal bag slider is present alongside other settings")
 local appearanceSlider,highlightSlider
 for _,frame in ipairs(sliders) do
     if frame.parent==categories["The Bar Appearance"].panel then
@@ -661,12 +661,23 @@ local meterSlider
 for _,frame in ipairs(sliders) do
     if frame.parent==categories["Combat Meter"].panel then meterSlider=frame end
 end
+local bagSlider
 for _,frame in ipairs(sliders) do
-    assert(frame.parent~=categories["The Bar"].panel,
-        "Bar settings cannot offer a fake or insecure bag-offset slider")
+    if frame.parent==categories["The Bar"].panel then bagSlider=frame end
 end
-assert(ChalkBoxDB.bagOffsetY==nil,
-    "opening Bar settings must not alter Blizzard bag positions")
+assert(bagSlider and bagSlider.value==0,
+    "the separate bag offset starts centered on Blizzard's baseline")
+assert(bagSlider.w==275 and bagSlider.h==18,
+    "the slider is laid out horizontally with no overlapping vertical labels")
+bagSlider:SetValue(70)
+assert(ChalkBoxDB.bagOffsetY==70,
+    "positive slider value moves the native separate bags downward")
+bagSlider:SetValue(-35)
+assert(ChalkBoxDB.bagOffsetY==-35,
+    "negative slider value moves the bags upward")
+Control("Reset Bags"):Click()
+assert(ChalkBoxDB.bagOffsetY==0 and bagSlider.value==0,
+    "Reset Bags returns both the saved offset and slider to native position")
 assert(meterSlider,"native meter opacity slider belongs to Combat Meter page")
 meterSlider:SetValue(65)
 assert(ChalkBoxDB.meter.opacity==0.65,
