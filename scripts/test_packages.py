@@ -24,6 +24,8 @@ def test() -> None:
     assert "## Interface: 11509" in toc
     assert "## Interface: 16001" in camelot
     assert "ChalkBoxDB" in toc and "ChalkBoxProfessionDB" in toc
+    assert "## IconTexture: Interface\\AddOns\\ChalkBox\\assets\\Icon" in toc
+    assert "## IconTexture: Interface\\AddOns\\ChalkBox\\assets\\Icon" in camelot
     assert version_of(SOURCE / "ChalkBox.toc") == version_of(
         SOURCE / "ChalkBox_Camelot.toc")
     listed = [line.strip().replace("\\", "/") for line in toc.splitlines()
@@ -40,6 +42,16 @@ def test() -> None:
         expected = {f"ChalkBox/{name}" for name in FILES}
         assert set(archive.namelist()) == expected, "Wrong ZIP install tree"
         assert archive.testzip() is None, "Corrupt ZIP"
+        icon = archive.read("ChalkBox/assets/Icon.tga")
+        assert len(icon) == 18 + 64 * 64 * 4 and icon[2] == 2 and (
+            int.from_bytes(icon[12:14], "little"),
+            int.from_bytes(icon[14:16], "little")
+        ) == (64, 64) and icon[16] == 32 and icon[17] == 0x28, (
+            "AddOn selection icon must be an uncompressed 64px RGBA WoW TGA"
+        )
+        assert (ROOT / "curseforge/artwork/chalkbox-project-icon-512.svg").is_file(), (
+            "Missing canonical ChalkBox artwork"
+        )
         for relative in FILES:
             assert archive.read(f"ChalkBox/{relative}") == (
                 SOURCE / relative).read_bytes(), f"Source mismatch: {relative}"

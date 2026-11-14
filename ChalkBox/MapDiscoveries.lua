@@ -501,17 +501,20 @@ local function AreaPopupPage(delta)
 end
 local function EnsureAreaPopup()
     if areaPopup or not panel then return end
-    local f=CreateFrame("Frame","ChalkBoxDiscoveriesAreaPicker",panel)
+    -- A child of the journal can be layered *under* later controls on
+    -- Forever, including the native menu or item list. Give the picker an
+    -- independent top-level stratum but anchor it to the original Area field.
+    -- As a UIParent child, its buttons are clickable above the whole journal.
+    local f=CreateFrame("Frame","ChalkBoxDiscoveriesAreaPicker",UIParent)
     f:SetSize(310,314)
-    f:SetPoint("TOPLEFT",panel,"TOPLEFT",20,-170)
+    f:SetPoint("TOPLEFT",controls.area,"BOTTOMLEFT",0,-2)
     if type(f.SetFrameStrata)=="function" then
-        f:SetFrameStrata("FULLSCREEN_DIALOG")
+        f:SetFrameStrata("TOOLTIP")
     end
     if type(f.SetFrameLevel)=="function" then
-        local level=type(panel.GetFrameLevel)=="function" and
-            Call(panel.GetFrameLevel,panel) or 200
-        f:SetFrameLevel((type(level)=="number" and level or 200)+30)
+        f:SetFrameLevel(1000)
     end
+    if type(f.SetToplevel)=="function" then f:SetToplevel(true) end
     if type(f.EnableMouse)=="function" then f:EnableMouse(true) end
     if type(f.EnableMouseWheel)=="function" then f:EnableMouseWheel(true) end
     local bg=f:CreateTexture(nil,"BACKGROUND")
@@ -561,6 +564,9 @@ local function Dropdown(parent,label,width,x,y,kind)
                 areaPopup.page=1
                 AreaPopupPage(0)
                 areaPopup:Show()
+                if type(areaPopup.Raise)=="function" then
+                    areaPopup:Raise()
+                end
             end
             return
         end

@@ -14,7 +14,7 @@ Quality-of-life tools for WoW Forever: MacroForge, DropSense, LootSense, The Bar
 
 **Release announcement**
 
-ChalkBox 2.0.11 gives Discoveries a real, scrollable zone list with no nested submenus. Choose any recorded zone or dungeon directly, or follow the world map. Loot history now shows Found, Drops and source-specific Rate with simple numbers like 4 drops from 12 loots (33.3%). Counts are observed looted corpses, not all kills or official chances. Existing settings and modules are preserved.
+ChalkBox 2.0.12 fixes the Discoveries Area / Dungeon zone picker appearing behind other menus in WoW Forever. The direct zone list now opens as a proper clickable overlay above the journal, keeping all browsing and map sync controls intact. The game's AddOns selection icon has also been refreshed to match the newer ChalkBox project artwork. All recorded loot, characters' settings, and prior fixes are preserved.
 
 **Screenshot captions (for actual in-game images only)**
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.12 — Clickable Discoveries picker and new addon icon (prerelease)
+- Move the Area / Dungeon popup above the entire Discoveries journal into an independent top-level overlay; keep it aligned with the original dropdown and hide it when the journal closes.
+- Prevent the zone list from being visible but blocked by other controls or the world map.
+- Render the newer ChalkBox project logo into a 64×64, 32-bit, game-compatible TGA during reproducible addon packaging; retain the same IconTexture path in both WoW flavor manifests.
+- Test the popup's parent, strata, anchor, behavior on close, and included icon encoding.
+- Preserve all map sync, area browsing, DropSense history, filters and existing fixes.
+
+
 ## 2.0.11 — Direct zone browser and clearer drop stats (prerelease)
 - Replace nested Area / Dungeon menus with a visible, scrollable and paged list of every recorded zone and dungeon.
 - Browse locations independently of the world map or choose Follow world map; retain existing UI, saved preferences, search and filters.
