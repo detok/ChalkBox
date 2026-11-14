@@ -74,14 +74,12 @@ assert(loadfile("MapDiscoveries.lua"))("ChalkBox")
 local state=ChalkBox_MapDiscoveriesStatus()
 assert(not state.frame and not state.button and state.allowed,
     "first login doesn't fabricate a loaded world map or a button")
--- Direct command must work while map is still load-on-demand: player map
--- provides a valid location via C_Map.
-assert(ChalkBox_OpenMapDiscoveries(),
-    "standalone journal is accessible even if Blizzard map hasn't loaded")
-assert(Find("ChalkBoxMapDiscoveries"):IsShown(),
-    "direct access never depends on the map button being visible")
-assert(#journalFonts>=30 and Find("ChalkBoxMapDiscoveries").scripts.OnUpdate,
-    "standalone journal must fully build even before the native map loads")
+-- Discoveries is intentionally map-owned. It cannot create a detached
+-- journal while the Forever World Map is not yet loaded.
+assert(not ChalkBox_OpenMapDiscoveries(),
+    "load-on-demand map is required before opening Discoveries")
+assert(Find("ChalkBoxMapDiscoveries")==nil,
+    "a missing native map never creates a standalone journal")
 local loader
 for _,f in ipairs(frames) do
     if f.scripts.OnEvent and f.scripts.OnUpdate then loader=f end
@@ -113,8 +111,18 @@ ChalkBox_MapDiscoveriesEnsure()
 assert(#frames==before,"repeated map events don't create duplicate buttons")
 assert(ChalkBox_MapDiscoveriesStatus().anchor=="canvas")
 button.scripts.OnClick(button)
-assert(Find("ChalkBoxMapDiscoveries"):IsShown(),
-    "new map button opens journal on the selected map")
+assert(Find("ChalkBoxMapDiscoveries"):IsShown()
+    and Find("ChalkBoxMapDiscoveries").parent==map
+    and #journalFonts>=30,
+    "map button opens a complete child sidecar when the map exists")
+map:Hide()
+if map.scripts.HookOnHide then map.scripts.HookOnHide(map) end
+assert(not Find("ChalkBoxMapDiscoveries"):IsShown()
+    and not ChalkBox_OpenMapDiscoveries(),
+    "closing native map closes Discoveries and blocks standalone reopening")
+map:Show()
+if map.scripts.HookOnShow then map.scripts.HookOnShow(map) end
+assert(ChalkBox_OpenMapDiscoveries(),"sidecar reopens when native map is visible")
 enabled=false
 ChalkBox_MapDiscoveriesRefresh()
 assert(not button:IsShown() and
@@ -125,4 +133,4 @@ ChalkBox_MapDiscoveriesRefresh()
 assert(button:IsShown(),"reenabling displays the same attached button")
 if map.scripts.HookOnShow then map.scripts.HookOnShow(map) end
 assert(button:IsShown(),"map reopen refresh preserves button")
-print("PASS: Forever lazy-load map recovery, canvas-safe visible button, fallback slash, no duplicate frames, opt-out")
+print("PASS: Forever lazy-load map recovery, map-owned sidecar only, canvas-safe button, no duplicate frames and opt-out")
