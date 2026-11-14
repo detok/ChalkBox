@@ -4,6 +4,7 @@
 - Eliminate the UIParent screen-inset system. The Bar now anchors only its own non-protected overlay and never repositions or resizes Blizzard's root UI. Old saved `barReserve` settings migrate to safe overlay.
 - Block Emota native-emote attempts (automatic or manual) during combat, including reaction events. Sit/sleep/stand poses are manual previews only; no idle automation can interrupt food/drink.
 - Suspend the unsafe separate-bag offset hook and stock container reanchoring. Preserve previous saved bag offset for a future secure alternative; the slider is temporarily disabled. Do not modify Blizzard bag/item buttons or their parent frames.
+- Suspend green reagent outlines that previously wrote textures and marker fields onto Blizzard item buttons. Item Insight recipe detection remains active, with preferences preserved.
 - Keep XP, gold, gear, auction scanning, loot insights, Blizzard-native DPS reports and saved data enabled.
 - Add regression traps preventing any Bar UIParent write, any bag-frame hook/move and any Emota combat dispatch.
 
