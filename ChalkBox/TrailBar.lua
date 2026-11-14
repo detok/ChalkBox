@@ -1,4 +1,4 @@
--- ChalkBox TrailBar v1.1.1; reserved UIParent safe area and a physical-edge bar.
+-- ChalkBox TrailBar: self-owned, combat-safe screen-edge overlay.
 -- A single native, low-profile information strip. No pop-up windows.
 -- Uses non-secret, ordinary player XP, money and elapsed online time only.
 
@@ -779,155 +779,25 @@ local function CreateBar()
     EditDecorations()
 end
 
--- A Titan-style screen reservation, not a whitelist of named UI frames.
--- UIParent is the root for normal Blizzard UI anchors. Insets leave a genuine
--- 18px top/bottom strip, while WorldFrame continues drawing behind the UI.
--- This cannot promise to move manually placed or WorldFrame-anchored addons.
-local BAR_HEIGHT = 18
-local reservation = {
-    active=false, original=nil, position=nil, pending=false, issue=nil
-}
-
+-- Combat-safe overlay: only move our own unprotected frame.
+-- Never reanchor, resize, or reset UIParent, Blizzard action buttons,
+-- or another addon's frames. Those mutations can taint protected actions.
+local reservation={active=false,pending=false,position=nil,issue=nil}
 local function InCombat()
     return type(InCombatLockdown)=="function" and InCombatLockdown()
 end
-
-local function InsetStillPresent(position)
-    if not UIParent or not UIParent.GetNumPoints or not UIParent.GetPoint then
-        return false
-    end
-    local top,bottom
-    local count=UIParent:GetNumPoints()
-    if not Public(count) or type(count)~="number" then return false end
-    for i=1,count do
-        local point,_,_,x,y=UIParent:GetPoint(i)
-        if point=="TOPLEFT" then top=y end
-        if point=="BOTTOMRIGHT" then bottom=y end
-    end
-    local expectedTop=position=="top" and -BAR_HEIGHT or 0
-    local expectedBottom=position=="bottom" and BAR_HEIGHT or 0
-    return top==expectedTop and bottom==expectedBottom
-end
-
-local function CaptureRoot()
-    if not UIParent or type(UIParent.GetNumPoints)~="function"
-        or type(UIParent.GetPoint)~="function" then return end
-    local count=UIParent:GetNumPoints()
-    if not Public(count) or type(count)~="number" or count<0 or count>8 then return end
-    local saved={anchors={}, width=UIParent.GetWidth and UIParent:GetWidth(),
-        height=UIParent.GetHeight and UIParent:GetHeight()}
-    for i=1,count do
-        local point,relative,relativePoint,x,y=UIParent:GetPoint(i)
-        if not Public(point) or type(point)~="string" then return end
-        -- Named fields preserve a nil relative frame: array/unpack can drop nil.
-        saved.anchors[#saved.anchors+1]={
-            point=point,relative=relative,relativePoint=relativePoint,
-            x=x or 0,y=y or 0
-        }
-    end
-    return saved
-end
-
-local function RestoreRoot()
-    if not reservation.active then return true end
-    if InCombat() then reservation.pending=true;return false end
-    local original=reservation.original
-    if not original or not UIParent or not UIParent.ClearAllPoints then return false end
-    local ok=pcall(function()
-        UIParent:ClearAllPoints()
-        if #original.anchors>0 then
-            for _,a in ipairs(original.anchors) do
-                UIParent:SetPoint(a.point,a.relative,a.relativePoint,a.x,a.y)
-            end
-        elseif UIParent.SetAllPoints then
-            -- UIParent without explicit points was the full-screen root.
-            UIParent:SetAllPoints()
-        end
-        if #original.anchors<=1 and UIParent.SetSize
-            and Public(original.width) and Public(original.height) then
-            UIParent:SetSize(original.width,original.height)
-        end
-    end)
-    if ok then
-        reservation.active=false
-        reservation.position=nil
-        reservation.original=nil
-        reservation.issue=nil
-        return true
-    end
-    reservation.issue="Could not restore the original screen anchors."
-    return false
-end
-
-local function ReserveRoot()
-    if InCombat() then reservation.pending=true;return false end
-    local want=(db and db.barReserve and db.bar~="off") and db.bar or nil
-    if reservation.active and reservation.position==want then
-        if InsetStillPresent(want) then
-            reservation.pending=false
-            return true
-        end
-        -- Blizzard or another addon rebuilt UIParent after a display/UI scale
-        -- change. The new anchors are the new baseline; don't restore stale ones.
-        reservation.active=false
-        reservation.position=nil
-        reservation.original=nil
-    end
-    if not RestoreRoot() then return false end
-    if not want then reservation.pending=false;reservation.issue=nil;return true end
-    if not UIParent or not UIParent.ClearAllPoints
-        or not UIParent.SetPoint then
-        reservation.issue="This client does not allow UIParent screen resizing."
-        return false
-    end
-    local original=CaptureRoot()
-    if not original then
-        reservation.issue="Unable to read this client's original UI layout."
-        return false
-    end
-    local ok=pcall(function()
-        UIParent:ClearAllPoints()
-        -- Explicit nil means the physical screen, not the resized UIParent.
-        UIParent:SetPoint("TOPLEFT",nil,"TOPLEFT",0,
-            want=="top" and -BAR_HEIGHT or 0)
-        UIParent:SetPoint("BOTTOMRIGHT",nil,"BOTTOMRIGHT",0,
-            want=="bottom" and BAR_HEIGHT or 0)
-    end)
-    if not ok then
-        reservation.original=original
-        reservation.active=true
-        RestoreRoot()
-        reservation.issue="Screen inset was rejected; TrailBar remains in overlay mode."
-        return false
-    end
-    reservation.original=original
-    reservation.active=true
-    reservation.position=want
-    reservation.pending=false
-    reservation.issue=nil
-    return true
-end
-
 local function PlaceBar()
     if not bar or not db then return end
-    -- If the user changes bar position in combat, leave the existing geometry
-    -- in place until Blizzard permits editing the root frame again.
-    local inCombat=InCombat()
-    local pendingChange=inCombat and reservation.active
-        and (db.bar~=reservation.position or not db.barReserve)
-    if not pendingChange then ReserveRoot() else reservation.pending=true end
-    if pendingChange and db.bar~="off" then return end
-
+    if InCombat() then
+        reservation.pending=true
+        return
+    end
+    reservation.pending=false
+    reservation.issue=nil
+    -- In overlay mode Blizzard owns its root layout at all times.
+    -- This remains anchored to the requested edge after UI scale changes.
     bar:ClearAllPoints()
-    if reservation.active and reservation.position==db.bar and db.barReserve then
-        if db.bar=="top" then
-            bar:SetPoint("BOTTOMLEFT",UIParent,"TOPLEFT",0,0)
-            bar:SetPoint("BOTTOMRIGHT",UIParent,"TOPRIGHT",0,0)
-        else
-            bar:SetPoint("TOPLEFT",UIParent,"BOTTOMLEFT",0,0)
-            bar:SetPoint("TOPRIGHT",UIParent,"BOTTOMRIGHT",0,0)
-        end
-    elseif db.bar=="bottom" then
+    if db.bar=="bottom" then
         bar:SetPoint("BOTTOMLEFT",UIParent,"BOTTOMLEFT",0,0)
         bar:SetPoint("BOTTOMRIGHT",UIParent,"BOTTOMRIGHT",0,0)
     else
@@ -1120,11 +990,11 @@ function ChalkBox_BarCommand(message)
             ". Visible at current width: "..table.concat(state.visible,", ")..".")
     elseif action == "reserve on" or action == "reserve off"
         or action == "dock on" or action == "dock off" then
-        db.barReserve=(action=="reserve on" or action=="dock on")
+        -- Retained alias for old slash commands; the dangerous root inset
+        -- is deliberately retired. We never modify UIParent.
+        db.barReserve=false
         PlaceBar()
-        Note("Reserve 18px for TrailBar: " .. (db.barReserve and "ON" or "OFF") ..
-            (reservation.pending and " (applies after combat)" or "") ..
-            (reservation.issue and " - " .. reservation.issue or ""))
+        Note("Safe overlay active. Blizzard's screen layout is untouched.")
     elseif action == "top" or action == "bottom" or action == "off" then
         db.bar = action
         PlaceBar()
@@ -1135,20 +1005,12 @@ function ChalkBox_BarCommand(message)
         Note("XP/hour and net-gold session reset.")
     elseif action == "status" then
         local xpPerHour, eta, goldPerHour = GetRates()
-        local rootHeight=UIParent and UIParent.GetHeight and UIParent:GetHeight()
-        local baselineHeight=reservation.original and reservation.original.height
-        local delta=(type(baselineHeight)=="number" and type(rootHeight)=="number")
-            and (baselineHeight-rootHeight) or nil
-        Note("Bar=" .. db.bar .. ", reserve=" .. tostring(db.barReserve) ..
-            ", active=" .. tostring(reservation.active) ..
-            ", applied=" .. tostring(reservation.position) ..
+        Note("Bar=" .. db.bar .. ", layout=safe overlay" ..
             ", pending=" .. tostring(reservation.pending) ..
-            ", screen space=" .. (delta and ("%.0f"):format(delta) or "unavailable") .. "px" ..
-            (reservation.issue and ", issue=" .. reservation.issue or "") ..
             ", XP/hr=" .. Number(xpPerHour) .. ", ETA=" .. Duration(eta) ..
             ", net gold/hr=" .. Money(goldPerHour, true))
     else
-        Note("The Bar: /chalk bar top|bottom|off | reserve on/off | reset | status")
+        Note("The Bar: /chalk bar top|bottom|off | reset | status (safe overlay)")
         Note("Stats: /chalk bar stat <module> on/off | stats all|balanced|minimal")
         Note("Layout: /chalk bar edit on/off | layout reset | move <module> <left|center|right> [index]")
         Note("Text alignment: /chalk bar align <module> <left|center|right> | opacity 0-100")
@@ -1194,9 +1056,9 @@ events:SetScript("OnEvent", function(_, event, name)
         if ChalkBoxDB.bar ~= "top" and ChalkBoxDB.bar ~= "bottom"
             and ChalkBoxDB.bar ~= "off" then ChalkBoxDB.bar = "top" end
         db = ChalkBoxDB
-        -- The previous frame-whitelist docking was ineffective. This setting
-        -- uses a real UIParent safe-area inset and defaults ON for all users.
-        if db.barReserve==nil then db.barReserve=true end
+        -- A saved legacy reservation is not safe: never re-enable it.
+        -- Keep the Bar itself; leave Blizzard-owned UIParent unmodified.
+        db.barReserve=false
         ConfigureStats()
         if db.barBagValueMode~="junk" then db.barBagValueMode="total" end
         ApplyAppearance()
