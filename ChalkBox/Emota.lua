@@ -73,7 +73,7 @@ local function Catalog()
     catalog={}
     for token in pairs(found) do
         catalog[#catalog+1]={
-            token=token,automatic=automatic[token]==true,idle=idleFeatured[token]==true
+            token=token,automatic=automatic[token]==true,idle=idleFeatured[token]==true,manualPose=poseTokens[token]==true
         }
     end
     table.sort(catalog,function(a,b)
@@ -153,6 +153,14 @@ local function StandaloneEnabled()
 end
 
 local function NativeEmote(token, reason, manual, targetName)
+    -- Some Forever clients treat PerformEmote as a protected chat action.
+    -- No manual, reactive, or automatic dispatch while combat is active.
+    if inCombat or (type(InCombatLockdown)=="function" and
+        InCombatLockdown()) then return false end
+    if type(UnitAffectingCombat)=="function" then
+        local fighting=UnitAffectingCombat("player")
+        if Hidden(fighting) or fighting then return false end
+    end
     if StandaloneEnabled() then
         if manual then Note("Standalone EmotaSpeak is active; integrated emotes are paused. Disable the standalone addon to use this module.", true) end
         return false
@@ -165,6 +173,11 @@ local function NativeEmote(token, reason, manual, targetName)
         return false
     end
     if not manual and token~="STAND" and not ChalkBox_EmotaGetEnabled(token) then
+        return false
+    end
+    -- Automatic sitting/sleeping/standing can interrupt drinking and player
+    -- actions even outside combat. Keep pose emotes as manual previews only.
+    if not manual and (poseTokens[token] or token=="STAND") then
         return false
     end
 
@@ -312,14 +325,15 @@ local function IdlePool()
         context=ChalkBox_PersonalityContext()
     end
     for _,entry in ipairs(idlePresets) do
-        if ChalkBox_EmotaGetEnabled(entry.token) then
+        if not entry.pose and ChalkBox_EmotaGetEnabled(entry.token) then
             local extra=context and context.weights[entry.token] or 0
             pool[#pool+1]={token=entry.token,weight=entry.weight+extra,pose=entry.pose}
         end
     end
     if context and context.weights then
         for token,weight in pairs(context.weights) do
-            if ChalkBox_EmotaGetEnabled(token) then
+            if not poseTokens[token] and token~="STAND"
+                and ChalkBox_EmotaGetEnabled(token) then
                 local found=false
                 for _,entry in ipairs(pool) do if entry.token==token then found=true;break end end
                 if not found then pool[#pool+1]={token=token,weight=weight} end
@@ -334,7 +348,8 @@ local function IdlePool()
         -- set above remains the primary source of animated behaviors.
         for _,entry in ipairs(Catalog()) do
             if not automatic[entry.token] and not idleFeatured[entry.token]
-                and entry.token~="STAND" and ChalkBox_EmotaGetEnabled(entry.token) then
+                and entry.token~="STAND" and not poseTokens[entry.token]
+                and ChalkBox_EmotaGetEnabled(entry.token) then
                 pool[#pool+1]={token=entry.token,weight=2}
             end
         end

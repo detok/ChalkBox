@@ -625,30 +625,21 @@ local function MakeLootAppearance()
                 d.lootCategories[key]=on
             end)
     end
-    Label(panel,"VERIFIED BAG REAGENT MARKERS","GameFontNormalLarge",
+    Label(panel,"BAG REAGENT OUTLINES PAUSED","GameFontNormalLarge",
         27,-246,480)
-    Toggle(panel,"Highlight ingredients for learned recipes",
-        nil,-275,
-        function()
-            local d=DB();return d and d.lootHighlightKnown~=false
-        end,
-        function(on)
-            if ChalkBox_BagHighlightSet then ChalkBox_BagHighlightSet(on) end
-        end)
-    Label(panel,"Marker opacity","GameFontNormal",27,-326,145)
+    Label(panel,"Protected item-button safety. Item Insight still works.",
+        "GameFontHighlightSmall",27,-275,495)
+    Label(panel,"Saved marker opacity","GameFontNormal",27,-326,145)
     local slider=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
     slider:SetSize(255,17)
     slider:SetPoint("TOPLEFT",panel,"TOPLEFT",182,-322)
     slider:SetMinMaxValues(15,100)
+    if type(slider.Disable)=="function" then slider:Disable() end
     if slider.SetValueStep then slider:SetValueStep(5) end
     local alpha=Label(panel,"75%","GameFontHighlightSmall",448,-328,65)
     local loading=false
-    slider:SetScript("OnValueChanged",function(_,value)
-        if loading or type(value)~="number" then return end
-        if ChalkBox_BagHighlightOpacity then
-            ChalkBox_BagHighlightOpacity(value)
-        end
-        alpha:SetText(tostring(math.floor(value+0.5)).."%")
+    slider:SetScript("OnValueChanged",function()
+        -- Preserved opacity is read-only until secure bag overlays exist.
     end)
     panel:AddRefresh(function()
         local status=ChalkBox_BagHighlightStatus and ChalkBox_BagHighlightStatus()
@@ -656,12 +647,7 @@ local function MakeLootAppearance()
         loading=true;slider:SetValue(value);loading=false
         alpha:SetText(tostring(value).."%")
     end)
-    Button(panel,"Refresh Bag Markers",28,-371,224,function()
-        if ChalkBox_BagHighlightsRefresh then
-            ChalkBox_BagHighlightsRefresh()
-        end
-    end)
-    Button(panel,"Scan Open Profession",270,-371,224,function()
+    Button(panel,"Scan Open Profession",28,-371,224,function()
         if ChalkBox_ProfessionRefresh then ChalkBox_ProfessionRefresh() end
         if ChalkBox_BagHighlightsRefresh then
             ChalkBox_BagHighlightsRefresh()
@@ -728,16 +714,10 @@ local function MakeBar()
             function() local db=DB(); return db and db.bar==entry[1] end,
             function() if ChalkBox_BarCommand then ChalkBox_BarCommand(entry[1]) end end)
     end
-    Toggle(panel,"Reserve screen space (18px)",
-        "Recommended: keeps Blizzard's UI out of the bar's screen strip.",-284,
-        function() local db=DB(); return db and db.barReserve~=false end,
-        function(on)
-            if ChalkBox_BarCommand then
-                ChalkBox_BarCommand(on and "reserve on" or "reserve off")
-            end
-        end)
+    Label(panel,"SAFE OVERLAY  |  Blizzard frames untouched",
+        "GameFontHighlight",28,-285,470)
     Label(panel,"SEPARATE BAG POSITION","GameFontNormalLarge",28,-335,300)
-    Label(panel,"Move bags relative to Blizzard's original anchor.",
+    Label(panel,"Offset paused to protect combat item use.",
         "GameFontHighlightSmall",28,-360,315)
     local current=Label(panel,"0  —  Blizzard default",
         "GameFontHighlight",28,-385,318)
@@ -746,6 +726,7 @@ local function MakeBar()
     bagSlider:SetPoint("TOPLEFT",panel,"TOPLEFT",363,-312)
     if bagSlider.SetOrientation then bagSlider:SetOrientation("VERTICAL") end
     bagSlider:SetMinMaxValues(-120,120)
+    if type(bagSlider.Disable)=="function" then bagSlider:Disable() end
     if bagSlider.SetValueStep then bagSlider:SetValueStep(5) end
     if bagSlider.SetThumbTexture then
         bagSlider:SetThumbTexture("Interface\\Buttons\\UI-SliderBar-Button-Vertical")
@@ -758,15 +739,8 @@ local function MakeBar()
     Label(panel,"0 · BLIZZARD","GameFontHighlightSmall",399,-365,120)
     Label(panel,"DOWN  +120","GameFontHighlightSmall",399,-418,120)
     local updating=false
-    bagSlider:SetScript("OnValueChanged",function(_,value)
-        if updating or type(value)~="number" then return end
-        -- Vertical sliders put their maximum at the top. Negate to make the
-        -- top move bags UP and bottom move bags DOWN, with Blizzard 0 centered.
-        local offset=math.floor(-value+0.5)
-        if ChalkBox_BagOffsetSet then ChalkBox_BagOffsetSet(offset) end
-        current:SetText((offset==0 and "0  —  Blizzard default") or
-            ((offset>0 and "+" or "")..offset.." points  ("..
-            (offset>0 and "down" or "up")..")"))
+    bagSlider:SetScript("OnValueChanged",function()
+        -- Deliberately inert: stock bag actions must remain secure.
     end)
     panel:AddRefresh(function()
         local status=ChalkBox_BagStatus and ChalkBox_BagStatus()
@@ -782,7 +756,7 @@ local function MakeBar()
         if ChalkBox_BarCommand then ChalkBox_BarCommand("reset") end
     end)
     Button(panel,"Reset Bags",172,-416,112,function()
-        if ChalkBox_BagOffsetSet then ChalkBox_BagOffsetSet(0) end
+        if ChalkBox_BagCommand then ChalkBox_BagCommand("reset") end
         if panel.OnRefresh then panel.OnRefresh() end
     end)
     return panel
@@ -1066,7 +1040,7 @@ end
 local function MakeCatalog()
     local panel=Panel("Emote Catalog",
         "Each token has its own switch. Try previews it without waiting for idle.")
-    Label(panel,"Reactions and curated idle emotes are enabled initially; extras are opt-in.",
+    Label(panel,"Auto reactions are cosmetic. Poses are manual-only for safety.",
         "GameFontHighlightSmall",26,-104,494)
     local page=1
     local rows={}
@@ -1109,11 +1083,13 @@ local function MakeCatalog()
             local entry=available[(page-1)*perPage+i]
             row.token=entry and entry.token or nil
             if entry then
-                local role=entry.automatic and "reaction" or (entry.idle and "idle" or "extra")
+                local role=entry.manualPose and "manual pose" or
+                    (entry.automatic and "reaction" or (entry.idle and "idle" or "extra"))
                 row.title:SetText(entry.token .. "   (" .. role .. ")")
                 row.check:SetChecked(ChalkBox_EmotaGetEnabled and
                     ChalkBox_EmotaGetEnabled(entry.token)==true)
-                row.check:Show()
+                if entry.manualPose then row.check:Hide()
+                else row.check:Show() end
                 row.test:Show()
             else
                 row.title:SetText("")
