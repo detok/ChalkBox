@@ -753,17 +753,8 @@ local function MakeBar()
     Label(panel,"0 · BLIZZARD","GameFontHighlightSmall",399,-365,120)
     Label(panel,"DOWN  +120","GameFontHighlightSmall",399,-418,120)
     local updating=false
-    bagSlider:SetScript("OnValueChanged",function(_,value)
-        if updating or type(value)~="number" then return end
-        -- Custom bag placement is disabled until a secure Blizzard API exists.
-        return
-        -- Vertical sliders put their maximum at the top. Negate to make the
-        -- top move bags UP and bottom move bags DOWN, with Blizzard 0 centered.
-        local offset=math.floor(-value+0.5)
-        if ChalkBox_BagOffsetSet then ChalkBox_BagOffsetSet(offset) end
-        current:SetText((offset==0 and "0  —  Blizzard default") or
-            ((offset>0 and "+" or "")..offset.." points  ("..
-            (offset>0 and "down" or "up")..")"))
+    bagSlider:SetScript("OnValueChanged",function()
+        -- Deliberately inert: stock bag actions must remain secure.
     end)
     panel:AddRefresh(function()
         local status=ChalkBox_BagStatus and ChalkBox_BagStatus()
