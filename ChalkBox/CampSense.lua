@@ -143,39 +143,34 @@ local function MeaningfulHint(buffs,tent)
     if db.buffs~=false and buffs.state=="expiring" then
         local mins=math.max(1,math.ceil((buffs.seconds or 0)/60))
         return "Camp Benefits expire in "..mins..
-            " min. Rest at a campsite soon.",
+            "m  ·  Rest at camp.",
             "Camp Benefits fading","camp-expiring"
     end
     if db.buffs~=false and tent.state=="ready" and tentCount and
         tentCount>0 then
-        return "Rested XP is below 5%. You have a Camp Tent; sit by it "..
-            "at a campfire for about 1 minute.",
+        return "Rested XP below 5%  ·  Camp Tent ready. Rest by fire ~1m.",
             "Tent refill available","tent-ready"
     end
     if db.buffs~=false and buffs.state=="missing" then
         if kit and kit>0 then
-            return "Camp Benefits missing. You have "..kit..
-                " Campfire Kit(s); set up camp and rest for 1 minute.",
+            return "Camp Benefits missing  ·  "..kit..
+                " kit(s) ready. Camp and rest ~1m.",
                 "Ready to make camp","camp-missing-kit"
         elseif wood and wood>0 and flint and flint>0 then
-            return "Camp Benefits missing. You have Simple Wood and Flint "..
-                "and Tinder to prepare a Campfire Kit.",
+            return "Camp Benefits missing  ·  Wood + Flint ready. Craft a kit.",
                 "Prepare a campfire","camp-missing-craft"
         else
-            return "Camp Benefits missing. Visit a campsite and rest "..
-                "for about 1 minute; check supplies first.",
+            return "Camp Benefits missing  ·  Rest at campsite ~1m.",
                 "Camp Benefits missing","camp-missing"
         end
     end
     if Forever() and db.supplies~=false and kit~=nil and kit==0 then
         if wood==0 then
-            return "No Campfire Kits or Simple Wood in your bags. "..
-                "Restock before your next camp.",
+            return "No kits or Simple Wood  ·  Restock before camping.",
                 "Restock camp supplies","supplies-empty"
         end
         if flint==0 then
-            return "You have wood but no Flint and Tinder. "..
-                "Carry the reusable tool to make campfire kits.",
+            return "Flint and Tinder missing  ·  Bring reusable tool.",
                 "Flint and Tinder needed","supplies-flint"
         end
     end
@@ -183,8 +178,7 @@ local function MeaningfulHint(buffs,tent)
     -- not a false claim that the character cannot camp right now.
     if Forever() and db.supplies~=false and kit==0 and wood and
         wood<2 then
-        return "Low on camp supplies. Carry Basic Campfire Kits or "..
-            "Simple Wood for your next trip.",
+        return "Camp supplies low  ·  Restock kits or Simple Wood.",
             "Camp supplies running low","supplies-low"
     end
     if db.classCare~=false and CurrentClass()=="HUNTER" then
