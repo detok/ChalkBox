@@ -60,7 +60,10 @@ _G.C_QuestLog={
         return false -- false is not proof that AddQuestWatch failed
     end,
     RemoveQuestWatch=function(id)
-        assert(id~=301,"never remove user's manual watch")
+        if id==301 then
+            assert(ChalkBoxZoneDB.mode=="zone",
+                "manual watch may only be temporarily hidden in Nearby mode")
+        end
         watches[id]=nil
         changes[#changes+1]="-"..id
         if frame then frame.fire(frame,"QUEST_WATCH_LIST_CHANGED") end
@@ -126,9 +129,20 @@ assert(watches[201],"new zone visit resets muted auto watch")
 -- A strict zone mode remains available to avoid clutter for players who want it.
 ChalkBox_QuestCommand("zone")
 Flush()
-assert(watches[201] and watches[301] and not watches[101] and not watches[102],
-    "nearby-only drops previous auto watches but preserves manual")
-assert(ChalkBoxZoneDB.mode=="zone")
+assert(watches[201] and not watches[301] and not watches[101] and not watches[102],
+    "nearby-only remote cleanup: 201="..tostring(watches[201])..
+    " 301="..tostring(watches[301]).." 101="..tostring(watches[101])..
+    " 102="..tostring(watches[102]).." reason="..ChalkBox_QuestStatus().reason)
+assert(ChalkBoxZoneDB.mode=="zone" and
+    ChalkBoxZoneDB.suspendedManual[301] and ChalkBox_QuestStatus().hidden==1,
+    "suspended manual watches are remembered, not forgotten")
+-- The explicit Nearby setting includes previously manual, out-of-zone quests.
+-- They must return only when relevant again, not require re-checking by hand.
+watches[401]=true
+Fire("QUEST_WATCH_LIST_CHANGED")
+Flush()
+assert(not watches[401] and ChalkBoxZoneDB.suspendedManual[401],
+    "manual remote watch is hidden but remembered automatically")
 -- No tracker edits with the map open: wait for OnHide and then reconcile.
 mapShown=true
 currentMap=3
@@ -138,8 +152,36 @@ assert(watches[201] and not watches[101] and ChalkBox_QuestStatus().pending)
 mapShown=false
 closeMap()
 Flush()
-assert(not watches[201] and watches[101] and watches[102] and watches[401],
-    "map closing unlocks queued current-zone watch changes")
+assert(not watches[201] and watches[101] and watches[102] and watches[401]
+    and not watches[301],
+    "map closing applies only currently matching zone watches")
+assert(not ChalkBoxZoneDB.suspendedManual[401] and
+    not ChalkBoxZoneDB.managed[401],
+    "when a manual watch becomes nearby again it is restored as manual")
+-- Manually unchecking a returned watch must stick until the zone changes.
+watches[401]=nil
+Fire("QUEST_WATCH_LIST_CHANGED")
+Flush()
+assert(not watches[401] and ChalkBoxZoneDB.muted[401],
+    "QuestSense respects manual unwatch even after restoring a saved choice")
+for i=1,4 do tickers[1]() end
+Flush()
+assert(not watches[401],
+    "periodic Nearby refresh never overrides an intentional manual unwatch")
+-- Recently accepted quests must not evade the active-zone filter.
+logs[#logs+1]={isHeader=true,title="Redridge Mountains"}
+logs[#logs+1]={questID=402,title="Fresh distant quest",
+    hasLocalPOI=true,isOnMap=true}
+Fire("QUEST_ACCEPTED",#logs,402)
+Flush()
+assert(not watches[402],
+    "new or local-POI-marked remote quests cannot bypass Nearby-only")
+-- A missed watch-change event is reconciled on the periodic safety scan.
+watches[201]=true
+for i=1,4 do tickers[1]() end
+Flush()
+assert(not watches[201] and ChalkBoxZoneDB.suspendedManual[201],
+    "Nearby mode repairs tracker drift without pressing Refresh")
 -- Likewise, defer updates while the separate quest log is open.
 logShown=true
 currentMap=2
@@ -149,7 +191,9 @@ assert(watches[101] and not watches[201])
 logShown=false
 closeLog()
 Flush()
-assert(watches[201] and not watches[101])
+assert(watches[201] and not watches[101] and
+    not ChalkBoxZoneDB.suspendedManual[201],
+    "returning to the area restores its manual watch automatically")
 -- No map or POI support: smart mode must still do something useful.
 C_Map=nil
 C_QuestLog.GetQuestsOnMap=nil
@@ -157,16 +201,35 @@ ChalkBox_QuestCommand("smart")
 Flush()
 assert(watches[101] and watches[102] and watches[201] and watches[401],
     "smart mode uses accepted quest log even on clients missing all map-pin APIs")
-assert(watches[301],"manual remains untouched without map info")
+assert(watches[301] and not ChalkBoxZoneDB.suspendedManual[301],
+    "leaving Nearby restores manually selected watches even without map data")
 -- Combat gating.
 inCombat=true
 ChalkBox_QuestCommand("zone")
 Flush()
 assert(ChalkBox_QuestStatus().pending)
 inCombat=false
+local zoneTextBefore=GetZoneText
+GetZoneText=function() return "" end
 Fire("PLAYER_REGEN_ENABLED")
 Flush()
-assert(ChalkBox_QuestStatus().reason=="ready")
+assert(ChalkBox_QuestStatus().pending and
+    ChalkBox_QuestStatus().reason:find("zone data",1,true),
+    "no zone evidence keeps existing watches instead of clearing them")
+GetZoneText=zoneTextBefore
+C_Map={
+    GetBestMapForUnit=function() return currentMap end,
+    GetMapInfo=function(id) return mapInfo[id] end,
+}
+C_QuestLog.GetQuestsOnMap=function(id)
+    if id==1 then return {{questID=101},{questID=401}} end
+    if id==2 then return {{questID=201}} end
+    return {}
+end
+Fire("ZONE_CHANGED_NEW_AREA")
+Flush()
+assert(ChalkBox_QuestStatus().reason=="ready",
+    "nearby tracking automatically resumes when map data returns")
 -- No API: state reports the reason instead of silently appearing functional.
 local old=C_QuestLog.GetNumQuestWatches
 C_QuestLog.GetNumQuestWatches=nil
@@ -181,10 +244,11 @@ Flush()
 assert(ChalkBox_QuestStatus().limit==5)
 ChalkBox_QuestCommand("off")
 Flush()
-assert(not watches[101] and not watches[102] and not watches[201] and not watches[401],
-    "disabling removes only our auto watches")
+assert(not watches[101] and not watches[102] and
+    not watches[401] and not watches[402] and watches[201],
+    "disabling removes only auto watches and keeps restored manual watches")
 assert(watches[301],"turning off never deletes manual watches")
 ChalkBox_QuestCommand("on")
 Flush()
 assert(watches[101] and watches[301],"re-enabling works on the same session")
-print("PASS: Forever C_QuestLog accepted-quest fallback, strict-zone mode, watch diff, event gating, manual unwatch, API diagnostics, limit and reset")
+print("PASS: Forever quest auto-nearby, remote manual suspension and restoration, recent quest filtering, periodic sync, safe API fallback, watch ownership, and modes")

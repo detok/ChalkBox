@@ -30,7 +30,7 @@ The optional **Combat Meter** displays DPS, damage, healing and other supported 
 
 ## Smaller improvements
 
-- **QuestSense:** accepted-quest watch management within Blizzard's own tracker.
+- **QuestSense:** automatic quest watches in Blizzard's own tracker, with a Nearby-only mode that keeps the visible list relevant to your current zone. Remote manually selected watches are temporarily hidden and restored as you return.
 - **Adventure Prep:** practical reminders for known camping supplies, tent/rested-XP status, buffs and supported class or pet care.
 - **Global Appearance:** a shared color palette and background controls for ChalkBox windows.
 - **Emota:** optional contextual character emotes.
@@ -46,7 +46,7 @@ Install the **ChalkBox** folder in your Forever client's **Interface/AddOns** fo
 
 ## Compatibility
 
-ChalkBox is developed for **WoW Forever**. Retail and Classic Era have not been tested. Some data depends on what the Forever client exposes. This 2.0.7 package is a **test build** while the latest Bar tooltip changes are checked in-game.
+ChalkBox is developed for **WoW Forever**. Retail and Classic Era have not been tested. Some data depends on what the Forever client exposes. This 2.0.8 package is a **test build** while the QuestSense Nearby automation is checked in-game.
 
 Source and issue tracker: https://github.com/detok/ChalkBox
 
