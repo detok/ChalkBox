@@ -6,7 +6,7 @@
 
 **A collection of useful tools for World of Warcraft: Forever.**
 
-[Download 2.1.1 — Test release](https://github.com/detok/ChalkBox/releases/tag/v2.1.1) · [Report a bug](https://github.com/detok/ChalkBox/issues/new/choose) · [User guide](docs/USER_GUIDE.md)
+[Download 2.1.2 — Test release](https://github.com/detok/ChalkBox/releases/tag/v2.1.2) · [Report a bug](https://github.com/detok/ChalkBox/issues/new/choose) · [User guide](docs/USER_GUIDE.md)
 
 </div>
 
