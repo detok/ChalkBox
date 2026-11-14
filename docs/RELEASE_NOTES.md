@@ -6,6 +6,7 @@ A priority fix for addon-blocked actions during combat, unexpected Bar disappear
 - **The Bar:** Always an independent 18px top/bottom overlay. No `UIParent:ClearAllPoints`, `UIParent:SetPoint` or root resizing. Bar placement and session stats remain available; the old full-screen push-down/reserved strip is removed until we can implement it without Blizzard taint.
 - **Emota:** Nothing is sent through the native emote API during combat, including mana reactions or manual previews. Out-of-combat cosmetic reactions continue to work. Automatic SIT/SLEEP/LAYDOWN/STAND posing is paused; manual previews remain available.
 - **Bags:** The earlier vertical-offset hook was reanchoring Blizzard container frames that hold clickable items. This is suspended. Stock Blizzard bags work normally; existing offset preferences are retained but not applied and the slider is disabled.
+- **Reagent outlines:** Green reagent textures previously attached directly to Blizzard bag item buttons. Those outlines are also temporarily paused. Learned-recipe Item Insight tooltips stay active, and marker preferences remain saved.
 - **Other modules:** Preserve the native DPS reports, auction scans, quest tracking, item insights, Drop Journal, and existing SavedVariables.
 
 ### Why
