@@ -73,7 +73,7 @@ local function Catalog()
     catalog={}
     for token in pairs(found) do
         catalog[#catalog+1]={
-            token=token,automatic=automatic[token]==true,idle=idleFeatured[token]==true
+            token=token,automatic=automatic[token]==true,idle=idleFeatured[token]==true,manualPose=poseTokens[token]==true
         }
     end
     table.sort(catalog,function(a,b)
