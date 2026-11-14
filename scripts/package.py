@@ -6,6 +6,8 @@ import re
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
+from render_addon_icon import render_icon
+
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "ChalkBox"
 DIST = ROOT / "dist"
@@ -71,6 +73,9 @@ def version_of(path: Path) -> str:
 
 
 def build() -> Path:
+    # The playable addon uses the same newer brand mark as CurseForge,
+    # rendered to the 32-bit TGA format the WoW addon list actually supports.
+    render_icon()
     versions = {version_of(SOURCE / name) for name in FILES if name.endswith(".toc")}
     if len(versions) != 1:
         raise ValueError(f"TOC versions differ: {versions}")

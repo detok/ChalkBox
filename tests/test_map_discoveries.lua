@@ -208,8 +208,12 @@ local function OpenArea()
     local button=ClickButton("▾")
     local popup=Find("ChalkBoxDiscoveriesAreaPicker")
     assert(popup and popup:IsShown(),"area field must open a visible dropdown")
-    assert(popup.parent==Find("ChalkBoxMapDiscoveries"),
-        "the zone picker must overlay the existing Discoveries journal")
+    assert(popup.parent==UIParent and popup.strata=="TOOLTIP" and
+        popup.level>=1000 and popup.toplevel,
+        "zone picker must be an independent top-level clickable overlay")
+    assert(popup.point and popup.point[1]=="TOPLEFT" and
+        popup.point[3]=="BOTTOMLEFT",
+        "overlay remains anchored beneath the existing Area field")
     return popup
 end
 local function SelectArea(text)
@@ -313,7 +317,12 @@ viewed=1436
 journal.OnUpdate(journal,0.8)
 assert(ChalkBox_DiscoveriesBrowserStatus().selectedArea=="z:1437",
     "browsing a remote zone survives map movement and updates")
+OpenArea()
+assert(Find("ChalkBoxDiscoveriesAreaPicker").shown,
+    "list stays clickable while the journal is open")
 journal:Hide()
+assert(not Find("ChalkBoxDiscoveriesAreaPicker").shown,
+    "hiding the journal closes its separate top-level popup")
 assert(ChalkBox_OpenMapDiscoveries())
 assert(ChalkBox_DiscoveriesBrowserStatus().selectedArea=="z:1437",
     "manual browse choice survives closing and reopening")
