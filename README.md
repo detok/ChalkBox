@@ -6,13 +6,13 @@
 
 **A collection of useful tools for World of Warcraft: Forever.**
 
-[Download 2.1.6 — UI fit update](https://github.com/detok/ChalkBox/releases/tag/v2.1.6) · [Report a bug](https://github.com/detok/ChalkBox/issues/new/choose) · [User guide](docs/USER_GUIDE.md)
+[Download 2.1.7 — Bar and bag interface polish](https://github.com/detok/ChalkBox/releases/tag/v2.1.7) · [Report a bug](https://github.com/detok/ChalkBox/issues/new/choose) · [User guide](docs/USER_GUIDE.md)
 
 </div>
 
 ChalkBox adds small improvements around the parts of the game you use every day: finding useful loot, managing quests, tracking progress, preparing for camp, and setting up your action buttons. Pick the modules you want and turn off the rest.
 
-**2.1.6 UI fit + combat safety:** The Bar is full-width again. It can shift eligible default-positioned Blizzard top frames down 18px without resizing the root UI; protected/custom frames are never moved. Emota does not dispatch emotes during combat. Blizzard bag positioning and in-bag reagent borders are temporarily paused to avoid touching protected item buttons; learned-recipe tooltips and other ChalkBox features remain available.
+**2.1.7 UI layering + combat safety:** The Bar is full-width and now draws behind Blizzard portrait artwork. It can shift eligible default-positioned Blizzard top frames down 18px without resizing the root UI; protected/custom frames are never moved. Emota does not dispatch emotes during combat. Blizzard bag positioning and in-bag reagent borders are temporarily paused to avoid touching protected item buttons; learned-recipe tooltips and other ChalkBox features remain available.
 
 It installs as **one addon**, including its profession recipe data. You don't need to download any companion packages.
 
@@ -43,7 +43,7 @@ These are real in-game captures, cropped around the addon controls. Character na
 | **QuestSense** | Manages accepted-quest watches in Blizzard's native tracker. |
 | **Combat Meter** | A small optional DPS/healing/interrupt meter, with a manual PARTY report. ChalkBox expands Blizzard's native meter gear menu with PARTY/SAY reports, Top 3/5/10 ranks, and optional post-combat reporting. |
 | **Adventure Prep** | Short reminders for supported camping, rested-XP, supplies, buffs and pet-care signals. |
-| **Appearance, Emota, QuietGuard & Bags** | Shared ChalkBox colors and transparency; optional character emotes, invite filtering and bag-window positioning. |
+| **Appearance, Emota, QuietGuard & Bags** | Shared ChalkBox colors and transparency; optional character emotes and invite filtering. Custom native bag-window positioning is paused for combat safety. |
 | **Updates** | Shows the installed addon version and a copyable GitHub Releases link. An optional group-version comparison can flag newer versions seen among other ChalkBox users. |
 
 ### A better-organized settings menu
@@ -108,7 +108,7 @@ MacroForge doesn't automate rotations or bypass the global cooldown. Installing 
 
 ## Install
 
-1. Download **[ChalkBox-2.1.6.zip](https://github.com/detok/ChalkBox/releases/download/v2.1.6/ChalkBox-2.1.6.zip)** from the GitHub release. Don't use the automatically generated "Source code" ZIP.
+1. Download **[ChalkBox-2.1.7.zip](https://github.com/detok/ChalkBox/releases/download/v2.1.7/ChalkBox-2.1.7.zip)** from the GitHub release. Don't use the automatically generated "Source code" ZIP.
 2. Extract the single **ChalkBox** folder into your Forever client's **Interface/AddOns** directory.
 3. Check that **Interface/AddOns/ChalkBox/ChalkBox.toc** exists. Avoid an extra nested ChalkBox folder.
 4. Launch the game and type **/chalk**.
@@ -139,7 +139,7 @@ The media kit now includes the real cropped gameplay gallery under `Screenshots/
 
 The **[CurseForge folder](curseforge/)** contains the current project description, short summary, FAQ, changelog and submission checklist, along with the original ChalkBox artwork.
 
-The release also includes a separate **[CurseForge media kit ZIP](https://github.com/detok/ChalkBox/releases/download/v2.1.6/ChalkBox-CurseForge-Media-2.1.6.zip)** with six SVG originals, PNG exports, and ready-to-use listing copy. It is **not an addon installation file**.
+The release also includes a separate **[CurseForge media kit ZIP](https://github.com/detok/ChalkBox/releases/download/v2.1.6/ChalkBox-CurseForge-Media-2.1.7.zip)** with six SVG originals, PNG exports, and ready-to-use listing copy. It is **not an addon installation file**.
 
 The illustrations are promotional graphics, not in-game screenshots. Real screenshots should be captured from the running Forever client before being used in a gallery.
 
@@ -147,7 +147,7 @@ The illustrations are promotional graphics, not in-game screenshots. Real screen
 
 ChalkBox targets **WoW Forever**. Retail and Classic Era compatibility have not been verified. Some client APIs may expose limited data, particularly for combat, loot sources and map layout.
 
-**2.1.6 is a test release** until the reorganized options and meter startup have been checked in-game. Automated Lua 5.1 tests and ZIP packaging run through [GitHub Actions](.github/workflows/release.yml).
+**2.1.7 is a test release** until the reorganized options and meter startup have been checked in-game. Automated Lua 5.1 tests and ZIP packaging run through [GitHub Actions](.github/workflows/release.yml).
 
 Report issues through [GitHub Issues](https://github.com/detok/ChalkBox/issues) with the ChalkBox version, Forever client build, steps to reproduce and any Lua error.
 
