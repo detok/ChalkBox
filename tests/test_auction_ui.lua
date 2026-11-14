@@ -4,7 +4,11 @@ local function Element(kind,parent,name,template)
     local f={kind=kind,parent=parent,name=name,template=template,
         scripts={},shown=true}
     function f:SetSize(w,h) self.w,self.h=w,h end
-    function f:SetPoint(...) self.point={...} end
+    function f:SetPoint(...)
+        self.point={...}
+        self.points=self.points or {}
+        self.points[#self.points+1]={...}
+    end
     function f:SetWidth(w) self.w=w end
     function f:SetText(v) self.text=v end
     function f:GetText() return self.text end
@@ -130,12 +134,43 @@ local pane=FindFrame("ChalkBoxAuctionSensePane")
 assert(tab and pane and pane.parent==AuctionHouseFrame,
     "AuctionSense is built directly inside Blizzard's auction house")
 assert(tab.template=="AuctionHouseFrameDisplayModeTabTemplate" and
-    tab.text=="AuctionSense",
-    "native AH-style tab, not a settings-only link or loose popup")
+    tab.text=="Market" and tab.w==92,
+    "short native AH tab stays readable inside the native tab strip")
 assert(tab.point and tab.point[2]==auctions and
     pane.point[2]==AuctionHouseFrame,
     "new tab aligns after Blizzard's native tabs")
 assert(not pane.shown)
+assert(pane.points[1][1]=="TOPLEFT"
+    and pane.points[1][5]==-56
+    and pane.points[2][1]=="BOTTOMRIGHT"
+    and pane.points[2][5]==68,
+    "AuctionSense reserves the stock AH title and a 68px footer/tab strip")
+local footer,previousButton,nextButton
+local rows={}
+for _,f in ipairs(allFrames) do
+    if f.parent==pane and f.kind=="Button" then
+        if f.text=="Previous" then previousButton=f
+        elseif f.text=="Next" then nextButton=f end
+    end
+    if f.parent==pane and f.marketData==nil and f.kind=="Frame"
+        and f.w==610 and f.h==23 then rows[#rows+1]=f end
+end
+for _,font in ipairs(fonts) do
+    if font.parent==pane and font.point and font.point[5]==-392 then
+        footer=font
+    end
+end
+assert(#rows==7 and footer and previousButton and nextButton,
+    "all seven result rows, pager and bottom disclaimer exist")
+assert(rows[1].point[5]==-179 and rows[7].point[5]==-323
+    and rows[7].h==23,
+    "rows are compact enough to leave a dedicated pager region")
+assert(previousButton.point[5]==-356 and
+    nextButton.point[5]==-356 and footer.point[5]==-392,
+    "pager and disclaimer stay above the native AH footer")
+assert(-rows[7].point[5]+rows[7].h<=-previousButton.point[5]-8
+    and -previousButton.point[5]+25<=-footer.point[5]-8,
+    "list and paging buttons never overlap vertically")
 assert(nativeRegistryEdits==0,"never touch protected Blizzard tab registry")
 assert(ChalkBox_AuctionOpen() and pane.shown and tab.selected)
 assert(Text("AuctionSense") and Text("Whitemane / Alliance"))
@@ -204,4 +239,4 @@ assert(not pane.shown,"Blizzard display mode changes restore native panels")
 assert(nativeRegistryEdits==0,"no protected PanelTemplates mutations")
 ChalkBox_AuctionHide()
 assert(not pane.shown)
-print("PASS: AuctionSense real AH tab, no popup or secure-tab edits, browser summary labels, scan separation, live native tab switching")
+print("PASS: AuctionSense compact inner-AH layout, safe footer, native tab, browse/full scans, mouseover and tab switching")
