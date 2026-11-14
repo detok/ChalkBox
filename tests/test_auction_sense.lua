@@ -100,6 +100,22 @@ assert(table.concat(tip.lines," "):find("Low ask: 50s",1,true)
     "item tooltip clearly labels stack-normalized asking prices")
 assert(not ChalkBox_AuctionTooltip(tip,"item:2589"),
     "repeat OnTooltipSetItem calls never duplicate the price block")
+-- Native tooltips get separate, semantically colored value columns.
+local colors={}
+function tip:AddDoubleLine(label,value,lr,lg,lb,vr,vg,vb)
+    self.lines[#self.lines+1]=label..": "..value
+    colors[label]={vr,vg,vb}
+end
+tip.lines={}
+assert(ChalkBox_AuctionTooltip(tip,"item:2589"))
+assert(colors["Low ask"] and
+    colors["Low ask"][2]>colors["Low ask"][1],
+    "lowest asking price is green and visually distinct")
+assert(colors["Avg ask"] and
+    colors["Avg ask"][1]>colors["Avg ask"][3],
+    "average asking price uses a warm amber color")
+assert(colors["Listings"] and colors["Units"],
+    "coverage data uses separate labeled fields")
 assert(not ChalkBox_AuctionTooltip(tip,"item:999"),
     "unpriced items never show guessed auction numbers")
 assert(ChalkBox_AuctionRows("linen",100)[1].name=="Linen Cloth")
