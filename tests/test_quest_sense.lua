@@ -60,7 +60,10 @@ _G.C_QuestLog={
         return false -- false is not proof that AddQuestWatch failed
     end,
     RemoveQuestWatch=function(id)
-        assert(id~=301,"never remove user's manual watch")
+        if id==301 then
+            assert(ChalkBoxZoneDB.mode=="zone",
+                "manual watch may only be temporarily hidden in Nearby mode")
+        end
         watches[id]=nil
         changes[#changes+1]="-"..id
         if frame then frame.fire(frame,"QUEST_WATCH_LIST_CHANGED") end
