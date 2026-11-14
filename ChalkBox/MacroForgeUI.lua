@@ -279,7 +279,7 @@ local function Create()
     accent:SetPoint("TOPLEFT",f,"TOPLEFT",0,0)
     accent:SetPoint("TOPRIGHT",f,"TOPRIGHT",0,0)
     accent:SetHeight(3);f.accent=accent
-    Font(f,"CHALKBOX  /  MACROFORGE","GameFontNormalHuge",23,-19,550)
+    Font(f,"MACROFORGE","GameFontNormalHuge",23,-19,550)
     Font(f,"Build from learned spells. One press cannot automate a rotation.",
         "GameFontHighlightSmall",25,-53,600)
     Button(f,"X",31,736,-20,function() f:Hide() end)
