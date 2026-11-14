@@ -127,7 +127,7 @@ local function Insight(label,details,role,red,green,blue)
             :gsub("^protected by you$","Personal protection")
             :gsub("^accepted quest needs this$","Needed for active quest")
             :gsub("^possible ","Possible ")
-            :gsub("not confirmed learned","learning unverified")
+            :gsub("not confirmed learned","learned status unknown")
     end
     return label,details,red,green,blue
 end
@@ -148,6 +148,10 @@ function ChalkBox_LootPresentation(message)
         local confirmed=body and body:find("used in a learned",1,true)
         if confirmed then
             body=body:gsub("^used in a learned ","")
+        end
+        if not confirmed then
+            body=body:gsub("^possible (.-) material %(check recipes%)$",
+                "%1  ·  Check recipes")
         end
         return Insight(confirmed and "LEARNED USE" or "POSSIBLE MATERIAL",
             body,confirmed and "good" or "warning",
