@@ -6,6 +6,7 @@ local addonName=...
 local db
 local BAR_HEIGHT=18
 local tracked={}
+local abandoned={} -- another addon / Edit Mode took over this anchor
 local pending=false
 local skippedProtected=0
 local skippedCustom=0
@@ -102,6 +103,7 @@ local function Restore(name)
     tracked[name]=nil
 end
 local function Apply(name)
+    if abandoned[name] then return end
     local frame=_G[name]
     if not frame then return end
     local safe,reason=IsSafeFrame(frame)
@@ -123,6 +125,7 @@ local function Apply(name)
         if Same(current,old.applied) then return end
         if not Same(current,old.original) then
             tracked[name]=nil
+            abandoned[name]=true
             skippedCustom=skippedCustom+1
             return -- another addon or Edit Mode owns the new position
         end
