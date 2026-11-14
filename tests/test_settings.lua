@@ -449,15 +449,11 @@ assert(ChalkBoxZoneDB.limit==15,"autowatch limit can be selected from native opt
 Control("Tracking Diagnostics"):Click()
 assert(printed[#printed]=="quests status")
 local barChecks=FindCheckByParentTitle("The Bar")
-assert(#barChecks==4)
+assert(#barChecks==3,
+    "no UI option may reenable the unsafe Blizzard root reservation")
 categories["The Bar"].panel:Show()
 barChecks[2]:Click(true)
-assert(ChalkBoxDB.bar=="bottom","placement selection must update saved bar")
-assert(barChecks[4].checked==true,"screen reservation should be enabled by default")
-barChecks[4]:Click(false)
-assert(ChalkBoxDB.barReserve==false,"user can disable screen reservation")
-barChecks[4]:Click(true)
-assert(ChalkBoxDB.barReserve==true,"screen reservation can be re-enabled")
+assert(ChalkBoxDB.bar=="bottom","placement selection updates the Bar only")
 Control("Reset Session"):Click()
 assert(printed[#printed]=="bar reset")
 Control("Appearance"):Click()
@@ -666,16 +662,12 @@ local bagSlider
 for _,frame in ipairs(sliders) do
     if frame.parent==categories["The Bar"].panel then bagSlider=frame end
 end
-assert(bagSlider and bagSlider.value==0,"bag offset starts at Blizzard default")
+assert(bagSlider and bagSlider.value==0,"safe bag placement starts at stock")
 bagSlider:SetValue(-30)
-assert(ChalkBoxDB.bagOffsetY==30,
-    "vertical slider downward moves separate bags down from the stock center")
 bagSlider:SetValue(35)
-assert(ChalkBoxDB.bagOffsetY==-35,
-    "vertical slider upward raises separate bags above Blizzard's stock anchor")
 bagSlider:SetValue(0)
-assert(ChalkBoxDB.bagOffsetY==0,
-    "vertical slider midpoint restores exactly Blizzard's original position")
+assert(ChalkBoxDB.bagOffsetY==nil,
+    "disabled bag slider never alters protected container positions")
 assert(meterSlider,"native meter opacity slider belongs to Combat Meter page")
 meterSlider:SetValue(65)
 assert(ChalkBoxDB.meter.opacity==0.65,
