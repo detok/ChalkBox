@@ -30,4 +30,16 @@ assert(not ChalkBox_ThemeSet("opacity",-1) and
 ChalkBox_ThemeReset()
 assert(ChalkBox_ThemeGet().preset=="charcoal" and
     ChalkBox_ThemeGet().opacity==100)
+local greenR,greenG,greenB=ChalkBox_TipColor("good")
+local redR,redG,redB=ChalkBox_TipColor("danger")
+local blueR,blueG,blueB=ChalkBox_TipColor("count")
+assert(greenG>greenR and redR>redG and blueB>blueR,
+    "one semantic palette communicates good, danger, and counts")
+local lines={}
+local tip={AddDoubleLine=function(_,label,value,lr,lg,lb,vr,vg,vb)
+    lines[#lines+1]={label=label,value=value,r=vr,g=vg,b=vb}
+end,AddLine=function(_,text) lines[#lines+1]={label=text} end}
+assert(ChalkBox_TipMetric(tip,"Low / unit","50s","good"))
+assert(lines[1].label=="Low / unit" and lines[1].value=="50s"
+    and lines[1].g>lines[1].r,"metric columns use the same color rules")
 print("PASS: one global color system, safe custom RGB, local alpha multiplier, live refresh and reset")
