@@ -141,9 +141,17 @@ _G.ChalkBox_DropAreaInfo=function(key)
     end
     return all[key]
 end
+local manyCreatures=false
 _G.ChalkBox_DropSources=function(key)
     if key=="z:1436" then
-        return {{key="c:12345",name="Defias Bandit",windows=12}}
+        local found={{key="c:12345",name="Defias Bandit",windows=12}}
+        if manyCreatures then
+            for i=1,14 do
+                found[#found+1]={key="c:"..(90000+i),
+                    name=("Creature %02d"):format(i),windows=i}
+            end
+        end
+        return found
     end
     return {}
 end
@@ -394,6 +402,9 @@ assert(ChalkBox_DiscoveriesBrowserStatus().selectedArea=="z:1437",
     "manual browse choice survives closing and reopening")
 OpenArea()
 SelectArea("Westfall")
+local menuBefore=MenuUtil
+_G.MenuUtil=nil
+_G.EasyMenu=nil
 ClickButton("All creatures")
 SelectQuick("Defias Bandit")
 assert(ChalkBox_DiscoveriesBrowserStatus().selectedSource=="c:12345",
@@ -411,6 +422,24 @@ for _,font in ipairs(fonts) do
 end
 assert(sawDrops and sawDropRate and sawSourceStats,
     "source-filtered items show drops, looted attempts and an observed percentage")
+-- Long source lists must stay directly selectable rather than silently
+-- cycling just the first few menu items.
+manyCreatures=true
+ClickButton("Defias Bandit")
+local sourcePopup=Find("ChalkBoxDiscoveriesQuickPicker")
+assert(sourcePopup and sourcePopup.pageLabel.text=="Page 1 / 2",
+    "many sources have a real, paged creature selector")
+sourcePopup.next.OnClick(sourcePopup.next,"LeftButton")
+assert(sourcePopup.pageLabel.text=="Page 2 / 2")
+SelectQuick("Creature 14")
+assert(ChalkBox_DiscoveriesBrowserStatus().selectedSource=="c:90014",
+    "creature from later page updates the selected source correctly")
+manyCreatures=false
+ClickButton("Creature 14")
+SelectQuick("All creatures")
+assert(ChalkBox_DiscoveriesBrowserStatus().selectedSource==nil,
+    "all-creature reset is a direct clickable action")
+_G.MenuUtil=menuBefore
 ClickButton("Quantity")
 SelectQuick("Item name")
 local inputs={}
