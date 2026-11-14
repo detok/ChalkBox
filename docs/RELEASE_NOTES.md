@@ -1,23 +1,23 @@
-# ChalkBox 2.2.0 — Discoveries: Map side panel
+# ChalkBox 2.2.1 — Protected item-use safety
 
-### Discoveries belongs to the World Map
-- Click the existing **Discoveries** map button to open a compact side panel, attached to the World Map. It is no longer a separate draggable window.
-- When space allows, the panel docks beside the map (right first, left if necessary). When the map occupies most of the screen, it attaches to the map's right inside edge so the panel stays visible.
-- Closing the World Map closes Discoveries and its selectors. Discoveries cannot be opened as a standalone window when the map is hidden.
-- Blizzard's map, zoom, quest tracking, frame anchors and artwork are never changed.
+### Investigation
+A player reported that the Cozy Sleeping Bag sometimes triggers a "ChalkBox blocked an action" error and only works again after `/reload`.
 
-### Select creatures reliably
-- **Creature Source** now opens a real clickable list instead of relying on a transient context menu that could silently fail in WoW Forever.
-- Supports paging/mouse wheel for longer lists and highlights your current creature choice. Sort uses the same reliable picker.
-- If DropSense has no identified creature source in a zone, the selector says so. It will not invent which mob dropped an item.
+Source audit found an unsafe Market-tab path introduced in 2.1.9:
+- ChalkBox directly called `AuctionHouseFrame:SetDisplayMode` with an addon-owned table.
+- Blizzard's Forever Auction House code stores that value in the frame's `displayMode`.
+- Forever's bag item-use handler calls `AuctionHouseFrame:IsListingAuctions()` while the AH is open; that method reads the same display mode before normal protected item use.
+- An independent Forever auction addon reported a **Cozy Sleeping Bag** blocked-action error with this exact suspected mechanism.
 
-### A cleaner reading layout
-- Group the Area and Creature choices, keep Sort and Search together, tighten the item list, and retain the sample sizes and personal drop-rate warnings.
-- Outdoor/dungeon switching, selection, map-sync, search, item tooltips, and per-character saved choices remain available.
+### Change
+- Never call `SetDisplayMode` from ChalkBox or inject a custom table into Blizzard's AH trading state.
+- Retain Market's integrated artwork and panel by temporarily hiding only safe, unprotected native content frames, then restoring them when leaving Market. No edits to Blizzard's display-mode list, protected native tab registry, or trading state.
+- Verify the native Buy, Sell and Auctions pages restore correctly and Market continues scanning/displaying prices.
 
-### Unchanged
-DropSense loot capture and observed probabilities, AuctionSense market data, LootSense profession intelligence, bag offset, full-width Bar, Emota safeguards and native damage-meter reporting were not modified.
+### What we did not change
+The **vertical bag offset behavior**, saved bags, Item Insight, Emota, the full-width Bar, native DPS meter, Discoveries, auction scan engine and all SavedVariables are unchanged.
 
-### Install and test
-Replace the ChalkBox addon folder using `ChalkBox-2.2.0.zip`, preserve SavedVariables and type `/reload`.
-Open World Map → Discoveries → Area → Creature → Sort, then close/reopen the map to confirm dock behavior. Automated Lua 5.1 regression and ZIP packaging checks run in GitHub Actions; actual Forever client visuals still require in-game validation.
+### Test and validation
+Automated Lua 5.1 regression tests explicitly forbid any addon call to Blizzard's display-mode setter and simulate right-clicking a soulbound usable item while the AH is open. The ZIP is validated in GitHub Actions.
+
+The exact blocked-function stack from the player's live client has not been captured. If an item is still blocked in WoW Forever after `/reload` and installing this version, enable `/console taintLog 1`, reproduce it and provide `Logs/taint.log` (and whether the Auction House was open or visited earlier). Avoid reproducing a suspected blocked action in combat.
