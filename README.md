@@ -6,7 +6,7 @@
 
 **A collection of useful tools for World of Warcraft: Forever.**
 
-[Download 2.1.4 — Test release](https://github.com/detok/ChalkBox/releases/tag/v2.1.4) · [Report a bug](https://github.com/detok/ChalkBox/issues/new/choose) · [User guide](docs/USER_GUIDE.md)
+[Download 2.1.5 — Combat-safety hotfix](https://github.com/detok/ChalkBox/releases/tag/v2.1.5) · [Report a bug](https://github.com/detok/ChalkBox/issues/new/choose) · [User guide](docs/USER_GUIDE.md)
 
 </div>
 
@@ -35,7 +35,7 @@ These are real in-game captures, cropped around the addon controls. Character na
 | **DropSense + Map Discoveries** | Saves the items observed in your loot windows. Browse them by outdoor zone, dungeon, or known creature source from a searchable window attached to the world map. |
 | **MacroForge** | Builds copy-ready macros from abilities in your actual spellbook. Includes openers, trinket attempts, modifier keys, mouseover targeting, and manual cast sequences. |
 | **LootSense + ProfessionSense** | Helps identify quest items, personally protected items, reagents in learned recipes, and possible crafting uses. Includes the Forever recipe catalog. |
-| **The Bar** | An optional 18px screen-edge strip for XP, level progress, bags, rested XP, gold, gear, repair estimates, and other selected stats. |
+| **The Bar** | An optional 18px screen-edge strip for XP, level progress, bags, rested XP, gold, gear, repair estimates, and other selected stats. Uses an independent safe overlay; never repositions Blizzard's root frame. |
 | **Repair Learning** | Remembers real repair quotes and uses them to estimate the cost of damaged gear away from a merchant. An estimated price is marked with a tilde. |
 | **Session Journal** | Keeps a recap of the current session and up to 20 previous sessions: XP, gold changes, quest turn-ins, sampled loot, and other recorded events. |
 | **QuestSense** | Manages accepted-quest watches in Blizzard's native tracker. |
@@ -106,7 +106,7 @@ MacroForge doesn't automate rotations or bypass the global cooldown. Installing 
 
 ## Install
 
-1. Download **[ChalkBox-2.1.4.zip](https://github.com/detok/ChalkBox/releases/download/v2.1.1/ChalkBox-2.1.1.zip)** from the GitHub release. Don't use the automatically generated "Source code" ZIP.
+1. Download **[ChalkBox-2.1.5.zip](https://github.com/detok/ChalkBox/releases/download/v2.1.5/ChalkBox-2.1.5.zip)** from the GitHub release. Don't use the automatically generated "Source code" ZIP.
 2. Extract the single **ChalkBox** folder into your Forever client's **Interface/AddOns** directory.
 3. Check that **Interface/AddOns/ChalkBox/ChalkBox.toc** exists. Avoid an extra nested ChalkBox folder.
 4. Launch the game and type **/chalk**.
@@ -137,7 +137,7 @@ The media kit now includes the real cropped gameplay gallery under `Screenshots/
 
 The **[CurseForge folder](curseforge/)** contains the current project description, short summary, FAQ, changelog and submission checklist, along with the original ChalkBox artwork.
 
-The release also includes a separate **[CurseForge media kit ZIP](https://github.com/detok/ChalkBox/releases/download/v2.1.4/ChalkBox-CurseForge-Media-2.1.4.zip)** with six SVG originals, PNG exports, and ready-to-use listing copy. It is **not an addon installation file**.
+The release also includes a separate **[CurseForge media kit ZIP](https://github.com/detok/ChalkBox/releases/download/v2.1.5/ChalkBox-CurseForge-Media-2.1.5.zip)** with six SVG originals, PNG exports, and ready-to-use listing copy. It is **not an addon installation file**.
 
 The illustrations are promotional graphics, not in-game screenshots. Real screenshots should be captured from the running Forever client before being used in a gallery.
 
@@ -145,7 +145,7 @@ The illustrations are promotional graphics, not in-game screenshots. Real screen
 
 ChalkBox targets **WoW Forever**. Retail and Classic Era compatibility have not been verified. Some client APIs may expose limited data, particularly for combat, loot sources and map layout.
 
-**2.1.4 is a test release** until the reorganized options and meter startup have been checked in-game. Automated Lua 5.1 tests and ZIP packaging run through [GitHub Actions](.github/workflows/release.yml).
+**2.1.5 is a test release** until the reorganized options and meter startup have been checked in-game. Automated Lua 5.1 tests and ZIP packaging run through [GitHub Actions](.github/workflows/release.yml).
 
 Report issues through [GitHub Issues](https://github.com/detok/ChalkBox/issues) with the ChalkBox version, Forever client build, steps to reproduce and any Lua error.
 
