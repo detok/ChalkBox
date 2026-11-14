@@ -12,7 +12,7 @@
 
 ChalkBox adds small improvements around the parts of the game you use every day: finding useful loot, managing quests, tracking progress, preparing for camp, and setting up your action buttons. Pick the modules you want and turn off the rest.
 
-**2.1.6 UI fit + combat safety:** The Bar now uses its own safe overlay and leaves room for top-right buffs and bags instead of moving Blizzard’s root UI. Emota does not dispatch emotes during combat. Blizzard bag positioning and in-bag reagent borders are temporarily paused to avoid touching protected item buttons; learned-recipe tooltips and other ChalkBox features remain available.
+**2.1.6 UI fit + combat safety:** The Bar is full-width again. It can shift eligible default-positioned Blizzard top frames down 18px without resizing the root UI; protected/custom frames are never moved. Emota does not dispatch emotes during combat. Blizzard bag positioning and in-bag reagent borders are temporarily paused to avoid touching protected item buttons; learned-recipe tooltips and other ChalkBox features remain available.
 
 It installs as **one addon**, including its profession recipe data. You don't need to download any companion packages.
 
