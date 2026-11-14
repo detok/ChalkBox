@@ -700,7 +700,7 @@ end
 
 local function MakeBar()
     local panel=Panel("The Bar",
-        "Bar position, screen space, and bag placement.")
+        "Bar position and safe top-screen spacing.")
     Label(panel,"BAR POSITION","GameFontNormalLarge",28,-108)
     Button(panel,"Stats & Presets",282,-100,126,function() Activate("barstats") end)
     Button(panel,"Appearance",416,-100,112,function() Activate("barappearance") end)
@@ -725,48 +725,16 @@ local function MakeBar()
                 ChalkBox_BarCommand(on and "reserve on" or "reserve off")
             end
         end)
-    Label(panel,"SEPARATE BAG POSITION","GameFontNormalLarge",28,-335,300)
-    Label(panel,"Offset paused to protect combat item use.",
-        "GameFontHighlightSmall",28,-360,315)
-    local current=Label(panel,"0  —  Blizzard default",
-        "GameFontHighlight",28,-385,318)
-    local bagSlider=CreateFrame("Slider",nil,panel)
-    bagSlider:SetSize(22,115)
-    bagSlider:SetPoint("TOPLEFT",panel,"TOPLEFT",363,-312)
-    if bagSlider.SetOrientation then bagSlider:SetOrientation("VERTICAL") end
-    bagSlider:SetMinMaxValues(-120,120)
-    if type(bagSlider.Disable)=="function" then bagSlider:Disable() end
-    if bagSlider.SetValueStep then bagSlider:SetValueStep(5) end
-    if bagSlider.SetThumbTexture then
-        bagSlider:SetThumbTexture("Interface\\Buttons\\UI-SliderBar-Button-Vertical")
-    end
-    local track=bagSlider:CreateTexture(nil,"BACKGROUND")
-    track:SetSize(5,115)
-    track:SetPoint("CENTER",bagSlider,"CENTER",0,0)
-    track:SetColorTexture(0.30,0.30,0.31,0.85)
-    Label(panel,"UP  −120","GameFontHighlightSmall",399,-313,120)
-    Label(panel,"0 · BLIZZARD","GameFontHighlightSmall",399,-365,120)
-    Label(panel,"DOWN  +120","GameFontHighlightSmall",399,-418,120)
-    local updating=false
-    bagSlider:SetScript("OnValueChanged",function()
-        -- Deliberately inert: stock bag actions must remain secure.
-    end)
-    panel:AddRefresh(function()
-        local status=ChalkBox_BagStatus and ChalkBox_BagStatus()
-        local offset=status and status.offset or 0
-        updating=true
-        bagSlider:SetValue(-offset)
-        updating=false
-        current:SetText((offset==0 and "0  —  Blizzard default") or
-            ((offset>0 and "+" or "")..offset.." points  ("..
-            (offset>0 and "down" or "up")..")"))
-    end)
-    Button(panel,"Reset Session",28,-416,133,function()
+    -- Blizzard's separate bags rise as more windows open. We intentionally
+    -- do not reanchor protected container/item buttons. Never render an
+    -- inoperative offset slider as though it still controlled native bags.
+    Label(panel,"BAG WINDOWS","GameFontNormalLarge",28,-335,300)
+    Label(panel,"Blizzard-managed  ·  bags stack upward when opened.",
+        "GameFontHighlightSmall",28,-364,505)
+    Label(panel,"Custom offset paused to protect combat item use.",
+        "GameFontHighlightSmall",28,-387,505)
+    Button(panel,"Reset Session",28,-425,133,function()
         if ChalkBox_BarCommand then ChalkBox_BarCommand("reset") end
-    end)
-    Button(panel,"Reset Bags",172,-416,112,function()
-        if ChalkBox_BagCommand then ChalkBox_BagCommand("reset") end
-        if panel.OnRefresh then panel.OnRefresh() end
     end)
     return panel
 end
