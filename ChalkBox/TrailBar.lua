@@ -576,7 +576,11 @@ local function CreateBar()
     if bar or not UIParent then return end
     bar=CreateFrame("Frame","ChalkBoxInfoBar",UIParent)
     bar:SetHeight(18)
-    bar:SetFrameStrata("LOW")
+    -- Bar is persistent background chrome. Blizzard's LOW/MEDIUM unit
+    -- frames (including the resting ZZZ artwork) must draw over it.
+    -- Never raise our Bar above native HUD frames.
+    bar:SetFrameStrata("BACKGROUND")
+    if bar.SetFrameLevel then bar:SetFrameLevel(1) end
     if bar.EnableMouse then bar:EnableMouse(true) end
     bar:SetScript("OnMouseUp",function(self,button)
         if button=="RightButton" and not editMode then
