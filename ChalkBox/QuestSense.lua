@@ -1,6 +1,7 @@
--- ChalkBox QuestSense 2: safe, evidence-first WoW Forever quest watch manager.
--- No map coordinates or database guesses. Tracks accepted log quests through
--- C_QuestLog, never replaces Blizzard's tracker or modifies manual watches.
+-- ChalkBox QuestSense: zone-aware watches using the Forever C_QuestLog API.
+-- No map coordinates or quest-database guesses; never replaces Blizzard's
+-- tracker. Nearby temporarily suspends remote manual watches and restores them
+-- when they become relevant or when the player switches tracking modes.
 local addonName=...
 local settings
 local queued,busy,pending=false,false,false
