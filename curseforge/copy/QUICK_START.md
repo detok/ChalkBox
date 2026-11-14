@@ -1,10 +1,10 @@
-# Install and first run — ChalkBox 2.0.10
+# Install and first run — ChalkBox 2.0.11
 
-1. Download **ChalkBox-2.0.10.zip** from https://github.com/detok/ChalkBox/releases/tag/v2.0.10.
+1. Download **ChalkBox-2.0.11.zip** from https://github.com/detok/ChalkBox/releases/tag/v2.0.11.
 2. Extract its single **ChalkBox** folder into your Forever client's **Interface/AddOns** directory. The correct file path ends in **ChalkBox/ChalkBox.toc**.
 3. Start the game and type **/chalk**.
    - Choose **QuestSense → Nearby only** to keep the visible tracker zone-focused automatically; prior manual selections return when you revisit their zone. The main settings page is grouped by module, with related settings nested beneath each heading.
-4. Open **DropSense** to check recording preferences. Open the world map and click **Discoveries**, or type **/chalk drops map**. Choose any recorded zone or dungeon from the Area dropdown (or Follow world map), then search for an item and use the Source and Sort dropdowns.
+4. Open **DropSense** to check recording preferences. Open the world map and click **Discoveries**, or type **/chalk drops map**. Click the Area / Dungeon field for a direct list of saved zones and dungeons (or Follow world map), then search for an item and use the Source and Sort dropdowns.
 5. Type **/chalk macro** to try MacroForge. Pick a learned spell, review the generated text and copy it via Ctrl+C.
 6. Visit **The Bar** to choose which stats to show and where it sits.
 7. Hover over a stat for a quick readout. Right-click a visible Bar stat for its short controls, or right-click empty Bar space for module and layout settings.
