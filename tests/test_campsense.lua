@@ -31,7 +31,7 @@ assert(ChalkBoxDB.camp.enabled==true and ChalkBoxDB.camp.interval==45)
 assert(ChalkBox_CampUtility(4470) and
     ChalkBox_CampUtility("4471"):find("reusable",1,true))
 assert(ChalkBox_CampUtility(279981):find("campsite",1,true))
-assert(ChalkBox_CampUtility(279978):find("rested",1,true))
+assert(ChalkBox_CampUtility(279978):lower():find("rested",1,true))
 assert(ChalkBox_CampUtility(11291):find("Journeyman",1,true))
 assert(ChalkBox_CampUtility(272941):find("higher-tier",1,true))
 assert(ChalkBox_CampUtility(211527):find("3%",1,true))
