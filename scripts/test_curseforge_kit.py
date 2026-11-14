@@ -23,7 +23,7 @@ def test():
         assert all(archive.read(name).startswith(PNG)
                    for name in names if name.endswith(".png"))
         assert any(name.endswith("/Project-Icon-512.png") for name in names)
-        assert any(name.endswith("/FILE_CHANGELOG_2.0.12.md") for name in names)
+        assert any(name.endswith("/FILE_CHANGELOG_2.1.0.md") for name in names)
         assert not any(name.lower().endswith((".ttf", ".otf", ".woff"))
                        for name in names)
         assert b"NOT the installable addon" in archive.read(

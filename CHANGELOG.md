@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.1.0 — AuctionSense foundation (test release)
+- New original, read-only AuctionSense module with native AddOns settings and a searchable market browser.
+- Explicit user-initiated WoW Forever full-market scans. Scan in frame-budgeted batches with a conservative 15-minute cooldown, no automated retries or transactions.
+- Save complete snapshots atomically per realm/faction; preserve prior data if the AH closes, metadata is incomplete, or the client rejects the request.
+- Display lowest per-item buyout, quantity-weighted average ask, listings, units and scan age. Flag mixed equipment variants and old scans; never claim recorded prices are completed sales.
+- Keep bounded price history and item storage. Provide shared `ChalkBox_AuctionPrice`, `ChalkBox_AuctionValue` and `ChalkBox_AuctionRows` accessors for LootSense, DropSense and future ProfessionSense uses.
+- Optionally show the saved asking prices on item tooltips and pass current, non-ambiguous market-value metadata to DropSense.
+- Add Lua regression tests for actual AH scan events, item stack math, error recovery, market isolation, saved history, tooltip behavior, and search UI.
+
+
 ## 2.0.12 — Clickable Discoveries picker and new addon icon (prerelease)
 - Move the Area / Dungeon popup above the entire Discoveries journal into an independent top-level overlay; keep it aligned with the original dropdown and hide it when the journal closes.
 - Prevent the zone list from being visible but blocked by other controls or the world map.

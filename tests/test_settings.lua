@@ -308,11 +308,20 @@ _G.Settings={
     end,
     OpenToCategory=function(id) opened[#opened+1]=id end,
 }
+_G.ChalkBox_AuctionStatus=function()
+    return {open=true,available=true,tooltip=true,
+        state="Ready to scan",realm="Whitemane",faction="Alliance",
+        auctions=24,items=8,age=5}
+end
+local auctionOpens,auctionScans=0,0
+_G.ChalkBox_AuctionOpen=function() auctionOpens=auctionOpens+1 end
+_G.ChalkBox_AuctionScan=function() auctionScans=auctionScans+1;return true end
+_G.ChalkBox_AuctionSetTooltips=function(value) _G.auctionTooltipEnabled=value end
 assert(loadfile("ChalkBox_Settings.lua"))("ChalkBox")
 local loader=frames[#frames]
 assert(loader.event=="PLAYER_LOGIN","must register settings when the client is ready")
 loader.script.OnEvent(loader,"PLAYER_LOGIN")
-assert(#registered==19,"native pages include MacroForge, Updates and all original categories")
+assert(#registered==20,"native pages include AuctionSense and all original categories")
 assert(categories.home.name=="ChalkBox")
 assert(categories["The Bar"].parent==categories.home
     and categories["The Bar Appearance"].parent==categories["The Bar"]
@@ -353,6 +362,22 @@ local function FindCheckByParentTitle(title)
     end end
     return checks
 end
+assert(categories["AuctionSense"] and
+    categories["AuctionSense"].parent==categories.home,
+    "AuctionSense is an independent ChalkBox module, not a hidden submenu")
+assert(ControlIn("AuctionSense","Open Market"),
+    "AuctionSense offers a clean market browser")
+assert(ControlIn("AuctionSense","Scan at Auctioneer"),
+    "AuctionSense scans only on a deliberate user click")
+ControlIn("AuctionSense","Open Market"):Click()
+ControlIn("AuctionSense","Scan at Auctioneer"):Click()
+assert(auctionOpens==1 and auctionScans==1,
+    "only an explicit user click opens or requests a scan")
+local auctionChecks=FindCheckByParentTitle("AuctionSense")
+assert(#auctionChecks==1,"market tooltip display has an independent toggle")
+auctionChecks[1]:Click(false)
+assert(_G.auctionTooltipEnabled==false,
+    "AuctionSense tooltip settings do not change LootSense or DropSense")
 assert(categories["MacroForge"],"MacroForge is a native but unobtrusive settings category")
 ChalkBox_OpenSettings("forge")
 assert(opened[#opened]==categories["MacroForge"].ID)

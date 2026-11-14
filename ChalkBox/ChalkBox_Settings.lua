@@ -13,6 +13,7 @@ local navigation = {
     {key="loot", title="LootSense", children={
         {key="loothighlight", title="Appearance"}}},
     {key="drops", title="DropSense"},
+    {key="auction", title="AuctionSense"},
     {key="quests", title="QuestSense"},
     {key="journal", title="Session Journal"},
     {key="bar", title="The Bar", children={
@@ -167,7 +168,7 @@ local function MakeHome()
         "Choose a module. Related controls are nested under its heading in the sidebar.")
     local groups={
         {title="DISCOVER & TRACK",
-            keys={"loot","drops","quests","journal"}},
+            keys={"loot","drops","auction","quests","journal"}},
         {title="COMBAT & HUD",
             keys={"bar","meter","forge","prep"}},
         {title="PERSONALIZE & MANAGE",
@@ -176,7 +177,7 @@ local function MakeHome()
     local pageByKey={}
     for _,entry in ipairs(navigation) do pageByKey[entry.key]=entry end
     for groupIndex,group in ipairs(groups) do
-        local headingY=-108-(groupIndex-1)*112
+        local headingY=({-100,-240,-350})[groupIndex]
         Label(panel,group.title,"GameFontNormalLarge",28,headingY,475)
         local divider=panel:CreateTexture(nil,"ARTWORK")
         divider:SetPoint("TOPLEFT",panel,"TOPLEFT",28,headingY-23)
@@ -379,6 +380,54 @@ local function MakeDrops()
         "GameFontHighlightSmall",28,-416,495)
     Label(panel,"Loot attempts are tracked; unlooted kills are not.",
         "GameFontHighlightSmall",28,-431,495)
+    return panel
+end
+
+local function MakeAuction()
+    local panel=Panel("AuctionSense",
+        "Current asking prices from scans you start. No automatic trading.")
+    Label(panel,"MARKET SNAPSHOT","GameFontNormalLarge",28,-112,480)
+    local market=Label(panel,"Realm / faction","GameFontHighlight",28,-151,490)
+    local status=Label(panel,"Open an auctioneer to scan.",
+        "GameFontHighlight",28,-184,490)
+    local details=Label(panel,"No snapshot saved","GameFontHighlightSmall",
+        28,-214,490)
+    Button(panel,"Open Market",28,-253,226,function()
+        if type(ChalkBox_AuctionOpen)=="function" then
+            ChalkBox_AuctionOpen()
+        end
+    end)
+    Button(panel,"Scan at Auctioneer",271,-253,231,function()
+        if type(ChalkBox_AuctionScan)=="function" then
+            local ok,why=ChalkBox_AuctionScan()
+            if not ok and why then Note(why) end
+        end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    Toggle(panel,"Show auction prices on item tooltips",
+        "Only when a market scan exists; always includes scan age.",
+        -311,function()
+            local st=ChalkBox_AuctionStatus and ChalkBox_AuctionStatus()
+            return st and st.tooltip
+        end,function(on)
+            if type(ChalkBox_AuctionSetTooltips)=="function" then
+                ChalkBox_AuctionSetTooltips(on)
+            end
+        end)
+    Label(panel,"LOW = cheapest listed buyout per item. AVG ASK = mean listed price.",
+        "GameFontHighlightSmall",28,-375,500)
+    Label(panel,"Scans respect the 15-minute server cooldown. No buying or selling.",
+        "GameFontHighlightSmall",28,-397,500)
+    panel:AddRefresh(function()
+        local st=ChalkBox_AuctionStatus and ChalkBox_AuctionStatus() or {}
+        market:SetText(st.realm and
+            (st.realm.." / "..tostring(st.faction or "?")) or
+            "Market not identified")
+        status:SetText(st.state or "AuctionSense unavailable")
+        details:SetText(("%d items  /  %d auctions  ·  %s"):format(
+            st.items or 0,st.auctions or 0,
+            st.age and (math.floor(st.age/60).."m old") or "No scan"))
+    end)
     return panel
 end
 
@@ -1294,6 +1343,7 @@ local function Register()
     panels.home = MakeHome()
     panels.theme = MakeTheme()
     panels.drops = MakeDrops()
+    panels.auction = MakeAuction()
     panels.journal = MakeJournal()
     panels.forge = MakeForge()
     panels.updates = MakeUpdates()

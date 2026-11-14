@@ -1,22 +1,29 @@
-# ChalkBox 2.0.12 — Clickable Discoveries picker and refreshed AddOns icon
+# ChalkBox 2.1.0 — Introducing AuctionSense (test release)
 
-## Discoveries
-The Area / Dungeon zone picker could appear **behind the journal or other game menus**, leaving recorded zones visible but impossible to select. The picker now opens on its own high-level UI layer, anchored beneath the existing Area field. You can actually click the entries. It closes automatically when the Discoveries journal closes.
+AuctionSense is a new, original ChalkBox module for observing auction asking prices. It is **read-only**. No buying, bidding, posting, automatic listing searches or third-party addon code.
 
-- Direct zone and dungeon list, mouse-wheel navigation and paging unchanged
-- Your manually browsed area, map sync, saved loot history and source filters preserved
-- Existing Discoveries layout and map button position unchanged
+### What's new
+- **Scan Market** manually requests a full-market snapshot while you're at an auctioneer.
+- The scanner reads the supported WoW Forever `C_AuctionHouse.ReplicateItems` data in small, frame-budgeted batches instead of freezing the UI.
+- Search the new AuctionSense window by item name or ID. See the **lowest buyout per item**, **quantity-weighted average asking price**, quantity, listing count and last scan.
+- Saved data is separated by realm and faction. An account-wide 15-minute scan cooldown is respected locally; the server remains authoritative.
+- Results publish **only after a complete scan**. A closed AH, timeout, unavailable item data or unsupported API leaves your previous complete snapshot intact.
+- A bounded history of low asking prices is retained per item. Old scans are marked; equipment with mixed item variants is flagged and cannot supply trusted valuations.
+- Optional item-tooltip pricing can be enabled independently of LootSense advice.
+- DropSense exposes optional *estimated gross asking value* metadata through the new common price lookup, and ProfessionSense can use the same API when its future margin analysis is built.
 
-## AddOns selection icon
-ChalkBox's in-game addon icon now matches the newer gold-and-teal ChalkBox project emblem used in the CurseForge artwork. The release packager renders the canonical SVG master as a **native 64×64, 32-bit uncompressed TGA**. Both game-flavor manifests already reference the same correct IconTexture path, so no extra installation or texture configuration is needed.
+### Find it
+Open **Options → AddOns → ChalkBox → AuctionSense** or type `/chalk auction`. At the Auction House, click **Scan Market**. You can also type `/chalk auction scan` while the AH is open. The market window can be opened anywhere to view your previously saved data.
 
-## Validation
-- Automated Lua 5.1, Discoveries frame-layering, zone-selection and package tests
-- Packaging checks assert the game TGA is in the installable ZIP in the expected format
-- Native world map, bank compatibility fixes, QuestSense and other ChalkBox modules remain unchanged
+### What the values mean
+- **Low**: cheapest currently listed buyout divided by stack size, in copper per item.
+- **Avg Ask**: quantity-weighted mean of currently listed buyouts per item, not a sale price.
+- **Stale**: over 24 hours since that market was scanned. Old or mixed-variant prices are excluded from the cross-module valuation helper.
+- This first release groups listings by base item ID. Equipment with multiple variants is marked and should be checked in Blizzard's AH before listing.
 
-**Install:** Replace the existing ChalkBox addon folder with **ChalkBox-2.0.12.zip** and restart or `/reload` the game. To see a changed icon on the character-selection AddOns screen, restart the client if it cached the old artwork. Keep SavedVariables.
+### Next steps
+Once Forever in-game scanning and visuals are verified: robust reference prices from the listing distribution, watchlists, item history and trend charts, bag appraisal and recipe profit estimates. No automation will place protected auction transactions.
 
-**ChalkBox-CurseForge-Media-2.0.12.zip** contains the separate promotional files. Do not install that ZIP as an addon.
+**Install:** Replace your ChalkBox addon folder with **ChalkBox-2.1.0.zip** and type `/reload`. Keep SavedVariables. **ChalkBox-CurseForge-Media-2.1.0.zip** is a separate listing/media kit, not the addon.
 
-For WoW Forever; live-client visual confirmation is still required. Retail and Classic Era remain unverified.
+New AuctionSense functionality passed Lua 5.1 regression and packaging tests. A live WoW Forever scan is required before claiming full compatibility; Retail and Classic Era have not been validated.

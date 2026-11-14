@@ -6,6 +6,8 @@ ChalkBox started as a way to get better information out of the game without addi
 
 ## Loot worth remembering
 
+**AuctionSense** is ChalkBox's original auction-market module. At an auctioneer you can manually request a complete scan, then search the locally saved snapshot. It shows lowest and average *asking* prices per item, listing counts and when the scan was taken. AuctionSense respects the client's scan cooldown, separates faction/realm markets, and never buys, posts or bids. Prices are available in item tooltips and to other ChalkBox modules through a shared, read-only lookup.
+
 **DropSense** keeps a personal record of items ChalkBox sees in loot windows. The AddOns screen now uses the same gold-and-teal ChalkBox emblem as the CurseForge project icon. The Discoveries Area / Dungeon dropdown directly lists all recorded zones and dungeons, with mouse-wheel scrolling and pages. Choose a location independently or follow the world map when sync is on. Open the world map and click **Discoveries** to browse what you've found in an outdoor zone or dungeon. The browser has item search, creature-source filtering, sorting and a readable list of your observations. You can drag the Discoveries map button to a better spot.
 
 Those percentages aren't official drop rates. They're the frequency with which an item appeared in **readable loot windows from an identified source**. ChalkBox doesn't see every kill, and it doesn't guess a percentage for mixed or unknown sources.
@@ -46,7 +48,7 @@ Install the **ChalkBox** folder in your Forever client's **Interface/AddOns** fo
 
 ## Compatibility
 
-ChalkBox is developed for **WoW Forever**. Retail and Classic Era have not been tested. Some data depends on what the Forever client exposes. This 2.0.12 package is a **test build** while the QuestSense Nearby automation is checked in-game.
+ChalkBox is developed for **WoW Forever**. Retail and Classic Era have not been tested. Some data depends on what the Forever client exposes. This 2.1.0 package is a **test build** while the QuestSense Nearby automation is checked in-game.
 
 Source and issue tracker: https://github.com/detok/ChalkBox
 

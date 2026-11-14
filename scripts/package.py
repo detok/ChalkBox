@@ -42,6 +42,8 @@ FILES = (
     "SessionJournal.lua",
     "CampSense.lua",
     "DropSense.lua",
+    "AuctionSense.lua",
+    "AuctionSenseUI.lua",
     "MapDiscoveries.lua",
     "UpdateCheck.lua",
     "MacroForge.lua",
