@@ -497,11 +497,12 @@ assert(button.OnDragStart and button.OnDragStop)
 button.OnDragStart(button)
 button.OnDragStop(button)
 local saved=ChalkBox_MapDiscoveriesButtonPosition()
-assert(saved.custom and saved.x==150 and saved.y==-160,
-    "button drag is saved relative to map container")
+assert(saved.custom and saved.x==250-WorldMapFrame.left
+    and saved.y==240-WorldMapFrame.top,
+    "button drag remains saved relative to the map, not screen geometry")
 ChalkBox_MapDiscoveriesEnsure()
-assert(button.point[4]==150 and button.point[5]==-160,
-    "map reopening keeps the user's chosen position")
+assert(button.point[4]==saved.x and button.point[5]==saved.y,
+    "map reopening keeps the user's chosen button position")
 assert(ChalkBox_MapDiscoveriesResetButton())
 assert(not ChalkBox_MapDiscoveriesButtonPosition().custom and
     button.point[4]==18 and button.point[5]==-114,
