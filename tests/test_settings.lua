@@ -70,8 +70,8 @@ _G.ChalkBox_BarStatEnabled=function(key)
 end
 _G.ChalkBox_BarCommand=function(value)
     if value=="top" or value=="bottom" or value=="off" then ChalkBoxDB.bar=value end
-    if value=="reserve on" then ChalkBoxDB.barReserve=true end
-    if value=="reserve off" then ChalkBoxDB.barReserve=false end
+    if value=="reserve on" then ChalkBoxDB.barShiftChrome=true end
+    if value=="reserve off" then ChalkBoxDB.barShiftChrome=false end
     local stat,on=value:match("^stat (%a+) (%a+)$")
     if stat and (on=="on" or on=="off") then
         ChalkBoxDB.barStats[stat]=on=="on"
@@ -444,11 +444,17 @@ assert(ChalkBoxZoneDB.limit==15,"autowatch limit can be selected from native opt
 Control("Tracking Diagnostics"):Click()
 assert(printed[#printed]=="quests status")
 local barChecks=FindCheckByParentTitle("The Bar")
-assert(#barChecks==3,
-    "no UI option may reenable the unsafe Blizzard root reservation")
+assert(#barChecks==4 and barChecks[4].checked,
+    "full-width Bar has its own top-chrome shift setting, initially enabled")
 categories["The Bar"].panel:Show()
 barChecks[2]:Click(true)
 assert(ChalkBoxDB.bar=="bottom","placement selection updates the Bar only")
+barChecks[4]:Click(false)
+assert(ChalkBoxDB.barShiftChrome==false and ChalkBoxDB.barReserve==true,
+    "new spacing control never re-enables direct UIParent reservation")
+barChecks[4]:Click(true)
+assert(ChalkBoxDB.barShiftChrome==true,
+    "safe top-chrome adjustment remains user-selectable")
 Control("Reset Session"):Click()
 assert(printed[#printed]=="bar reset")
 Control("Appearance"):Click()
