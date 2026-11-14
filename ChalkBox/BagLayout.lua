@@ -4,6 +4,7 @@
 local addonName = ...
 local db
 local hooked = false
+local bankOpen = false
 local pending = false
 local lastApplied = 0
 
@@ -13,6 +14,26 @@ end
 
 local function InCombat()
     return type(InCombatLockdown) == "function" and InCombatLockdown()
+end
+
+local function BankVisible()
+    if bankOpen then return true end
+    local frame=BankFrame
+    if frame and type(frame.IsShown)=="function" then
+        local ok,shown=pcall(frame.IsShown,frame)
+        if ok and Safe(shown) and shown then return true end
+    end
+    return false
+end
+
+local function PlayerBag(frame)
+    if not frame or type(frame.GetBagID)~="function" then return true end
+    local ok,id=pcall(frame.GetBagID,frame)
+    if not ok or not Safe(id) or type(id)~="number" then return false end
+    local backpack=type(BACKPACK_CONTAINER)=="number" and
+        BACKPACK_CONTAINER or 0
+    local max=type(NUM_BAG_SLOTS)=="number" and NUM_BAG_SLOTS or 4
+    return id>=backpack and id<=max
 end
 
 local function Offset()
@@ -41,13 +62,18 @@ end
 
 local function ApplyOffset()
     if not db then return end
-    if InCombat() then pending=true;return end
+    -- First-time bank opening can initialize protected container anchors.
+    -- Never move bag frames as a side effect of that bank UI setup.
+    if InCombat() or BankVisible() then
+        if Offset()~=0 then pending=true end
+        return
+    end
     local shift = Offset()
     lastApplied = 0
     pending = false
     if shift == 0 then return end
     local frame = ShownFirstBag()
-    if not frame or type(frame.GetPoint)~="function"
+    if not PlayerBag(frame) or type(frame.GetPoint)~="function"
         or type(frame.GetParent)~="function"
         or type(frame.ClearAllPoints)~="function"
         or type(frame.SetPoint)~="function" then return end
@@ -68,14 +94,14 @@ local function ApplyOffset()
 end
 
 local function InstallHook()
-    if hooked or type(hooksecurefunc)~="function"
+    if hooked or BankVisible() or type(hooksecurefunc)~="function"
         or type(UpdateContainerFrameAnchors)~="function" then return end
     hooked = pcall(hooksecurefunc,"UpdateContainerFrameAnchors",ApplyOffset)
 end
 
 local function RefreshLayout()
     InstallHook()
-    if InCombat() then pending=true;return end
+    if InCombat() or BankVisible() then pending=true;return end
     if type(UpdateContainerFrameAnchors)=="function" then
         local ok = pcall(UpdateContainerFrameAnchors)
         if ok then
@@ -126,10 +152,28 @@ end
 
 local events=CreateFrame("Frame")
 for _,event in ipairs({"ADDON_LOADED","PLAYER_LOGIN","PLAYER_ENTERING_WORLD",
-    "PLAYER_REGEN_ENABLED"}) do
+    "PLAYER_REGEN_ENABLED","BANKFRAME_OPENED","BANKFRAME_CLOSED"}) do
     pcall(events.RegisterEvent,events,event)
 end
 events:SetScript("OnEvent",function(_,event,name)
+    if event=="BANKFRAME_OPENED" then
+        bankOpen=true
+        return
+    elseif event=="BANKFRAME_CLOSED" then
+        bankOpen=false
+        if db and Offset()~=0 then
+            -- BankFrame may still be visible at the exact close-event edge.
+            -- A deferred pass runs after Blizzard finishes its panel changes.
+            if C_Timer and type(C_Timer.After)=="function" then
+                C_Timer.After(0.2,function()
+                    if not BankVisible() then RefreshLayout() end
+                end)
+            elseif not BankVisible() then
+                RefreshLayout()
+            end
+        end
+        return
+    end
     if event=="ADDON_LOADED" then
         if name==addonName then
             if type(ChalkBoxDB)~="table" then ChalkBoxDB={} end
