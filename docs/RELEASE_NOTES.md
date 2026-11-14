@@ -1,22 +1,22 @@
-# ChalkBox 2.0.11 — Discoveries direct zone picker and cleaner drop rates
+# ChalkBox 2.0.12 — Clickable Discoveries picker and refreshed AddOns icon
 
-The Discoveries Area / Dungeon field now opens a **visible, scrollable zone picker**. No more nested submenus. Browse every outdoor zone or dungeon with recorded loot, then return to Follow world map whenever you want.
+## Discoveries
+The Area / Dungeon zone picker could appear **behind the journal or other game menus**, leaving recorded zones visible but impossible to select. The picker now opens on its own high-level UI layer, anchored beneath the existing Area field. You can actually click the entries. It closes automatically when the Discoveries journal closes.
 
-## Changes
-- Alphabetized list of every recorded zone and dungeon, with item counts.
-- Nine visible rows; mouse-wheel scrolling and Previous / Next pages for large journals.
-- A Follow world map choice in the same picker. Manual zone selection pauses map sync without moving Blizzard's world map; saved selections survive relogging.
-- Picker works even when Forever's MenuUtil and EasyMenu aren't loaded.
-- Clearer item columns: **Found** (item copies), **Drops** (loot occurrences), **Rate** (percentage of looted corpses from a specific creature that yielded the item).
-- Short creature-specific readouts, e.g. **Defias Bandit · 4 drops / 12 loots · 33.3%**.
-- When an item has only one identified mob source, its personal observed rate can be shown from the whole-zone view. If several mob types dropped it, choose the creature to prevent a misleading mixed rate.
-- Shorter tooltips, DropSense settings, and summary text.
+- Direct zone and dungeon list, mouse-wheel navigation and paging unchanged
+- Your manually browsed area, map sync, saved loot history and source filters preserved
+- Existing Discoveries layout and map button position unchanged
 
-**Important:** A loot attempt is not necessarily a kill. ChalkBox only counts readable, attributed loots, not every corpse you kill or every zero-loot kill. These percentages are your personal sample, not official server drop chances.
+## AddOns selection icon
+ChalkBox's in-game addon icon now matches the newer gold-and-teal ChalkBox project emblem used in the CurseForge artwork. The release packager renders the canonical SVG master as a **native 64×64, 32-bit uncompressed TGA**. Both game-flavor manifests already reference the same correct IconTexture path, so no extra installation or texture configuration is needed.
 
-## Preserved
-Current Discoveries window layout, item icons, filters, search, sorting, native map button and its position, saved loot history, saved preferences, QuestSense, The Bar, bank compatibility fix, and other ChalkBox modules.
+## Validation
+- Automated Lua 5.1, Discoveries frame-layering, zone-selection and package tests
+- Packaging checks assert the game TGA is in the installable ZIP in the expected format
+- Native world map, bank compatibility fixes, QuestSense and other ChalkBox modules remain unchanged
 
-**Install:** Replace your existing ChalkBox folder with the folder inside `ChalkBox-2.0.11.zip` and type `/reload`. Keep SavedVariables. The separate `ChalkBox-CurseForge-Media-2.0.11.zip` is for publication artwork and copy, not installation.
+**Install:** Replace the existing ChalkBox addon folder with **ChalkBox-2.0.12.zip** and restart or `/reload` the game. To see a changed icon on the character-selection AddOns screen, restart the client if it cached the old artwork. Keep SavedVariables.
 
-WoW Forever beta/test build. Automated Lua 5.1 and packaging tests passed; in-game visual confirmation remains necessary.
+**ChalkBox-CurseForge-Media-2.0.12.zip** contains the separate promotional files. Do not install that ZIP as an addon.
+
+For WoW Forever; live-client visual confirmation is still required. Retail and Classic Era remain unverified.

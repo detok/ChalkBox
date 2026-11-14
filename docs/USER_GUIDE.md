@@ -1,6 +1,6 @@
 # ChalkBox User Guide
 
-**Version 2.0.11 · World of Warcraft: Forever**
+**Version 2.0.12 · World of Warcraft: Forever**
 
 ChalkBox puts several small tools in one addon. Everything is managed from **Options → AddOns → ChalkBox**, or **/chalk**. Choose the modules you want; the rest can stay out of sight.
 
@@ -28,6 +28,9 @@ Select the module first, then its child page. The same top heading and return-to
 When a character opens their bank for the first time, ChalkBox no longer decorates bank item buttons or runs bag-anchor moves while Blizzard's bank interface is initializing. The bank stays native, and normal bag highlighting and configured separate-bag positioning resume after it closes. If a blocked-action dialog still occurs, record the exact blocked function or screenshot (and any Lua error stack), since a live-client trace is required to confirm its cause.
 
 ## DropSense and Map Discoveries
+
+**2.0.12:** The direct Area / Dungeon zone list is now a top-level clickable overlay, rather than being drawn behind the Discoveries content on Forever. Click the Area field for the list; it remains anchored to the field, scrolls/pages normally, and closes when the journal closes. The AddOns selection icon has also been updated to the current CurseForge ChalkBox logo.
+
 
 **2.0.11:** The Area / Dungeon field opens a direct list of all recorded zones and dungeons, with mouse-wheel navigation and paging. Choose a location to browse independently, or choose Follow world map to resync. Found counts item copies, Drops counts the times an item appeared, and Rate is based on *looted corpses from an identifiable creature*, not every kill or official odds.
 
@@ -134,7 +137,7 @@ Recorded details include observed XP, levels, net gold, quest turn-ins, sampled 
 
 ## Install, updates and troubleshooting
 
-Download the installable **ChalkBox-2.0.11.zip** from the [release page](https://github.com/detok/ChalkBox/releases/tag/v2.0.11). Extract the single ChalkBox folder into **Interface/AddOns**. Don't extract an extra nested ChalkBox folder.
+Download the installable **ChalkBox-2.0.12.zip** from the [release page](https://github.com/detok/ChalkBox/releases/tag/v2.0.12). Extract the single ChalkBox folder into **Interface/AddOns**. Don't extract an extra nested ChalkBox folder.
 
 When updating, **keep your SavedVariables**. Use **/chalk** to check preferences and **/chalk update** to see the installed version.
 
