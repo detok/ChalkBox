@@ -4,6 +4,10 @@ local MAX_ROWS=7
 local visibleRows=4
 -- The actual AH content height varies across Forever UI scales.
 local frame,tab,host,labels=nil,nil,nil,{}
+-- A local display mode uses Blizzard's existing SetDisplayMode lifecycle
+-- to hide the other AH pages. It is NOT inserted into Blizzard's global
+-- display-mode table or the protected native tab registry.
+local marketMode={"ChalkBoxAuctionSensePane"}
 local searchText,page="",1
 local seconds=0
 local cachedRows,cachedMarket,cachedTime,cachedSearch={},"",0,nil
@@ -179,11 +183,14 @@ local function Ensure()
     local ah=AuctionHouseFrame
     if not ah then return false end
     host=ah
-    local f=CreateFrame("Frame","ChalkBoxAuctionSensePane",ah)
-    -- The stock AH has a title, decorative frame edge and bottom tabs.
-    -- Confine our content to its inner body; never cover the footer/tabs.
+    -- Use native inset framing and auction index artwork. The previous
+    -- opaque rectangle covered the Blizzard panel instead of belonging
+    -- to it. The parent frame owns its portrait, money footer and tabs.
+    local f=CreateFrame("Frame","ChalkBoxAuctionSensePane",ah,
+        "InsetFrameTemplate")
     f:SetPoint("TOPLEFT",ah,"TOPLEFT",13,-56)
     f:SetPoint("BOTTOMRIGHT",ah,"BOTTOMRIGHT",-13,68)
+    ah.ChalkBoxAuctionSensePane=f
     if f.SetFrameLevel then
         local base=type(ah.GetFrameLevel)=="function" and
             ah:GetFrameLevel() or 20
@@ -192,12 +199,21 @@ local function Ensure()
     if f.EnableMouse then f:EnableMouse(true) end
     local background=f:CreateTexture(nil,"BACKGROUND")
     background:SetAllPoints(f)
-    if background.SetColorTexture then
-        background:SetColorTexture(0.11,0.085,0.061,0.985)
-    elseif background.SetTexture then
-        background:SetTexture("Interface\\Buttons\\WHITE8X8")
-        if background.SetVertexColor then
-            background:SetVertexColor(0.11,0.085,0.061,0.985)
+    -- Same atlas as AuctionHouseBrowseResultsFrame.ItemList in Forever.
+    -- Fallback remains opaque if the atlas is unavailable in a client.
+    local themed=false
+    if type(background.SetAtlas)=="function" then
+        themed=pcall(background.SetAtlas,background,
+            "auctionhouse-background-index",false)
+    end
+    if not themed then
+        if type(background.SetColorTexture)=="function" then
+            background:SetColorTexture(0.18,0.14,0.11,1)
+        elseif type(background.SetTexture)=="function" then
+            background:SetTexture("Interface\\Buttons\\WHITE8X8")
+            if type(background.SetVertexColor)=="function" then
+                background:SetVertexColor(0.18,0.14,0.11,1)
+            end
         end
     end
     labels.title=Font(f,"GameFontNormalHuge",20,-9,410)
@@ -224,9 +240,10 @@ local function Ensure()
     end)
     Hint(labels.fullscan,"Full listings","Complete auction listing snapshot",
         "Server limit: once every 15 minutes")
-    local input=CreateFrame("EditBox",nil,f,"InputBoxTemplate")
-    input:SetSize(199,24)
-    input:SetPoint("TOPLEFT",f,"TOPLEFT",367,-107)
+    local input=CreateFrame("EditBox",nil,f,"SearchBoxTemplate")
+    input:SetSize(258,24)
+    input:ClearAllPoints()
+    input:SetPoint("TOPRIGHT",f,"TOPRIGHT",-25,-107)
     if input.SetAutoFocus then input:SetAutoFocus(false) end
     if input.SetMaxLetters then input:SetMaxLetters(70) end
     input:SetScript("OnTextChanged",function(self)
@@ -236,28 +253,31 @@ local function Ensure()
     input:SetScript("OnEscapePressed",function(self)
         if self.ClearFocus then self:ClearFocus() end
     end)
-    Font(f,"GameFontNormal",324,-113,41):SetText("Find")
-    Font(f,"GameFontNormal",21,-138,230):SetText("ITEM")
-    local lowHeader=Font(f,"GameFontNormal",281,-138,91)
+    local find=Font(f,"GameFontNormal",0,0,36)
+    find:ClearAllPoints()
+    find:SetPoint("RIGHT",input,"LEFT",-8,0)
+    find:SetText("Find")
+    Font(f,"GameFontNormal",21,-138,330):SetText("ITEM")
+    local lowHeader=Font(f,"GameFontNormal",392,-138,102)
     lowHeader:SetText("LOW / UNIT")
     Tint(lowHeader,COLOR.low)
-    local averageHeader=Font(f,"GameFontNormal",388,-138,91)
+    local averageHeader=Font(f,"GameFontNormal",505,-138,102)
     averageHeader:SetText("AVG ASK")
     Tint(averageHeader,COLOR.average)
-    local listingHeader=Font(f,"GameFontNormal",495,-138,81)
+    local listingHeader=Font(f,"GameFontNormal",628,-138,92)
     listingHeader:SetText("LISTINGS")
     Tint(listingHeader,COLOR.counts)
     labels.rows={}
     for i=1,MAX_ROWS do
         local y=-157-(i-1)*24
         local row=CreateFrame("Frame",nil,f)
-        row:SetSize(560,22)
+        row:SetSize(735,22)
         row:SetPoint("TOPLEFT",f,"TOPLEFT",17,y)
-        local name=Font(row,"GameFontHighlight",4,-1,240)
-        local low=Font(row,"GameFontHighlight",264,-1,89)
-        local average=Font(row,"GameFontHighlight",371,-1,89)
-        local listings=Font(row,"GameFontHighlightSmall",478,-1,78)
-        local note=Font(row,"GameFontHighlightSmall",4,-12,540)
+        local name=Font(row,"GameFontHighlight",4,-1,340)
+        local low=Font(row,"GameFontHighlight",375,-1,102)
+        local average=Font(row,"GameFontHighlight",488,-1,102)
+        local listings=Font(row,"GameFontHighlightSmall",611,-1,92)
+        local note=Font(row,"GameFontHighlightSmall",4,-12,720)
         Tint(low,COLOR.low)
         Tint(average,COLOR.average)
         Tint(listings,COLOR.counts)
@@ -309,15 +329,15 @@ local function Ensure()
     -- instead of assuming every client has 450px of vertical room.
     if previous.ClearAllPoints then previous:ClearAllPoints() end
     previous:SetPoint("BOTTOMLEFT",f,"BOTTOMLEFT",21,34)
-    labels.page=Font(f,"GameFontHighlightSmall",251,-10,120)
+    labels.page=Font(f,"GameFontHighlightSmall",0,0,120)
     if labels.page.ClearAllPoints then labels.page:ClearAllPoints() end
-    labels.page:SetPoint("BOTTOMLEFT",f,"BOTTOMLEFT",251,41)
-    local nextButton=Button(f,"Next",462,-10,104,function()
+    labels.page:SetPoint("BOTTOM",f,"BOTTOM",0,41)
+    local nextButton=Button(f,"Next",0,-10,104,function()
         page=page+1;Refresh()
     end)
     if nextButton.ClearAllPoints then nextButton:ClearAllPoints() end
-    nextButton:SetPoint("BOTTOMLEFT",f,"BOTTOMLEFT",462,34)
-    labels.info=Font(f,"GameFontHighlightSmall",21,-10,540)
+    nextButton:SetPoint("BOTTOMRIGHT",f,"BOTTOMRIGHT",-21,34)
+    labels.info=Font(f,"GameFontHighlightSmall",21,-10,720)
     if labels.info.ClearAllPoints then labels.info:ClearAllPoints() end
     labels.info:SetPoint("BOTTOMLEFT",f,"BOTTOMLEFT",21,12)
     frame=f
@@ -374,7 +394,23 @@ function ChalkBox_AuctionAttach()
         tab:SetScript("OnClick",function()
             if type(InCombatLockdown)=="function" and
                 InCombatLockdown() then return end
-            frame:Show()
+            -- Blizzard closes its own Browse/Search/Sell/Auctions panes.
+            -- This keeps the market screen a native AH display mode rather
+            -- than a full-size overlay obscuring live controls underneath.
+            local switched=false
+            if host and type(host.SetDisplayMode)=="function" then
+                switched=pcall(host.SetDisplayMode,host,marketMode)
+            end
+            if not switched then frame:Show() end
+            if type(PanelTemplates_DeselectTab)=="function" then
+                local nativeTabs=type(host.Tabs)=="table" and host.Tabs or
+                    {host.BuyTab,host.SellTab,host.AuctionsTab}
+                for _,native in pairs(nativeTabs) do
+                    if native and native~=tab then
+                        pcall(PanelTemplates_DeselectTab,native)
+                    end
+                end
+            end
             if type(PanelTemplates_SelectTab)=="function" then
                 pcall(PanelTemplates_SelectTab,tab)
             end
@@ -386,7 +422,9 @@ function ChalkBox_AuctionAttach()
         end
         if type(hooksecurefunc)=="function" and
             type(host.SetDisplayMode)=="function" then
-            pcall(hooksecurefunc,host,"SetDisplayMode",HidePane)
+            pcall(hooksecurefunc,host,"SetDisplayMode",function(_,mode)
+                if mode~=marketMode then HidePane() end
+            end)
         end
     end
     HookOtherTabs()

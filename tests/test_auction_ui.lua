@@ -41,6 +41,7 @@ local function Element(kind,parent,name,template)
         local t=Element("Texture",self)
         function t:SetAllPoints() end
         function t:SetColorTexture() end
+        function t:SetAtlas(atlas,resize) self.atlas=atlas;self.resize=resize end
         function t:SetTexture() end
         function t:SetVertexColor() end
         return t
@@ -70,8 +71,24 @@ local buy=Element("Button",AuctionHouseFrame,"AHBuy")
 local sell=Element("Button",AuctionHouseFrame,"AHSell")
 local auctions=Element("Button",AuctionHouseFrame,"AHAuctions")
 AuctionHouseFrame.Tabs={buy,sell,auctions}
-for _,native in ipairs(AuctionHouseFrame.Tabs) do
-    native:SetScript("OnClick",function() end)
+-- The actual Forever Blizzard SetDisplayMode hides every native page
+-- before showing subframes belonging to the requested display mode.
+_G.AuctionHouseFrameDisplayMode={
+    Buy={"CategoriesList","SearchBar","BrowseResultsFrame"},
+    Sell={"ItemSellFrame","ItemSellList"},
+    Auctions={"AuctionsFrame"},
+}
+for _,name in ipairs({"CategoriesList","SearchBar","BrowseResultsFrame",
+    "ItemSellFrame","ItemSellList","AuctionsFrame"}) do
+    AuctionHouseFrame[name]=Element("Frame",AuctionHouseFrame,name)
+end
+for i,native in ipairs(AuctionHouseFrame.Tabs) do
+    local mode=({AuctionHouseFrameDisplayMode.Buy,
+        AuctionHouseFrameDisplayMode.Sell,
+        AuctionHouseFrameDisplayMode.Auctions})[i]
+    native:SetScript("OnClick",function()
+        AuctionHouseFrame:SetDisplayMode(mode)
+    end)
 end
 local nativeRegistryEdits=0
 _G.PanelTemplates_SetTab=function()
@@ -85,7 +102,20 @@ _G.hooksecurefunc=function(parent,method,callback)
     assert(parent==AuctionHouseFrame and method=="SetDisplayMode")
     parent.modeHook=callback
 end
-AuctionHouseFrame.SetDisplayMode=function() end
+AuctionHouseFrame.SetDisplayMode=function(self,mode)
+    if self.displayMode==mode then return end
+    self.displayMode=mode
+    -- Simulated native behavior: this does not modify the native
+    -- registry; it simply uses an existing method for our own pane.
+    for _,list in pairs(AuctionHouseFrameDisplayMode) do
+        for _,name in ipairs(list) do self[name]:Hide() end
+    end
+    for _,name in ipairs(mode) do
+        assert(self[name],"unknown auction display-mode frame "..name)
+        self[name]:Show()
+    end
+    if self.modeHook then self.modeHook(self,mode) end
+end
 local function FindFrame(name)
     for _,v in ipairs(allFrames) do
         if v.name==name then return v end
@@ -140,6 +170,17 @@ local tab=FindFrame("ChalkBoxAuctionSenseTab")
 local pane=FindFrame("ChalkBoxAuctionSensePane")
 assert(tab and pane and pane.parent==AuctionHouseFrame,
     "AuctionSense is built directly inside Blizzard's auction house")
+assert(AuctionHouseFrame.ChalkBoxAuctionSensePane==pane
+    and pane.template=="InsetFrameTemplate",
+    "native Blizzard display mode owns a matching inset pane")
+local matchingAtlas=false
+for _,v in ipairs(allFrames) do
+    if v.kind=="Texture" and v.parent==pane and
+        v.atlas=="auctionhouse-background-index" then
+        matchingAtlas=true
+    end
+end
+assert(matchingAtlas,"Market uses the same auctionhouse-background-index artwork as native Browse")
 assert(tab.template=="AuctionHouseFrameDisplayModeTabTemplate" and
     tab.text=="Market" and tab.w==92,
     "short native AH tab stays readable inside the native tab strip")
@@ -160,7 +201,7 @@ for _,f in ipairs(allFrames) do
         elseif f.text=="Next" then nextButton=f end
     end
     if f.parent==pane and f.kind=="Frame"
-        and f.w==560 and f.h==22 then rows[#rows+1]=f end
+        and f.w==735 and f.h==22 then rows[#rows+1]=f end
 end
 for _,font in ipairs(fonts) do
     if font.parent==pane and font.point and
@@ -170,10 +211,13 @@ for _,font in ipairs(fonts) do
 end
 assert(#rows==7 and footer and previousButton and nextButton,
     "rows, pager, and scan disclaimer all exist within the native pane")
+assert(rows[1].w==735 and rows[1].h==22
+    and nextButton.point[1]=="BOTTOMRIGHT",
+    "columns fill the native AH body; Next is aligned to the right edge")
 assert(rows[1].point[5]==-157 and rows[7].point[5]==-301,
     "compact rows share a fixed 24px rhythm")
 assert(previousButton.point[1]=="BOTTOMLEFT"
-    and nextButton.point[1]=="BOTTOMLEFT"
+    and nextButton.point[1]=="BOTTOMRIGHT"
     and previousButton.point[5]==34 and nextButton.point[5]==34
     and footer.point[5]==12,
     "paging and notes anchor to the pane bottom, not a hard-coded height")
@@ -184,6 +228,13 @@ local function VisibleRows()
 end
 assert(nativeRegistryEdits==0,"never touch protected Blizzard tab registry")
 assert(ChalkBox_AuctionOpen() and pane.shown and tab.selected)
+assert(AuctionHouseFrame.displayMode
+    and AuctionHouseFrame.displayMode[1]=="ChalkBoxAuctionSensePane",
+    "Market uses Blizzard's native SetDisplayMode lifecycle")
+assert(not AuctionHouseFrame.BrowseResultsFrame.shown
+    and not AuctionHouseFrame.SearchBar.shown
+    and not AuctionHouseFrame.CategoriesList.shown,
+    "Blizzard's own Browse controls are hidden, not overlapped by dark sheet")
 assert(Text("AuctionSense") and Text("Whitemane / Alliance"))
 assert(Text("15s 0c") and Text("—"),
     "browse results have a low price but no fabricated average")
@@ -279,13 +330,21 @@ pane.scripts.OnUpdate(pane,1.5)
 Button("Full listings (15m)"):Click()
 assert(fullScans==1,"advanced full scan is a separate explicit action")
 buy:Click()
-assert(not pane.shown and not tab.selected,
-    "native Buy tab automatically closes the custom panel")
+assert(not pane.shown and not tab.selected
+    and AuctionHouseFrame.BrowseResultsFrame.shown
+    and AuctionHouseFrame.SearchBar.shown,
+    "native Buy returns the original Blizzard browsing interface")
 tab:Click()
-assert(pane.shown,"returning to AuctionSense opens inline again")
-AuctionHouseFrame.modeHook()
-assert(not pane.shown,"Blizzard display mode changes restore native panels")
+assert(pane.shown and not AuctionHouseFrame.BrowseResultsFrame.shown,
+    "returning to Market hides the native Buy screen again")
+sell:Click()
+assert(not pane.shown and AuctionHouseFrame.ItemSellFrame.shown,
+    "native Sell shows its own real auction controls")
+tab:Click()
+auctions:Click()
+assert(not pane.shown and AuctionHouseFrame.AuctionsFrame.shown,
+    "native Auctions tab is never blocked by our market mode")
 assert(nativeRegistryEdits==0,"no protected PanelTemplates mutations")
 ChalkBox_AuctionHide()
 assert(not pane.shown)
-print("PASS: AuctionSense compact inner-AH layout, safe footer, native tab, browse/full scans, mouseover and tab switching")
+print("PASS: native Market display mode, Browse artwork, full-width pricing columns, independent native Buy/Sell/Auctions and safe scanner behavior")

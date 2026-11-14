@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.9 — Market belongs inside Blizzard's Auction House (test release)
+- Replace the nearly opaque AuctionSense overlay with Blizzard's **auctionhouse-background-index** artwork and native inset border, matching the built-in Browse results.
+- Switch Market using the existing Auction House `SetDisplayMode` lifecycle. Blizzard's Browse, Search, Sell and Auctions page frames hide while the Market tab is selected and restore normally when switching back. Do not edit the global display-mode list or native tab registry.
+- Spread low/average/listings columns across the full native inset width; align search to the right and pager controls to opposite footer edges.
+- Retain dynamic 1–7 result rows, browse/full-scan API calls, market snapshot distinctions, pricing colors, saved data and protected-combat restrictions.
+- Extend regression coverage for Blizzard artwork, content switching, native Buy/Sell/Auctions controls, responsive pagination and existing tooltips.
+
+
 ## 2.1.8 — Restore adjustable separate-bag position (test release)
 - Restore the previously working Blizzard separate-bag vertical offset. The 2.1.5 combat hotfix disabled this functionality without proving it was the source of a blocked-action error.
 - Restore the saved bag offset, including negative/upward values on login. Recalculate from Blizzard's current native anchor on each layout update so offsets never accumulate.
