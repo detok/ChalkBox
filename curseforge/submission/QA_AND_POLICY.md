@@ -7,12 +7,12 @@ This checklist is for a publisher preparing the addon for the CurseForge author 
 - [ ] The title and summary clearly describe ChalkBox's **real, shipped modules**.
 - [ ] The description mentions the WoW Forever target client without claiming an official Blizzard relationship.
 - [ ] The feature list matches the code. No MapSense continuous map engine, AI combat bot, official drop tables or guaranteed vendor estimates are advertised.
-- [ ] The current file changelog matches version **2.0.2** and real changes.
+- [ ] The current file changelog matches version **2.0.6** and real changes.
 - [ ] **Detok Whitemaine** appears only as the creator credit, not as fake endorsements or testimonials.
 
 ## Installable file
 
-- [ ] Upload **ChalkBox-2.0.2.zip**, not the separate CurseForge media kit or the GitHub source archive.
+- [ ] Upload **ChalkBox-2.0.6.zip**, not the separate CurseForge media kit or the GitHub source archive.
 - [ ] The ZIP has exactly one top-level **ChalkBox** folder and both Forever TOC manifests.
 - [ ] Lua tests and packaging tests passed. The addon loads and saved settings persist after a real client test.
 - [ ] Original bundled licenses are intact (including the separate LibProfessionDB MIT notice).

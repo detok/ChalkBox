@@ -1,15 +1,18 @@
-# ChalkBox 2.0.5 — Discoveries journal text and layout
+# ChalkBox 2.0.6 — The Bar menu refresh
 
-The Discoveries journal now finishes building all of its controls and text in WoW Forever. Eight section headings were being sent to a function using the wrong argument order, passing a heading as a font style and a style name as an x-coordinate. This could interrupt construction halfway through, leaving a frame with only the first few buttons visible.
+The Bar's right-click controls are now shorter, grouped by purpose, and color-coded.
 
-- Corrected the heading call sites, with a dedicated function that assigns the label text, proper Blizzard font template and valid numeric coordinates.
-- Set explicit, readable text colors and subtle shadows for Discoveries text.
-- Added stricter Lua regression tests that fail on invalid font names, wrong coordinates, missing section labels, or a partially initialized journal.
-- Preserved the higher-layer journal background and bag performance improvements from 2.0.4.
-- No changes to stored loot discoveries, macro recipes, profile preferences or other saved data.
+- Right-click a visible stat for only its own controls: **Show/Hide**, **Move**, **Align**, and **Bar settings**. Bag value and repair keep their own context actions.
+- Right-click empty Bar space for global **Modules**, **Position**, **Edit layout**, **Reset layout**, **Stat settings**, and **Appearance**.
+- Gold headings and selected positions; cyan navigation; green enabled; gray disabled; amber reset/hide. Shorter option labels and action messages.
+- Tested both modern Blizzard context menus and the older EasyMenu fallback.
+- Preserves all current metrics, saved layout and alignment, existing module settings, and the 2.0.4 bag-opening performance improvements.
+- Keeps the Discoveries 2.0.5 fixes intact.
 
-**Testing:** Automated Lua 5.1 tests and addon packaging run in GitHub Actions. A final visual check in the actual WoW Forever client is still required. Open the world map, click Discoveries and confirm the entire journal—including headings, item rows, dropdowns and footer—is visible.
+**Installation:** Replace the existing `ChalkBox` addon folder with the one inside **ChalkBox-2.0.6.zip**, then `/reload`. Do not delete SavedVariables.
 
-The playable game download is **ChalkBox-2.0.5.zip**. **ChalkBox-CurseForge-Media-2.0.5.zip** is only for CurseForge listing art and documentation.
+**Verification:** The Lua 5.1 and packaging regression suite runs on GitHub Actions. Please verify the appearance of both right-click menus in the actual WoW Forever client.
 
-Repository: https://github.com/detok/ChalkBox
+**ChalkBox-CurseForge-Media-2.0.6.zip** is the separate listing-art and screenshot bundle, not the installable addon.
+
+Built for WoW Forever; unverified on Retail and Classic Era. Maintained by Detok Whitemaine.
