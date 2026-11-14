@@ -1,5 +1,6 @@
 -- ChalkBox Discoveries browser. WoW Forever's native WorldMapFrame is
--- preserved; only a movable optional button and a standalone browser are added.
+-- preserved. Discoveries is a map-owned side panel; its optional map
+-- button retains its existing user-selected position. Never move the map.
 -- No HTTP requests, map texture replacements or fabricated drop probabilities.
 local mapButton,panel,loader
 local currentMap=nil
@@ -16,7 +17,8 @@ local rows={}
 local controls={}
 local lastMap,elapsed=nil,0
 local attachedTo,retries=nil,0
-local PANEL_W,PANEL_H=660,616
+local PANEL_W,PANEL_H=488,616
+local dockSide="unpositioned"
 local PER_PAGE=7
 
 local function Public(v)
@@ -419,13 +421,18 @@ local function SourceOptions()
         {text=(not selectedSource and "✓ " or "").."All creatures",
             action=function() selectedSource=nil;page=1;refresh() end}
     }
-    for _,entry in ipairs(Sources()) do
+    local sources=Sources()
+    for _,entry in ipairs(sources) do
         local item=entry
         list[#list+1]={text=(selectedSource==item.key and "✓ " or "")..
             item.name.." · "..tostring(item.windows).." loots",
             action=function()
                 selectedSource=item.key;page=1;refresh()
             end}
+    end
+    if #sources==0 then
+        list[#list+1]={text="No identified creatures in this area",
+            title=true,tone="muted"}
     end
     return list
 end
@@ -554,9 +561,128 @@ local function EnsureAreaPopup()
     areaPopup=f
     f:Hide()
 end
+local quickPicker
+local QUICK_VISIBLE_ROWS=9
+local QUICK_ROW_HEIGHT=26
+local function CloseQuickPopup()
+    if quickPicker and quickPicker.Hide then quickPicker:Hide() end
+end
+local function QuickPopupPage(delta)
+    if not quickPicker then return end
+    local kind=quickPicker.kind
+    if kind~="source" and kind~="sort" then return end
+    local options=ChalkBox_DiscoveriesDropdownItems(kind)
+    local totalPages=math.max(1,math.ceil(#options/QUICK_VISIBLE_ROWS))
+    quickPicker.page=math.max(1,math.min(totalPages,
+        (quickPicker.page or 1)+delta))
+    local startIndex=(quickPicker.page-1)*QUICK_VISIBLE_ROWS
+    for i,button in ipairs(quickPicker.rows) do
+        local entry=options[startIndex+i]
+        button.choice=entry
+        if entry then
+            local value=tostring(entry.text or "")
+            if #value>38 then value=value:sub(1,35).."..." end
+            button.label:SetText(value)
+            local r,g,b=0.88,0.91,0.95
+            if entry.title then r,g,b=1,0.83,0.40
+            elseif value:find("✓",1,true) then r,g,b=0.43,0.93,0.61 end
+            button.label:SetTextColor(r,g,b,1)
+            if button.back and button.back.SetColorTexture then
+                button.back:SetColorTexture(entry.title and 0.12 or 0.08,
+                    entry.title and 0.16 or 0.10,
+                    entry.title and 0.19 or 0.13,0.95)
+            end
+            button:SetScript("OnClick",entry.action and function()
+                entry.action()
+                CloseQuickPopup()
+            end or nil)
+            button:Show()
+        else
+            button:SetScript("OnClick",nil)
+            button:Hide()
+        end
+    end
+    quickPicker.pageLabel:SetText(
+        ("Page %d / %d"):format(quickPicker.page,totalPages))
+    quickPicker.previous:SetText(quickPicker.page>1 and "◀ Previous" or "◀")
+    quickPicker.next:SetText(quickPicker.page<totalPages and "Next ▶" or "▶")
+end
+local function EnsureQuickPopup()
+    if quickPicker or not panel then return end
+    local f=CreateFrame("Frame","ChalkBoxDiscoveriesQuickPicker",UIParent)
+    f:SetSize(252,314)
+    if type(f.SetFrameStrata)=="function" then f:SetFrameStrata("TOOLTIP") end
+    if type(f.SetFrameLevel)=="function" then f:SetFrameLevel(1001) end
+    if type(f.SetToplevel)=="function" then f:SetToplevel(true) end
+    if type(f.EnableMouse)=="function" then f:EnableMouse(true) end
+    if type(f.EnableMouseWheel)=="function" then f:EnableMouseWheel(true) end
+    local bg=f:CreateTexture(nil,"BACKGROUND")
+    bg:SetAllPoints(f)
+    Paint(bg,0.025,0.034,0.042,0.98)
+    f.back=bg
+    local edge=f:CreateTexture(nil,"BORDER")
+    edge:SetPoint("TOPLEFT",f,"TOPLEFT",0,0)
+    edge:SetPoint("TOPRIGHT",f,"TOPRIGHT",0,0)
+    edge:SetHeight(2)
+    local er,eg,eb=Accent()
+    Paint(edge,er,eg,eb,1)
+    f.rows={}
+    for i=1,QUICK_VISIBLE_ROWS do
+        local b=CreateFrame("Button",nil,f)
+        b:SetSize(236,QUICK_ROW_HEIGHT-1)
+        b:SetPoint("TOPLEFT",f,"TOPLEFT",8,-8-(i-1)*QUICK_ROW_HEIGHT)
+        local back=b:CreateTexture(nil,"BACKGROUND")
+        back:SetAllPoints(b)
+        b.back=back
+        b.label=Font(b,"GameFontHighlight",7,-3,220)
+        b:SetScript("OnMouseWheel",function(_,wheel)
+            QuickPopupPage(wheel>0 and -1 or 1)
+        end)
+        f.rows[i]=b
+    end
+    f.previous=Button(f,"◀ Previous",98,8,-251,function()
+        QuickPopupPage(-1)
+    end)
+    f.pageLabel=Font(f,"GameFontHighlightSmall",107,-256,66)
+    f.next=Button(f,"Next ▶",98,147,-251,function()
+        QuickPopupPage(1)
+    end)
+    f:SetScript("OnMouseWheel",function(_,wheel)
+        QuickPopupPage(wheel>0 and -1 or 1)
+    end)
+    quickPicker=f
+    f:Hide()
+end
+local function ToggleQuickPopup(kind)
+    EnsureQuickPopup()
+    if not quickPicker then return end
+    if quickPicker:IsShown() and quickPicker.kind==kind then
+        CloseQuickPopup()
+        return
+    end
+    CloseAreaPopup()
+    quickPicker.kind=kind
+    quickPicker.page=1
+    quickPicker:ClearAllPoints()
+    if kind=="source" then
+        -- The source button sits on the right of the compact sidecar.
+        -- Right-align the popup to keep it inside the map-side panel.
+        quickPicker:SetPoint("TOPRIGHT",controls[kind],"BOTTOMRIGHT",0,-2)
+    else
+        quickPicker:SetPoint("TOPLEFT",controls[kind],"BOTTOMLEFT",0,-2)
+    end
+    QuickPopupPage(0)
+    quickPicker:Show()
+    if type(quickPicker.Raise)=="function" then quickPicker:Raise() end
+end
+local function ClosePickers()
+    CloseAreaPopup()
+    CloseQuickPopup()
+end
 local function Dropdown(parent,label,width,x,y,kind)
     local b=Button(parent,label,width,x,y,function(self)
         if kind=="area" then
+            CloseQuickPopup()
             EnsureAreaPopup()
             if not areaPopup then return end
             if areaPopup:IsShown() then CloseAreaPopup()
@@ -570,41 +696,28 @@ local function Dropdown(parent,label,width,x,y,kind)
             end
             return
         end
-        CloseAreaPopup()
-        local options=ChalkBox_DiscoveriesDropdownItems(kind)
-        if not ShowMenu(self,options) then
-            local actionable={}
-            for _,entry in ipairs(options) do
-                if entry.action and not entry.title then
-                    actionable[#actionable+1]=entry
-                end
-            end
-            if #actionable>0 then
-                local pointer=controls[kind.."Cycle"] or 0
-                pointer=pointer%#actionable+1
-                controls[kind.."Cycle"]=pointer
-                Pick(pointer,actionable)
-            end
-        end
+        -- Actual clickable Blizzard-style frames, not a context menu that
+        -- may silently fail to appear on Forever. No auto-cycling fallback.
+        ToggleQuickPopup(kind)
     end)
     controls[kind]=b
     return b
 end
 local function Row(parent,index)
-    local y=-276-(index-1)*39
+    local y=-291-(index-1)*36
     local frame=CreateFrame("Frame",nil,parent)
-    frame:SetSize(PANEL_W-40,37)
-    frame:SetPoint("TOPLEFT",parent,"TOPLEFT",20,y)
+    frame:SetSize(PANEL_W-36,34)
+    frame:SetPoint("TOPLEFT",parent,"TOPLEFT",18,y)
     local back=frame:CreateTexture(nil,"BACKGROUND")
     back:SetAllPoints(frame)
     local icon=frame:CreateTexture(nil,"ARTWORK")
     icon:SetSize(28,28)
     icon:SetPoint("LEFT",frame,"LEFT",7,0)
-    local name=Font(frame,"GameFontHighlight",46,-5,276)
-    local quantity=Font(frame,"GameFontNormal",328,-5,62)
-    local sampled=Font(frame,"GameFontHighlightSmall",401,-5,92)
-    local rate=Font(frame,"GameFontHighlight",511,-5,103)
-    local hint=Font(frame,"GameFontHighlightSmall",46,-22,495)
+    local name=Font(frame,"GameFontHighlight",46,-5,198)
+    local quantity=Font(frame,"GameFontNormal",243,-5,52)
+    local sampled=Font(frame,"GameFontHighlightSmall",304,-5,55)
+    local rate=Font(frame,"GameFontHighlight",375,-5,64)
+    local hint=Font(frame,"GameFontHighlightSmall",46,-21,397)
     local r={frame=frame,back=back,icon=icon,name=name,qty=quantity,
         samples=sampled,rate=rate,hint=hint}
     if type(frame.EnableMouse)=="function" then frame:EnableMouse(true) end
@@ -679,6 +792,7 @@ refresh=function()
         if s.key==selectedSource then sourceName=s.name;break end
     end
     if sourceName:len()>18 then sourceName=sourceName:sub(1,15).."..." end
+    if #sources==0 then sourceName="No creatures recorded" end
     controls.source:SetText(sourceName.."  ▾")
     local sortName="Quantity"
     for _,s in ipairs(sorting) do
@@ -720,23 +834,73 @@ refresh=function()
         "* Personal loot rates only  ·  Unlooted kills not counted."..
         (opts.limitReached and "  ·  Storage limit reached." or ""))
 end
+-- Attach to Blizzard's map without mutating its points/scale/size.
+-- Prefer a sidecar outside the right edge, use left if needed, and keep
+-- a deliberate in-map side attachment for maximized map layouts.
+local dockGeometry
+local function DockPanel()
+    if not panel or not WorldMapFrame then return false end
+    local world=WorldMapFrame
+    local worldLeft=Call(world.GetLeft,world)
+    local worldRight=Call(world.GetRight,world)
+    local worldTop=Call(world.GetTop,world)
+    local rootLeft=UIParent and Call(UIParent.GetLeft,UIParent)
+    local rootRight=UIParent and Call(UIParent.GetRight,UIParent)
+    local rootTop=UIParent and Call(UIParent.GetTop,UIParent)
+    local rootBottom=UIParent and Call(UIParent.GetBottom,UIParent)
+    local gap=8
+    local side="right"
+    if type(worldRight)=="number" and type(rootRight)=="number"
+        and rootRight-worldRight<PANEL_W+gap then
+        side="inside"
+        if type(worldLeft)=="number" and type(rootLeft)=="number"
+            and worldLeft-rootLeft>=PANEL_W+gap then
+            side="left"
+        end
+    end
+    local y=0
+    if type(worldTop)=="number" and type(rootTop)=="number"
+        and type(rootBottom)=="number" then
+        local minY=rootBottom+PANEL_H-worldTop+10
+        local maxY=rootTop-worldTop-10
+        if minY<=maxY then y=math.max(minY,math.min(0,maxY)) end
+    end
+    local key=tostring(side)..":"..tostring(y)..":"..
+        tostring(worldLeft)..":"..tostring(worldRight)..":"..
+        tostring(worldTop)..":"..tostring(rootRight)
+    if key==dockGeometry then return true end
+    dockGeometry=key
+    dockSide=side
+    panel:ClearAllPoints()
+    if side=="right" then
+        panel:SetPoint("TOPLEFT",world,"TOPRIGHT",gap,y)
+    elseif side=="left" then
+        panel:SetPoint("TOPRIGHT",world,"TOPLEFT",-gap,y)
+    else
+        panel:SetPoint("TOPRIGHT",world,"TOPRIGHT",-10,y)
+    end
+    return true
+end
 local function EnsurePanel()
     if panel or not UIParent then return end
     local template=type(BackdropTemplateMixin)=="table" and
         "BackdropTemplate" or nil
-    local f=CreateFrame("Frame","ChalkBoxMapDiscoveries",UIParent,template)
+    local world=WorldMapFrame
+    if not world then return end
+    -- Parenting to the map makes the side panel disappear with it, even
+    -- if another addon closes the map without notifying ChalkBox.
+    local f=CreateFrame("Frame","ChalkBoxMapDiscoveries",world,template)
     f:SetSize(PANEL_W,PANEL_H)
-    f:SetPoint("CENTER",UIParent,"CENTER",0,0)
+    f:SetPoint("TOPLEFT",world,"TOPRIGHT",8,0)
     -- The native Map & Quest Log uses higher strata than ordinary DIALOG.
     -- Put the *whole* journal (body + child controls) above it.
     if type(f.SetFrameStrata)=="function" then
         f:SetFrameStrata("FULLSCREEN_DIALOG")
     end
     if type(f.SetFrameLevel)=="function" then
-        local level=type(WorldMapFrame)=="table" and
-            Call(WorldMapFrame.GetFrameLevel,WorldMapFrame) or 0
+        local level=Call(world.GetFrameLevel,world) or 0
         if type(level)~="number" then level=0 end
-        f:SetFrameLevel(math.max(200,level+100))
+        f:SetFrameLevel(math.max(200,level+20))
     end
     if type(f.SetToplevel)=="function" then f:SetToplevel(true) end
     if type(f.SetBackdrop)=="function" then
@@ -747,23 +911,9 @@ local function EnsurePanel()
             insets={left=8,right=8,top=8,bottom=8},
         })
     end
-    if type(f.SetMovable)=="function" then f:SetMovable(true) end
-    if type(f.SetClampedToScreen)=="function" then
-        f:SetClampedToScreen(true)
-    end
+    -- Sidecars are docked, not draggable independent dialogs.
     if type(f.EnableMouse)=="function" then f:EnableMouse(true) end
-    if type(f.RegisterForDrag)=="function" then
-        f:RegisterForDrag("LeftButton")
-    end
-    f:SetScript("OnHide",CloseAreaPopup)
-    f:SetScript("OnDragStart",function(self)
-        if type(InCombatLockdown)~="function" or not InCombatLockdown() then
-            if self.StartMoving then self:StartMoving() end
-        end
-    end)
-    f:SetScript("OnDragStop",function(self)
-        if self.StopMovingOrSizing then self:StopMovingOrSizing() end
-    end)
+    f:SetScript("OnHide",ClosePickers)
     -- A dedicated visible border and inset body keep the journal legible
     -- even when the shared theme requests a fully transparent background.
     local edge=f:CreateTexture(nil,"BACKGROUND",nil,-1)
@@ -776,20 +926,20 @@ local function EnsurePanel()
     stripe:SetPoint("TOPLEFT",f,"TOPLEFT",0,0)
     stripe:SetPoint("TOPRIGHT",f,"TOPRIGHT",0,0)
     stripe:SetHeight(3);f.stripe=stripe
-    controls.title=Font(f,"GameFontNormalHuge",22,-20,400)
-    controls.subtitle=Font(f,"GameFontHighlightSmall",22,-51,594)
-    Button(f,"Close",86,552,-20,function() f:Hide() end)
-    controls.outdoor=Button(f,"Outdoor",128,22,-83,function()
+    controls.title=Font(f,"GameFontNormalHuge",20,-20,310)
+    controls.subtitle=Font(f,"GameFontHighlightSmall",20,-51,446)
+    Button(f,"Close",72,392,-20,function() f:Hide() end)
+    controls.outdoor=Button(f,"Outdoor",102,18,-83,function()
         CloseAreaPopup()
         mode="outdoor";selectedArea=DefaultArea()
         selectedSource=nil;page=1;SaveBrowser();refresh()
     end)
-    controls.dungeon=Button(f,"Dungeons",128,160,-83,function()
+    controls.dungeon=Button(f,"Dungeons",108,130,-83,function()
         CloseAreaPopup()
         mode="dungeon";selectedArea=DefaultArea()
         selectedSource=nil;page=1;SaveBrowser();refresh()
     end)
-    controls.map=Button(f,"Map sync: ON",153,485,-83,function()
+    controls.map=Button(f,"Map sync: ON",136,332,-83,function()
         CloseAreaPopup()
         if followMap then
             followMap=false
@@ -806,16 +956,16 @@ local function EnsurePanel()
             FollowWorldMap()
         end
     end)
-    Heading(f,"AREA / DUNGEON","GameFontNormal",22,-124,265)
-    Heading(f,"CREATURE SOURCE","GameFontNormal",301,-124,212)
-    Heading(f,"SORT BY","GameFontNormal",515,-124,116)
-    Dropdown(f,"Choose area",265,22,-144,"area")
-    Dropdown(f,"All creatures",205,301,-144,"source")
-    Dropdown(f,"Quantity",123,515,-144,"sort")
-    Heading(f,"SEARCH ITEMS","GameFontNormal",22,-195,137)
+    Heading(f,"AREA / DUNGEON","GameFontNormal",18,-124,218)
+    Heading(f,"CREATURE","GameFontNormal",247,-124,218)
+    Dropdown(f,"Choose area",218,18,-144,"area")
+    Dropdown(f,"All creatures",218,247,-144,"source")
+    Heading(f,"SORT","GameFontNormal",18,-192,135)
+    Heading(f,"SEARCH ITEMS","GameFontNormal",164,-192,210)
+    Dropdown(f,"Quantity",135,18,-212,"sort")
     local input=CreateFrame("EditBox",nil,f,"InputBoxTemplate")
-    input:SetSize(382,24)
-    input:SetPoint("TOPLEFT",f,"TOPLEFT",151,-189)
+    input:SetSize(211,24)
+    input:SetPoint("TOPLEFT",f,"TOPLEFT",164,-212)
     if input.SetAutoFocus then input:SetAutoFocus(false) end
     if input.SetScript then
         input:SetScript("OnTextChanged",function(self)
@@ -830,25 +980,25 @@ local function EnsurePanel()
         end)
     end
     controls.search=input
-    Button(f,"Clear",91,545,-189,function()
+    Button(f,"Clear",81,387,-212,function()
         if input.SetText then input:SetText("") end
         searchText="";page=1;refresh()
     end)
-    controls.count=Font(f,"GameFontHighlightSmall",22,-230,610)
-    Heading(f,"ITEM", "GameFontNormal",70,-257,260)
-    Heading(f,"FOUND", "GameFontNormal",348,-257,90)
-    Heading(f,"DROPS", "GameFontNormal",425,-257,88)
-    Heading(f,"RATE*", "GameFontNormal",542,-257,70)
+    controls.count=Font(f,"GameFontHighlightSmall",18,-249,450)
+    Heading(f,"ITEM","GameFontNormal",65,-271,190)
+    Heading(f,"FOUND","GameFontNormal",261,-271,70)
+    Heading(f,"LOOTS","GameFontNormal",320,-271,70)
+    Heading(f,"RATE*","GameFontNormal",393,-271,68)
     for i=1,PER_PAGE do rows[i]=Row(f,i) end
-    controls.empty=Font(f,"GameFontHighlight",37,-311,575)
-    Button(f,"◀ Previous",112,22,-558,function()
+    controls.empty=Font(f,"GameFontHighlight",30,-315,428)
+    Button(f,"◀ Previous",105,18,-558,function()
         page=math.max(1,page-1);refresh()
     end)
-    controls.page=Font(f,"GameFontNormal",279,-564,137)
-    Button(f,"Next ▶",109,529,-558,function()
+    controls.page=Font(f,"GameFontNormal",204,-564,110)
+    Button(f,"Next ▶",105,365,-558,function()
         page=page+1;refresh()
     end)
-    controls.footer=Font(f,"GameFontHighlightSmall",22,-593,612)
+    controls.footer=Font(f,"GameFontHighlightSmall",18,-593,452)
     panel=f
     f:Hide()
     Tint()
@@ -859,6 +1009,8 @@ local function EnsurePanel()
         elapsed=elapsed+(type(dt)=="number" and dt or 0)
         if elapsed<0.7 then return end
         elapsed=0
+        -- Recheck only ~once per second; no per-frame pcall/geometry work.
+        DockPanel()
         local id=MapID()
         if id and id~=lastMap then
             lastMap=id;currentMap=id
@@ -870,12 +1022,18 @@ local function EnsurePanel()
     end)
 end
 function ChalkBox_OpenMapDiscoveries()
+    if not WorldMapFrame or
+        (type(WorldMapFrame.IsShown)=="function" and
+        not WorldMapFrame:IsShown()) then
+        return false -- Discoveries is not an independent standalone window.
+    end
     RestoreBrowser()
     if type(ChalkBox_MapDiscoveriesEnsure)=="function" then
         ChalkBox_MapDiscoveriesEnsure()
     end
     EnsurePanel()
     if not panel then return false end
+    DockPanel()
     local id=MapID()
     if id then currentMap=id;lastMap=id end
     if not selectedArea or followMap then
@@ -890,7 +1048,7 @@ function ChalkBox_OpenMapDiscoveries()
         local level=WorldMapFrame and
             Call(WorldMapFrame.GetFrameLevel,WorldMapFrame) or 0
         if type(level)~="number" then level=0 end
-        panel:SetFrameLevel(math.max(200,level+100))
+        panel:SetFrameLevel(math.max(200,level+20))
     end
     return true
 end
@@ -1042,7 +1200,14 @@ local function InstallButton()
     if type(world.HookScript)=="function" then
         world:HookScript("OnShow",function()
             PositionButton()
+            dockGeometry=nil
+            if panel and type(panel.IsShown)=="function"
+                and panel:IsShown() then DockPanel() end
             ChalkBox_MapDiscoveriesRefresh()
+        end)
+        world:HookScript("OnHide",function()
+            ClosePickers()
+            if panel and panel.Hide then panel:Hide() end
         end)
     end
     if type(hooksecurefunc)=="function" and
@@ -1064,7 +1229,8 @@ end
 function ChalkBox_DiscoveriesBrowserStatus()
     RestoreBrowser()
     return {followMap=followMap,mode=mode,selectedArea=selectedArea,
-        browseArea=browseArea,mapID=currentMap}
+        browseArea=browseArea,mapID=currentMap,dock=dockSide,
+        selectedSource=selectedSource}
 end
 function ChalkBox_MapDiscoveriesStatus()
     local opt=type(ChalkBox_DropOptions)=="function" and

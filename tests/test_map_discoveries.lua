@@ -86,13 +86,23 @@ local function Frame(kind,name,parent)
     frames[#frames+1]=f
     return f
 end
-_G.UIParent={}
+_G.UIParent={
+    GetLeft=function() return 0 end,
+    GetRight=function() return 1648 end,
+    GetTop=function() return 900 end,
+    GetBottom=function() return 0 end,
+}
 _G.BackdropTemplateMixin={}
 local viewed=1436
 _G.WorldMapFrame=Frame("Frame","WorldMapFrame",UIParent)
 WorldMapFrame:SetFrameLevel(45)
 WorldMapFrame:SetFrameStrata("FULLSCREEN_DIALOG")
+WorldMapFrame.left=100
+WorldMapFrame.right=800
+WorldMapFrame.top=750
+WorldMapFrame:Show()
 WorldMapFrame.GetMapID=function() return viewed end
+WorldMapFrame.GetRight=function(self) return self.right end
 _G.CreateFrame=Frame
 _G.C_Map={
     GetBestMapForUnit=function() return 1436 end,
@@ -131,9 +141,17 @@ _G.ChalkBox_DropAreaInfo=function(key)
     end
     return all[key]
 end
+local manyCreatures=false
 _G.ChalkBox_DropSources=function(key)
     if key=="z:1436" then
-        return {{key="c:12345",name="Defias Bandit",windows=12}}
+        local found={{key="c:12345",name="Defias Bandit",windows=12}}
+        if manyCreatures then
+            for i=1,14 do
+                found[#found+1]={key="c:"..(90000+i),
+                    name=("Creature %02d"):format(i),windows=i}
+            end
+        end
+        return found
     end
     return {}
 end
@@ -202,6 +220,23 @@ local function FindMenu(entries,pattern)
         end
     end
 end
+local function SelectQuick(pattern)
+    local popup=Find("ChalkBoxDiscoveriesQuickPicker")
+    assert(popup and popup:IsShown(),
+        "source and sort must open a visible, directly clickable picker")
+    assert(popup.parent==UIParent and popup.strata=="TOOLTIP"
+        and popup.rows and #popup.rows==9,
+        "picker is independent of Forever's unreliable context-menu APIs")
+    for _,row in ipairs(popup.rows) do
+        if row.shown and row.label.text and
+            row.label.text:find(pattern,1,true) and row.OnClick then
+            row.OnClick(row,"LeftButton")
+            assert(not popup:IsShown(),"selection closes its picker")
+            return
+        end
+    end
+    error("Missing visible quick-pick option: "..pattern)
+end
 local function ChooseMenu(pattern)
     local entry=FindMenu(menuEntries,pattern)
     if entry and entry.action then entry.action();return true end
@@ -242,14 +277,22 @@ assert(button and button.parent==WorldMapFrame and button.shown,
     "2.0 live-client map attach remains intact")
 button.OnClick(button,"LeftButton")
 local journal=Find("ChalkBoxMapDiscoveries")
-assert(journal and journal:IsShown() and journal.w==660 and journal.h==616,
-    "Discoveries journal opens at the expected size")
+assert(journal and journal:IsShown() and journal.w==488
+    and journal.h==616 and journal.parent==WorldMapFrame,
+    "Discoveries is a compact World Map-owned sidecar, not a dialog")
+assert(journal.point[1]=="TOPLEFT"
+    and journal.point[2]==WorldMapFrame
+    and journal.point[3]=="TOPRIGHT"
+    and journal.point[4]==8,
+    "map sidecar docks flush to the right of the existing World Map")
+assert(not journal.movable and not journal.OnDragStart,
+    "the data browser must not be another free-floating movable window")
 -- Previously this passed despite the real client aborting halfway through
 -- construction: static heading text was incorrectly passed as a font style.
 local headings={
-    ["AREA / DUNGEON"]=true,["CREATURE SOURCE"]=true,
-    ["SORT BY"]=true,["SEARCH ITEMS"]=true,ITEM=true,
-    FOUND=true,DROPS=true,["RATE*"]=true,
+    ["AREA / DUNGEON"]=true,CREATURE=true,
+    SORT=true,["SEARCH ITEMS"]=true,ITEM=true,
+    FOUND=true,LOOTS=true,["RATE*"]=true,
 }
 local foundHeadings={}
 for _,fs in ipairs(fonts) do
@@ -305,6 +348,23 @@ assert(ChalkBoxZoneDB.mapDiscoveryUI.followMap==nil,
     "opening the journal does not mutate original follow-map defaults")
 assert(#ChalkBox_DiscoveriesDropdownItems("source")>=3)
 assert(#ChalkBox_DiscoveriesDropdownItems("sort")==5)
+-- No geometry changes to Blizzard WorldMapFrame are permitted.
+assert(WorldMapFrame.left==100 and WorldMapFrame.right==800,
+    "sidecar must not move or resize the native map")
+local panelStatus=ChalkBox_DiscoveriesBrowserStatus()
+assert(panelStatus.dock=="right",
+    "the preferred dock mode uses available space outside the map")
+WorldMapFrame.right=1500
+journal.OnUpdate(journal,0.8)
+assert(journal.point[1]=="TOPRIGHT" and
+    journal.point[3]=="TOPRIGHT" and
+    ChalkBox_DiscoveriesBrowserStatus().dock=="inside",
+    "maximized maps dock at the right inside edge rather than offscreen")
+WorldMapFrame.right=800
+journal.OnUpdate(journal,0.8)
+assert(journal.point[1]=="TOPLEFT" and
+    journal.point[3]=="TOPRIGHT",
+    "resizing map restores the right sidecar without dragging native map" )
 OpenArea()
 SelectArea("Redridge Mountains")
 local browser=ChalkBox_DiscoveriesBrowserStatus()
@@ -314,8 +374,10 @@ assert(not browser.followMap and browser.mode=="outdoor"
 assert(viewed==1436 and ChalkBoxZoneDB.mapDiscoveryUI.browseArea=="z:1437"
     and ChalkBoxZoneDB.mapDiscoveryUI.followMap==false,
     "manual location is saved per character while the native world map stays put")
-assert(#ChalkBox_DiscoveriesDropdownItems("source")==2,
-    "area switching works and clears unrelated creature filters")
+assert(#ChalkBox_DiscoveriesDropdownItems("source")==3
+    and ChalkBox_DiscoveriesDropdownItems("source")[3].text==
+        "No identified creatures in this area",
+    "area switching clears the old creature and explains missing source data")
 viewed=1436
 journal.OnUpdate(journal,0.8)
 assert(ChalkBox_DiscoveriesBrowserStatus().selectedArea=="z:1437",
@@ -326,19 +388,33 @@ assert(Find("ChalkBoxDiscoveriesAreaPicker").shown,
 journal:Hide()
 assert(not Find("ChalkBoxDiscoveriesAreaPicker").shown,
     "hiding the journal closes its separate top-level popup")
+-- Map ownership is mandatory. Closing it must close the side panel and
+-- prevent Discoveries from reopening as an unrelated standalone window.
+WorldMapFrame:Hide()
+if WorldMapFrame.HookOnHide then WorldMapFrame.HookOnHide(WorldMapFrame) end
+assert(not journal:IsShown(),"map close closes the sidecar")
+assert(not ChalkBox_OpenMapDiscoveries(),
+    "Discoveries cannot open while the World Map is hidden")
+WorldMapFrame:Show()
+if WorldMapFrame.HookOnShow then WorldMapFrame.HookOnShow(WorldMapFrame) end
 assert(ChalkBox_OpenMapDiscoveries())
 assert(ChalkBox_DiscoveriesBrowserStatus().selectedArea=="z:1437",
     "manual browse choice survives closing and reopening")
 OpenArea()
 SelectArea("Westfall")
+local menuBefore=MenuUtil
+_G.MenuUtil=nil
+_G.EasyMenu=nil
 ClickButton("All creatures")
-ChooseMenu("Defias Bandit")
+SelectQuick("Defias Bandit")
+assert(ChalkBox_DiscoveriesBrowserStatus().selectedSource=="c:12345",
+    "source selection must update the observed creature key")
 local selected=ChalkBox_DiscoveriesDropdownItems("source")
 assert(selected[3].text:find("Defias Bandit",1,true),
     "known-creature source can be selected in a genuine menu")
 local sawDropRate,sawDrops,sawSourceStats=false,false,false
 for _,font in ipairs(fonts) do
-    if font.text=="DROPS" then sawDrops=true end
+    if font.text=="LOOTS" then sawDrops=true end
     if font.text=="33.3%" then sawDropRate=true end
     if font.text and font.text:find("4 drops / 12 loots",1,true) then
         sawSourceStats=true
@@ -346,8 +422,26 @@ for _,font in ipairs(fonts) do
 end
 assert(sawDrops and sawDropRate and sawSourceStats,
     "source-filtered items show drops, looted attempts and an observed percentage")
+-- Long source lists must stay directly selectable rather than silently
+-- cycling just the first few menu items.
+manyCreatures=true
+ClickButton("Defias Bandit")
+local sourcePopup=Find("ChalkBoxDiscoveriesQuickPicker")
+assert(sourcePopup and sourcePopup.pageLabel.text=="Page 1 / 2",
+    "many sources have a real, paged creature selector")
+sourcePopup.next.OnClick(sourcePopup.next,"LeftButton")
+assert(sourcePopup.pageLabel.text=="Page 2 / 2")
+SelectQuick("Creature 14")
+assert(ChalkBox_DiscoveriesBrowserStatus().selectedSource=="c:90014",
+    "creature from later page updates the selected source correctly")
+manyCreatures=false
+ClickButton("Creature 14")
+SelectQuick("All creatures")
+assert(ChalkBox_DiscoveriesBrowserStatus().selectedSource==nil,
+    "all-creature reset is a direct clickable action")
+_G.MenuUtil=menuBefore
 ClickButton("Quantity")
-ChooseMenu("Item name")
+SelectQuick("Item name")
 local inputs={}
 for _,f in ipairs(frames) do
     if f.kind=="EditBox" and f.parent==journal then
@@ -432,11 +526,12 @@ assert(button.OnDragStart and button.OnDragStop)
 button.OnDragStart(button)
 button.OnDragStop(button)
 local saved=ChalkBox_MapDiscoveriesButtonPosition()
-assert(saved.custom and saved.x==150 and saved.y==-160,
-    "button drag is saved relative to map container")
+assert(saved.custom and saved.x==250-WorldMapFrame.left
+    and saved.y==240-WorldMapFrame.top,
+    "button drag remains saved relative to the map, not screen geometry")
 ChalkBox_MapDiscoveriesEnsure()
-assert(button.point[4]==150 and button.point[5]==-160,
-    "map reopening keeps the user's chosen position")
+assert(button.point[4]==saved.x and button.point[5]==saved.y,
+    "map reopening keeps the user's chosen button position")
 assert(ChalkBox_MapDiscoveriesResetButton())
 assert(not ChalkBox_MapDiscoveriesButtonPosition().custom and
     button.point[4]==18 and button.point[5]==-114,
@@ -453,4 +548,4 @@ local restored=ChalkBox_DiscoveriesBrowserStatus()
 assert(not restored.followMap and restored.mode=="outdoor" and
     restored.selectedArea=="z:1437",
     "fresh browser instance restores the per-character manual zone")
-print("PASS: Discoveries direct zone picker, real visible rows without native menu APIs, source filter, paging, sync, saved selection and map button")
+print("PASS: Discoveries map-owned compact sidecar, safe docking/fallback, reliable creature/sort picker, zone paging, sync, saved data and map lifecycle")

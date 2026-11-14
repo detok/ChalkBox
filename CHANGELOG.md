@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.0 — Discoveries becomes a World Map extension (test release)
+- Dock Discoveries to the World Map as a compact 488px side panel instead of an independent draggable 660px popup. Prefer the available right side, then left, with an in-map edge fallback when the map fills the screen. Never alter Blizzard's own map position, size, zoom or textures.
+- Parent Discoveries to the existing WorldMapFrame and close it when the map closes. Refuse opening the browser while the World Map is hidden. Preserve the map button and its saved independent position.
+- Fix the Creature Source selector by replacing Forever's transient context menu and broken cycling fallback with a real, clickable, paged and mouse-wheel-capable list. Sort uses the same reliable control; Area retains its working direct picker.
+- Simplify the layout so Area and Creature are together, Sort and Search are together, and the table/footnotes are more compact. Show a clear message when an area lacks identified creature-source data.
+- Preserve DropSense item counts, personal observed loot rates, area/dungeon browsing, map sync, user settings, AuctionSense price links and the rest of ChalkBox. No loot-event, item-use, combat, SavedVariables-schema or data-collection changes.
+- Extend UI regressions for map-owned lifecycle, side docking and maximized-map fallback, direct source selection, source statistics and normal map button behavior.
+
+
 ## 2.1.9 — Market belongs inside Blizzard's Auction House (test release)
 - Replace the nearly opaque AuctionSense overlay with Blizzard's **auctionhouse-background-index** artwork and native inset border, matching the built-in Browse results.
 - Switch Market using the existing Auction House `SetDisplayMode` lifecycle. Blizzard's Browse, Search, Sell and Auctions page frames hide while the Market tab is selected and restore normally when switching back. Do not edit the global display-mode list or native tab registry.
