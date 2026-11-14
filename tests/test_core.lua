@@ -83,12 +83,12 @@ eventCallback(nil,"MERCHANT_SHOW")
 assert(overlay.shown==true,"merchant glow should appear for unfulfilled quest item")
 assert(edgeCount == 4 and markerText == "!","raised overlay needs four visible borders and quest marker")
 onTooltip(tooltip)
-assert(#tooltip.lines==1 and tooltip.lines[1]=="BUY THIS FOR QUEST: Keeper of the Flame (need 4 more)","vendor should say BUY with remaining count")
+assert(#tooltip.lines==1 and tooltip.lines[1]=="BUY FOR QUEST  ·  Keeper of the Flame (4 more)","vendor should say BUY with remaining count")
 onTooltip(tooltip)
 assert(#tooltip.lines==1,"duplicate tooltip should not repeat a line")
 tooltip.lines={};tooltip.owner={}
 onTooltip(tooltip)
-assert(#tooltip.lines==1 and tooltip.lines[1]=="Don't sell: needed for Keeper of the Flame","bag should say DON'T SELL")
+assert(#tooltip.lines==1 and tooltip.lines[1]=="DO NOT SELL  ·  Keeper of the Flame","bag should say DON'T SELL")
 quests={{type="item",text="Flask of Oil: 5/5",numFulfilled=5,numRequired=5,finished=true}}
 eventCallback(nil,"QUEST_LOG_UPDATE")
 assert(overlay.shown==false,"completed objective should hide merchant glow")
@@ -96,7 +96,7 @@ tooltip.lines={};tooltip.owner=button
 onTooltip(tooltip)
 assert(#tooltip.lines==0,"completed objective should not say BUY")
 tooltip.owner={};onTooltip(tooltip)
-assert(#tooltip.lines==1 and tooltip.lines[1]:find("Don't sell"),"completed objective should preserve original reminder")
+assert(#tooltip.lines==1 and tooltip.lines[1]:find("DO NOT SELL"),"completed objective should preserve original reminder")
 quests={{type="item",text="Flask of Oil: 0/5",numFulfilled=0,numRequired=5}}
 eventCallback(nil,"QUEST_LOG_UPDATE")
 button.id=11
