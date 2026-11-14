@@ -164,22 +164,38 @@ function ChalkBox_AuctionTooltip(tooltip,link)
         end
     end
     local age=price.age or 0
-    local when=age<60 and "now" or (age<3600 and
+    local when=age<60 and "just now" or (age<3600 and
         (math.floor(age/60).."m ago") or
         (age<86400 and math.floor(age/3600).."h ago" or
         math.floor(age/86400).."d ago"))
-    tooltip:AddLine("AUCTIONSENSE  |  "..price.market,0.90,0.75,0.43)
-    tooltip:AddLine("Low ask: "..Money(price.low)..
-        (price.average and ("  |  Avg ask: "..Money(price.average))
-            or "  |  Average unavailable"),0.48,0.89,0.77)
-    tooltip:AddLine((price.listings and
-        (tostring(price.listings).." listings  |  ") or "")..
-        "scanned "..when,
-        0.70,0.77,0.80)
-    if price.stale or price.mixed then
-        tooltip:AddLine(price.stale and "Old scan — prices may have changed" or
-            "Multiple item variants — check exact gear",0.97,0.70,0.42)
+    local market=(price.market or "Unknown market"):gsub("|"," / ")
+    local source=price.source=="browse" and "Browse" or "Full listings"
+    -- Each fact gets its own line and semantic color. Browse snapshots
+    -- have no observed listing count or average; never invent either.
+    local function Metric(label,value,r,g,b)
+        if type(tooltip.AddDoubleLine)=="function" then
+            tooltip:AddDoubleLine(label,value,0.79,0.82,0.85,r,g,b)
+        else
+            tooltip:AddLine(label..": "..value,r,g,b)
+        end
     end
+    tooltip:AddLine("AUCTIONSENSE  |  "..market,0.40,0.83,0.78)
+    Metric("Low ask",Money(price.low),0.39,0.94,0.62)
+    Metric("Avg ask",price.average and Money(price.average) or "—",
+        0.98,0.79,0.39)
+    Metric("Listings",price.listings and tostring(price.listings) or "—",
+        0.51,0.76,0.98)
+    Metric("Units",price.quantity and tostring(price.quantity) or "—",
+        0.80,0.84,0.88)
+    tooltip:AddLine(source.."  |  "..when,0.67,0.73,0.77)
+    if price.mixed then
+        tooltip:AddLine("VARIANTS MIXED  |  Check exact gear",
+            0.98,0.67,0.33)
+    end
+    if price.stale then
+        tooltip:AddLine("OLD SCAN  |  Refresh prices",0.98,0.45,0.40)
+    end
+    tooltip:AddLine("Asking prices, not sales",0.52,0.57,0.61)
     if type(tooltip.Show)=="function" then tooltip:Show() end
     return true
 end
