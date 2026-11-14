@@ -1,136 +1,45 @@
--- ChalkBox Bag Layout: reversible signed vertical shift around Blizzard's default.
--- Tests source-compatible anchors, idempotence, combat deferral and reset.
-local parent={}
-local stockY=85
-local combined=false
-local combat=false
-local bankVisible=false
-_G.BankFrame={IsShown=function() return bankVisible end}
-local waiting={ }
-_G.C_Timer={After=function(delay,fn)
-    assert(delay>=0.1)
-    waiting[#waiting+1]=fn
-end}
-local frame={shown=true,point=nil,relative=nil,relativePoint=nil,x=0,y=0}
-function frame:GetParent() return parent end
-function frame:IsShown() return self.shown end
-function frame:GetPoint()
-    return self.point,self.relative,self.relativePoint,self.x,self.y
-end
-function frame:ClearAllPoints() self.point=nil;self.relative=nil end
-function frame:SetPoint(point,relative,relativePoint,x,y)
-    self.point,self.relative,self.relativePoint,self.x,self.y=
-        point,relative,relativePoint,x,y
-end
-
-_G.ChalkBoxDB={}
-_G.DEFAULT_CHAT_FRAME={AddMessage=function() end}
+-- Combat safety: ChalkBox must not modify Blizzard bag/item frames.
+-- This test deliberately makes every attempted native anchor hook or move fail.
+_G.ChalkBoxDB={bagOffsetY=45}
+local chat={}
+_G.DEFAULT_CHAT_FRAME={AddMessage=function(_,msg) chat[#chat+1]=msg end}
+_G.hooksecurefunc=function() error("must never hook Blizzard bag layout") end
+_G.UpdateContainerFrameAnchors=function() error("must not run stock layout") end
 _G.ContainerFrameSettingsManager={
-    GetBagsShown=function() return {frame} end,
-    IsUsingCombinedBags=function() return combined end,
+    GetBagsShown=function() error("must not inspect native bag frame") end,
 }
-local updateCalls=0
-_G.UpdateContainerFrameAnchors=function()
-    updateCalls=updateCalls+1
-    frame:ClearAllPoints()
-    frame:SetPoint("BOTTOMRIGHT",parent,"BOTTOMRIGHT",-10,stockY)
-end
-_G.hooksecurefunc=function(name,callback)
-    assert(name=="UpdateContainerFrameAnchors")
-    local original=_G[name]
-    _G[name]=function(...)
-        original(...)
-        callback(...)
-    end
-end
-_G.InCombatLockdown=function() return combat end
-local eventFrame
+_G.ContainerFrame1={ClearAllPoints=function()
+    error("native bag frame must remain secure")
+end}
+_G.InCombatLockdown=function() return true end
+local events
 _G.CreateFrame=function()
-    local f={}
-    function f:RegisterEvent() end
-    function f:SetScript(_,fn) self.callback=fn end
-    eventFrame=f
+    local f={registered={}}
+    function f:RegisterEvent(name) self.registered[name]=true end
+    function f:SetScript(_,callback) self.callback=callback end
+    events=f
     return f
 end
 assert(loadfile("BagLayout.lua"))("ChalkBox")
-eventFrame.callback(eventFrame,"ADDON_LOADED","ChalkBox")
-assert(ChalkBox_BagStatus().hooked and ChalkBox_BagStatus().offset==0,
-    "should detect Forever's native bag anchor API without changing defaults")
-UpdateContainerFrameAnchors()
-assert(frame.y==85,"zero default does not touch Blizzard's anchor")
-
-ChalkBox_BagOffsetSet(30)
-assert(ChalkBoxDB.bagOffsetY==30 and frame.y==55,
-    "30 pixel slider nudges whole column down")
-UpdateContainerFrameAnchors()
-assert(frame.y==55,"each Blizzard layout update reapplies, never stacks the offset")
-ChalkBox_BagOffsetSet(40)
-assert(frame.y==45 and ChalkBox_BagStatus().applied==40,
-    "changing offset uses Blizzard's fresh baseline, not previous shifted anchor")
-
-combined=true
-ChalkBox_BagOffsetSet(50)
-assert(frame.y==85 and ChalkBox_BagStatus().applied==0,
-    "combined bags retain stock placement")
-combined=false
-ChalkBox_BagOffsetSet(30)
-assert(frame.y==55,"returning to separate bags restores saved position")
-
-combat=true
-local previousCalls=updateCalls
-ChalkBox_BagOffsetSet(70)
-assert(frame.y==55 and updateCalls==previousCalls and ChalkBox_BagStatus().pending,
-    "combat defers frame movement")
-combat=false
-eventFrame.callback(eventFrame,"PLAYER_REGEN_ENABLED")
-assert(frame.y==15 and not ChalkBox_BagStatus().pending,
-    "deferred layout safely resumes after combat")
-
-ChalkBox_BagOffsetSet(999)
-assert(ChalkBoxDB.bagOffsetY==120 and frame.y==-35,
-    "maximum +120 clamp limits excessive downward movement")
-ChalkBox_BagOffsetSet(-120)
-assert(ChalkBoxDB.bagOffsetY==-120 and frame.y==205,
-    "negative values move the bag UP relative to Blizzard's anchor")
+events.callback(events,"ADDON_LOADED","ChalkBox")
+local status=ChalkBox_BagStatus()
+assert(status.suspended and not status.hooked and status.applied==0
+    and not status.pending and status.offset==0 and status.savedOffset==45,
+    "old bag offset is remembered without ever moving a protected container")
+assert(ChalkBox_BagOffsetSet(30)==false
+    and ChalkBoxDB.bagOffsetY==45,
+    "unsafe reposition requests are rejected and stored layout untouched")
 ChalkBox_BagCommand("offset -35")
-assert(ChalkBoxDB.bagOffsetY==-35 and frame.y==120,
-    "signed slash offsets provide real above-default positioning")
-ChalkBox_BagCommand("reset")
-assert(ChalkBoxDB.bagOffsetY==0 and frame.y==85,
-    "reset returns Blizzard's original anchor")
-ChalkBox_BagCommand("offset 30")
-assert(frame.y==55,"slash command uses same safe slider path")
+assert(ChalkBoxDB.bagOffsetY==45,
+    "slash commands cannot reactivate unsafe bag hooks")
+events.callback(events,"PLAYER_LOGIN")
+events.callback(events,"PLAYER_REGEN_ENABLED")
+assert(ChalkBox_BagStatus().applied==0,
+    "combat exit cannot trigger a deferred Blizzard frame move")
 ChalkBox_BagCommand("status")
-ChalkBox_BagCommand("not a command")
-assert(frame.y==55,"unrecognized commands do not move bags")
--- Opening the bank for the very first time must not let a Blizzard
--- container-anchor hook shift any secure bank UI during lazy initialization.
-local beforeBank=updateCalls
-local oldY=frame.y
-bankVisible=true
-eventFrame.callback(eventFrame,"BANKFRAME_OPENED")
-UpdateContainerFrameAnchors()
-assert(frame.y==stockY and ChalkBox_BagStatus().pending,
-    "bank opening skips ChalkBox anchor offsets without blocking stock layout")
-assert(updateCalls==beforeBank+1,"Blizzard layout remains in charge")
-ChalkBox_BagOffsetSet(45)
-assert(updateCalls==beforeBank+1,
-    "user offset changes defer, instead of forcing layouts while bank is open")
-eventFrame.callback(eventFrame,"BANKFRAME_CLOSED")
-assert(#waiting==1,"bank close schedules a safe post-bank layout refresh")
-bankVisible=false
-waiting[1]()
-assert(frame.y==stockY-45 and not ChalkBox_BagStatus().pending,
-    "after the bank closes, normal bag offsets safely resume")
-
--- A reported bank container frame is never moved even if no bank panel
--- is visible; only character bag IDs are eligible for repositioning.
-frame.GetBagID=function() return -1 end
-UpdateContainerFrameAnchors()
-assert(frame.y==stockY and ChalkBox_BagStatus().applied==0,
-    "an actual bank container ID is never repositioned")
-frame.GetBagID=nil
-UpdateContainerFrameAnchors()
-assert(frame.y==stockY-45,"regular bag behavior returns after bank")
-
-print("PASS: signed separate-bag offset -120..120, no stacking, combined bags untouched, combat deferral, and stock reset")
+assert(chat[#chat]:find("Blizzard owns",1,true),
+    "safety status is explicit")
+ChalkBox_BagCommand("reset")
+assert(ChalkBoxDB.bagOffsetY==0,
+    "users can clear an old saved preference without touching bag UI")
+print("PASS: native bag frames untouched, no protected hooks, no combat movement, saved preferences retained")
