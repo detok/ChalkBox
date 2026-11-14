@@ -6,6 +6,7 @@ local addonName = ...
 local db
 local bar
 local widgets = {}
+local latest = {} -- shared with hover color roles and live stat refresh
 local ticker
 local Refresh -- forward declaration: mode controls update TrailBar immediately
 local session = {
@@ -217,7 +218,6 @@ local groups={
 }
 local dropPriority={"latency","time","pet","eta","rate","rested","gear","bagvalue","bags","repair","gold"}
 local displayed={}
-local latest={}
 local lastLayout=""
 local editMode=false
 local backgroundOpacity=70
