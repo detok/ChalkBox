@@ -91,6 +91,21 @@ local function Text(value)
         if v.text==value then return true end
     end
 end
+local tip={lines={},shown=false}
+function tip:SetOwner(owner,anchor)
+    self.owner,self.anchor=owner,anchor
+end
+function tip:ClearLines() self.lines={} end
+function tip:AddLine(message,r,g,b)
+    self.lines[#self.lines+1]={text=message,color={r,g,b}}
+end
+function tip:AddDoubleLine(label,value,lr,lg,lb,vr,vg,vb)
+    self.lines[#self.lines+1]={text=label,value=value,
+        color={vr,vg,vb}}
+end
+function tip:Show() self.shown=true end
+function tip:Hide() self.shown=false end
+_G.GameTooltip=tip
 local browseScans,fullScans,reads=0,0,0
 local stamp=500
 local status={
@@ -126,7 +141,7 @@ assert(ChalkBox_AuctionOpen() and pane.shown and tab.selected)
 assert(Text("AuctionSense") and Text("Whitemane / Alliance"))
 assert(Text("15s 0c") and Text("—"),
     "browse results have a low price but no fabricated average")
-assert(Text("24 units listed") and
+assert(Text("24 units") and
     (function()
         for _,font in ipairs(fonts) do
             if type(font.text)=="string" and
@@ -134,6 +149,34 @@ assert(Text("24 units listed") and
         end
     end)(),"browse summaries label their source clearly")
 assert(fullScans==0 and browseScans==0)
+local hoverRow
+for _,f in ipairs(allFrames) do
+    if f.marketData and f.scripts.OnEnter then hoverRow=f;break end
+end
+assert(hoverRow,"each price row exposes a hover summary")
+hoverRow.scripts.OnEnter(hoverRow)
+assert(tip.shown and tip.owner==hoverRow)
+local lowSeen,avgUnknown,unitsSeen,sourceSeen=false,false,false,false
+for _,entry in ipairs(tip.lines) do
+    if entry.text=="Low ask / unit" and entry.value=="15s 0c" then
+        lowSeen=entry.color[2]>entry.color[1]
+    elseif entry.text=="Avg ask / unit" and entry.value=="--" then
+        avgUnknown=true
+    elseif entry.text=="Units" and entry.value=="24" then
+        unitsSeen=true
+    elseif entry.text:find("Browse",1,true) then
+        sourceSeen=true
+    end
+end
+assert(lowSeen and avgUnknown and unitsSeen and sourceSeen,
+    "row hover shows color-coded low, unavailable average, units and source")
+hoverRow.scripts.OnLeave()
+assert(not tip.shown,"hover tooltip hides on mouse leave")
+local scanButton=Button("Scan Market")
+scanButton.scripts.OnEnter(scanButton)
+assert(tip.shown and tip.lines[1].text=="Scan Market",
+    "scan controls have brief, useful tooltips")
+scanButton.scripts.OnLeave()
 assert(Button("Full listings (15m)").enabled==false,
     "full scan button honors cooldown")
 assert(Button("Scan Market").enabled==true,
