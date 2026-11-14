@@ -127,7 +127,9 @@ assert(watches[201],"new zone visit resets muted auto watch")
 ChalkBox_QuestCommand("zone")
 Flush()
 assert(watches[201] and not watches[301] and not watches[101] and not watches[102],
-    "nearby-only removes remote auto watches and temporarily hides remote manual watches")
+    "nearby-only remote cleanup: 201="..tostring(watches[201])..
+    " 301="..tostring(watches[301]).." 101="..tostring(watches[101])..
+    " 102="..tostring(watches[102]).." reason="..ChalkBox_QuestStatus().reason)
 assert(ChalkBoxZoneDB.mode=="zone" and
     ChalkBoxZoneDB.suspendedManual[301] and ChalkBox_QuestStatus().hidden==1,
     "suspended manual watches are remembered, not forgotten")
@@ -239,8 +241,9 @@ Flush()
 assert(ChalkBox_QuestStatus().limit==5)
 ChalkBox_QuestCommand("off")
 Flush()
-assert(not watches[101] and not watches[102] and not watches[201] and not watches[401],
-    "disabling removes only our auto watches")
+assert(not watches[101] and not watches[102] and
+    not watches[401] and not watches[402] and watches[201],
+    "disabling removes only auto watches and keeps restored manual watches")
 assert(watches[301],"turning off never deletes manual watches")
 ChalkBox_QuestCommand("on")
 Flush()
