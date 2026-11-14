@@ -52,7 +52,7 @@ assert(type(ChalkBoxDB.auctionSense)=="table")
 assert(events.AUCTION_HOUSE_SHOW and events.AUCTION_HOUSE_CLOSED
     and events.REPLICATE_ITEM_LIST_UPDATE)
 assert(ChalkBox_AuctionPrice(2589)==nil)
-assert(not ChalkBox_AuctionScan(),"can't scan away from the auctioneer")
+assert(not ChalkBox_AuctionFullScan(),"can't scan away from the auctioneer")
 Fire("AUCTION_HOUSE_SHOW")
 assert(requested==0,"opening the auctioneer never silently starts full scans")
 auctions={
@@ -63,16 +63,16 @@ auctions={
     Listing("Bid Only",999,1,0),
     Listing("Copper Ore",2770,4,8000),
 }
-assert(ChalkBox_AuctionScan())
+assert(ChalkBox_AuctionFullScan())
 assert(requested==1 and ChalkBox_AuctionStatus().busy)
-assert(not ChalkBox_AuctionScan(),"busy request cannot send another scan")
+assert(not ChalkBox_AuctionFullScan(),"busy request cannot send another scan")
 Fire("REPLICATE_ITEM_LIST_UPDATE")
 Fire("REPLICATE_ITEM_LIST_UPDATE") -- repeated metadata event, ignore
 Tick(4)
 local status=ChalkBox_AuctionStatus()
 assert(not status.busy and status.scannedAt==clock and
     status.auctions==6 and status.items==3,
-    "full replicate scan commits once after all listings are read")
+    "advanced full replicate scan commits once after all listings are read")
 local linen=ChalkBox_AuctionPrice("|Hitem:2589:0|h[Linen Cloth]|h")
 assert(linen and linen.low==5000 and linen.average==6786 and
     linen.quantity==7 and linen.listings==2 and not linen.mixed,
@@ -104,7 +104,7 @@ assert(not ChalkBox_AuctionTooltip(tip,"item:999"),
     "unpriced items never show guessed auction numbers")
 assert(ChalkBox_AuctionRows("linen",100)[1].name=="Linen Cloth")
 assert(#ChalkBox_AuctionRows("",100)==3)
-assert(not ChalkBox_AuctionScan() and requested==1,
+assert(not ChalkBox_AuctionFullScan() and requested==1,
     "full-scan cooldown prevents a second server request")
 faction="Horde"
 assert(not ChalkBox_AuctionPrice(2589),
@@ -118,7 +118,7 @@ tip.lines={}
 assert(ChalkBox_AuctionTooltip(tip,"item:2589") and
     table.concat(tip.lines," "):find("Old scan",1,true),
     "stale tooltip explicitly warns prices may have changed")
-assert(ChalkBox_AuctionScan())
+assert(ChalkBox_AuctionFullScan())
 auctions={Listing("Linen Cloth",2589,1,9000)}
 Fire("REPLICATE_ITEM_LIST_UPDATE")
 Tick(2)
@@ -127,7 +127,7 @@ assert(ChalkBox_AuctionPrice(2589).low==9000 and
     "successful scans atomically replace the market and keep bounded price history")
 clock=clock+901
 auctions={Listing("Linen Cloth",2589,1,4000)}
-assert(ChalkBox_AuctionScan())
+assert(ChalkBox_AuctionFullScan())
 Fire("REPLICATE_ITEM_LIST_UPDATE")
 Fire("AUCTION_HOUSE_CLOSED")
 Tick(3)
@@ -135,7 +135,7 @@ assert(ChalkBox_AuctionPrice(2589).low==9000,
     "closing the AH in the middle of a scan preserves prior complete prices")
 Fire("AUCTION_HOUSE_SHOW")
 clock=clock+901
-assert(ChalkBox_AuctionScan())
+assert(ChalkBox_AuctionFullScan())
 auctions={Listing("Unknown",2589,1,9000,nil,false)}
 Fire("REPLICATE_ITEM_LIST_UPDATE")
 Tick(1)
@@ -150,7 +150,7 @@ assert(ChalkBox_AuctionPrice(2589).low==9000,
 assert(not ChalkBox_AuctionStatus().busy,
     "scanner eventually reports incomplete data without hanging")
 clock=clock+901
-assert(ChalkBox_AuctionScan())
+assert(ChalkBox_AuctionFullScan())
 Tick(1,26)
 assert(not ChalkBox_AuctionStatus().busy,
     "throttled or ignored server requests time out rather than hanging forever")
@@ -162,4 +162,17 @@ assert(ChalkBox_AuctionStatus().tooltip)
 ChalkBox_AuctionCommand("status")
 assert(msgs[#msgs]:find("market whitemane|alliance",1,true),
     "market status includes current realm and faction, never fabricated prices")
+-- The old module registered its job AFTER ReplicateItems, losing a synchronous
+-- response forever. This must now complete even if the event fires inside it.
+clock=clock+901
+auctions={Listing("Linen Cloth",2589,3,15000)}
+C_AuctionHouse.ReplicateItems=function()
+    requested=requested+1
+    Fire("REPLICATE_ITEM_LIST_UPDATE")
+end
+assert(ChalkBox_AuctionFullScan())
+Tick(2)
+assert(not ChalkBox_AuctionStatus().busy and
+    ChalkBox_AuctionPrice(2589).low==5000,
+    "synchronous replicate events are handled before the request returns")
 print("PASS: AuctionSense manual requests, zero-based replicates, stack prices, weighted asks, variants, stale age, faction isolation, history, cooldown, metadata retries, atomic rollback and timeouts")
