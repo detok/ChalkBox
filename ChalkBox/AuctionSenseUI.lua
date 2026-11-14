@@ -1,8 +1,7 @@
 -- AuctionSense market browser: clear prices with source, age and scan state.
 -- Separate from Blizzard's trading controls: display only, never transact.
-local WINDOW_WIDTH,WINDOW_HEIGHT=660,482
 local PER_PAGE=7
-local frame,labels=nil,{}
+local frame,tab,host,labels=nil,nil,nil,{}
 local searchText,page="",1
 local seconds=0
 local cachedRows,cachedMarket,cachedTime,cachedSearch={},"",0,nil
@@ -48,17 +47,24 @@ local function Refresh()
     labels.market:SetText(market)
     labels.status:SetText(status.state or "Ready")
     labels.progress:SetText(status.busy and
-        ("Reading "..tostring(status.progress or 0).."%") or
+        (status.mode=="browse" and
+            (tostring(status.scannedItems or 0).." items read") or
+            ("Full scan "..tostring(status.progress or 0).."%")) or
         (status.scannedAt and ("Last scan "..Age(status.age)) or "No scan yet"))
     local cooldown=status.cooldown or 0
     labels.cooldown:SetText(cooldown>0 and
-        ("Next full scan in "..math.ceil(cooldown/60).."m") or
-        (status.open and "Scan available" or "Visit an auctioneer to scan"))
-    labels.details:SetText(("%d items  /  %d auctions"):format(
-        status.items or 0,status.auctions or 0))
-    labels.info:SetText(status.age and status.age>86400 and
-        "Old data — check the scan date before using prices." or
-        "Low / average are asking prices per item, not completed sales.")
+        ("Full scan: "..math.ceil(cooldown/60).."m cooldown") or
+        (status.fullAvailable and "Full listing scan ready" or
+        "Full listing scan unavailable"))
+    labels.details:SetText(("%d items  ·  %s"):format(
+        status.items or 0,
+        status.source=="browse" and "Browse prices" or
+        (status.source=="full" and
+            (tostring(status.auctions or 0).." listings") or "No scan")))
+    labels.info:SetText(status.error or
+        (status.age and status.age>86400 and
+            "Prices are old. Scan again before making decisions." or
+            "Lowest unit asking prices, not completed sales."))
     if cachedSearch~=searchText or
         cachedMarket~=(status.marketKey or "") or
         cachedTime~=(status.scannedAt or 0) then
@@ -78,10 +84,11 @@ local function Refresh()
             row.name:SetText(item.name or ("Item #"..tostring(item.itemID)))
             row.low:SetText(Coin(item.low))
             row.average:SetText(Coin(item.average))
-            row.listings:SetText(tostring(item.listings).." listings")
+            row.listings:SetText(item.listings and
+                (tostring(item.listings).." lots") or "—")
             row.note:SetText(item.mixed and
-                "Variants mixed — confirm the exact item before selling" or
-                (tostring(item.quantity or 0).." units available"))
+                "Gear variants mixed — check the exact item" or
+                (tostring(item.quantity or 0).." units listed"))
             row.frame:Show()
         else
             row.frame:Hide()
@@ -90,55 +97,64 @@ local function Refresh()
     labels.page:SetText(("Page %d / %d"):format(page,maxPages))
     if labels.scan and labels.scan.SetEnabled then
         labels.scan:SetEnabled(status.open and status.available and
-            not status.busy and cooldown==0)
+            not status.busy)
+    end
+    if labels.fullscan and labels.fullscan.SetEnabled then
+        labels.fullscan:SetEnabled(status.open and status.fullAvailable
+            and not status.busy and cooldown==0)
     end
 end
 function ChalkBox_AuctionRefreshUI() Refresh() end
+-- The journal is mounted INSIDE Blizzard's AH, not a detached window.
+-- No edits to Blizzard's protected Tabs list or PanelTemplates_SetTab.
 local function Ensure()
-    if frame then return end
-    local f=CreateFrame("Frame","ChalkBoxAuctionSenseWindow",UIParent)
-    f:SetSize(WINDOW_WIDTH,WINDOW_HEIGHT)
-    f:SetPoint("CENTER",UIParent,"CENTER",0,0)
-    if f.SetFrameStrata then f:SetFrameStrata("DIALOG") end
-    if f.SetFrameLevel then f:SetFrameLevel(220) end
-    if f.SetToplevel then f:SetToplevel(true) end
+    if frame then return true end
+    local ah=AuctionHouseFrame
+    if not ah then return false end
+    host=ah
+    local f=CreateFrame("Frame","ChalkBoxAuctionSensePane",ah)
+    f:SetPoint("TOPLEFT",ah,"TOPLEFT",13,-56)
+    f:SetPoint("BOTTOMRIGHT",ah,"BOTTOMRIGHT",-13,39)
+    if f.SetFrameLevel then
+        local base=type(ah.GetFrameLevel)=="function" and
+            ah:GetFrameLevel() or 20
+        f:SetFrameLevel(base+45)
+    end
     if f.EnableMouse then f:EnableMouse(true) end
-    if f.SetMovable then f:SetMovable(true) end
-    if f.RegisterForDrag then f:RegisterForDrag("LeftButton") end
-    f:SetScript("OnDragStart",function(self)
-        if type(InCombatLockdown)~="function" or not InCombatLockdown() then
-            if self.StartMoving then self:StartMoving() end
-        end
-    end)
-    f:SetScript("OnDragStop",function(self)
-        if self.StopMovingOrSizing then self:StopMovingOrSizing() end
-    end)
     local background=f:CreateTexture(nil,"BACKGROUND")
     background:SetAllPoints(f)
-    if background.SetTexture and background.SetVertexColor then
+    if background.SetColorTexture then
+        background:SetColorTexture(0.11,0.085,0.061,0.985)
+    elseif background.SetTexture then
         background:SetTexture("Interface\\Buttons\\WHITE8X8")
-        background:SetVertexColor(0.025,0.036,0.046,0.98)
-    elseif background.SetColorTexture then
-        background:SetColorTexture(0.025,0.036,0.046,0.98)
+        if background.SetVertexColor then
+            background:SetVertexColor(0.11,0.085,0.061,0.985)
+        end
     end
-    labels.title=Font(f,"GameFontNormalHuge",22,-18,420)
+    labels.title=Font(f,"GameFontNormalHuge",20,-12,410)
     labels.title:SetText("AuctionSense")
-    labels.market=Font(f,"GameFontHighlightSmall",23,-52,420)
-    labels.status=Font(f,"GameFontNormal",22,-83,450)
-    labels.progress=Font(f,"GameFontHighlight",23,-109,255)
-    labels.cooldown=Font(f,"GameFontHighlight",318,-109,310)
-    labels.details=Font(f,"GameFontHighlight",23,-135,500)
-    Button(f,"Close",546,-16,88,function() f:Hide() end)
-    labels.scan=Button(f,"Scan Market",498,-75,136,function()
+    labels.market=Font(f,"GameFontHighlightSmall",21,-42,425)
+    labels.status=Font(f,"GameFontNormal",20,-72,560)
+    labels.progress=Font(f,"GameFontHighlight",21,-98,270)
+    labels.cooldown=Font(f,"GameFontHighlight",313,-98,295)
+    labels.details=Font(f,"GameFontHighlight",21,-124,545)
+    labels.scan=Button(f,"Scan Market",21,-146,140,function()
         if type(ChalkBox_AuctionScan)=="function" then
             local ok,reason=ChalkBox_AuctionScan()
-            if not ok then labels.status:SetText(reason or "Scan unavailable") end
+            if not ok then labels.status:SetText(reason or "Browse unavailable") end
+            Refresh()
+        end
+    end)
+    labels.fullscan=Button(f,"Full listings (15m)",172,-146,167,function()
+        if type(ChalkBox_AuctionFullScan)=="function" then
+            local ok,reason=ChalkBox_AuctionFullScan()
+            if not ok then labels.status:SetText(reason or "Full scan unavailable") end
             Refresh()
         end
     end)
     local input=CreateFrame("EditBox",nil,f,"InputBoxTemplate")
-    input:SetSize(392,24)
-    input:SetPoint("TOPLEFT",f,"TOPLEFT",175,-165)
+    input:SetSize(224,24)
+    input:SetPoint("TOPLEFT",f,"TOPLEFT",386,-147)
     if input.SetAutoFocus then input:SetAutoFocus(false) end
     if input.SetMaxLetters then input:SetMaxLetters(70) end
     input:SetScript("OnTextChanged",function(self)
@@ -148,47 +164,122 @@ local function Ensure()
     input:SetScript("OnEscapePressed",function(self)
         if self.ClearFocus then self:ClearFocus() end
     end)
-    Font(f,"GameFontNormal",23,-170,148):SetText("Search items")
-    Font(f,"GameFontNormal",23,-205,285):SetText("ITEM")
-    Font(f,"GameFontNormal",339,-205,102):SetText("LOW")
-    Font(f,"GameFontNormal",454,-205,104):SetText("AVG ASK")
-    Font(f,"GameFontNormal",568,-205,82):SetText("LISTINGS")
+    Font(f,"GameFontNormal",345,-153,45):SetText("Find")
+    Font(f,"GameFontNormal",21,-184,255):SetText("ITEM")
+    Font(f,"GameFontNormal",316,-184,102):SetText("LOW")
+    Font(f,"GameFontNormal",428,-184,104):SetText("AVG ASK")
+    Font(f,"GameFontNormal",541,-184,92):SetText("LOTS")
     labels.rows={}
     for i=1,PER_PAGE do
-        local y=-226-(i-1)*28
+        local y=-206-(i-1)*29
         local row=CreateFrame("Frame",nil,f)
-        row:SetSize(622,27)
-        row:SetPoint("TOPLEFT",f,"TOPLEFT",20,y)
-        local name=Font(row,"GameFontHighlight",4,-1,310)
-        local low=Font(row,"GameFontHighlight",315,-1,111)
-        local average=Font(row,"GameFontHighlight",430,-1,109)
-        local listings=Font(row,"GameFontHighlightSmall",542,-1,89)
-        local note=Font(row,"GameFontHighlightSmall",4,-15,615)
-        if note.SetTextColor then note:SetTextColor(0.55,0.68,0.70,1) end
+        row:SetSize(610,28)
+        row:SetPoint("TOPLEFT",f,"TOPLEFT",17,y)
+        local name=Font(row,"GameFontHighlight",4,-1,287)
+        local low=Font(row,"GameFontHighlight",299,-1,102)
+        local average=Font(row,"GameFontHighlight",411,-1,102)
+        local listings=Font(row,"GameFontHighlightSmall",524,-1,85)
+        local note=Font(row,"GameFontHighlightSmall",4,-15,588)
+        if note.SetTextColor then note:SetTextColor(0.72,0.66,0.54,1) end
         labels.rows[#labels.rows+1]={frame=row,name=name,low=low,
             average=average,listings=listings,note=note}
     end
-    Button(f,"Previous",23,-434,115,function()
+    Button(f,"Previous",21,-413,111,function()
         page=math.max(1,page-1);Refresh()
     end)
-    labels.page=Font(f,"GameFontHighlightSmall",279,-439,110)
-    Button(f,"Next",526,-434,112,function()
+    labels.page=Font(f,"GameFontHighlightSmall",281,-419,106)
+    Button(f,"Next",500,-413,111,function()
         page=page+1;Refresh()
     end)
-    labels.info=Font(f,"GameFontHighlightSmall",23,-464,610)
+    labels.info=Font(f,"GameFontHighlightSmall",21,-446,594)
     frame=f
     f:SetScript("OnUpdate",function(self,elapsed)
         seconds=seconds+(type(elapsed)=="number" and elapsed or 0)
         if seconds>=1 then seconds=0;Refresh() end
     end)
     f:Hide()
+    return true
+end
+local function HidePane()
+    if frame then frame:Hide() end
+    if tab and type(PanelTemplates_DeselectTab)=="function" then
+        pcall(PanelTemplates_DeselectTab,tab)
+    end
+end
+local hooked={}
+local function HookOtherTabs()
+    if not host then return end
+    local tabs=type(host.Tabs)=="table" and host.Tabs or
+        {host.BuyTab,host.SellTab,host.AuctionsTab}
+    for _,button in pairs(tabs) do
+        if button and button~=tab and not hooked[button] and
+            type(button.HookScript)=="function" then
+            hooked[button]=true
+            pcall(button.HookScript,button,"OnClick",HidePane)
+        end
+    end
+end
+function ChalkBox_AuctionAttach()
+    if not Ensure() then return false end
+    if not tab then
+        local tabs=type(host.Tabs)=="table" and host.Tabs or nil
+        local previous=tabs and tabs[#tabs] or
+            host.AuctionsTab or host.SellTab or host.BuyTab
+        -- Blizzard's tab template keeps the same visual language as the AH.
+        -- Never append to host.Tabs or edit its secure tab numbers ourselves.
+        local ok,button=pcall(CreateFrame,"Button",
+            "ChalkBoxAuctionSenseTab",host,
+            "AuctionHouseFrameDisplayModeTabTemplate")
+        if not ok or not button then
+            button=CreateFrame("Button","ChalkBoxAuctionSenseTab",
+                host,"UIPanelButtonTemplate")
+        end
+        tab=button
+        tab:SetText("AuctionSense")
+        if tab.SetWidth then tab:SetWidth(116) end
+        if previous then
+            tab:SetPoint("LEFT",previous,"RIGHT",-3,0)
+        else
+            tab:SetPoint("BOTTOMLEFT",host,"BOTTOMLEFT",240,3)
+        end
+        tab:SetScript("OnClick",function()
+            if type(InCombatLockdown)=="function" and
+                InCombatLockdown() then return end
+            frame:Show()
+            if type(PanelTemplates_SelectTab)=="function" then
+                pcall(PanelTemplates_SelectTab,tab)
+            end
+            Refresh()
+        end)
+        if type(host.HookScript)=="function" then
+            host:HookScript("OnHide",HidePane)
+            host:HookScript("OnShow",HidePane)
+        end
+        if type(hooksecurefunc)=="function" and
+            type(host.SetDisplayMode)=="function" then
+            pcall(hooksecurefunc,host,"SetDisplayMode",HidePane)
+        end
+    end
+    HookOtherTabs()
+    return true
+end
+function ChalkBox_AuctionHide()
+    HidePane()
 end
 function ChalkBox_AuctionOpen()
-    Ensure()
-    if not frame then return false end
-    page=1
-    frame:Show()
-    if frame.Raise then frame:Raise() end
+    if not AuctionHouseFrame then
+        if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
+            DEFAULT_CHAT_FRAME:AddMessage(
+                "|cff67c6b7AuctionSense|r Open an auctioneer to use the AH tab.")
+        end
+        return false
+    end
+    if not ChalkBox_AuctionAttach() then return false end
+    if tab and tab.Click then
+        tab:Click()
+    elseif frame then
+        frame:Show()
+    end
     Refresh()
     return true
 end

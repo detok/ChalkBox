@@ -1,29 +1,28 @@
-# ChalkBox 2.1.0 — Introducing AuctionSense (test release)
+# ChalkBox 2.1.1 — AuctionSense tab and scanner repair
 
-AuctionSense is a new, original ChalkBox module for observing auction asking prices. It is **read-only**. No buying, bidding, posting, automatic listing searches or third-party addon code.
+**AuctionSense 2.1.0 did not meet the intended user experience.** Its detached window was hidden behind AddOns settings and its full replicate request could remain waiting without results. This test release addresses both shortcomings.
 
-### What's new
-- **Scan Market** manually requests a full-market snapshot while you're at an auctioneer.
-- The scanner reads the supported WoW Forever `C_AuctionHouse.ReplicateItems` data in small, frame-budgeted batches instead of freezing the UI.
-- Search the new AuctionSense window by item name or ID. See the **lowest buyout per item**, **quantity-weighted average asking price**, quantity, listing count and last scan.
-- Saved data is separated by realm and faction. An account-wide 15-minute scan cooldown is respected locally; the server remains authoritative.
-- Results publish **only after a complete scan**. A closed AH, timeout, unavailable item data or unsupported API leaves your previous complete snapshot intact.
-- A bounded history of low asking prices is retained per item. Old scans are marked; equipment with mixed item variants is flagged and cannot supply trusted valuations.
-- Optional item-tooltip pricing can be enabled independently of LootSense advice.
-- DropSense exposes optional *estimated gross asking value* metadata through the new common price lookup, and ProfessionSense can use the same API when its future margin analysis is built.
+### Auction House integration
+- AuctionSense now opens **as an actual Blizzard-style tab inside the Auction House**, not a separate window.
+- The original Auction House frame remains the owner. AuctionSense hides when native AH tabs are selected or when the AH closes, without directly editing Blizzard's protected tab selection tables.
+- Search, status and scanned prices are displayed in the AH panel. The AddOns setting page remains for tooltip preferences, not as the main interface.
 
-### Find it
-Open **Options → AddOns → ChalkBox → AuctionSense** or type `/chalk auction`. At the Auction House, click **Scan Market**. You can also type `/chalk auction scan` while the AH is open. The market window can be opened anywhere to view your previously saved data.
+### Scan Market — the default
+- Clicking **Scan Market** starts a deliberate full browse query using `C_AuctionHouse.SendBrowseQuery`.
+- The addon gathers `GetBrowseResults`, follows browse-results events and requests more pages only when the server's throttled system is ready. This is the modern Forever auction API path used by the native Browse interface.
+- The summary contains the **lowest per-unit asking price** and **total units listed**, *not* a verified per-listing average or count of auctions. Unsupported fields show a dash.
+- Data is never saved as complete until `HasFullBrowseResults()` reports completion.
+- If Forever never responds within 12 seconds, AuctionSense reports an explicit error; previous complete scan data is preserved.
 
-### What the values mean
-- **Low**: cheapest currently listed buyout divided by stack size, in copper per item.
-- **Avg Ask**: quantity-weighted mean of currently listed buyouts per item, not a sale price.
-- **Stale**: over 24 hours since that market was scanned. Old or mixed-variant prices are excluded from the cross-module valuation helper.
-- This first release groups listings by base item ID. Equipment with multiple variants is marked and should be checked in Blizzard's AH before listing.
+### Full listings (15m) — advanced
+- Separate button attempts `C_AuctionHouse.ReplicateItems`, with the roughly 15-minute account-wide server restriction.
+- Fixed a race where `REPLICATE_ITEM_LIST_UPDATE` could arrive synchronously before AuctionSense registered its scan state.
+- A rejected or unanswered full listing scan reports a useful error without overwriting prices. The API's presence alone is not a guarantee that the Forever server will complete it.
 
-### Next steps
-Once Forever in-game scanning and visuals are verified: robust reference prices from the listing distribution, watchlists, item history and trend charts, bag appraisal and recipe profit estimates. No automation will place protected auction transactions.
+### Existing data and integrations
+Market snapshots remain grouped by realm/faction in SavedVariables. LootSense market tooltips and the read-only shared price APIs for DropSense and future ProfessionSense use are preserved. No auction purchases, bids, posts or protected trading actions are automated.
 
-**Install:** Replace your ChalkBox addon folder with **ChalkBox-2.1.0.zip** and type `/reload`. Keep SavedVariables. **ChalkBox-CurseForge-Media-2.1.0.zip** is a separate listing/media kit, not the addon.
+### Install and test
+Replace the old ChalkBox folder with **ChalkBox-2.1.1.zip**, type `/reload`, then open an auctioneer. Click **AuctionSense** in Blizzard's Auction House tab row and try **Scan Market**. The normal scan is distinct from **Full listings (15m)**.
 
-New AuctionSense functionality passed Lua 5.1 regression and packaging tests. A live WoW Forever scan is required before claiming full compatibility; Retail and Classic Era have not been validated.
+The code and packaging passed automated Lua 5.1 regression tests but **a live WoW Forever client test is still required** to confirm rendering, network responses and protected frame behavior. Do not publish this as a proven production auction scanner without that check.

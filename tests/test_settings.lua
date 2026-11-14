@@ -365,14 +365,11 @@ end
 assert(categories["AuctionSense"] and
     categories["AuctionSense"].parent==categories.home,
     "AuctionSense is an independent ChalkBox module, not a hidden submenu")
-assert(ControlIn("AuctionSense","Open Market"),
-    "AuctionSense offers a clean market browser")
-assert(ControlIn("AuctionSense","Scan at Auctioneer"),
-    "AuctionSense scans only on a deliberate user click")
-ControlIn("AuctionSense","Open Market"):Click()
-ControlIn("AuctionSense","Scan at Auctioneer"):Click()
-assert(auctionOpens==1 and auctionScans==1,
-    "only an explicit user click opens or requests a scan")
+assert(ControlIn("AuctionSense","Open AuctionSense Tab"),
+    "settings directs the player to the native AH tab")
+ControlIn("AuctionSense","Open AuctionSense Tab"):Click()
+assert(auctionOpens==1 and auctionScans==0,
+    "settings never initiates an AH scan or creates a separate window")
 local auctionChecks=FindCheckByParentTitle("AuctionSense")
 assert(#auctionChecks==1,"market tooltip display has an independent toggle")
 auctionChecks[1]:Click(false)

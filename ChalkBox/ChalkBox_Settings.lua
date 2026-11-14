@@ -392,18 +392,15 @@ local function MakeAuction()
         "GameFontHighlight",28,-184,490)
     local details=Label(panel,"No snapshot saved","GameFontHighlightSmall",
         28,-214,490)
-    Button(panel,"Open Market",28,-253,226,function()
+    Button(panel,"Open AuctionSense Tab",28,-253,300,function()
         if type(ChalkBox_AuctionOpen)=="function" then
-            ChalkBox_AuctionOpen()
+            if not ChalkBox_AuctionOpen() then
+                Note("Visit an auctioneer, then choose the AuctionSense tab.")
+            end
         end
     end)
-    Button(panel,"Scan at Auctioneer",271,-253,231,function()
-        if type(ChalkBox_AuctionScan)=="function" then
-            local ok,why=ChalkBox_AuctionScan()
-            if not ok and why then Note(why) end
-        end
-        if panel.OnRefresh then panel.OnRefresh() end
-    end)
+    Label(panel,"AuctionSense is part of Blizzard's Auction House.",
+        "GameFontHighlightSmall",28,-287,490)
     Toggle(panel,"Show auction prices on item tooltips",
         "Only when a market scan exists; always includes scan age.",
         -311,function()
@@ -414,9 +411,9 @@ local function MakeAuction()
                 ChalkBox_AuctionSetTooltips(on)
             end
         end)
-    Label(panel,"LOW = cheapest listed buyout per item. AVG ASK = mean listed price.",
+    Label(panel,"Scan Market uses browse results; Full listings has a 15m cooldown.",
         "GameFontHighlightSmall",28,-375,500)
-    Label(panel,"Scans respect the 15-minute server cooldown. No buying or selling.",
+    Label(panel,"Prices are asking prices. No buying or selling automation.",
         "GameFontHighlightSmall",28,-397,500)
     panel:AddRefresh(function()
         local st=ChalkBox_AuctionStatus and ChalkBox_AuctionStatus() or {}
@@ -424,8 +421,9 @@ local function MakeAuction()
             (st.realm.." / "..tostring(st.faction or "?")) or
             "Market not identified")
         status:SetText(st.state or "AuctionSense unavailable")
-        details:SetText(("%d items  /  %d auctions  ·  %s"):format(
-            st.items or 0,st.auctions or 0,
+        details:SetText(("%d items  ·  %s  ·  %s"):format(
+            st.items or 0,st.source=="browse" and "Browse snapshot" or
+            (st.source=="full" and "Full listing snapshot" or "Unscanned"),
             st.age and (math.floor(st.age/60).."m old") or "No scan"))
     end)
     return panel

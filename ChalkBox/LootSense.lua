@@ -357,7 +357,7 @@ SlashCmdList.CHALKBOX = function(input)
         Note("LootSense shows quest protections and your character's possible/known profession uses. No automatic selling.")
         Note("Explore: /chalk drops map | map status | map on|off | /chalk drops status | chance 5 20")
         Note("Build: /chalk macro opens MacroForge | /chalk forge rescan refreshes your spellbook.")
-        Note("Auctions: /chalk auction opens AuctionSense | /chalk auction scan requests a market snapshot at an auctioneer.")
+        Note("Auctions: at an auctioneer, open the AuctionSense tab. /chalk auction scan = browse prices; /chalk auction full = full listing request (15m cooldown).")
         Note("Updates: /chalk update shows your installed version and GitHub Releases link.")
     end
 end
