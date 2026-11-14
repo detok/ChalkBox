@@ -1006,10 +1006,11 @@ local function EnsurePanel()
         if type(self.IsShown)=="function" and not self:IsShown() then
             return
         end
-        DockPanel()
         elapsed=elapsed+(type(dt)=="number" and dt or 0)
         if elapsed<0.7 then return end
         elapsed=0
+        -- Recheck only ~once per second; no per-frame pcall/geometry work.
+        DockPanel()
         local id=MapID()
         if id and id~=lastMap then
             lastMap=id;currentMap=id
