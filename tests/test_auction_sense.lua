@@ -85,6 +85,23 @@ assert(ChalkBox_AuctionPrice(999)==nil,
 assert(ChalkBox_AuctionPrice(100).mixed and
     ChalkBox_AuctionValue(100,1)==nil,
     "mixed equipment variants have observations, but no safe valuation")
+local tip={lines={}}
+function tip:AddLine(text)
+    self.lines[#self.lines+1]=text
+    _G["AuctionSenseTestTextLeft"..#self.lines]={
+        GetText=function() return text end}
+end
+function tip:GetName() return "AuctionSenseTest" end
+function tip:NumLines() return #self.lines end
+function tip:Show() end
+assert(ChalkBox_AuctionTooltip(tip,"item:2589"))
+assert(table.concat(tip.lines," "):find("Low ask: 50s",1,true)
+    and table.concat(tip.lines," "):find("Avg ask: 67s 86c",1,true),
+    "item tooltip clearly labels stack-normalized asking prices")
+assert(not ChalkBox_AuctionTooltip(tip,"item:2589"),
+    "repeat OnTooltipSetItem calls never duplicate the price block")
+assert(not ChalkBox_AuctionTooltip(tip,"item:999"),
+    "unpriced items never show guessed auction numbers")
 assert(ChalkBox_AuctionRows("linen",100)[1].name=="Linen Cloth")
 assert(#ChalkBox_AuctionRows("",100)==3)
 assert(not ChalkBox_AuctionScan() and requested==1,
@@ -97,6 +114,10 @@ clock=clock+86401
 assert(ChalkBox_AuctionPrice(2589).stale and
     ChalkBox_AuctionValue(2589,2)==nil,
     "stale data can be displayed with age, not promoted as current valuation")
+tip.lines={}
+assert(ChalkBox_AuctionTooltip(tip,"item:2589") and
+    table.concat(tip.lines," "):find("Old scan",1,true),
+    "stale tooltip explicitly warns prices may have changed")
 assert(ChalkBox_AuctionScan())
 auctions={Listing("Linen Cloth",2589,1,9000)}
 Fire("REPLICATE_ITEM_LIST_UPDATE")

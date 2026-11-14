@@ -177,7 +177,7 @@ function ChalkBox_AuctionRows(search,limit)
     local results={}
     if not market or type(market.items)~="table" then return results end
     search=type(search)=="string" and search:lower():sub(1,70) or ""
-    limit=Integer(limit) and math.min(limit,100) or 50
+    limit=Integer(limit) and math.min(limit,MAX_ITEMS) or 50
     for id,entry in pairs(market.items) do
         if search=="" or id:find(search,1,true) or
             (type(entry.name)=="string" and
@@ -214,7 +214,7 @@ local function Commit(scan)
     local items,found={},0
     for itemID,row in pairs(scan.rows) do
         found=found+1
-        local average=math.floor(row.totalCopper/row.quantity+0.5)
+        local average=math.ceil(row.totalCopper/row.quantity)
         items[itemID]={name=row.name,low=row.low,
             average=average,quantity=row.quantity,
             listings=row.listings,mixed=row.mixed}
@@ -287,11 +287,11 @@ local function ReadRow(scan,index)
         end
         row={name=type(name)=="string" and name:sub(1,76)
                 or ("Item #"..id),
-            low=math.floor(buyout/count),listings=0,
+            low=math.ceil(buyout/count),listings=0,
             quantity=0,totalCopper=0}
         scan.rows[id]=row
     end
-    local price=math.floor(buyout/count)
+    local price=math.ceil(buyout/count)
     if price<row.low then row.low=price end
     row.listings=row.listings+1
     row.quantity=row.quantity+count

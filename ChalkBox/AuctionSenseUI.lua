@@ -2,9 +2,10 @@
 -- Separate from Blizzard's trading controls: display only, never transact.
 local WINDOW_WIDTH,WINDOW_HEIGHT=660,482
 local PER_PAGE=7
-local frame,labels={},{}
+local frame,labels=nil,{}
 local searchText,page="",1
 local seconds=0
+local cachedRows,cachedMarket,cachedTime,cachedSearch={},"",0,nil
 
 local function Font(parent,style,x,y,width)
     local label=parent:CreateFontString(nil,"OVERLAY",style or "GameFontHighlight")
@@ -58,8 +59,16 @@ local function Refresh()
     labels.info:SetText(status.age and status.age>86400 and
         "Old data — check the scan date before using prices." or
         "Low / average are asking prices per item, not completed sales.")
-    local entries=ChalkBox_AuctionRows and
-        ChalkBox_AuctionRows(searchText,100) or {}
+    if cachedSearch~=searchText or
+        cachedMarket~=(status.marketKey or "") or
+        cachedTime~=(status.scannedAt or 0) then
+        cachedMarket=status.marketKey or ""
+        cachedTime=status.scannedAt or 0
+        cachedSearch=searchText
+        cachedRows=ChalkBox_AuctionRows and
+            ChalkBox_AuctionRows(searchText,12000) or {}
+    end
+    local entries=cachedRows
     local maxPages=math.max(1,math.ceil(#entries/PER_PAGE))
     page=math.max(1,math.min(page,maxPages))
     local start=(page-1)*PER_PAGE
