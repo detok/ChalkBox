@@ -139,7 +139,7 @@ The media kit now includes the real cropped gameplay gallery under `Screenshots/
 
 The **[CurseForge folder](curseforge/)** contains the current project description, short summary, FAQ, changelog and submission checklist, along with the original ChalkBox artwork.
 
-The release also includes a separate **[CurseForge media kit ZIP](https://github.com/detok/ChalkBox/releases/download/v2.1.6/ChalkBox-CurseForge-Media-2.1.9.zip)** with six SVG originals, PNG exports, and ready-to-use listing copy. It is **not an addon installation file**.
+The release also includes a separate **[CurseForge media kit ZIP](https://github.com/detok/ChalkBox/releases/download/v2.1.9/ChalkBox-CurseForge-Media-2.1.9.zip)** with six SVG originals, PNG exports, and ready-to-use listing copy. It is **not an addon installation file**.
 
 The illustrations are promotional graphics, not in-game screenshots. Real screenshots should be captured from the running Forever client before being used in a gallery.
 
