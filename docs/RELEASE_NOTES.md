@@ -1,18 +1,26 @@
-# ChalkBox 2.0.6 — The Bar menu refresh
+# ChalkBox 2.0.7 — Compact Bar hover tooltips
 
-The Bar's right-click controls are now shorter, grouped by purpose, and color-coded.
+The Bar's hover tooltips are now short status readouts instead of explanations.
 
-- Right-click a visible stat for only its own controls: **Show/Hide**, **Move**, **Align**, and **Bar settings**. Bag value and repair keep their own context actions.
-- Right-click empty Bar space for global **Modules**, **Position**, **Edit layout**, **Reset layout**, **Stat settings**, and **Appearance**.
-- Gold headings and selected positions; cyan navigation; green enabled; gray disabled; amber reset/hide. Shorter option labels and action messages.
-- Tested both modern Blizzard context menus and the older EasyMenu fallback.
-- Preserves all current metrics, saved layout and alignment, existing module settings, and the 2.0.4 bag-opening performance improvements.
-- Keeps the Discoveries 2.0.5 fixes intact.
+- Level/XP: progress toward the next level
+- XP rate: session XP gained
+- Bag value: junk and total resale values; unknown items noted when needed
+- Repair: exact quote or marked estimate; equipment wear
+- Bags: free slots and specialty split
+- Durability: overall and lowest equipped condition
+- Level ETA: remaining XP
+- Rested XP: bonus XP and percent
+- Pet: health or availability
+- Session: elapsed time
+- Latency: home and world ping
+- Gold: net change and net per hour
 
-**Installation:** Replace the existing `ChalkBox` addon folder with the one inside **ChalkBox-2.0.6.zip**, then `/reload`. Do not delete SavedVariables.
+Each hover uses a short gold title and typically one or two data lines. No explanatory paragraphs, repeated caveats, or command instructions.
 
-**Verification:** The Lua 5.1 and packaging regression suite runs on GitHub Actions. Please verify the appearance of both right-click menus in the actual WoW Forever client.
+The 2.0.6 Bar menu cleanup, stat calculations, saved layouts, item scans, Discoveries fixes and previous settings are preserved. New automated tests verify tooltip behavior, text length and core values.
 
-**ChalkBox-CurseForge-Media-2.0.6.zip** is the separate listing-art and screenshot bundle, not the installable addon.
+**Install:** Replace the old ChalkBox addon folder with the folder inside **ChalkBox-2.0.7.zip**, then `/reload`. Preserve SavedVariables.
 
-Built for WoW Forever; unverified on Retail and Classic Era. Maintained by Detok Whitemaine.
+The separate **ChalkBox-CurseForge-Media-2.0.7.zip** contains publishing assets, not the playable addon.
+
+WoW Forever beta/test build. Final in-game visual confirmation is required; other WoW flavors remain unverified. ChalkBox by Detok Whitemaine.

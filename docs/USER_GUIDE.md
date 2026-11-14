@@ -1,6 +1,6 @@
 # ChalkBox User Guide
 
-**Version 2.0.6 · World of Warcraft: Forever**
+**Version 2.0.7 · World of Warcraft: Forever**
 
 ChalkBox puts several small tools in one addon. Everything is managed from **Options → AddOns → ChalkBox**, or **/chalk**. Choose the modules you want; the rest can stay out of sight.
 
@@ -73,6 +73,9 @@ MacroForge is a design tool. It cannot automate a rotation, skip spells based on
 
 ## The Bar
 
+**2.0.7:** Hover details show the metric's key numbers or current state, without repeated explanations. Repair values are still marked as quotes or estimates. Detailed help remains in module settings.
+
+
 **2.0.6:** Right-click a displayed stat for a small stat-only menu. Right-click the empty Bar background to manage modules, position, and layout. Green choices are enabled, gray choices are disabled, gold marks the current position/alignment, cyan opens more controls, and amber marks hide/reset actions.
  and repair learning
 
@@ -118,7 +121,7 @@ Recorded details include observed XP, levels, net gold, quest turn-ins, sampled 
 
 ## Install, updates and troubleshooting
 
-Download the installable **ChalkBox-2.0.6.zip** from the [release page](https://github.com/detok/ChalkBox/releases/tag/v2.0.6). Extract the single ChalkBox folder into **Interface/AddOns**. Don't extract an extra nested ChalkBox folder.
+Download the installable **ChalkBox-2.0.7.zip** from the [release page](https://github.com/detok/ChalkBox/releases/tag/v2.0.7). Extract the single ChalkBox folder into **Interface/AddOns**. Don't extract an extra nested ChalkBox folder.
 
 When updating, **keep your SavedVariables**. Use **/chalk** to check preferences and **/chalk update** to see the installed version.
 

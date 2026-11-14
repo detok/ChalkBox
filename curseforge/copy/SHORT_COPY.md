@@ -14,7 +14,7 @@ Quality-of-life tools for WoW Forever: MacroForge, DropSense, LootSense, The Bar
 
 **Release announcement**
 
-ChalkBox 2.0.6 refreshes The Bar's right-click menus with short labels, readable colors and focused stat controls. Right-click any stat to show, move, align or adjust it; right-click the background for module and layout options. The update preserves your saved setup and the previous Discoveries and bag-performance fixes. ChalkBox also includes DropSense, LootSense, MacroForge, QuestSense, Session Journal, and other optional tools.
+ChalkBox 2.0.7 brings shorter, cleaner hover tooltips to The Bar. Each stat now displays only the essential numbers or state, while repair values keep their quote/estimate distinction. The colored 2.0.6 right-click menus, Discoveries fixes, bag-performance work and your saved layout remain intact.
 
 **Screenshot captions (for actual in-game images only)**
 
