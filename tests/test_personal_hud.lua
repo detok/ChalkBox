@@ -250,7 +250,6 @@ assert(ChalkBox_BarBagValueModeGet()=="total",
 ChalkBox_BarCommand("stat bagvalue on")
 assert(ChalkBoxDB.barStats.bagvalue==true)
 assert(FindText("Value 18g"),"total shows vendor value for all bag items")
-HoverStat("Value ",3,"Junk: 1g 25s 25c")
 
 assert(FindText("Gear 87%"),"durability appears in the actual TrailBar widgets")
 assert(FindText("Rest 42%"),"rested XP appears as a level percent")
@@ -295,6 +294,7 @@ HoverStat("Pet ",2,"Health: 95%")
 HoverStat("Time ",2,"Elapsed: 1m")
 HoverStat("World ",3,"Home: 21 ms")
 HoverStat("Gold ",3,"Net: +2g 20s")
+HoverStat("Value ",3,"Junk: 1g 25s 25c")
 local repairMenuData=ChalkBox_BarContextItems("repair")
 assert(type(repairMenuData)=="table",
     "repair cost is a real customizable stat, not a hardcoded label")
