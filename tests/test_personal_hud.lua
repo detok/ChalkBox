@@ -103,6 +103,7 @@ _G.CreateFrame = function(_, name, parent)
     function frame:SetHeight(height) self.height=height end
     function frame:SetSize(w,h) self.width=w;self.height=h end
     function frame:SetFrameStrata(strata) self.strata=strata end
+    function frame:SetFrameLevel(level) self.level=level end
     function frame:CreateTexture() return NewTexture() end
     function frame:CreateFontString()
         local font=NewFont()
@@ -216,6 +217,10 @@ local function RootIsBaseline()
        and select(5,UIParent:GetPoint(2))==0
 end
 assert(bar.height==18,"bar should remain slim")
+assert(bar.strata=="BACKGROUND" and bar.level==1,
+    "Bar chrome must be behind LOW/MEDIUM Blizzard unit frames and resting ZZZ")
+assert(RootIsBaseline(),
+    "lowering Bar draw order never modifies protected UIParent")
 local aligned={}
 for _,w in ipairs(frames) do
     if w.parent==bar and w.text and w.text.value then
