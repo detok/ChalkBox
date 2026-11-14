@@ -225,6 +225,14 @@ pane.mockHeight=316
 pane.scripts.OnUpdate(pane,1.5)
 assert(VisibleRows()==4 and Text("Page 1 / 3"),
     "resizing smaller repaginates instead of clipping")
+-- Restore the familiar sample before verifying prices and mouseover hints.
+_G.ChalkBox_AuctionRows=function()
+    reads=reads+1
+    return {{name="Linen Cloth",itemID=2589,low=1500,
+        average=nil,listings=nil,quantity=24}}
+end
+status.scannedAt=stamp+2
+pane.scripts.OnUpdate(pane,1.5)
 local hoverRow
 for _,f in ipairs(allFrames) do
     if f.marketData and f.scripts.OnEnter then hoverRow=f;break end
