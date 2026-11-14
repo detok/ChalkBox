@@ -783,6 +783,17 @@ end
 -- Never reanchor, resize, or reset UIParent, Blizzard action buttons,
 -- or another addon's frames. Those mutations can taint protected actions.
 local reservation={active=false,pending=false,position=nil,issue=nil}
+-- Buffs, quest buttons, map widgets and bag panels share the upper-right.
+-- Our Bar must yield that corner instead of covering protected Blizzard UI.
+-- This is a read-only screen measurement; only our own frame is anchored.
+local function SafeRightGutter()
+    local width=UIParent and type(UIParent.GetWidth)=="function"
+        and UIParent:GetWidth() or 0
+    if not Public(width) or type(width)~="number" or width<=0 then
+        return 320
+    end
+    return math.floor(math.min(480,math.max(250,width*0.23))+0.5)
+end
 local function InCombat()
     return type(InCombatLockdown)=="function" and InCombatLockdown()
 end
@@ -797,14 +808,18 @@ local function PlaceBar()
     -- In overlay mode Blizzard owns its root layout at all times.
     -- This remains anchored to the requested edge after UI scale changes.
     bar:ClearAllPoints()
+    local gutter=SafeRightGutter()
     if db.bar=="bottom" then
         bar:SetPoint("BOTTOMLEFT",UIParent,"BOTTOMLEFT",0,0)
-        bar:SetPoint("BOTTOMRIGHT",UIParent,"BOTTOMRIGHT",0,0)
+        bar:SetPoint("BOTTOMRIGHT",UIParent,"BOTTOMRIGHT",-gutter,0)
     else
         bar:SetPoint("TOPLEFT",UIParent,"TOPLEFT",0,0)
-        bar:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",0,0)
+        bar:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",-gutter,0)
     end
     if db.bar=="off" then bar:Hide() else bar:Show() end
+    -- Anchors can change after scaling or loading screens. Relayout within
+    -- the actual shortened Bar width, never across the buff/bag corner.
+    lastLayout=""
 end
 
 Refresh=function()
@@ -1006,6 +1021,7 @@ function ChalkBox_BarCommand(message)
     elseif action == "status" then
         local xpPerHour, eta, goldPerHour = GetRates()
         Note("Bar=" .. db.bar .. ", layout=safe overlay" ..
+            ", clear-right=" .. SafeRightGutter() .. "px" ..
             ", pending=" .. tostring(reservation.pending) ..
             ", XP/hr=" .. Number(xpPerHour) .. ", ETA=" .. Duration(eta) ..
             ", net gold/hr=" .. Money(goldPerHour, true))
