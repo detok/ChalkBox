@@ -444,9 +444,11 @@ assert(ChalkBoxZoneDB.limit==15,"autowatch limit can be selected from native opt
 Control("Tracking Diagnostics"):Click()
 assert(printed[#printed]=="quests status")
 local barChecks=FindCheckByParentTitle("The Bar")
-assert(#barChecks==4 and barChecks[4].checked,
-    "full-width Bar has its own top-chrome shift setting, initially enabled")
+assert(#barChecks==4,
+    "full-width Bar has its own top-chrome shift setting")
 categories["The Bar"].panel:Show()
+assert(barChecks[4].checked,
+    "the top-UI adjustment is enabled when the options page refreshes")
 barChecks[2]:Click(true)
 assert(ChalkBoxDB.bar=="bottom","placement selection updates the Bar only")
 barChecks[4]:Click(false)
