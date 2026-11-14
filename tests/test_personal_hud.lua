@@ -2,8 +2,7 @@
 local now, playerXP, xpMax, playerLevel, money = 1000, 200, 1000, 25, 150000
 local standalone, moving, combat = false, true, false
 local frames, timers, emotes, notes = {}, {}, {}, {}
--- Simulate a screen-sized UIParent. The bar must shorten this root by
--- exactly 18 UI units instead of offsetting selected named UI frames.
+-- Model Blizzard-owned UIParent. The addon must never alter its anchors or size.
 _G.UIParent = {points={},width=1024,height=768}
 local function ScreenPoint(point,relative,relativePoint,x,y)
     return {point=point,relative=relative,relativePoint=relativePoint,x=x,y=y}
@@ -34,7 +33,13 @@ function UIParent:SetAllPoints()
     self:SetPoint("BOTTOMRIGHT",nil,"BOTTOMRIGHT",0,0)
 end
 UIParent:SetAllPoints()
-_G.ChalkBoxDB = {}
+-- A strict regression trap: tampering with the Blizzard root must fail.
+-- The Bar can only reanchor its own non-protected frame.
+UIParent.ClearAllPoints=function() error("unsafe UIParent:ClearAllPoints") end
+UIParent.SetPoint=function() error("unsafe UIParent:SetPoint") end
+UIParent.SetAllPoints=function() error("unsafe UIParent:SetAllPoints") end
+UIParent.SetSize=function() error("unsafe UIParent:SetSize") end
+_G.ChalkBoxDB = {barReserve=true}
 _G.ChalkBoxZoneDB = {}
 local cursorX=0
 _G.GetCursorPosition=function() return cursorX,0 end
@@ -196,11 +201,13 @@ assert(ChalkBoxDB.bar=="top","default info bar is at top")
 Fire("PLAYER_ENTERING_WORLD")
 local bar
 for _,frame in ipairs(frames) do if frame.name=="ChalkBoxInfoBar" then bar=frame end end
-assert(bar and bar.visible and bar.anchor=="BOTTOMRIGHT",
-    "top bar should occupy the new reserved strip above UIParent")
-assert(ChalkBoxDB.barReserve==true,"screen reservation should be on by default")
-assert(UIParent:GetHeight()==750,"top reservation must reduce usable root height by 18")
-assert(select(5,UIParent:GetPoint(1))==-18,"UIParent top must move down 18")
+assert(bar and bar.visible and bar.anchor=="TOPRIGHT",
+    "top bar must stay visible as its own combat-safe overlay")
+assert(ChalkBoxDB.barReserve==false,
+    "legacy UIParent reservation setting must be migrated to safe overlay")
+assert(UIParent:GetHeight()==768,"Blizzard root height must never change")
+assert(select(5,UIParent:GetPoint(1))==0,
+    "no addon-driven changes to Blizzard root anchors")
 local function RootIsBaseline()
     return UIParent:GetHeight()==768 and select(5,UIParent:GetPoint(1))==0
        and select(5,UIParent:GetPoint(2))==0
@@ -482,51 +489,37 @@ combat=true
 assert(not ChalkBox_BarEditSet(true),"combat may not enter layout editor")
 combat=false
 ChalkBox_BarAppearanceSet(70)
--- A normal UIParent-anchored widget keeps its own offset; by shrinking the
--- root, every such widget follows the inset without being named by the addon.
+-- Combat-taint regression: every display and positioning command leaves
+-- UIParent untouched. Even a legacy "reserve on" cannot enable root writes.
 local anchoredChild=CreateFrame("Frame","NeverWhitelisted",UIParent)
 anchoredChild:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",-10,-8)
 assert(anchoredChild.points[1][2]==UIParent)
 ChalkBox_BarCommand("reserve off")
-assert(RootIsBaseline(),"reserve off must restore the exact full-screen root")
-assert(bar.anchor=="TOPRIGHT","overlay fallback anchors to UIParent edge")
+assert(RootIsBaseline() and bar.anchor=="TOPRIGHT")
 ChalkBox_BarCommand("reserve on")
-assert(UIParent:GetHeight()==750 and bar.anchor=="BOTTOMRIGHT",
-    "reserve on must reactivate physical top gap")
+assert(RootIsBaseline() and ChalkBoxDB.barReserve==false,
+    "legacy reserve command must never reenable root mutation")
 ChalkBox_BarCommand("bottom")
-assert(UIParent:GetHeight()==750 and select(5,UIParent:GetPoint(2))==18,
-    "bottom reservation reduces root height from below")
-assert(bar.anchor=="TOPRIGHT" and bar.visible,
-    "bar must live below the shortened UIParent")
+assert(RootIsBaseline() and bar.anchor=="BOTTOMRIGHT" and bar.visible,
+    "bottom bar anchors only its own frame")
 ChalkBox_BarCommand("off")
-assert(RootIsBaseline(),"hiding bar must restore original root")
-assert(bar.visible==false,"bar can be hidden without losing session statistics")
+assert(RootIsBaseline() and not bar.visible,
+    "hidden bar must leave Blizzard root alone")
 ChalkBox_BarCommand("top")
-assert(bar.visible and bar.anchor=="BOTTOMRIGHT")
-assert(UIParent:GetHeight()==750)
+assert(RootIsBaseline() and bar.visible and bar.anchor=="TOPRIGHT")
 combat=true
 ChalkBox_BarCommand("bottom")
-assert(select(5,UIParent:GetPoint(1))==-18,
-    "in combat the existing top inset remains unchanged")
+assert(RootIsBaseline() and bar.anchor=="TOPRIGHT",
+    "combat must defer even self-owned frame repositioning")
 combat=false
 Fire("PLAYER_REGEN_ENABLED")
-assert(select(5,UIParent:GetPoint(2))==18 and bar.anchor=="TOPRIGHT",
-    "pending bottom inset applies after combat")
+assert(RootIsBaseline() and bar.anchor=="BOTTOMRIGHT",
+    "deferred safe placement resumes after combat")
 ChalkBox_BarCommand("top")
-assert(select(5,UIParent:GetPoint(1))==-18)
-ChalkBox_BarCommand("reserve off")
-assert(RootIsBaseline())
-ChalkBox_BarCommand("reserve on")
-assert(UIParent:GetHeight()==750)
--- Blizzard can reset UIParent anchors during display/UI scale changes.
-UIParent:SetAllPoints()
-assert(RootIsBaseline())
 Fire("UI_SCALE_CHANGED")
-assert(UIParent:GetHeight()==750,
-    "TrailBar re-applies a lost screen inset after a UI scale reset")
-ChalkBox_BarCommand("reserve off")
-assert(RootIsBaseline(),"UI scale changes still preserve reversible layout")
-ChalkBox_BarCommand("reserve on")
+Fire("DISPLAY_SIZE_CHANGED")
+assert(RootIsBaseline() and bar.anchor=="TOPRIGHT",
+    "scale changes must never rewrite protected UIParent")
 ChalkBox_BarCommand("reset")
 assert(FindText("XP/h 0"),"reset must restart XP baseline")
 playerLevel=26
