@@ -126,7 +126,13 @@ assert(ChalkBox_AuctionOpen() and pane.shown and tab.selected)
 assert(Text("AuctionSense") and Text("Whitemane / Alliance"))
 assert(Text("15s 0c") and Text("—"),
     "browse results have a low price but no fabricated average")
-assert(Text("24 units listed") and Text("Browse prices"))
+assert(Text("24 units listed") and
+    (function()
+        for _,font in ipairs(fonts) do
+            if type(font.text)=="string" and
+                font.text:find("Browse prices",1,true) then return true end
+        end
+    end)(),"browse summaries label their source clearly")
 assert(fullScans==0 and browseScans==0)
 assert(Button("Full listings (15m)").enabled==false,
     "full scan button honors cooldown")
