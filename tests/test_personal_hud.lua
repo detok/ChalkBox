@@ -203,6 +203,8 @@ local bar
 for _,frame in ipairs(frames) do if frame.name=="ChalkBoxInfoBar" then bar=frame end end
 assert(bar and bar.visible and bar.anchor=="TOPRIGHT",
     "top bar must stay visible as its own combat-safe overlay")
+assert(bar.points[2] and bar.points[2][4]==-250,
+    "1024px Bar leaves a safe right gutter instead of covering buff icons")
 assert(ChalkBoxDB.barReserve==false,
     "legacy UIParent reservation setting must be migrated to safe overlay")
 assert(UIParent:GetHeight()==768,"Blizzard root height must never change")
@@ -520,6 +522,18 @@ Fire("UI_SCALE_CHANGED")
 Fire("DISPLAY_SIZE_CHANGED")
 assert(RootIsBaseline() and bar.anchor=="TOPRIGHT",
     "scale changes must never rewrite protected UIParent")
+assert(bar.points[2] and bar.points[2][4]==-250,
+    "top-right safe gutter survives position and scale changes")
+-- Wider monitor sizes still reserve the buff/bag corner; no protected frame
+-- is moved, and the Bar reanchors only itself when the UI scale changes.
+UIParent.width=2048
+Fire("DISPLAY_SIZE_CHANGED")
+assert(RootIsBaseline() and bar.points[2][4]==-471,
+    "2048px view leaves at least 470px free for buff and bag controls")
+UIParent.width=1024
+Fire("DISPLAY_SIZE_CHANGED")
+assert(bar.points[2][4]==-250,
+    "small monitors keep a useful compact Bar with clear right margin")
 ChalkBox_BarCommand("reset")
 assert(FindText("XP/h 0"),"reset must restart XP baseline")
 playerLevel=26
@@ -591,4 +605,4 @@ Fire("BAG_UPDATE_DELAYED")
 assert(#scheduled==2,"later inventory changes are still displayed")
 scheduled[2].callback()
 
-print("PASS: HUD stats, bag-event debounce, 18px root safe area, Emota idle rotation and frequency extremes")
+print("PASS: HUD stats, bag-event debounce, dynamic right-side safe gutter, protected-root safety, Emota idle rotation and frequency extremes")
