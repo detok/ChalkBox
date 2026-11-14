@@ -172,12 +172,14 @@ local function Ensure()
     if not ah then return false end
     host=ah
     local f=CreateFrame("Frame","ChalkBoxAuctionSensePane",ah)
+    -- The stock AH has a title, decorative frame edge and bottom tabs.
+    -- Confine our content to its inner body; never cover the footer/tabs.
     f:SetPoint("TOPLEFT",ah,"TOPLEFT",13,-56)
-    f:SetPoint("BOTTOMRIGHT",ah,"BOTTOMRIGHT",-13,39)
+    f:SetPoint("BOTTOMRIGHT",ah,"BOTTOMRIGHT",-13,68)
     if f.SetFrameLevel then
         local base=type(ah.GetFrameLevel)=="function" and
             ah:GetFrameLevel() or 20
-        f:SetFrameLevel(base+45)
+        f:SetFrameLevel(base+20)
     end
     if f.EnableMouse then f:EnableMouse(true) end
     local background=f:CreateTexture(nil,"BACKGROUND")
@@ -190,14 +192,14 @@ local function Ensure()
             background:SetVertexColor(0.11,0.085,0.061,0.985)
         end
     end
-    labels.title=Font(f,"GameFontNormalHuge",20,-12,410)
+    labels.title=Font(f,"GameFontNormalHuge",20,-9,410)
     labels.title:SetText("AuctionSense")
-    labels.market=Font(f,"GameFontHighlightSmall",21,-42,425)
-    labels.status=Font(f,"GameFontNormal",20,-72,560)
-    labels.progress=Font(f,"GameFontHighlight",21,-98,270)
-    labels.cooldown=Font(f,"GameFontHighlight",313,-98,295)
-    labels.details=Font(f,"GameFontHighlight",21,-124,545)
-    labels.scan=Button(f,"Scan Market",21,-146,140,function()
+    labels.market=Font(f,"GameFontHighlightSmall",21,-35,425)
+    labels.status=Font(f,"GameFontNormal",20,-56,560)
+    labels.progress=Font(f,"GameFontHighlight",21,-78,270)
+    labels.cooldown=Font(f,"GameFontHighlight",313,-78,295)
+    labels.details=Font(f,"GameFontHighlight",21,-100,545)
+    labels.scan=Button(f,"Scan Market",21,-119,140,function()
         if type(ChalkBox_AuctionScan)=="function" then
             local ok,reason=ChalkBox_AuctionScan()
             if not ok then labels.status:SetText(reason or "Browse unavailable") end
@@ -205,7 +207,7 @@ local function Ensure()
         end
     end)
     Hint(labels.scan,"Scan Market","Browse asking prices","No full-scan cooldown")
-    labels.fullscan=Button(f,"Full listings (15m)",172,-146,167,function()
+    labels.fullscan=Button(f,"Full listings (15m)",172,-119,167,function()
         if type(ChalkBox_AuctionFullScan)=="function" then
             local ok,reason=ChalkBox_AuctionFullScan()
             if not ok then labels.status:SetText(reason or "Full scan unavailable") end
@@ -216,7 +218,7 @@ local function Ensure()
         "Server limit: once every 15 minutes")
     local input=CreateFrame("EditBox",nil,f,"InputBoxTemplate")
     input:SetSize(224,24)
-    input:SetPoint("TOPLEFT",f,"TOPLEFT",386,-147)
+    input:SetPoint("TOPLEFT",f,"TOPLEFT",386,-120)
     if input.SetAutoFocus then input:SetAutoFocus(false) end
     if input.SetMaxLetters then input:SetMaxLetters(70) end
     input:SetScript("OnTextChanged",function(self)
@@ -226,28 +228,28 @@ local function Ensure()
     input:SetScript("OnEscapePressed",function(self)
         if self.ClearFocus then self:ClearFocus() end
     end)
-    Font(f,"GameFontNormal",345,-153,45):SetText("Find")
-    Font(f,"GameFontNormal",21,-184,255):SetText("ITEM")
-    local lowHeader=Font(f,"GameFontNormal",316,-184,102)
+    Font(f,"GameFontNormal",345,-126,45):SetText("Find")
+    Font(f,"GameFontNormal",21,-156,255):SetText("ITEM")
+    local lowHeader=Font(f,"GameFontNormal",316,-156,102)
     lowHeader:SetText("LOW / UNIT")
     Tint(lowHeader,COLOR.low)
-    local averageHeader=Font(f,"GameFontNormal",428,-184,104)
+    local averageHeader=Font(f,"GameFontNormal",428,-156,104)
     averageHeader:SetText("AVG ASK")
     Tint(averageHeader,COLOR.average)
-    local listingHeader=Font(f,"GameFontNormal",541,-184,92)
+    local listingHeader=Font(f,"GameFontNormal",541,-156,92)
     listingHeader:SetText("LISTINGS")
     Tint(listingHeader,COLOR.counts)
     labels.rows={}
     for i=1,PER_PAGE do
-        local y=-206-(i-1)*29
+        local y=-179-(i-1)*24
         local row=CreateFrame("Frame",nil,f)
-        row:SetSize(610,28)
+        row:SetSize(610,23)
         row:SetPoint("TOPLEFT",f,"TOPLEFT",17,y)
         local name=Font(row,"GameFontHighlight",4,-1,287)
         local low=Font(row,"GameFontHighlight",299,-1,102)
         local average=Font(row,"GameFontHighlight",411,-1,102)
         local listings=Font(row,"GameFontHighlightSmall",524,-1,85)
-        local note=Font(row,"GameFontHighlightSmall",4,-15,588)
+        local note=Font(row,"GameFontHighlightSmall",4,-13,588)
         Tint(low,COLOR.low)
         Tint(average,COLOR.average)
         Tint(listings,COLOR.counts)
@@ -292,14 +294,14 @@ local function Ensure()
         labels.rows[#labels.rows+1]={frame=row,name=name,low=low,
             average=average,listings=listings,note=note}
     end
-    Button(f,"Previous",21,-413,111,function()
+    Button(f,"Previous",21,-356,111,function()
         page=math.max(1,page-1);Refresh()
     end)
-    labels.page=Font(f,"GameFontHighlightSmall",281,-419,106)
-    Button(f,"Next",500,-413,111,function()
+    labels.page=Font(f,"GameFontHighlightSmall",281,-363,106)
+    Button(f,"Next",500,-356,111,function()
         page=page+1;Refresh()
     end)
-    labels.info=Font(f,"GameFontHighlightSmall",21,-446,594)
+    labels.info=Font(f,"GameFontHighlightSmall",21,-392,594)
     frame=f
     f:SetScript("OnUpdate",function(self,elapsed)
         seconds=seconds+(type(elapsed)=="number" and elapsed or 0)
@@ -343,8 +345,9 @@ function ChalkBox_AuctionAttach()
                 host,"UIPanelButtonTemplate")
         end
         tab=button
-        tab:SetText("AuctionSense")
-        if tab.SetWidth then tab:SetWidth(116) end
+        -- Short tab label fits Blizzard's tab strip at normal UI scale.
+        tab:SetText("Market")
+        if tab.SetWidth then tab:SetWidth(92) end
         if previous then
             tab:SetPoint("LEFT",previous,"RIGHT",-3,0)
         else
