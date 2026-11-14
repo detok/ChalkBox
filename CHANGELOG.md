@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.1.8 — Restore adjustable separate-bag position (test release)
+- Restore the previously working Blizzard separate-bag vertical offset. The 2.1.5 combat hotfix disabled this functionality without proving it was the source of a blocked-action error.
+- Restore the saved bag offset, including negative/upward values on login. Recalculate from Blizzard's current native anchor on each layout update so offsets never accumulate.
+- Restore a properly working horizontal slider under The Bar settings: **left raises bags**, **right lowers bags**, 0 returns to Blizzard default. Clean labels and live value; Reset Bags is functional again.
+- Continue deferring bag updates during combat or while the bank is open; only adjust the native first player-bag column when the expected Blizzard anchor is available. Never modify individual item buttons or call item-use APIs.
+- Preserve full-width Bar behind portrait effects, safe top-UI shift, auction UI/scanners, Emota combat guard, native DPS reports, and SavedVariables.
+- Expand bag layout and settings regressions (positive/negative offsets, combat deferral, no stacking, bank handling, saved-position recovery and UI control).
+
+
 ## 2.1.7 — Bar layering and honest bag controls (test release)
 - Keep the original full-width 18px Bar and 2.1.6 safe top-UI spacing, but render the Bar at BACKGROUND strata, level 1. Blizzard portraits, resting ZZZs, buffs and native HUD art can draw over the strip.
 - Remove the disabled, nonfunctional bag-offset slider and its overlapping scale labels from The Bar settings. Replace it with clear native-bag layout status; no pretend controls or irrelevant reset button.
