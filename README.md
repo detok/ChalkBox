@@ -6,7 +6,7 @@
 
 **A collection of useful tools for World of Warcraft: Forever.**
 
-[Download 2.0.8 — Test release](https://github.com/detok/ChalkBox/releases/tag/v2.0.8) · [Report a bug](https://github.com/detok/ChalkBox/issues/new/choose) · [User guide](docs/USER_GUIDE.md)
+[Download 2.0.9 — Test release](https://github.com/detok/ChalkBox/releases/tag/v2.0.9) · [Report a bug](https://github.com/detok/ChalkBox/issues/new/choose) · [User guide](docs/USER_GUIDE.md)
 
 </div>
 
@@ -66,6 +66,9 @@ The optional ChalkBox DPS meter **starts closed each time you log in**. Open it 
 
 ### Map Discoveries
 
+**2.0.9:** The existing Area / Dungeon dropdown now lets you browse **all recorded outdoor zones and dungeons** from grouped, alphabetized lists, no matter where the native map is pointing. Pick a location to browse it independently; use **Follow world map** in the dropdown or the existing **Map sync** control to return to the map. Your last manually browsed location and sync setting are saved per character. No map movement, fabricated drop data, or new window layout.
+
+
 **Updated in 2.0.5:** The Discoveries journal now builds and renders its complete text, filters, search and item list over the native map. Bag highlighting and vendor-value updates also avoid repeated work when opening bags.
 
 Open the normal world map and click **Discoveries**. You can drag the map button wherever you prefer; right-click it to reset the position. In the Discoveries window, use the Area/Dungeon, Creature Source and Sort menus, or search for an item by name or ID.
@@ -82,7 +85,7 @@ MacroForge doesn't automate rotations or bypass the global cooldown. Installing 
 
 ## Install
 
-1. Download **[ChalkBox-2.0.8.zip](https://github.com/detok/ChalkBox/releases/download/v2.0.5/ChalkBox-2.0.8.zip)** from the GitHub release. Don't use the automatically generated "Source code" ZIP.
+1. Download **[ChalkBox-2.0.9.zip](https://github.com/detok/ChalkBox/releases/download/v2.0.9/ChalkBox-2.0.9.zip)** from the GitHub release. Don't use the automatically generated "Source code" ZIP.
 2. Extract the single **ChalkBox** folder into your Forever client's **Interface/AddOns** directory.
 3. Check that **Interface/AddOns/ChalkBox/ChalkBox.toc** exists. Avoid an extra nested ChalkBox folder.
 4. Launch the game and type **/chalk**.
@@ -113,7 +116,7 @@ The media kit now includes the real cropped gameplay gallery under `Screenshots/
 
 The **[CurseForge folder](curseforge/)** contains the current project description, short summary, FAQ, changelog and submission checklist, along with the original ChalkBox artwork.
 
-The release also includes a separate **[CurseForge media kit ZIP](https://github.com/detok/ChalkBox/releases/download/v2.0.5/ChalkBox-CurseForge-Media-2.0.8.zip)** with six SVG originals, PNG exports, and ready-to-use listing copy. It is **not an addon installation file**.
+The release also includes a separate **[CurseForge media kit ZIP](https://github.com/detok/ChalkBox/releases/download/v2.0.9/ChalkBox-CurseForge-Media-2.0.9.zip)** with six SVG originals, PNG exports, and ready-to-use listing copy. It is **not an addon installation file**.
 
 The illustrations are promotional graphics, not in-game screenshots. Real screenshots should be captured from the running Forever client before being used in a gallery.
 
@@ -121,7 +124,7 @@ The illustrations are promotional graphics, not in-game screenshots. Real screen
 
 ChalkBox targets **WoW Forever**. Retail and Classic Era compatibility have not been verified. Some client APIs may expose limited data, particularly for combat, loot sources and map layout.
 
-**2.0.8 is a test release** until the reorganized options and meter startup have been checked in-game. Automated Lua 5.1 tests and ZIP packaging run through [GitHub Actions](.github/workflows/release.yml).
+**2.0.9 is a test release** until the reorganized options and meter startup have been checked in-game. Automated Lua 5.1 tests and ZIP packaging run through [GitHub Actions](.github/workflows/release.yml).
 
 Report issues through [GitHub Issues](https://github.com/detok/ChalkBox/issues) with the ChalkBox version, Forever client build, steps to reproduce and any Lua error.
 

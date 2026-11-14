@@ -31,7 +31,7 @@ COPY = [
     "copy/SHORT_COPY.md", "copy/QUICK_START.md",
     "copy/COMMANDS.md", "copy/FAQ.md",
     "copy/FEATURE_PROOF.md", "copy/SUPPORT_AND_CREDITS.md",
-    "copy/FILE_CHANGELOG_2.0.8.md", "submission/PUBLISH_CHECKLIST.md",
+    "copy/FILE_CHANGELOG_2.0.9.md", "submission/PUBLISH_CHECKLIST.md",
     "submission/QA_AND_POLICY.md", "submission/GITHUB_PRESENTATION.md",
     "artwork/SCREENSHOT_PLAN.md", "launch-kit/START_HERE.md",
 ]
