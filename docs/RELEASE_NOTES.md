@@ -1,19 +1,17 @@
-# ChalkBox 2.1.2 — AuctionSense quick-read polish
+# ChalkBox 2.1.3 — Native meter reports and cleaner item tooltips
 
-AuctionSense results now surface the numbers first. The tested 2.1.1 scanning and native Auction House tab remain unchanged.
+### Blizzard damage meter
+- Open the Blizzard damage meter's **gear menu → Combat reports**.
+- Print to **PARTY** or **SAY** from the selected native meter mode and session.
+- Choose **Top 3 / Top 5 / Top 10** players to include.
+- Optional **after-combat reports** are OFF by default. Customize channel (PARTY/SAY), stat (DPS/damage/healing), minimum fight duration (0/10/20/30 seconds) and cooldown (30/60/120 seconds).
+- Reports post a single compact message. Protected or incomplete data, invalid party channels, repetitive summaries and too-frequent automatic messages are suppressed. No automated trading or combat actions.
 
-### At-a-glance prices
-- **Green:** lowest asking price per item unit.
-- **Gold:** average asking price per unit, when observed from full listings.
-- **Blue:** listing count. **Gray dash:** not available in browse data.
-- **Amber:** mixed equipment variants or server scan cooldown. **Red:** stale scans and errors.
-- Hover an item in the AuctionSense table for a short breakdown: unit low, average, listings, quantity, source, scan age and server market.
-- Hover Scan Market / Full listings for short action hints.
+### Tooltips
+- Remove repeated **CHALKBOX | ITEM INSIGHT** branding from item tooltips: just the colored status and supporting evidence.
+- Rename the loot annotation's heading to **Drop Journal**, without repeating the addon name.
 
-### Data integrity
-Market prices are asking prices, never completed sales. Browse data does not invent average prices or listing counts. Older saved snapshots and all other ChalkBox modules are preserved.
+### Install
+Install `ChalkBox-2.1.3.zip` as the single ChalkBox addon folder, replacing the old folder but keeping SavedVariables. Type `/reload`, then open Blizzard's damage meter and use the gear menu. No new standalone meter is needed.
 
-### Install and test
-Replace the ChalkBox addon folder with ChalkBox-2.1.2.zip and type `/reload`. Open the Auction House and hover a scanned result. Check that low prices are green, missing averages show a dash, and warnings are obvious.
-
-GitHub Actions checks Lua 5.1 syntax, addon regressions and ZIP packaging. In-client WoW Forever visual verification is still recommended.
+Automated CI covers Lua 5.1 syntax, module regressions and installable ZIP integrity. Check menu availability and chat permissions in a real WoW Forever client before assuming every option works on that server.
