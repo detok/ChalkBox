@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.2 — AuctionSense quick-read tooltips (test release)
+- Use consistent green low ask, amber average ask, blue listing counts and red/amber warnings.
+- Present price facts on separate short lines, with clear missing values instead of invented browse statistics.
+- Add native row-hover price summaries, market/source/scan age and compact scan button hints.
+- Shorten panel status and freshness warnings; retain the working AH tab and both scanners.
+- Expand regression tests for hover behavior and tooltip color hierarchy.
+
+
 ## 2.1.1 — AuctionSense native AH tab and scan repair (test release)
 - Move AuctionSense into Blizzard's actual Auction House as a tab; no floating window or hidden settings-only interface.
 - Read all-market browse results through the current Forever browse API, including incremental pages and server throttle readiness. Show lowest asking prices and total units; leave unsupported averages and listing counts blank.

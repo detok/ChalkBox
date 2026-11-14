@@ -5,6 +5,56 @@ local frame,tab,host,labels=nil,nil,nil,{}
 local searchText,page="",1
 local seconds=0
 local cachedRows,cachedMarket,cachedTime,cachedSearch={},"",0,nil
+local COLOR={
+    low={0.39,0.94,0.62},average={0.98,0.79,0.39},
+    counts={0.51,0.76,0.98},ready={0.40,0.85,0.75},
+    warning={0.98,0.66,0.33},error={0.98,0.45,0.40},
+    muted={0.65,0.70,0.73},neutral={0.83,0.86,0.88},
+}
+local function Tint(label,rgb)
+    if label and type(label.SetTextColor)=="function" then
+        label:SetTextColor(rgb[1],rgb[2],rgb[3],1)
+    end
+end
+local function StartTooltip(owner,title)
+    local tip=GameTooltip
+    if not tip or type(tip.SetOwner)~="function" or
+        type(tip.AddLine)~="function" then return nil end
+    tip:SetOwner(owner,"ANCHOR_RIGHT")
+    if type(tip.ClearLines)=="function" then tip:ClearLines() end
+    tip:AddLine(title,0.95,0.95,0.93)
+    return tip
+end
+local function Metric(tip,label,value,rgb)
+    if type(tip.AddDoubleLine)=="function" then
+        tip:AddDoubleLine(label,value,0.79,0.82,0.85,
+            rgb[1],rgb[2],rgb[3])
+    else
+        tip:AddLine(label..": "..value,rgb[1],rgb[2],rgb[3])
+    end
+end
+local function EndTooltip(tip)
+    if tip and type(tip.Show)=="function" then tip:Show() end
+end
+local function HideTooltip()
+    if GameTooltip and type(GameTooltip.Hide)=="function" then
+        GameTooltip:Hide()
+    end
+end
+local function Hint(button,title,summary,extra)
+    button:SetScript("OnEnter",function(self)
+        local tip=StartTooltip(self,title)
+        if not tip then return end
+        tip:AddLine(summary,COLOR.neutral[1],COLOR.neutral[2],
+            COLOR.neutral[3])
+        if extra then
+            tip:AddLine(extra,COLOR.muted[1],COLOR.muted[2],
+                COLOR.muted[3])
+        end
+        EndTooltip(tip)
+    end)
+    button:SetScript("OnLeave",HideTooltip)
+end
 
 local function Font(parent,style,x,y,width)
     local label=parent:CreateFontString(nil,"OVERLAY",style or "GameFontHighlight")
@@ -46,6 +96,8 @@ local function Refresh()
         or "Market unavailable"
     labels.market:SetText(market)
     labels.status:SetText(status.state or "Ready")
+    Tint(labels.status,status.error and COLOR.error or
+        (status.busy and COLOR.warning or COLOR.ready))
     labels.progress:SetText(status.busy and
         (status.mode=="browse" and
             (tostring(status.scannedItems or 0).." items read") or
@@ -53,9 +105,11 @@ local function Refresh()
         (status.scannedAt and ("Last scan "..Age(status.age)) or "No scan yet"))
     local cooldown=status.cooldown or 0
     labels.cooldown:SetText(cooldown>0 and
-        ("Full scan: "..math.ceil(cooldown/60).."m cooldown") or
-        (status.fullAvailable and "Full listing scan ready" or
-        "Full listing scan unavailable"))
+        ("Full scan  |  "..math.ceil(cooldown/60).."m cooldown") or
+        (status.fullAvailable and "Full scan ready" or
+        "Full scan unavailable"))
+    Tint(labels.cooldown,cooldown>0 and COLOR.warning or
+        (status.fullAvailable and COLOR.ready or COLOR.muted))
     labels.details:SetText(("%d items  ·  %s"):format(
         status.items or 0,
         status.source=="browse" and "Browse prices" or
@@ -63,8 +117,10 @@ local function Refresh()
             (tostring(status.auctions or 0).." listings") or "No scan")))
     labels.info:SetText(status.error or
         (status.age and status.age>86400 and
-            "Prices are old. Scan again before making decisions." or
-            "Lowest unit asking prices, not completed sales."))
+            "OLD SCAN  |  Refresh before buying" or
+            "UNIT ASKING PRICES  |  Not completed sales"))
+    Tint(labels.info,status.error and COLOR.error or
+        (status.age and status.age>86400 and COLOR.warning or COLOR.muted))
     if cachedSearch~=searchText or
         cachedMarket~=(status.marketKey or "") or
         cachedTime~=(status.scannedAt or 0) then
@@ -87,10 +143,13 @@ local function Refresh()
             row.listings:SetText(item.listings and
                 (tostring(item.listings).." lots") or "—")
             row.note:SetText(item.mixed and
-                "Gear variants mixed — check the exact item" or
-                (tostring(item.quantity or 0).." units listed"))
+                "VARIANTS MIXED  |  Verify exact gear" or
+                (tostring(item.quantity or 0).." units"))
+            Tint(row.note,item.mixed and COLOR.warning or COLOR.muted)
+            row.frame.marketData=item
             row.frame:Show()
         else
+            row.frame.marketData=nil
             row.frame:Hide()
         end
     end
@@ -145,6 +204,7 @@ local function Ensure()
             Refresh()
         end
     end)
+    Hint(labels.scan,"Scan Market","Browse asking prices","No full-scan cooldown")
     labels.fullscan=Button(f,"Full listings (15m)",172,-146,167,function()
         if type(ChalkBox_AuctionFullScan)=="function" then
             local ok,reason=ChalkBox_AuctionFullScan()
@@ -152,6 +212,8 @@ local function Ensure()
             Refresh()
         end
     end)
+    Hint(labels.fullscan,"Full listings","Complete auction listing snapshot",
+        "Server limit: once every 15 minutes")
     local input=CreateFrame("EditBox",nil,f,"InputBoxTemplate")
     input:SetSize(224,24)
     input:SetPoint("TOPLEFT",f,"TOPLEFT",386,-147)
@@ -166,9 +228,15 @@ local function Ensure()
     end)
     Font(f,"GameFontNormal",345,-153,45):SetText("Find")
     Font(f,"GameFontNormal",21,-184,255):SetText("ITEM")
-    Font(f,"GameFontNormal",316,-184,102):SetText("LOW")
-    Font(f,"GameFontNormal",428,-184,104):SetText("AVG ASK")
-    Font(f,"GameFontNormal",541,-184,92):SetText("LOTS")
+    local lowHeader=Font(f,"GameFontNormal",316,-184,102)
+    lowHeader:SetText("LOW / UNIT")
+    Tint(lowHeader,COLOR.low)
+    local averageHeader=Font(f,"GameFontNormal",428,-184,104)
+    averageHeader:SetText("AVG ASK")
+    Tint(averageHeader,COLOR.average)
+    local listingHeader=Font(f,"GameFontNormal",541,-184,92)
+    listingHeader:SetText("LISTINGS")
+    Tint(listingHeader,COLOR.counts)
     labels.rows={}
     for i=1,PER_PAGE do
         local y=-206-(i-1)*29
@@ -180,7 +248,47 @@ local function Ensure()
         local average=Font(row,"GameFontHighlight",411,-1,102)
         local listings=Font(row,"GameFontHighlightSmall",524,-1,85)
         local note=Font(row,"GameFontHighlightSmall",4,-15,588)
-        if note.SetTextColor then note:SetTextColor(0.72,0.66,0.54,1) end
+        Tint(low,COLOR.low)
+        Tint(average,COLOR.average)
+        Tint(listings,COLOR.counts)
+        Tint(note,COLOR.muted)
+        if type(row.EnableMouse)=="function" then row:EnableMouse(true) end
+        row:SetScript("OnEnter",function(self)
+            local item=self.marketData
+            if not item then return end
+            local tip=StartTooltip(self,item.name or
+                ("Item #"..tostring(item.itemID)))
+            if not tip then return end
+            Metric(tip,"Low ask / unit",Coin(item.low),COLOR.low)
+            Metric(tip,"Avg ask / unit",Coin(item.average),
+                item.average and COLOR.average or COLOR.muted)
+            Metric(tip,"Listings",item.listings and
+                tostring(item.listings) or "—",COLOR.counts)
+            Metric(tip,"Units",item.quantity and
+                tostring(item.quantity) or "—",COLOR.neutral)
+            local current=ChalkBox_AuctionStatus and
+                ChalkBox_AuctionStatus() or {}
+            local source=current.source=="browse" and "Browse" or
+                (current.source=="full" and "Full listings" or "Unknown")
+            tip:AddLine(source.."  |  Updated "..Age(current.age),
+                COLOR.muted[1],COLOR.muted[2],COLOR.muted[3])
+            if current.realm and current.faction then
+                tip:AddLine(current.realm.." / "..current.faction,
+                    COLOR.muted[1],COLOR.muted[2],COLOR.muted[3])
+            end
+            if item.mixed then
+                tip:AddLine("VARIANTS MIXED  |  Check exact gear",
+                    COLOR.warning[1],COLOR.warning[2],COLOR.warning[3])
+            end
+            if current.age and current.age>86400 then
+                tip:AddLine("OLD SCAN  |  Refresh prices",
+                    COLOR.error[1],COLOR.error[2],COLOR.error[3])
+            end
+            tip:AddLine("Asking prices, not sales",
+                COLOR.muted[1],COLOR.muted[2],COLOR.muted[3])
+            EndTooltip(tip)
+        end)
+        row:SetScript("OnLeave",HideTooltip)
         labels.rows[#labels.rows+1]={frame=row,name=name,low=low,
             average=average,listings=listings,note=note}
     end
