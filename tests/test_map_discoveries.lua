@@ -401,7 +401,7 @@ assert(selected[3].text:find("Defias Bandit",1,true),
     "known-creature source can be selected in a genuine menu")
 local sawDropRate,sawDrops,sawSourceStats=false,false,false
 for _,font in ipairs(fonts) do
-    if font.text=="DROPS" then sawDrops=true end
+    if font.text=="LOOTS" then sawDrops=true end
     if font.text=="33.3%" then sawDropRate=true end
     if font.text and font.text:find("4 drops / 12 loots",1,true) then
         sawSourceStats=true
