@@ -14,7 +14,7 @@ Quality-of-life tools for WoW Forever: MacroForge, DropSense, LootSense, The Bar
 
 **Release announcement**
 
-ChalkBox 2.0.8 makes QuestSense's Nearby-only mode automatically maintain a current-zone quest watch list. Out-of-area manually tracked quests are temporarily hidden and restored when you return or change modes; no repeated manual clear-and-refresh is needed. It retains Discoveries, LootSense, MacroForge, The Bar, Combat Meter, Session Journal, and the previous performance/UI improvements.
+ChalkBox 2.0.9 adds a smarter Discoveries location browser. The existing Area / Dungeon dropdown now lists every recorded outdoor zone and dungeon, grouped and alphabetized, with a clear Follow world map option. Choose any saved location to browse independently or return to map sync, with your preference and last manual location remembered. Existing loot observations, filters, QuestSense, The Bar and other tools are preserved.
 
 **Screenshot captions (for actual in-game images only)**
 

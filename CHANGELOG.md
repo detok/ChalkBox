@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.9 — Discoveries location browser (prerelease)
+- Extend the existing Area / Dungeon dropdown with a Follow world map choice and grouped Outdoor zones / Dungeons menus covering all places in the player's observed-loot history.
+- Alphabetize locations with item counts; selecting a zone or dungeon switches tabs automatically and does not move the native world map.
+- Make the existing map-sync control a visible on/off toggle, with map following selectable directly from the area dropdown.
+- Save map-sync preference and last manually browsed location per character, and restore manual selection when map sync is turned off.
+- Support nested controls on both modern MenuUtil and legacy EasyMenu clients; preserve source/search/sort filters, journal layout, map button location and current loot history.
+- Expand Lua regression coverage for map-independent browsing, cross-category selection, map sync, persistence, and old-client menus.
+
+
 ## 2.0.8 — QuestSense Nearby auto-sync (prerelease)
 - Keep Nearby only restricted to quests confirmed by the current area's quest map or quest-log zone heading; newly accepted distant quests and unscoped POI hints no longer bypass the filter.
 - Temporarily hide nonlocal manually selected quest watches instead of permanently discarding them; restore their manual selection when relevant again, when another tracking mode is selected, or when auto-tracking is disabled.

@@ -1,18 +1,23 @@
-# ChalkBox 2.0.8 — QuestSense Nearby auto-sync
+# ChalkBox 2.0.9 — Discoveries map and location browsing
 
-**Nearby only** now maintains the tracker around the quest zone you are actually in, without repeated manual refreshes or unwatching.
+The existing Discoveries Area / Dungeon dropdown is now a real location browser. You can select **any outdoor zone or dungeon with recorded observations**, regardless of which region your world map is displaying.
 
-- Matches accepted quests using confirmed current-zone map data or their quest-log zone heading. Freshly accepted quests and unscoped POI hints no longer force distant quests into Nearby.
-- Temporarily hides non-local manually watched quests, remembers those choices per character, and restores them automatically when you return to the zone, choose Smart or All, or turn QuestSense off.
-- Rechecks Nearby every 12 seconds as a fallback for missed zone or tracker events, while retaining fast event-driven updates.
-- Keeps manual unwatch decisions, addon-managed watch boundaries, watch limits, and Blizzard's native tracker/supertracked quest.
-- Defers changes during combat, map/quest-log use and instances. Preserves watched quests when the client doesn't provide reliable zone information rather than risking false removals.
-- Settings display the active mode and count of temporarily hidden watches.
+### New
+- A clearly marked **Follow world map** choice directly in the Area / Dungeon dropdown.
+- Alphabetized **Outdoor zones** and **Dungeons** submenus, showing recorded item counts.
+- Selecting a location automatically uses the matching Outdoor or Dungeons tab, with no navigation or changes to Blizzard's world map.
+- Existing upper-right **Map sync** control now clearly shows ON/OFF and toggles between following and manual browsing.
+- Manually selected area and sync preference persist per character. Turning sync off returns to your previous manual selection.
+- Compatible nested menus with native MenuUtil and EasyMenu fallback.
 
-**How to use:** Open **Options → AddOns → ChalkBox → QuestSense**, enable automatic tracking, then choose **Nearby only**. Once selected, it stays active as you travel. Nearby means current zone/area evidence; it does not calculate a physical radius or invent quest coordinates.
+### Preserved
+- Journal size and layout; draggable world-map button and saved button position.
+- Source filters, search, sort and paging.
+- DropSense's existing observations, known-source rates, SavedVariables and other ChalkBox modules.
 
-**Installation:** Replace the existing addon folder with **ChalkBox-2.0.8.zip**, then type `/reload`. Keep SavedVariables; hidden manual watches and preferences are stored per character.
+### Test
+Open the normal world map, click **Discoveries**, then open the **Area / Dungeon** dropdown. Choose a recorded area from either submenu to browse its loot. To follow the world map again, select **Follow world map** (or use the existing Map sync control).
 
-The separate **ChalkBox-CurseForge-Media-2.0.8.zip** is for artwork/listing copy, not installation.
+**Install:** Replace the existing addon folder with **ChalkBox-2.0.9.zip** and type `/reload`. Keep your SavedVariables. The separate **ChalkBox-CurseForge-Media-2.0.9.zip** is artwork/listing copy, not the addon.
 
-This WoW Forever beta/test build passed automated Lua 5.1 and package checks but needs real-client behavior confirmation. Retail and Classic Era remain unverified. Maintained by Detok Whitemaine.
+WoW Forever beta/test build. Automated Lua 5.1 and packaging checks passed; the menu still needs final visual verification in the actual client. Other WoW versions remain unverified.

@@ -6,6 +6,8 @@ local currentMap=nil
 local mode="outdoor"
 local selectedArea=nil
 local followMap=true
+local browseArea,browseMode=nil,"outdoor"
+local browserStateLoaded=false
 local selectedSource=nil
 local sortKey="quantity"
 local searchText=""
@@ -14,7 +16,6 @@ local rows={}
 local controls={}
 local lastMap,elapsed=nil,0
 local attachedTo,retries=nil,0
-local menuFrame
 local PANEL_W,PANEL_H=660,616
 local PER_PAGE=7
 
@@ -33,6 +34,34 @@ local function Store()
         saved={};ChalkBoxZoneDB.mapDiscoveryUI=saved
     end
     return saved
+end
+-- Browser preferences are per character, separate from button positioning.
+-- Older saves have no browser fields and keep the original follow-map default.
+local function RestoreBrowser()
+    if browserStateLoaded then return end
+    browserStateLoaded=true
+    local saved=Store()
+    followMap=saved.followMap~=false
+    if saved.viewMode=="dungeon" then mode="dungeon" end
+    if saved.browseMode=="dungeon" then browseMode="dungeon" end
+    if type(saved.browseArea)=="string" and #saved.browseArea<128 then
+        browseArea=saved.browseArea
+    end
+    if not followMap then
+        mode=browseMode
+        selectedArea=browseArea
+    end
+end
+local function SaveBrowser()
+    local saved=Store()
+    saved.followMap=followMap
+    saved.viewMode=mode
+    if not followMap then
+        browseArea=selectedArea
+        browseMode=mode
+        saved.browseArea=browseArea
+        saved.browseMode=browseMode
+    end
 end
 local function ValidOffset(v)
     return type(v)=="number" and v==v and v>-5000 and v<5000 and
@@ -250,8 +279,52 @@ local function Items()
     end)
     return items
 end
--- MenuUtil is the modern client API. EasyMenu is a fallback. If neither is
--- present, clicking cycles through options instead of breaking navigation.
+-- Menus share the same hierarchy on modern and older Forever clients.
+-- Keeping zone/dungeon submenus separate makes a long loot atlas navigable.
+local menuFrame
+local menuColors={
+    title="ffffd36a",group="ff79d4e9",selected="ff79df9c",
+    normal="ffe4e9ef",muted="ff9ca7b5",
+}
+local function MenuLabel(entry)
+    return "|c"..(menuColors[entry.tone] or menuColors.normal)..
+        entry.text.."|r"
+end
+local function NativeChoices(root,choices)
+    for _,entry in ipairs(choices) do
+        local text=MenuLabel(entry)
+        if entry.children then
+            if type(root.CreateButton)=="function" then
+                local submenu=root:CreateButton(text)
+                if submenu and type(submenu.CreateButton)=="function" then
+                    NativeChoices(submenu,entry.children)
+                end
+            end
+        elseif entry.title then
+            if type(root.CreateTitle)=="function" then
+                root:CreateTitle(text)
+            end
+        elseif entry.action and type(root.CreateButton)=="function" then
+            root:CreateButton(text,function() entry.action() end)
+        end
+    end
+end
+local function LegacyChoices(choices)
+    local list={}
+    for _,entry in ipairs(choices) do
+        local item={text=MenuLabel(entry),notCheckable=true}
+        if entry.children then
+            item.hasArrow=true
+            item.menuList=LegacyChoices(entry.children)
+        elseif entry.title then
+            item.isTitle=true
+        else
+            item.func=entry.action
+        end
+        list[#list+1]=item
+    end
+    return list
+end
 local function ShowMenu(owner,choices)
     if type(InCombatLockdown)=="function" and InCombatLockdown() then
         return false
@@ -259,15 +332,7 @@ local function ShowMenu(owner,choices)
     if type(MenuUtil)=="table" and
         type(MenuUtil.CreateContextMenu)=="function" then
         local ok=pcall(MenuUtil.CreateContextMenu,owner,
-            function(_,root)
-                for _,entry in ipairs(choices) do
-                    if entry.title and type(root.CreateTitle)=="function" then
-                        root:CreateTitle(entry.text)
-                    elseif type(root.CreateButton)=="function" then
-                        root:CreateButton(entry.text,function() entry.action() end)
-                    end
-                end
-            end)
+            function(_,root) NativeChoices(root,choices) end)
         if ok then return true end
     end
     if type(EasyMenu)=="function" then
@@ -275,12 +340,8 @@ local function ShowMenu(owner,choices)
             menuFrame=CreateFrame("Frame",
                 "ChalkBoxDiscoveriesDropdown",UIParent,"UIDropDownMenuTemplate")
         end
-        local list={}
-        for _,entry in ipairs(choices) do
-            list[#list+1]={text=entry.text,func=entry.action,
-                isTitle=entry.title==true,notCheckable=true}
-        end
-        local ok=pcall(EasyMenu,list,menuFrame,owner,0,-4,"MENU")
+        local ok=pcall(EasyMenu,LegacyChoices(choices),menuFrame,
+            owner,0,-4,"MENU")
         if ok then return true end
     end
     return false
@@ -291,21 +352,70 @@ local function Pick(index,options)
     if candidate and candidate.action then candidate.action() end
 end
 local refresh
+local function FollowWorldMap()
+    followMap=true
+    mode="outdoor"
+    currentMap=MapID() or currentMap
+    selectedArea=DefaultArea()
+    selectedSource=nil
+    page=1
+    SaveBrowser()
+    refresh()
+end
+local function BrowseLocation(entry)
+    if type(entry)~="table" or type(entry.key)~="string" then return end
+    followMap=false
+    mode=entry.kind=="dungeon" and "dungeon" or "outdoor"
+    selectedArea=entry.key
+    selectedSource=nil
+    page=1
+    SaveBrowser()
+    refresh()
+end
 local function AreaOptions()
-    local list={{text="CHOOSE "..(mode=="outdoor" and "OUTDOOR ZONE"
-        or "DUNGEON"),title=true}}
-    for _,entry in ipairs(Areas(mode)) do
-        local item=entry
-        local name=(entry.key==selectedArea and "✓ " or "")..
-            entry.name.." · "..tostring(entry.items or 0).." items"
-        list[#list+1]={text=name,action=function()
-            selectedArea=item.key
-            followMap=false;selectedSource=nil;page=1
-            refresh()
-        end}
+    local list={
+        {text=(followMap and "✓ " or "").."Follow world map",
+            tone=followMap and "selected" or "normal",
+            action=FollowWorldMap},
+        {text="BROWSE RECORDED LOCATIONS",title=true,tone="title"},
+    }
+    local total=0
+    for _,category in ipairs({
+        {kind="outdoor",name="Outdoor zones"},
+        {kind="dungeon",name="Dungeons"},
+    }) do
+        local entries=Areas(category.kind)
+        -- Explicit deterministic order even when an older DropSense build
+        -- returns the recorded-location index unsorted.
+        table.sort(entries,function(a,b)
+            local an,bn=string.lower(tostring(a.name or a.key)),
+                string.lower(tostring(b.name or b.key))
+            if an==bn then return tostring(a.key)<tostring(b.key) end
+            return an<bn
+        end)
+        local children={}
+        for _,entry in ipairs(entries) do
+            local item=entry
+            local isSelected=not followMap and selectedArea==entry.key
+            children[#children+1]={
+                text=(isSelected and "✓ " or "")..
+                    tostring(entry.name or entry.key)..
+                    "  ·  "..tostring(entry.items or 0).." items",
+                tone=isSelected and "selected" or "normal",
+                action=function() BrowseLocation(item) end,
+            }
+            total=total+1
+        end
+        if #children>0 then
+            list[#list+1]={
+                text=category.name.." ("..#children..")",
+                children=children,tone="group",
+            }
+        end
     end
-    if #list==1 then
-        list[2]={text="No observed locations yet",action=function() end}
+    if total==0 then
+        list[#list+1]={text="No recorded locations yet",
+            title=true,tone="muted"}
     end
     return list
 end
@@ -351,9 +461,16 @@ local function Dropdown(parent,label,width,x,y,kind)
         local options=ChalkBox_DiscoveriesDropdownItems(kind)
         if not ShowMenu(self,options) then
             local actionable={}
-            for _,entry in ipairs(options) do
-                if not entry.title then actionable[#actionable+1]=entry end
+            local function Collect(entries)
+                for _,entry in ipairs(entries) do
+                    if entry.children then
+                        Collect(entry.children)
+                    elseif entry.action and not entry.title then
+                        actionable[#actionable+1]=entry
+                    end
+                end
             end
+            Collect(options)
             if #actionable>0 then
                 local pointer=controls[kind.."Cycle"] or 0
                 pointer=pointer%#actionable+1
@@ -460,7 +577,7 @@ refresh=function()
     controls.sort:SetText(sortName.."  ▾")
     controls.outdoor:SetText(mode=="outdoor" and "● Outdoor" or "Outdoor")
     controls.dungeon:SetText(mode=="dungeon" and "● Dungeons" or "Dungeons")
-    controls.map:SetText(followMap and "Following map" or "Use map zone")
+    controls.map:SetText(followMap and "● Map sync: ON" or "○ Map sync: OFF")
     controls.count:SetText(("%d items  ·  %d loot windows  ·  %d sources"):format(
         #all,info and info.windows or 0,#sources))
     for i,row in ipairs(rows) do
@@ -554,15 +671,27 @@ local function EnsurePanel()
     Button(f,"Close",86,552,-20,function() f:Hide() end)
     controls.outdoor=Button(f,"Outdoor",128,22,-83,function()
         mode="outdoor";selectedArea=DefaultArea()
-        selectedSource=nil;page=1;refresh()
+        selectedSource=nil;page=1;SaveBrowser();refresh()
     end)
     controls.dungeon=Button(f,"Dungeons",128,160,-83,function()
         mode="dungeon";selectedArea=DefaultArea()
-        selectedSource=nil;page=1;refresh()
+        selectedSource=nil;page=1;SaveBrowser();refresh()
     end)
-    controls.map=Button(f,"Following map",153,485,-83,function()
-        followMap=true;currentMap=MapID()
-        selectedArea=DefaultArea();selectedSource=nil;page=1;refresh()
+    controls.map=Button(f,"Map sync: ON",153,485,-83,function()
+        if followMap then
+            followMap=false
+            -- Return to the last location deliberately selected by the player.
+            if browseArea then
+                mode=browseMode
+                selectedArea=browseArea
+            elseif not selectedArea then
+                selectedArea=DefaultArea()
+            end
+            SaveBrowser()
+            selectedSource=nil;page=1;refresh()
+        else
+            FollowWorldMap()
+        end
     end)
     Heading(f,"AREA / DUNGEON","GameFontNormal",22,-124,265)
     Heading(f,"CREATURE SOURCE","GameFontNormal",301,-124,212)
@@ -628,6 +757,7 @@ local function EnsurePanel()
     end)
 end
 function ChalkBox_OpenMapDiscoveries()
+    RestoreBrowser()
     if type(ChalkBox_MapDiscoveriesEnsure)=="function" then
         ChalkBox_MapDiscoveriesEnsure()
     end
@@ -816,6 +946,12 @@ function ChalkBox_MapDiscoveriesEnsure()
     if not mapButton then InstallButton() end
     if mapButton then PositionButton() end
     return mapButton~=nil
+end
+-- Read-only browser state for diagnostics and regression tests.
+function ChalkBox_DiscoveriesBrowserStatus()
+    RestoreBrowser()
+    return {followMap=followMap,mode=mode,selectedArea=selectedArea,
+        browseArea=browseArea,mapID=currentMap}
 end
 function ChalkBox_MapDiscoveriesStatus()
     local opt=type(ChalkBox_DropOptions)=="function" and

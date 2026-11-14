@@ -1,6 +1,6 @@
 # ChalkBox User Guide
 
-**Version 2.0.8 · World of Warcraft: Forever**
+**Version 2.0.9 · World of Warcraft: Forever**
 
 ChalkBox puts several small tools in one addon. Everything is managed from **Options → AddOns → ChalkBox**, or **/chalk**. Choose the modules you want; the rest can stay out of sight.
 
@@ -24,6 +24,9 @@ The native sidebar contains related pages under their parent module:
 Select the module first, then its child page. The same top heading and return-to-ChalkBox navigation appear throughout. Older settings keys and SavedVariables are retained.
 
 ## DropSense and Map Discoveries
+
+**2.0.9 — Browse anywhere:** Open the Area / Dungeon dropdown in Discoveries to see **Follow world map**, **Outdoor zones**, and **Dungeons**. The grouped lists contain every location where this character has recorded loot; you can pick any of them without moving the native map. Selecting one pauses map sync and switches to its tab. Choose Follow world map in the dropdown (or toggle the existing top-right Map sync control) to follow the map again. Turning sync off restores the last location you manually chose. Preferences survive relogging and do not change existing loot history or map-button position.
+
 
 **2.0.5:** The standalone Discoveries journal has a corrected layout and text initialization. Open it from the world map button or `/chalk drops map` to browse area, source and sort filters, search, and collected items.
 
@@ -124,7 +127,7 @@ Recorded details include observed XP, levels, net gold, quest turn-ins, sampled 
 
 ## Install, updates and troubleshooting
 
-Download the installable **ChalkBox-2.0.8.zip** from the [release page](https://github.com/detok/ChalkBox/releases/tag/v2.0.8). Extract the single ChalkBox folder into **Interface/AddOns**. Don't extract an extra nested ChalkBox folder.
+Download the installable **ChalkBox-2.0.9.zip** from the [release page](https://github.com/detok/ChalkBox/releases/tag/v2.0.9). Extract the single ChalkBox folder into **Interface/AddOns**. Don't extract an extra nested ChalkBox folder.
 
 When updating, **keep your SavedVariables**. Use **/chalk** to check preferences and **/chalk update** to see the installed version.
 
