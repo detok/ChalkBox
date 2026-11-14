@@ -402,8 +402,14 @@ local function StepBrowse(_,elapsed)
     elapsed=type(elapsed)=="number" and elapsed or 0
     scan.elapsed=scan.elapsed+elapsed
     scan.poll=(scan.poll or 0)+elapsed
+    if not scan.received then
+        if scan.elapsed>=12 then
+            Abort("No browse response in 12s. The AH may be busy; try again.")
+        end
+        return
+    end
     if scan.elapsed>=65 then
-        Abort("Browse timed out. Try again at the auctioneer.")
+        Abort("Browse timed out while loading pages. Previous prices kept.")
         return
     end
     -- Never hammer the browse system every render frame.
@@ -520,7 +526,8 @@ local function StartScan(mode)
         -- Set the state BEFORE sending. Some Forever auction events are
         -- synchronous; the old scanner missed responses for this reason.
         job={mode="browse",phase="reading",key=key,
-            elapsed=0,poll=0,updated=false,seen=0,itemCount=0,
+            elapsed=0,poll=0,received=false,updated=false,
+            seen=0,itemCount=0,
             nextPageAt=1,awaitingPage=false,rows={}}
         progress=0
         lastMode=mode
@@ -640,6 +647,7 @@ local function OnEvent(_,event,name)
     elseif (event=="AUCTION_HOUSE_BROWSE_RESULTS_UPDATED" or
         event=="AUCTION_HOUSE_BROWSE_RESULTS_ADDED") and job and
         job.mode=="browse" then
+        job.received=true
         job.updated=true
         job.awaitingPage=false
     elseif event=="AUCTION_HOUSE_BROWSE_FAILURE" and job and

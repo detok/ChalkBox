@@ -77,10 +77,10 @@ full=false
 results={}
 clock=clock+1
 assert(ChalkBox_AuctionScan())
-Tick(66)
+Tick(13)
 assert(not ChalkBox_AuctionStatus().busy and
-    ChalkBox_AuctionStatus().error:find("timed out",1,true),
-    "unanswered browse scan returns a clear timeout")
+    ChalkBox_AuctionStatus().error:find("No browse response",1,true),
+    "unanswered browse scan fails in 12 seconds with a useful message")
 assert(ChalkBox_AuctionPrice(2589).low==1250,
     "failed browse never deletes the last good market")
 -- The server may reject a browse query without throwing Lua errors.
