@@ -46,7 +46,7 @@ Install the **ChalkBox** folder in your Forever client's **Interface/AddOns** fo
 
 ## Compatibility
 
-ChalkBox is developed for **WoW Forever**. Retail and Classic Era have not been tested. Some data depends on what the Forever client exposes. This 2.0.5 package is a **test build** while the Discoveries visibility fix, settings hierarchy and startup behavior are checked in-game.
+ChalkBox is developed for **WoW Forever**. Retail and Classic Era have not been tested. Some data depends on what the Forever client exposes. This 2.0.6 package is a **test build** while the latest Bar menu changes are checked in-game.
 
 Source and issue tracker: https://github.com/detok/ChalkBox
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.6 — The Bar menu cleanup (prerelease)
+- Right-click a stat for only its relevant controls: Show/Hide, Move, Align, and Bar settings, with contextual vendor-value and repair options.
+- Right-click empty bar space for Modules, Position, Edit layout, Reset layout, Stat settings, and Appearance.
+- Add consistent gold, cyan, green, gray, and amber text cues to modern and legacy dropdown menus; highlight the current position and alignment.
+- Shorten noisy action messages and Bar settings descriptions.
+- Expand regression tests for native/legacy menu structure, colors, and callbacks; preserve all saved layouts, character settings, metrics, and bag refresh improvements.
+
+
 ## 2.0.5 — Discoveries journal initialization and legibility (prerelease)
 - Fix eight incorrectly constructed static text labels that could interrupt Discoveries window creation and leave floating buttons.
 - Give all journal font strings explicit contrast and subtle shadows.
