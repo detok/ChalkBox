@@ -339,6 +339,24 @@ assert(not browser.followMap and browser.mode=="dungeon" and
 -- Switching to the Outdoor tab still works without replacing the main layout.
 ClickButton("Dungeons")
 ClickButton("Outdoor")
+-- Legacy EasyMenu must expose the same nested navigation without
+-- changing the saved selection when only opening the menu.
+local modernMenu=MenuUtil
+local legacyChoices
+_G.MenuUtil=nil
+_G.EasyMenu=function(items)
+    legacyChoices=items
+    return true
+end
+ClickButton("Westfall")
+assert(legacyChoices and legacyChoices[1].text:find("Follow world map",1,true)
+    and legacyChoices[3].hasArrow and legacyChoices[4].hasArrow
+    and #legacyChoices[3].menuList==2 and #legacyChoices[4].menuList==1,
+    "older clients receive the same grouped zone/dungeon browser")
+assert(legacyChoices[3].menuList[1].text:find("Redridge",1,true),
+    "legacy dropdown orders saved zones consistently")
+_G.MenuUtil=modernMenu
+_G.EasyMenu=nil
 -- Position persistence per character.
 assert(button.OnDragStart and button.OnDragStop)
 button.OnDragStart(button)
@@ -353,4 +371,16 @@ assert(ChalkBox_MapDiscoveriesResetButton())
 assert(not ChalkBox_MapDiscoveriesButtonPosition().custom and
     button.point[4]==18 and button.point[5]==-114,
     "reset puts button back on default map position")
+-- Player's manual selection survives not only reopening but a new addon
+-- instance (the same persisted per-character SavedVariables after relog).
+ClickButton("Westfall")
+ChooseMenu("Redridge Mountains")
+local savedBrowse=ChalkBoxZoneDB.mapDiscoveryUI
+assert(savedBrowse.followMap==false and savedBrowse.browseArea=="z:1437")
+assert(loadfile("MapDiscoveries.lua"))("ChalkBox")
+assert(ChalkBox_OpenMapDiscoveries())
+local restored=ChalkBox_DiscoveriesBrowserStatus()
+assert(not restored.followMap and restored.mode=="outdoor" and
+    restored.selectedArea=="z:1437",
+    "fresh browser instance restores the per-character manual zone")
 print("PASS: Discoveries readable layout, native dropdowns, source/zone/dungeon filtering, live search, sort, persisted button drag and reset")
