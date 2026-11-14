@@ -625,30 +625,21 @@ local function MakeLootAppearance()
                 d.lootCategories[key]=on
             end)
     end
-    Label(panel,"VERIFIED BAG REAGENT MARKERS","GameFontNormalLarge",
+    Label(panel,"BAG REAGENT OUTLINES PAUSED","GameFontNormalLarge",
         27,-246,480)
-    Toggle(panel,"Highlight ingredients for learned recipes",
-        nil,-275,
-        function()
-            local d=DB();return d and d.lootHighlightKnown~=false
-        end,
-        function(on)
-            if ChalkBox_BagHighlightSet then ChalkBox_BagHighlightSet(on) end
-        end)
-    Label(panel,"Marker opacity","GameFontNormal",27,-326,145)
+    Label(panel,"Protected item-button safety. Item Insight still works.",
+        "GameFontHighlightSmall",27,-275,495)
+    Label(panel,"Saved marker opacity","GameFontNormal",27,-326,145)
     local slider=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
     slider:SetSize(255,17)
     slider:SetPoint("TOPLEFT",panel,"TOPLEFT",182,-322)
     slider:SetMinMaxValues(15,100)
+    if type(slider.Disable)=="function" then slider:Disable() end
     if slider.SetValueStep then slider:SetValueStep(5) end
     local alpha=Label(panel,"75%","GameFontHighlightSmall",448,-328,65)
     local loading=false
-    slider:SetScript("OnValueChanged",function(_,value)
-        if loading or type(value)~="number" then return end
-        if ChalkBox_BagHighlightOpacity then
-            ChalkBox_BagHighlightOpacity(value)
-        end
-        alpha:SetText(tostring(math.floor(value+0.5)).."%")
+    slider:SetScript("OnValueChanged",function()
+        -- Preserved opacity is read-only until secure bag overlays exist.
     end)
     panel:AddRefresh(function()
         local status=ChalkBox_BagHighlightStatus and ChalkBox_BagHighlightStatus()
@@ -656,12 +647,7 @@ local function MakeLootAppearance()
         loading=true;slider:SetValue(value);loading=false
         alpha:SetText(tostring(value).."%")
     end)
-    Button(panel,"Refresh Bag Markers",28,-371,224,function()
-        if ChalkBox_BagHighlightsRefresh then
-            ChalkBox_BagHighlightsRefresh()
-        end
-    end)
-    Button(panel,"Scan Open Profession",270,-371,224,function()
+    Button(panel,"Scan Open Profession",28,-371,224,function()
         if ChalkBox_ProfessionRefresh then ChalkBox_ProfessionRefresh() end
         if ChalkBox_BagHighlightsRefresh then
             ChalkBox_BagHighlightsRefresh()
