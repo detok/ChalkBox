@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.5 — Combat safety: protect Blizzard's UI and item actions (urgent hotfix)
+- Eliminate the UIParent screen-inset system. The Bar now anchors only its own non-protected overlay and never repositions or resizes Blizzard's root UI. Old saved `barReserve` settings migrate to safe overlay.
+- Block Emota native-emote attempts (automatic or manual) during combat, including reaction events. Sit/sleep/stand poses are manual previews only; no idle automation can interrupt food/drink.
+- Suspend the unsafe separate-bag offset hook and stock container reanchoring. Preserve previous saved bag offset for a future secure alternative; the slider is temporarily disabled. Do not modify Blizzard bag/item buttons or their parent frames.
+- Keep XP, gold, gear, auction scanning, loot insights, Blizzard-native DPS reports and saved data enabled.
+- Add regression traps preventing any Bar UIParent write, any bag-frame hook/move and any Emota combat dispatch.
+
+
 ## 2.1.4 — Clear, consistent in-game tooltips (test release)
 - Make the existing item insight status the only header; compact the learned-recipe, possible-use, camp tool and bonus-XP explanations into one useful evidence line.
 - Unify add-on tooltip colors: green useful/known values, gold costs/values, blue counts, amber cautions and red urgent warnings. Leave Blizzard quality colors alone.
