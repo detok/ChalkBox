@@ -194,6 +194,7 @@ local function Fire(event,...)
 end
 assert(loadfile("Emota.lua"))("ChalkBox")
 assert(loadfile("TrailBarLayout.lua"))("ChalkBox")
+assert(loadfile("ScreenLayout.lua"))("ChalkBox")
 assert(loadfile("TrailBar.lua"))("ChalkBox")
 Fire("ADDON_LOADED","ChalkBox")
 assert(ChalkBoxDB.emota.auto==false,"integrated auto-emotes must default off")
@@ -203,8 +204,8 @@ local bar
 for _,frame in ipairs(frames) do if frame.name=="ChalkBoxInfoBar" then bar=frame end end
 assert(bar and bar.visible and bar.anchor=="TOPRIGHT",
     "top bar must stay visible as its own combat-safe overlay")
-assert(bar.points[2] and bar.points[2][4]==-250,
-    "1024px Bar leaves a safe right gutter instead of covering buff icons")
+assert(bar.points[2] and bar.points[2][4]==0,
+    "the full-width Bar reaches both screen edges")
 assert(ChalkBoxDB.barReserve==false,
     "legacy UIParent reservation setting must be migrated to safe overlay")
 assert(UIParent:GetHeight()==768,"Blizzard root height must never change")
@@ -522,18 +523,16 @@ Fire("UI_SCALE_CHANGED")
 Fire("DISPLAY_SIZE_CHANGED")
 assert(RootIsBaseline() and bar.anchor=="TOPRIGHT",
     "scale changes must never rewrite protected UIParent")
-assert(bar.points[2] and bar.points[2][4]==-250,
-    "top-right safe gutter survives position and scale changes")
--- Wider monitor sizes still reserve the buff/bag corner; no protected frame
--- is moved, and the Bar reanchors only itself when the UI scale changes.
+assert(bar.points[2] and bar.points[2][4]==0,
+    "full-width Bar keeps its original edge-to-edge design")
 UIParent.width=2048
 Fire("DISPLAY_SIZE_CHANGED")
-assert(RootIsBaseline() and bar.points[2][4]==-471,
-    "2048px view leaves at least 470px free for buff and bag controls")
+assert(RootIsBaseline() and bar.points[2][4]==0,
+    "wider view keeps Bar full width without modifying UIParent")
 UIParent.width=1024
 Fire("DISPLAY_SIZE_CHANGED")
-assert(bar.points[2][4]==-250,
-    "small monitors keep a useful compact Bar with clear right margin")
+assert(bar.points[2][4]==0,
+    "small views keep Bar full width; other Blizzard top frames shift")
 ChalkBox_BarCommand("reset")
 assert(FindText("XP/h 0"),"reset must restart XP baseline")
 playerLevel=26
@@ -605,4 +604,4 @@ Fire("BAG_UPDATE_DELAYED")
 assert(#scheduled==2,"later inventory changes are still displayed")
 scheduled[2].callback()
 
-print("PASS: HUD stats, bag-event debounce, dynamic right-side safe gutter, protected-root safety, Emota idle rotation and frequency extremes")
+print("PASS: full-width HUD, protected root untouched, safe screen layout integration, Emota idle rotation and frequency extremes")
