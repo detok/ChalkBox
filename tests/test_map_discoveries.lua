@@ -35,7 +35,10 @@ local function Frame(kind,name,parent)
     function f:GetText() return self.text end
     function f:SetAutoFocus() end
     function f:Show() self.shown=true end
-    function f:Hide() self.shown=false end
+    function f:Hide()
+        self.shown=false
+        if self.OnHide then self.OnHide(self) end
+    end
     function f:IsShown() return self.shown end
     function f:GetLeft() return self.left or 100 end
     function f:GetTop() return self.top or 400 end
