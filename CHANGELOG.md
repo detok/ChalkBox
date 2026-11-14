@@ -1,10 +1,10 @@
 # Changelog
 
 ## 2.1.6 — Auction and Bar layout repair (test release)
-- AuctionSense: keep seven results per page but tighten the table, move controls/footnote inside the native Auction House body and leave its bottom tabs unobstructed.
+- AuctionSense: dynamically show 1–7 rows per page based on actual native Auction House height; anchor search/paging controls and disclaimer within the body above Blizzard's footer.
 - Rename the fourth Auction House tab to the shorter **Market** so the native tab strip fits cleanly. The panel still identifies itself as AuctionSense.
-- The Bar: keep a responsive right-side gutter for buffs, bag windows and minimap controls. Use only the Bar's own frame anchors; never resize or reposition `UIParent`.
-- Regression tests for auction footer/list/pager spacing, native tab behavior and Bar right-side clearance at multiple screen widths.
+- The Bar: restore the original full-width 18px strip. A shared top-UI layout manager offsets only unprotected, default-anchored Blizzard frames by 18px, with exact restoration and combat deferral. Never mutate `UIParent`.
+- Regression tests for AH height-sensitive pagination, native tab/footer behavior, full-width Bar, protected top-frame safety, 18px reversibility and combat deferral.
 - Preserve the 2.1.5 combat-protection changes (no protected bag item button mutations, no combat emotes), working auction scanners, saved data and Blizzard-native damage report features.
 
 
