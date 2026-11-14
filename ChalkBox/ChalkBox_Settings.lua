@@ -1054,7 +1054,7 @@ end
 local function MakeCatalog()
     local panel=Panel("Emote Catalog",
         "Each token has its own switch. Try previews it without waiting for idle.")
-    Label(panel,"Reactions and curated idle emotes are enabled initially; extras are opt-in.",
+    Label(panel,"Auto reactions are cosmetic. Poses are manual-only for safety.",
         "GameFontHighlightSmall",26,-104,494)
     local page=1
     local rows={}
@@ -1097,11 +1097,13 @@ local function MakeCatalog()
             local entry=available[(page-1)*perPage+i]
             row.token=entry and entry.token or nil
             if entry then
-                local role=entry.automatic and "reaction" or (entry.idle and "idle" or "extra")
+                local role=entry.manualPose and "manual pose" or
+                    (entry.automatic and "reaction" or (entry.idle and "idle" or "extra"))
                 row.title:SetText(entry.token .. "   (" .. role .. ")")
                 row.check:SetChecked(ChalkBox_EmotaGetEnabled and
                     ChalkBox_EmotaGetEnabled(entry.token)==true)
-                row.check:Show()
+                if entry.manualPose then row.check:Hide()
+                else row.check:Show() end
                 row.test:Show()
             else
                 row.title:SetText("")
