@@ -14,7 +14,7 @@ Quality-of-life tools for WoW Forever: MacroForge, DropSense, LootSense, The Bar
 
 **Release announcement**
 
-ChalkBox 2.0.7 brings shorter, cleaner hover tooltips to The Bar. Each stat now displays only the essential numbers or state, while repair values keep their quote/estimate distinction. The colored 2.0.6 right-click menus, Discoveries fixes, bag-performance work and your saved layout remain intact.
+ChalkBox 2.0.8 makes QuestSense's Nearby-only mode automatically maintain a current-zone quest watch list. Out-of-area manually tracked quests are temporarily hidden and restored when you return or change modes; no repeated manual clear-and-refresh is needed. It retains Discoveries, LootSense, MacroForge, The Bar, Combat Meter, Session Journal, and the previous performance/UI improvements.
 
 **Screenshot captions (for actual in-game images only)**
 

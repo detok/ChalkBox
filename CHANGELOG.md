@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.8 — QuestSense Nearby auto-sync (prerelease)
+- Keep Nearby only restricted to quests confirmed by the current area's quest map or quest-log zone heading; newly accepted distant quests and unscoped POI hints no longer bypass the filter.
+- Temporarily hide nonlocal manually selected quest watches instead of permanently discarding them; restore their manual selection when relevant again, when another tracking mode is selected, or when auto-tracking is disabled.
+- Reconcile Nearby every 12 seconds, in addition to debounced event updates, to recover from missed changes without manual Refresh.
+- Preserve watch limits and native manual decisions; never edit during combat, map/quest-log display, or dungeon instances, or when locality cannot be verified.
+- Show the active tracking mode and temporarily hidden count in settings; expand Lua regression tests.
+
+
 ## 2.0.7 — Compact Bar hover tooltips (prerelease)
 - Replace lengthy stat hover explanations with 1–2 essential detail lines.
 - Keep live values and data distinctions for XP, bags, vendor value, repairs, gear, ETA, rested XP, pets, session, latency and gold.

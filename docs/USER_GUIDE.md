@@ -1,6 +1,6 @@
 # ChalkBox User Guide
 
-**Version 2.0.7 · World of Warcraft: Forever**
+**Version 2.0.8 · World of Warcraft: Forever**
 
 ChalkBox puts several small tools in one addon. Everything is managed from **Options → AddOns → ChalkBox**, or **/chalk**. Choose the modules you want; the rest can stay out of sight.
 
@@ -97,6 +97,9 @@ The window supports DPS, damage, healing, taken damage and interruptions when th
 
 ## QuestSense
 
+**2.0.8 — Nearby only:** Tracks accepted quests with a confirmed current-zone match and keeps refreshing as you move. Out-of-area manual watches are temporarily hidden—not forgotten—and return automatically when you revisit their area or choose Smart/All. The filter does not calculate walking distance or invent quest coordinates. When reliable zone evidence is unavailable, your current watches are preserved instead of being wiped.
+
+
 QuestSense organizes watch choices for accepted quests inside Blizzard's existing quest tracker. The Smart, Nearby and All modes are selectable from settings. It doesn't create unverified quest coordinates, auto-complete objectives or replace the native map.
 
 ## Adventure Prep
@@ -121,7 +124,7 @@ Recorded details include observed XP, levels, net gold, quest turn-ins, sampled 
 
 ## Install, updates and troubleshooting
 
-Download the installable **ChalkBox-2.0.7.zip** from the [release page](https://github.com/detok/ChalkBox/releases/tag/v2.0.7). Extract the single ChalkBox folder into **Interface/AddOns**. Don't extract an extra nested ChalkBox folder.
+Download the installable **ChalkBox-2.0.8.zip** from the [release page](https://github.com/detok/ChalkBox/releases/tag/v2.0.8). Extract the single ChalkBox folder into **Interface/AddOns**. Don't extract an extra nested ChalkBox folder.
 
 When updating, **keep your SavedVariables**. Use **/chalk** to check preferences and **/chalk update** to see the installed version.
 
