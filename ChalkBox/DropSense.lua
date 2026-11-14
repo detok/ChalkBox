@@ -480,19 +480,45 @@ function ChalkBox_DropAreaItems(key,sourceKey,search)
     local area=State().areas[key]
     if not area then return {} end
     local result={}
-    local from=sourceKey and area.sources[sourceKey]
-    local rows=from and from.items or area.items
+    local chosen=sourceKey and area.sources[sourceKey] or nil
+    local rows=chosen and chosen.items or area.items
     search=type(search)=="string" and search:lower() or ""
     for id,counts in pairs(rows or {}) do
         local item=ChalkBox_DropRead(id,key,sourceKey)
         if item and (search=="" or item.name:lower():find(
                 search,1,true) or id:find(search,1,true)) then
+            local sourceName,hits,attempts,rate=item.sourceName,
+                item.hits,item.attempts,item.rate
+            if not sourceKey then
+                -- A single identified mob provides a useful rate while
+                -- browsing the whole zone. With several mob types, NEVER
+                -- conflate their separate loot pools into one percentage.
+                local onlyKey,ambiguous
+                for mobKey,source in pairs(area.sources or {}) do
+                    if type(source)=="table" and source.items and
+                        source.items[id] then
+                        if onlyKey then ambiguous=true;break end
+                        onlyKey=mobKey
+                    end
+                end
+                if onlyKey and not ambiguous then
+                    local detail=ChalkBox_DropRead(id,key,onlyKey)
+                    if detail and detail.attempts then
+                        sourceName=detail.sourceName
+                        hits,attempts,rate=
+                            detail.hits,detail.attempts,detail.rate
+                    end
+                end
+            end
             result[#result+1]={
                 id=id,name=item.name,
                 quantity=counts.quantity or 0,
                 windows=counts.windows or 0,
-                rate=item.rate,attempts=item.attempts,low=item.low,
-                high=item.high,sourceName=item.sourceName}
+                hits=hits,rate=rate,attempts=attempts,
+                low=item.low,high=item.high,
+                sourceName=sourceName,
+                multipleSources=not sourceName,
+            }
         end
     end
     table.sort(result,function(a,b)

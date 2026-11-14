@@ -100,12 +100,21 @@ _G.C_Map={
 _G.ChalkBox_DropOptions=function()
     return {mapButton=true,enabled=true,areas=3}
 end
+local manyZones=false
 _G.ChalkBox_DropVisitedAreas=function(kind)
     if kind=="outdoor" then
-        return {{key="z:1436",kind="outdoor",mapID=1436,name="Westfall",
+        local list={{key="z:1436",kind="outdoor",mapID=1436,name="Westfall",
             items=2,windows=12},
             {key="z:1437",kind="outdoor",mapID=1437,
                 name="Redridge Mountains",items=1,windows=2}}
+        if manyZones then
+            for i=1,14 do
+                list[#list+1]={key="z:"..(2000+i),kind="outdoor",
+                    mapID=2000+i,name=("Sample Zone %02d"):format(i),
+                    items=i,windows=i*2}
+            end
+        end
+        return list
     end
     return {{key="d:36:1",kind="dungeon",name="The Deadmines",
         entranceZoneID=1436,items=1,windows=5}}
@@ -129,7 +138,8 @@ _G.ChalkBox_DropAreaItems=function(key,source,search)
     local list
     if key=="z:1436" then
         list=source and {{id="100",name="Linen Cloth",quantity=8,
-            windows=4,attempts=12,rate=33.333}}
+            windows=4,hits=4,attempts=12,rate=33.333,
+            sourceName="Defias Bandit"}}
         or {{id="100",name="Linen Cloth",quantity=8,windows=4},
             {id="200",name="Bone",quantity=2,windows=2}}
     elseif key=="d:36:1" then list={{id="500",name="Dungeon Trinket",
@@ -194,6 +204,31 @@ local function ChooseMenu(pattern)
     if entry and entry.action then entry.action();return true end
     error("Missing menu choice "..pattern)
 end
+local function OpenArea()
+    local button=ClickButton("▾")
+    local popup=Find("ChalkBoxDiscoveriesAreaPicker")
+    assert(popup and popup:IsShown(),"area field must open a visible dropdown")
+    assert(popup.parent==Find("ChalkBoxMapDiscoveries"),
+        "the zone picker must overlay the existing Discoveries journal")
+    return popup
+end
+local function SelectArea(text)
+    local popup=Find("ChalkBoxDiscoveriesAreaPicker")
+    assert(popup and popup:IsShown(),"open area dropdown before selecting")
+    local pages=tonumber((popup.pageLabel.text or ""):match("/ (%d+)")) or 1
+    for pageIndex=1,pages do
+        for _,row in ipairs(popup.rows) do
+            if row.shown and row.label.text and
+                row.label.text:find(text,1,true) and row.OnClick then
+                row.OnClick(row,"LeftButton")
+                assert(not popup:IsShown(),"zone selection closes the dropdown")
+                return true
+            end
+        end
+        popup.next.OnClick(popup.next,"LeftButton")
+    end
+    error("Missing direct area option: "..text)
+end
 assert(loadfile("MapDiscoveries.lua"))("ChalkBox")
 local button=Find("ChalkBoxMapDiscoveriesButton")
 assert(button and button.parent==WorldMapFrame and button.shown,
@@ -248,23 +283,23 @@ for _,f in ipairs(frames) do
 end
 assert(filterCount==3,"visible Area/Source/Sort dropdown selectors")
 local areaMenu=ChalkBox_DiscoveriesDropdownItems("area")
-assert(#areaMenu==4 and areaMenu[1].text:find("Follow world map",1,true),
-    "area dropdown combines map following with every recorded location")
-assert(areaMenu[3].text:find("Outdoor zones (2)",1,true) and
-    areaMenu[4].text:find("Dungeons (1)",1,true) and
-    #areaMenu[3].children==2 and #areaMenu[4].children==1,
-    "locations are grouped by type, not restricted to the current tab")
-assert(areaMenu[3].children[1].text:find("Redridge",1,true) and
-    areaMenu[3].children[2].text:find("Westfall",1,true),
-    "recorded outdoor zones are presented alphabetically")
+assert(#areaMenu==6 and areaMenu[1].text:find("Follow world map",1,true),
+    "area dropdown includes map sync and every recorded location directly")
+assert(areaMenu[2].text:find("OUTDOOR ZONES (2)",1,true) and
+    areaMenu[5].text:find("DUNGEONS (1)",1,true),
+    "zones and dungeons have readable section headings")
+assert(areaMenu[3].text:find("Redridge",1,true) and
+    areaMenu[4].text:find("Westfall",1,true) and
+    areaMenu[6].text:find("Deadmines",1,true),
+    "all recorded locations can be selected without nested submenus")
 assert(ChalkBox_DiscoveriesBrowserStatus().followMap,
     "fresh characters continue following the current world map")
 assert(ChalkBoxZoneDB.mapDiscoveryUI.followMap==nil,
     "opening the journal does not mutate original follow-map defaults")
 assert(#ChalkBox_DiscoveriesDropdownItems("source")>=3)
 assert(#ChalkBox_DiscoveriesDropdownItems("sort")==5)
-ClickButton("Westfall")
-ChooseMenu("Redridge Mountains")
+OpenArea()
+SelectArea("Redridge Mountains")
 local browser=ChalkBox_DiscoveriesBrowserStatus()
 assert(not browser.followMap and browser.mode=="outdoor"
     and browser.selectedArea=="z:1437",
@@ -282,13 +317,23 @@ journal:Hide()
 assert(ChalkBox_OpenMapDiscoveries())
 assert(ChalkBox_DiscoveriesBrowserStatus().selectedArea=="z:1437",
     "manual browse choice survives closing and reopening")
-ClickButton("Redridge Mountains")
-ChooseMenu("Westfall")
-ClickButton("All sources")
+OpenArea()
+SelectArea("Westfall")
+ClickButton("All creatures")
 ChooseMenu("Defias Bandit")
 local selected=ChalkBox_DiscoveriesDropdownItems("source")
 assert(selected[3].text:find("Defias Bandit",1,true),
     "known-creature source can be selected in a genuine menu")
+local sawDropRate,sawDrops,sawSourceStats=false,false,false
+for _,font in ipairs(fonts) do
+    if font.text=="DROPS" then sawDrops=true end
+    if font.text=="33.3%" then sawDropRate=true end
+    if font.text and font.text:find("4 drops / 12 loots",1,true) then
+        sawSourceStats=true
+    end
+end
+assert(sawDrops and sawDropRate and sawSourceStats,
+    "source-filtered items show drops, looted attempts and an observed percentage")
 ClickButton("Quantity")
 ChooseMenu("Item name")
 local inputs={}
@@ -301,8 +346,8 @@ assert(#inputs==1)
 inputs[1]:SetText("Linen")
 ClickButton("Clear")
 -- Choose a dungeon directly from the same area dropdown without switching tabs.
-ClickButton("Westfall")
-ChooseMenu("The Deadmines")
+OpenArea()
+SelectArea("The Deadmines")
 browser=ChalkBox_DiscoveriesBrowserStatus()
 assert(browser.mode=="dungeon" and browser.selectedArea=="d:36:1"
     and not browser.followMap,
@@ -323,8 +368,8 @@ assert(browser.followMap and browser.mode=="outdoor" and
     "map sync immediately returns to the zone on Blizzard's map")
 assert(ChalkBoxZoneDB.mapDiscoveryUI.browseArea=="d:36:1",
     "syncing does not destroy last deliberately browsed location")
-ClickButton("Redridge Mountains")
-ChooseMenu("Follow world map")
+OpenArea()
+SelectArea("Follow world map")
 assert(ChalkBox_DiscoveriesBrowserStatus().followMap,
     "the area dropdown can explicitly enable following the world map")
 viewed=1436
@@ -339,24 +384,37 @@ assert(not browser.followMap and browser.mode=="dungeon" and
 -- Switching to the Outdoor tab still works without replacing the main layout.
 ClickButton("Dungeons")
 ClickButton("Outdoor")
--- Legacy EasyMenu must expose the same nested navigation without
--- changing the saved selection when only opening the menu.
+-- The area list is a real dropdown and must not depend on whether
+-- Forever ships either of its native transient menu APIs.
 local modernMenu=MenuUtil
-local legacyChoices
 _G.MenuUtil=nil
-_G.EasyMenu=function(items)
-    legacyChoices=items
-    return true
-end
-ClickButton("Westfall")
-assert(legacyChoices and legacyChoices[1].text:find("Follow world map",1,true)
-    and legacyChoices[3].hasArrow and legacyChoices[4].hasArrow
-    and #legacyChoices[3].menuList==2 and #legacyChoices[4].menuList==1,
-    "older clients receive the same grouped zone/dungeon browser")
-assert(legacyChoices[3].menuList[1].text:find("Redridge",1,true),
-    "legacy dropdown orders saved zones consistently")
-_G.MenuUtil=modernMenu
 _G.EasyMenu=nil
+local direct=OpenArea()
+assert(direct.rows[1].label.text:find("Follow world map",1,true) and
+    direct.rows[3].label.text:find("Redridge",1,true) and
+    direct.rows[4].label.text:find("Westfall",1,true),
+    "actual visible rows expose zone names immediately")
+SelectArea("Westfall")
+_G.MenuUtil=modernMenu
+-- Many known zones need more than nine visible rows. A paginated
+-- picker still lets the player choose any saved zone directly.
+manyZones=true
+local popup=OpenArea()
+assert(popup.pageLabel.text=="Page 1 / 3",
+    "large observed zone libraries have a visible page indicator")
+popup.OnMouseWheel(popup,-1)
+assert(popup.pageLabel.text=="Page 2 / 3",
+    "mouse wheel scrolls the zone selection")
+popup.OnMouseWheel(popup,1)
+assert(popup.pageLabel.text=="Page 1 / 3",
+    "mouse wheel can move backward")
+popup.next.OnClick(popup.next,"LeftButton")
+SelectArea("Sample Zone 14")
+assert(ChalkBox_DiscoveriesBrowserStatus().selectedArea=="z:2014",
+    "a later-page location is actually selectable")
+manyZones=false
+OpenArea()
+SelectArea("Westfall")
 -- Position persistence per character.
 assert(button.OnDragStart and button.OnDragStop)
 button.OnDragStart(button)
@@ -373,8 +431,8 @@ assert(not ChalkBox_MapDiscoveriesButtonPosition().custom and
     "reset puts button back on default map position")
 -- Player's manual selection survives not only reopening but a new addon
 -- instance (the same persisted per-character SavedVariables after relog).
-ClickButton("Westfall")
-ChooseMenu("Redridge Mountains")
+OpenArea()
+SelectArea("Redridge Mountains")
 local savedBrowse=ChalkBoxZoneDB.mapDiscoveryUI
 assert(savedBrowse.followMap==false and savedBrowse.browseArea=="z:1437")
 assert(loadfile("MapDiscoveries.lua"))("ChalkBox")
@@ -383,4 +441,4 @@ local restored=ChalkBox_DiscoveriesBrowserStatus()
 assert(not restored.followMap and restored.mode=="outdoor" and
     restored.selectedArea=="z:1437",
     "fresh browser instance restores the per-character manual zone")
-print("PASS: Discoveries readable layout, native dropdowns, source/zone/dungeon filtering, live search, sort, persisted button drag and reset")
+print("PASS: Discoveries direct zone picker, real visible rows without native menu APIs, source filter, paging, sync, saved selection and map button")

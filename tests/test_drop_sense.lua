@@ -70,8 +70,17 @@ assert(detail and detail.attempts==1 and detail.hits==1 and
     "only named unambiguous creature opportunities have observed frequency")
 local zone=ChalkBox_DropMapData(1436)
 assert(zone.zone.name=="Westfall" and #zone.dungeons==0)
-assert(#ChalkBox_DropAreaItems("z:1436")==2,
+local firstAreaItems=ChalkBox_DropAreaItems("z:1436")
+assert(#firstAreaItems==2,
     "zone lists every observed item without a manually selected watchlist")
+local clothSummary
+for _,item in ipairs(firstAreaItems) do
+    if item.id=="100" then clothSummary=item end
+end
+assert(clothSummary and clothSummary.hits==1 and
+    clothSummary.attempts==1 and clothSummary.rate==100 and
+    clothSummary.sourceName=="Defias Bandit",
+    "with one verified mob source, show drops / loots and rate immediately")
 assert(#ChalkBox_DropSources("z:1436")==1)
 handlers.event(nil,"LOOT_CLOSED")
 now=110;handlers.event(nil,"LOOT_OPENED")
@@ -88,11 +97,23 @@ assert(detail.attempts==2 and detail.hits==1 and detail.rate==50,
 handlers.event(nil,"LOOT_CLOSED")
 now=500
 guid="Creature-0-1-22-333-99999-00002C"
-links={"|Hitem:300:0|h[Uncommon Cloak]|h"}
+links={"|Hitem:300:0|h[Uncommon Cloak]|h",
+    "|Hitem:100:0|h[Linen Cloth]|h"}
 handlers.event(nil,"LOOT_OPENED")
 detail=ChalkBox_DropRead(100,"z:1436","c:12345")
 assert(detail.attempts==2 and detail.rate==50,
     "another creature type cannot pollute the Defias Bandit denominator")
+local ambiguousArea=ChalkBox_DropAreaItems("z:1436")
+local ambiguousCloth
+for _,item in ipairs(ambiguousArea) do
+    if item.id=="100" then ambiguousCloth=item end
+end
+assert(ambiguousCloth and ambiguousCloth.rate==nil,
+    "two identified mob types never produce a fake combined drop rate")
+local banditCloth=ChalkBox_DropAreaItems("z:1436","c:12345")
+assert(#banditCloth>=1 and banditCloth[1].rate==50 and
+    banditCloth[1].hits==1 and banditCloth[1].attempts==2,
+    "specific creature filter reports exactly its own tracked 1/2 = 50%")
 handlers.event(nil,"LOOT_CLOSED")
 now=550
 overrideSources={
