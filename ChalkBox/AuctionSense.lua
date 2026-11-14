@@ -402,12 +402,13 @@ local function StepBrowse(_,elapsed)
     elapsed=type(elapsed)=="number" and elapsed or 0
     scan.elapsed=scan.elapsed+elapsed
     scan.poll=(scan.poll or 0)+elapsed
-    if not scan.received then
-        if scan.elapsed>=12 then
-            Abort("No browse response in 12s. The AH may be busy; try again.")
-        end
+    -- The server can fire a browse event with no actual rows. Empty
+    -- callbacks are not progress; fail quickly and preserve the old market.
+    if (not scan.received or scan.seen==0) and scan.elapsed>=12 then
+        Abort("No browse data in 12s. The AH may be busy; try again.")
         return
     end
+    if not scan.received then return end
     if scan.elapsed>=65 then
         Abort("Browse timed out while loading pages. Previous prices kept.")
         return

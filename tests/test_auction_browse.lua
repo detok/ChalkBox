@@ -79,7 +79,7 @@ clock=clock+1
 assert(ChalkBox_AuctionScan())
 Tick(13)
 assert(not ChalkBox_AuctionStatus().busy and
-    ChalkBox_AuctionStatus().error:find("No browse response",1,true),
+    ChalkBox_AuctionStatus().error:find("No browse data",1,true),
     "unanswered browse scan fails in 12 seconds with a useful message")
 assert(ChalkBox_AuctionPrice(2589).low==1250,
     "failed browse never deletes the last good market")
