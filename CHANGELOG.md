@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.7 — Bar layering and honest bag controls (test release)
+- Keep the original full-width 18px Bar and 2.1.6 safe top-UI spacing, but render the Bar at BACKGROUND strata, level 1. Blizzard portraits, resting ZZZs, buffs and native HUD art can draw over the strip.
+- Remove the disabled, nonfunctional bag-offset slider and its overlapping scale labels from The Bar settings. Replace it with clear native-bag layout status; no pretend controls or irrelevant reset button.
+- Clarify that Blizzard's separate bag windows stack upward when several bags are opened. ChalkBox's protected container offset remains suspended to avoid blocked item-use actions.
+- Preserve all existing saved data, AuctionSense browsing, native DPS reports, Emota combat restrictions, top-UI layout, and bag-button protections.
+- Add regressions for Bar frame strata and the absence of any bag slider on The Bar settings page.
+
+
 ## 2.1.6 — Auction and Bar layout repair (test release)
 - AuctionSense: dynamically show 1–7 rows per page based on actual native Auction House height; anchor search/paging controls and disclaimer within the body above Blizzard's footer.
 - Rename the fourth Auction House tab to the shorter **Market** so the native tab strip fits cleanly. The panel still identifies itself as AuctionSense.
