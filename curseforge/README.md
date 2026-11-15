@@ -1,23 +1,36 @@
-# ChalkBox — CurseForge publishing files
+# ChalkBox — CurseForge publishing assets
 
-This folder contains the listing text, original brand artwork, and submission checklist for ChalkBox. **The game addon remains a separate release ZIP.**
+**Current playable release: 2.2.10 · WoW Forever**
 
-## Start here
+This folder is for publishing **the separate addon ZIP and supporting listing materials**. It does not replace the installed ChalkBox addon, and it must not be distributed as a game-addon bundle.
 
-- **[Publishing checklist](launch-kit/START_HERE.md)** — what to upload, where it belongs, and what to test first.
-- **[Project description](copy/PROJECT_DESCRIPTION.md)** — the main CurseForge page text.
-- **[Project fields](copy/PROJECT_FIELDS.md)** — title, summary, creator credit, categories and version notes.
-- **[Current changelog](copy/FILE_CHANGELOG_2.1.1.md)** — changes for this build.
-- **[Artwork](artwork/)** — six SVG master files, available in PNG form through the separate release media kit.
-- **[Real in-game screenshots](screenshots/README.md)** — ten cropped WoW Forever captures ready for the gallery.
-- **[Screenshot wishlist](artwork/SCREENSHOT_PLAN.md)** — optional future views.
+## Which file is which?
 
-GitHub Releases includes **ChalkBox-2.1.1.zip** (the playable addon) and **ChalkBox-CurseForge-Media-2.1.1.zip** (brand art, PNGs, ten genuine gameplay JPGs and listing files). Do not confuse the two.
+| Artifact | Use |
+| --- | --- |
+| [ChalkBox-2.2.10.zip](https://github.com/detok/ChalkBox/releases/download/v2.2.10/ChalkBox-2.2.10.zip) | **Actual game addon**; one `ChalkBox/` directory |
+| [ChalkBox-CurseForge-Media-2.2.10.zip](https://github.com/detok/ChalkBox/releases/download/v2.2.10/ChalkBox-CurseForge-Media-2.2.10.zip) | **Publisher media kit only**; PNG/SVG art, authentic game JPGs, listing copy and checklists |
 
-The media kit includes ten cropped in-game screenshots under `Screenshots/`, separate from the promotional artwork. It also exports the original artwork to PNG and retains all six editable SVG designs. The icon is 512×512 pixels. The two larger illustrated pieces are labeled *Editorial-Only*; they're not actual in-game UI screenshots.
+Do not upload the media ZIP as the addon, or the automatic GitHub source ZIP as a game file.
 
-## Before submitting
+## Publisher's starting point
 
-ChalkBox targets WoW Forever. Verify that the version and game flavor you intend to select on CurseForge is supported by the site. Don't claim untested Retail or Classic Era compatibility, and don't link to a CurseForge project until it's been created and approved.
+- [Start here](launch-kit/START_HERE.md): mapping media assets to actual submission fields
+- [Current project description](copy/PROJECT_DESCRIPTION.md) and [short copy](copy/SHORT_COPY.md)
+- [Current file changelog](copy/FILE_CHANGELOG_CURRENT.md), not historical `FILE_CHANGELOG_*.md` archives
+- [Project fields](copy/PROJECT_FIELDS.md) and [publish checklist](submission/PUBLISH_CHECKLIST.md)
+- [FAQ](copy/FAQ.md), [command reference](copy/COMMANDS.md) and [proof/limitations](copy/FEATURE_PROOF.md)
+- [Artwork master files](artwork/) and [genuine client screenshots](screenshots/README.md)
+- [Official in-repo release process](../docs/RELEASE_PROCESS.md) and [maintainer QA](../docs/MAINTAINER_RUNBOOK.md)
 
-The author byline is **Detok Whitemaine**. The source and bug tracker are at https://github.com/detok/ChalkBox. The code is MIT-licensed, with bundled third-party notices.
+The media kit includes six original SVG design files, nine rendered PNGs and ten genuine captured WoW Forever JPGs. **Editorial-Only** illustrations are *not* gameplay screenshots. Some existing game captures depict earlier UI revisions; review them before asserting that a current release looks exactly the same.
+
+## Compatibility and credits
+
+ChalkBox targets **WoW Forever**. Verify the live CurseForge portal's supported version/flavor options before uploading a game file. Do not label an unsupported Retro/Classic/Retail selection as verified simply to pass the form.
+
+**Created and maintained by Detok Whitemaine.** Original source under [MIT](../LICENSE); bundled third-party licenses remain in the runtime library directories. [Source](https://github.com/detok/ChalkBox) · [Issues](https://github.com/detok/ChalkBox/issues). Independent community project, not endorsed by Blizzard.
+
+## Keep the kit current
+
+On each new runtime release, update `copy/FILE_CHANGELOG_CURRENT.md` with a heading matching both TOC versions and revise the public listing copy when features change. `scripts/test_curseforge_kit.py` checks the packaged current changelog's version. It is safe to retain historical per-version changelog files as archives, but **never use them as the current upload**.
