@@ -761,14 +761,13 @@ local function MakeQuestNavigation()
             return st and st.locked
         end,
         function(on) Run(on and "lock" or "unlock") end)
-    Toggle(panel,"Use sharp HD arrow (instead of classic)",
-        "Same north-pointing shape, rendered at 256px.",
-        -290,
-        function()
-            local st=ChalkBox_NavStatus and ChalkBox_NavStatus()
-            return st and st.arrowStyle=="hd"
-        end,
-        function(on) Run(on and "hd" or "classic") end)
+    Label(panel,"Arrow appearance","GameFontNormal",28,-292,460)
+    Button(panel,"Original WoW",27,-315,153,
+        function() Run("original") end)
+    Button(panel,"Blizzard Navigation",189,-315,169,
+        function() Run("classic") end)
+    Button(panel,"ChalkBox HD",367,-315,148,
+        function() Run("hd") end)
     Button(panel,"Previous Quest",27,-352,158,
         function() Run("prev") end)
     Button(panel,"Reset Position",196,-352,142,
@@ -781,9 +780,11 @@ local function MakeQuestNavigation()
     panel:AddRefresh(function()
         local st=ChalkBox_NavStatus and ChalkBox_NavStatus()
         if not st then info:SetText("Navigation not loaded.");return end
+        local style=st.arrowStyle=="original" and "Original WoW" or
+            (st.arrowStyle=="classic" and "Blizzard" or "HD")
         info:SetText((st.enabled and "ON" or "OFF").."  |  "..
             (st.title or "No quest destination").."  |  "..
-            tostring(st.candidates).." known waypoints")
+            style.."  |  "..tostring(st.candidates).." waypoints")
     end)
     return panel
 end
