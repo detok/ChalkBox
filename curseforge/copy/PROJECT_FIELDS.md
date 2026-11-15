@@ -1,6 +1,6 @@
 # ChalkBox — CurseForge project fields
 
-**Publication reference for playable ChalkBox 2.2.17 (GitHub prerelease).** Always verify the current official publisher form and the actual compatible WoW Forever game flavor before uploading.
+**Publication reference for ChalkBox 2.2.18 (draft, not published). Latest published playable prerelease remains 2.2.17.** Always verify the current official publisher form and the actual compatible WoW Forever game flavor before uploading.
 
 | Field | Value or guidance |
 | --- | --- |
