@@ -1,6 +1,6 @@
 # ChalkBox architecture and safety boundaries
 
-**Maintainer reference · addon version 2.2.11**
+**Maintainer reference · addon version 2.2.12**
 
 ChalkBox is **one Lua 5.1 addon** for WoW Forever. No separate addon, backend process, runtime HTTP client or outside service is required. The code runs inside the game client under native Blizzard event and UI constraints. All tests simulate supported events/APIs, but in-client testing remains necessary.
 
@@ -20,6 +20,7 @@ ChalkBox is **one Lua 5.1 addon** for WoW Forever. No separate addon, backend pr
 | Profession evidence | `ProfessionSense.lua`, `RecipeAdvisor.lua`, `Libs/LibProfessionDB-1.0/` | Learned recipes versus possible catalog uses |
 | Loot tracking / journal | `DropSense.lua`, `MapDiscoveries.lua` | Loot-window observations, source/area aggregation, outdoor position samples and native World Map sidecar |
 | Market / DE | `AuctionSense.lua`, `AuctionSenseUI.lua`, `AuctionInsights.lua`, `DisenchantSense.lua` | Explicit AH read scans, realm/faction snapshots, bag/sales insights and modeled DE outcomes |
+| Quest navigation | `QuestNavigator.lua` | Standalone, optional, read-only waypoint/facing arrow; per-character settings, no quest-watch / user-map-pin writes |
 | Quests | `QuestSense.lua` | Native watch-list reconciliation, conservative zone and instance matching, saved manual watches |
 | Macro wizard | `MacroForge.lua`, `MacroForgeUI.lua` | Learned spell validation and macro generation; presentation and explicit copy/install |
 | HUD / screen | `TrailBar.lua`, `TrailBarStats.lua`, `TrailBarLayout.lua`, `ScreenLayout.lua`, `BagLayout.lua` | Stats, per-character layout, safe native top chrome shift, bounded separate bag offset |
