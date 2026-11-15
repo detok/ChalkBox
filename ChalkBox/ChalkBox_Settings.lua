@@ -66,13 +66,8 @@ local function Panel(titleText, subtitle)
     panel:SetSize(560, 450)
     panel.name = titleText
     panel:Hide()
-    -- ChalkBox-owned reading surface: the native options window can be
-    -- translucent over bright 3D scenery and player names.
-    -- Keep this behind all controls without changing Blizzard's frame.
-    local surface=panel:CreateTexture(nil,"BACKGROUND")
-    surface:SetPoint("TOPLEFT",panel,"TOPLEFT",12,-98)
-    surface:SetPoint("BOTTOMRIGHT",panel,"BOTTOMRIGHT",-12,8)
-    surface:SetColorTexture(0.02,0.02,0.025,0.88)
+    -- Blizzard owns the native Settings canvas and its transparency.
+    -- Never paint a competing black rectangle behind this module page.
     Label(panel, titleText, "GameFontNormalHuge", 24, -22, 395)
     Label(panel, subtitle, "GameFontHighlightSmall", 24, -59, 505)
     local line = panel:CreateTexture(nil, "ARTWORK")
