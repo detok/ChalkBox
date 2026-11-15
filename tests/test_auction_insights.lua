@@ -1,5 +1,5 @@
 -- Market intelligence: no item use, auction posting, or inbox mutation.
-local events={},{}
+local events={}
 local frames={}
 _G.CreateFrame=function()
     local f={scripts={}}
