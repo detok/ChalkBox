@@ -1,31 +1,29 @@
-# ChalkBox — short copy
+# ChalkBox — short listing copy (2.2.10)
 
 **Short description**
 
-A WoW Forever addon for loot discoveries, macros, quests, camping, combat stats and a customizable HUD.
+One WoW Forever addon for personal loot discoveries, dungeon-aware quest tracking, macros, auction insights and a customizable HUD.
 
 **Alternate headline**
 
-Know what dropped. Build the macro. Keep playing.
+Know what dropped. Find your quests. Build your buttons. Keep playing.
 
-**GitHub About**
+**Suggested GitHub About**
 
-Quality-of-life tools for WoW Forever: MacroForge, DropSense, LootSense, The Bar, QuestSense, CampSense and session history.
+Quality-of-life tools for WoW Forever: loot discoveries, quests, MacroForge, auctions and a compact HUD.
 
-**Release announcement**
+**Current release announcement**
 
-ChalkBox 2.1.1 moves AuctionSense directly into Blizzard's Auction House tab row and repairs the scanner. Scan Market uses the Forever browse-results API for lowest asking prices and listed quantity; optional Full listings uses the account-throttled replicate API. Unanswered scans now report errors rather than waiting forever, and missing price statistics are never invented. The rest of ChalkBox stays unchanged.
+ChalkBox 2.2.10 makes Smart QuestSense dungeon-aware: inside a recognized party dungeon, it shows only accepted quests confirmed for that specific instance and restores prior manual watches when you exit. If the client cannot verify the match, it preserves the tracker rather than guessing. The release retains loot-location observations, the redesigned wood-framed MacroForge/Discoveries UI, AuctionSense, the Bar and the rest of ChalkBox.
 
-**Screenshot captions (for actual in-game images only)**
+**Suggested captions for actual gameplay captures**
 
-- Map Discoveries: Items observed during your own adventures, sorted by zone and source.
-- MacroForge: Choose learned abilities and build a macro you can edit or copy.
-- The Bar: Configure a compact row of the stats that matter to you.
-- Session Journal: Revisit recorded XP, quests, loot and gold changes.
-- Adventure Prep: Short reminders for supplies and supported camping buffs.
+- Discoveries: Your personally observed loot, organized by zone and creature, with optional recent outdoor loot coordinates.
+- MacroForge: Build and save macros from your known spells, with an explicit copy/install step.
+- The Bar: Arrange a compact row of XP, inventory, gear, gold and latency.
+- AuctionSense: Read observed asking prices after an explicit market scan.
+- QuestSense: Manage your native quest tracker, including verified dungeon watches.
 
-**Creator credit**
+**Creator credit:** ChalkBox by Detok Whitemaine.
 
-ChalkBox by Detok Whitemaine.
-
-Don't label generated concept graphics as screenshots. The artwork folder has promotional images, but the game gallery should use actual Forever captures.
+Use only genuine Forever client captures as screenshots. The art folder includes *editorial illustrations* that must not be labeled as game UI.
