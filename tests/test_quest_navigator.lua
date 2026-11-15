@@ -147,6 +147,8 @@ _G.CreateFrame=function(kind,name,parent,template)
     function f:CreateTexture()
         local t={shown=true}
         function t:SetTexture(v) self.texture=v end
+        function t:SetAtlas(v) self.atlas=v end
+        function t:GetAtlas() return self.atlas end
         function t:SetAllPoints() self.all=true end
         function t:SetColorTexture(...) self.color={...} end
         function t:SetPoint(...) self.point={...} end
@@ -177,6 +179,8 @@ local nav=frames.ChalkBoxQuestNavigator
 assert(nav and nav:IsShown() and nav.movable and nav.clamped
     and nav.w==64 and nav.h==64,
     "navigation is a movable, uncluttered 64px arrow hit area")
+assert(nav.arrow.atlas=="Navigation-Tracked-Arrow",
+    "native north-up arrow atlas avoids the minimap glyph orientation")
 assert(nav.backdrop==nil and nav.back==nil and not nav.title
     and not nav.distance and not nav.mode and not nav.children[1],
     "floating compass has no box, labels, border or visible action buttons")
@@ -286,6 +290,14 @@ assert(ChalkBox_NavStatus().targetType=="corpse" and
     "while ghosted, corpse west of the player overrides all quests")
 assert(nav.readout:find("yd",1,true),
     "corpse arrow uses genuine position and distance when available")
+-- Parent-map fallback finds the same corpse while ghosted on a
+-- local minimap/subzone that does not itself expose the death marker.
+currentMap=5
+ChalkBox_NavCommand("status")
+assert(ChalkBox_NavStatus().targetType=="corpse" and
+    CloseAngle(nav.arrow.angle,math.pi/2),
+    "corpse marker is retrieved from a parent map when necessary")
+currentMap=1
 corpseVisible=false
 ChalkBox_NavCommand("status")
 assert(nav.readout=="Corpse position unavailable" and
