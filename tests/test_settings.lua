@@ -345,7 +345,8 @@ assert(loadfile("ChalkBox_Settings.lua"))("ChalkBox")
 local loader=frames[#frames]
 assert(loader.event=="PLAYER_LOGIN","must register settings when the client is ready")
 loader.script.OnEvent(loader,"PLAYER_LOGIN")
-assert(#registered==20,"native pages include AuctionSense and all original categories")
+assert(#registered==21,
+    "native settings include the new QuestSense Navigation child page")
 for _,texture in ipairs(textures) do
     assert(not (texture.color and texture.color[1]==0.02
         and texture.color[2]==0.02 and texture.color[3]==0.025
@@ -363,6 +364,9 @@ assert(categories["LootSense Appearance"].parent==categories["LootSense"]
     and categories["Toast Appearance"].parent==categories["Adventure Prep"]
     and categories["Emota Race Behavior"].parent==categories["Emota"],
     "nested module pages share their parent's native settings hierarchy")
+assert(categories["QuestSense Navigation"] and
+    categories["QuestSense Navigation"].parent==categories["QuestSense"],
+    "navigation is an optional child of QuestSense, not a second root addon")
 assert(categories["Global Appearance"].parent==categories.home
     and categories["Updates"].parent==categories.home,
     "standalone modules remain accessible directly below ChalkBox")
@@ -514,6 +518,14 @@ Control("15"):Click()
 assert(ChalkBoxZoneDB.limit==15,"autowatch limit can be selected from native options")
 Control("Tracking Diagnostics"):Click()
 assert(printed[#printed]=="quests status")
+Control("Navigation Arrow"):Click()
+assert(opened[#opened]==categories["QuestSense Navigation"].ID,
+    "QuestSense offers a direct link to its native Navigation settings page")
+categories["QuestSense Navigation"].panel:Show()
+assert(ControlIn("QuestSense Navigation","Auto: Tracked / Nearest")
+    and ControlIn("QuestSense Navigation","Next Quest")
+    and ControlIn("QuestSense Navigation","Hide"),
+    "navigator settings expose compact Auto / Next / Hide controls")
 local barChecks=FindCheckByParentTitle("The Bar")
 assert(#barChecks==4,
     "full-width Bar has its own top-chrome shift setting")
