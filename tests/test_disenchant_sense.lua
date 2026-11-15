@@ -207,22 +207,26 @@ local ranges={
     {5,15},{16,20},{21,25},{26,30},{31,35},
     {36,40},{41,45},{46,50},{51,55},{56,60},{61,99},
 }
+local epicRanges={
+    {40,45},{46,50},{51,55},{56,60},{61,99}
+}
 for _,class in ipairs({2,4}) do
     for _,quality in ipairs({2,3,4}) do
-        for i,range in ipairs(ranges) do
+        local correctRanges=quality==4 and epicRanges or ranges
+        for _,range in ipairs(correctRanges) do
             for _,lvl in ipairs(range) do
                 local row=ns.materials.Find(class,quality,lvl)
-                if quality==4 and lvl<40 then
-                    assert(row==nil,"no epic disenchant bracket below ilvl 40")
-                else
-                    assert(row and row[1]==range[1] and row[2]==range[2],
-                        "Forever reference bracket mismatch at "..class.."/"..quality.."/"..lvl)
-                    local sum=0
-                    for j=3,#row do sum=sum+row[j][1] end
-                    assert(sum==100,"all bracket outcomes must total 100 percent")
-                end
+                assert(row and row[1]==range[1] and row[2]==range[2],
+                    "Forever reference bracket mismatch at "..class.."/"..quality.."/"..lvl)
+                local sum=0
+                for j=3,#row do sum=sum+row[j][1] end
+                assert(sum==100,"all bracket outcomes must total 100 percent")
             end
+        end
+        if quality==4 then
+            assert(ns.materials.Find(class,quality,39)==nil,
+                "client disallows epic disenchant bracket below item level 40")
         end
     end
 end
-print("PASS: 55 client quality/class brackets, flags and special loot, Forever level/rarity boundaries, Classic odds, item-level API, partial/stale/mixed price safety, tooltip and Market")
+print("PASS: 54 client quality/class brackets, flags and special loot, Forever level/rarity boundaries, Classic odds, item-level API, partial/stale/mixed price safety, tooltip and Market")
