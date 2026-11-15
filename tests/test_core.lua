@@ -80,6 +80,18 @@ assert(loadfile("Core.lua"))()
 assert(type(onTooltip)=="function")
 eventCallback(nil,"PLAYER_ENTERING_WORLD")
 eventCallback(nil,"MERCHANT_SHOW")
+local matching=ChalkBox_QuestItemDetails("Flask of Oil")
+assert(type(matching)=="table" and #matching==1 and
+    matching[1].title=="Keeper of the Flame" and
+    matching[1].id==345 and
+    matching[1].have==1 and matching[1].required==5 and
+    not matching[1].complete,
+    "core already knows quest name, quest ID and exact objective progress")
+matching[1].title="NOT THE QUEST NAME"
+assert(ChalkBox_QuestItemDetails("Flask of Oil")[1].title==
+    "Keeper of the Flame","quest details are returned as safe detached copies")
+assert(ChalkBox_QuestItemDetails("Not an objective")==nil,
+    "unknown items do not receive guessed quest names")
 assert(overlay.shown==true,"merchant glow should appear for unfulfilled quest item")
 assert(edgeCount == 4 and markerText == "!","raised overlay needs four visible borders and quest marker")
 onTooltip(tooltip)
@@ -97,6 +109,10 @@ onTooltip(tooltip)
 assert(#tooltip.lines==0,"completed objective should not say BUY")
 tooltip.owner={};onTooltip(tooltip)
 assert(#tooltip.lines==1 and tooltip.lines[1]:find("DO NOT SELL"),"completed objective should preserve original reminder")
+matching=ChalkBox_QuestItemDetails("Flask of Oil")
+assert(matching[1].have==5 and matching[1].required==5 and
+    matching[1].complete,
+    "completed objectives retain their exact title/progress until quest turn-in")
 quests={{type="item",text="Flask of Oil: 0/5",numFulfilled=0,numRequired=5}}
 eventCallback(nil,"QUEST_LOG_UPDATE")
 button.id=11
@@ -112,4 +128,34 @@ hooks.MerchantFrame_Update()
 assert(overlay.shown==true,"vendor glow should return on buy tab")
 eventCallback(nil,"MERCHANT_CLOSED")
 assert(overlay.shown==false,"closing merchant should clear glow")
-print("PASS: visible raised buy border, strong BUY copy, buy/sell, quantities, no duplicate lines, pages, buyback, close")
+-- Two accepted quests may need the same item. Keep every real
+-- source quest, but never claim an unrelated quest needs the item.
+local byQuest={
+    [345]={{type="item",text="Flask of Oil: 2/5",
+        numFulfilled=2,numRequired=5,finished=false}},
+    [876]={{type="item",text="Flask of Oil: 3/3",
+        numFulfilled=3,numRequired=3,finished=true}},
+}
+C_QuestLog.GetNumQuestLogEntries=function() return 2 end
+C_QuestLog.GetInfo=function(index)
+    if index==1 then return {title="Keeper of the Flame",
+        questID=345,isHeader=false} end
+    return {title="Another Oil Quest",questID=876,isHeader=false}
+end
+C_QuestLog.GetQuestObjectives=function(id) return byQuest[id] end
+eventCallback(nil,"QUEST_LOG_UPDATE")
+matching=ChalkBox_QuestItemDetails("Flask of Oil")
+assert(#matching==2 and
+    matching[1].title=="Keeper of the Flame" and
+    matching[1].have==2 and
+    matching[2].title=="Another Oil Quest" and
+    matching[2].complete,
+    "both accepted quest titles are preserved, including complete objectives")
+assert(ChalkBox_IsTrackedQuestItem("Flask of Oil"),
+    "shared quest item remains protected while either quest is accepted")
+C_QuestLog.GetNumQuestLogEntries=function() return 0 end
+eventCallback(nil,"QUEST_REMOVED")
+assert(ChalkBox_QuestItemDetails("Flask of Oil")==nil
+    and not ChalkBox_IsTrackedQuestItem("Flask of Oil"),
+    "completed/removed quest cache is cleared rather than kept indefinitely")
+print("PASS: quest title/progress read-only API, shared quests, completed objectives, removed quests, vendor protections and native merchant border")

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.5 — Named quest items and a World Map-style Discoveries backdrop (test release)
+- **LootSense** now reuses Core.lua's existing accepted-quest item-objective cache to show the exact quest title and objective progress alongside the original KEEP protection. Shared items list all matching accepted quests. Completed objectives remain named and protected until quest removal or turn-in. No external quest database, new scans, or speculative ID-to-quest mappings.
+- Extend the existing Core read-only quest lookup without changing merchant BUY FOR QUEST / DO NOT SELL warnings, QuestSense watch logic, or user KEEP priorities. Nonmatching class-12 quest items remain protected but do not invent a quest name.
+- **Discoveries** now draws the same native `gamepad-mapquestlog-bgtile-2k` atlas as Forever's World Map beneath a legible dark glaze and existing accent border. Fallback to the previous solid surface when the atlas is absent. Preserve map ownership/docking, source selector, zone sync, data and positions.
+- No item actions, protected frame modifications, AH trading state changes, or saved-data migration. Add regressions for real quest title/progress, multiple quests, completed/removed objectives, tooltip duplication, native map art, theme failure and fallback.
+
+
 ## 2.2.4 — AuctionSense: My Items and Sales & Stats (test release)
 - Expand the existing **native Auction House → Market** pane with three compact subviews: **Prices** (existing scanner), **My Items** (read-only bag price comparison) and **Sales & Stats** (verified seller-invoice receipts). No additional windows or changes to protected Blizzard tabs.
 - My Items aggregates identical item IDs across carried bags, displays fresh low asks, item counts, estimated gross listing value, vendor alternatives and disenchant expected value from the existing DisenchantSense model. User KEEP, quest, and reported bound items get prominent protection; never auto-post, sell, buy or disenchant. Stale, mixed-variant and unpriced items get NO market values.

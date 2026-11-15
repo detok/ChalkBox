@@ -223,11 +223,62 @@ local function OnItemTooltip(tooltip)
     -- The meaningful classification IS the heading. Do not repeat
     -- brand/module names inside Blizzard's item tooltip.
     local label,details,cr,cg,cb=ChalkBox_LootPresentation(message)
+    -- Core.lua already cached the exact accepted-quest titles and
+    -- item objective progress. Reuse it; never guess a quest from the
+    -- item class or require a second quest-log scan on tooltip hover.
+    local quests
+    if label=="KEEP" and type(ChalkBox_QuestItemDetails)=="function" then
+        local ok,found=pcall(ChalkBox_QuestItemDetails,name)
+        if ok and type(found)=="table" then quests=found end
+    end
     if label and not HasLine(tooltip,label) then
         tooltip:AddLine(" ",1,1,1)
         tooltip:AddLine(label,cr or r,cg or g,cb or b,true)
+        if quests and #quests>0 and
+            message=="KEEP: accepted quest needs this" then
+            if #quests==1 and type(quests[1].title)=="string" then
+                details="Needed for: "..quests[1].title
+            else
+                details="Needed for "..#quests.." accepted quests"
+            end
+        end
         if details and details~="" then
             tooltip:AddLine(details,0.92,0.91,0.84,true)
+        end
+        if quests and #quests>0 then
+            if #quests==1 then
+                local q=quests[1]
+                if message~="KEEP: accepted quest needs this" and
+                    type(q.title)=="string" then
+                    tooltip:AddLine("Needed for: "..q.title,
+                        0.88,0.84,0.70,true)
+                end
+                if type(q.have)=="number" and
+                    type(q.required)=="number" and q.required>0 then
+                    local progress=("%d / %d collected"):format(
+                        q.have,q.required)
+                    if q.complete then
+                        progress=progress.."  ·  Objective complete"
+                    end
+                    tooltip:AddLine(progress,0.72,0.84,0.77,true)
+                end
+            else
+                -- Accepted-quest list length is bounded by the quest log.
+                -- Display each matching quest, including completed
+                -- objectives that should remain protected until turn-in.
+                for _,q in ipairs(quests) do
+                    if type(q.title)=="string" and q.title~="" then
+                        local line=q.title
+                        if type(q.have)=="number" and
+                            type(q.required)=="number" and q.required>0 then
+                            line=line..("  ·  %d/%d"):format(
+                                q.have,q.required)
+                        end
+                        if q.complete then line=line.."  ·  Complete" end
+                        tooltip:AddLine(line,0.83,0.85,0.78,true)
+                    end
+                end
+            end
         end
         if type(IsShiftKeyDown)=="function" and IsShiftKeyDown()
             and type(ChalkBox_RecipeDetails)=="function" then

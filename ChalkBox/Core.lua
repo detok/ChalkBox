@@ -52,7 +52,7 @@ local function RebuildQuestItems()
                         if name and name ~= "" then
                             local entry = fresh[name]
                             if not entry then
-                                entry = { protect = nil, purchase = nil }
+                                entry = { protect = nil, purchase = nil, quests = {} }
                                 fresh[name] = entry
                             end
                             -- Keep the original behavior: warn about accepted-quest items,
@@ -65,6 +65,22 @@ local function RebuildQuestItems()
                             if Safe(required) and type(required) == "number" and required > 0
                                 and Safe(have) and type(have) == "number" then
                                 unfinished = have < required and unfinished
+                            end
+                            -- Cache the actual active quest title and item
+                            -- objective progress for LootSense. No new quest
+                            -- queries are required when tooltips appear.
+                            -- Multiple accepted quests can need the same item.
+                            local found=false
+                            for _,q in ipairs(entry.quests) do
+                                if q.id==questID then found=true;break end
+                            end
+                            if not found then
+                                entry.quests[#entry.quests+1]={
+                                    title=title,id=questID,
+                                    have=type(have)=="number" and have or nil,
+                                    required=type(required)=="number" and required or nil,
+                                    complete=not unfinished,
+                                }
                             end
                             if unfinished then
                                 local remaining
@@ -88,6 +104,25 @@ end
 function ChalkBox_IsTrackedQuestItem(itemName)
     return Safe(itemName) and type(itemName) == "string"
         and questItems[itemName] ~= nil and questItems[itemName].protect ~= nil
+end
+
+-- Read-only evidence for LootSense; only use objectives the accepted quest
+-- log itself identifies as item collections. Do not invent a matching quest
+-- from item rarity, quest-class flags, or an external name database.
+function ChalkBox_QuestItemDetails(itemName)
+    if not Safe(itemName) or type(itemName)~="string" then return nil end
+    local entry=questItems[itemName]
+    if not entry or type(entry.quests)~="table" or #entry.quests==0 then
+        return nil
+    end
+    -- Return a detached copy so callers cannot mutate the live quest cache.
+    local found={}
+    for _,quest in ipairs(entry.quests) do
+        found[#found+1]={title=quest.title,id=quest.id,
+            have=quest.have,required=quest.required,
+            complete=quest.complete}
+    end
+    return found
 end
 
 local function GetVendorName(index)

@@ -20,6 +20,9 @@ local attachedTo,retries=nil,0
 local PANEL_W,PANEL_H=488,616
 local dockSide="unpositioned"
 local PER_PAGE=7
+-- The very same backdrop atlas Blizzard uses in Forever's World Map
+-- (Blizzard_WorldMap.xml). Artwork stays confined to this side panel.
+local MAP_TILE_ATLAS="gamepad-mapquestlog-bgtile-2k"
 
 local function Public(v)
     return v~=nil and (type(issecretvalue)~="function" or not issecretvalue(v))
@@ -111,10 +114,15 @@ local function Tint()
     if not panel then return end
     local r,g,b,a=Colors()
     local ar,ag,ab=Accent()
-    Paint(panel.back,r,g,b,a)
+    -- Keep the map's parchment/tiled background visible beneath a dark
+    -- glaze so the existing light-on-dark controls stay easy to read.
+    -- If a Forever build lacks the atlas, retain the original opaque body.
+    Paint(panel.back,r,g,b,panel.hasMapArt and 0.62 or a)
     Paint(panel.edge,ar,ag,ab,0.82)
     Paint(panel.stripe,ar,ag,ab,1)
     if type(panel.SetBackdropColor)=="function" then
+        -- This undercoat is below the map tile; the visible inner glaze
+        -- is handled separately by panel.back.
         panel:SetBackdropColor(r,g,b,a)
     end
     if type(panel.SetBackdropBorderColor)=="function" then
@@ -905,7 +913,7 @@ local function EnsurePanel()
     if type(f.SetToplevel)=="function" then f:SetToplevel(true) end
     if type(f.SetBackdrop)=="function" then
         f:SetBackdrop({
-            bgFile="Interface\\DialogFrame\\UI-DialogBox-Background",
+            bgFile="Interface\\Buttons\\WHITE8X8",
             edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border",
             tile=true,tileSize=32,edgeSize=24,
             insets={left=8,right=8,top=8,bottom=8},
@@ -918,7 +926,33 @@ local function EnsurePanel()
     -- even when the shared theme requests a fully transparent background.
     local edge=f:CreateTexture(nil,"BACKGROUND",nil,-1)
     edge:SetAllPoints(f);f.edge=edge
-    local bg=f:CreateTexture(nil,"BACKGROUND",nil,0)
+    -- Purely cosmetic map-style body, not a copy of the map canvas or a
+    -- replacement for its tiles. Reuse native Forever art and leave
+    -- WorldMapFrame's geometry, scroll container and map IDs untouched.
+    local art=f:CreateTexture(nil,"BACKGROUND",nil,0)
+    art:SetPoint("TOPLEFT",f,"TOPLEFT",2,-2)
+    art:SetPoint("BOTTOMRIGHT",f,"BOTTOMRIGHT",-2,2)
+    f.mapArt=art
+    local loaded=false
+    if type(art.SetAtlas)=="function" then
+        local ok,result=pcall(art.SetAtlas,art,MAP_TILE_ATLAS,false)
+        loaded=ok and result~=false
+    end
+    if loaded then
+        if type(art.SetHorizTile)=="function" then
+            art:SetHorizTile(true)
+        end
+        if type(art.SetVertTile)=="function" then
+            art:SetVertTile(true)
+        end
+        if type(art.SetVertexColor)=="function" then
+            art:SetVertexColor(1,1,1,1)
+        end
+    elseif type(art.Hide)=="function" then
+        art:Hide()
+    end
+    f.hasMapArt=loaded
+    local bg=f:CreateTexture(nil,"BACKGROUND",nil,1)
     bg:SetPoint("TOPLEFT",f,"TOPLEFT",2,-2)
     bg:SetPoint("BOTTOMRIGHT",f,"BOTTOMRIGHT",-2,2)
     f.back=bg

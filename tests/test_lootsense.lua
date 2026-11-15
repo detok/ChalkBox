@@ -17,6 +17,10 @@ _G.MerchantItem1ItemButton=vendorButton
 _G.MerchantFrame={IsShown=function() return merchantOpen end}
 _G.MERCHANT_ITEMS_PER_PAGE=10
 _G.ChalkBox_IsTrackedQuestItem=function(name) return activeQuest[name] == true end
+local questDetails={}
+_G.ChalkBox_QuestItemDetails=function(name)
+    return questDetails[name]
+end
 local hasLW=true
 _G.ChalkBox_ProfessionMatch=function(id,name,subtype,classID)
     if hasLW and name=="Light Leather" then return "Leatherworking","possible" end
@@ -154,14 +158,52 @@ assert(deCalls[#deCalls].protected,
     "personally protected items suppress DE trade recommendations")
 SlashCmdList.CHALKBOX("forget |Hitem:103:0|h[Green Trinket]|h")
 assert(Hover(104)=="","no generic equipment reviews")
-assert(Hover(106):find("KEEP",1,true),"quest class should stay protected")
+local unknownQuest=Hover(106)
+assert(unknownQuest:find("KEEP",1,true) and
+    not unknownQuest:find("Needed for:",1,true),
+    "quest-class items without matched accepted objectives get no fake quest")
 assert(Hover(107)=="","uncached quality should not produce sell advice")
 activeQuest["Broken Fang"]=true
-assert(Hover(101):find("KEEP",1,true),"active quest protection overrides grey quality")
+questDetails["Broken Fang"]={{title="Fangs for the Hunter",
+    id=1234,have=2,required=6,complete=false}}
+local questLoot=Hover(101)
+assert(questLoot:find("KEEP",1,true)
+    and questLoot:find("Needed for: Fangs for the Hunter",1,true)
+    and questLoot:find("2 / 6 collected",1,true),
+    "LootSense uses Core's actual accepted quest and objective progress")
+local beforeQuest=#tip.lines
+onTooltip(tip)
+assert(#tip.lines==beforeQuest,
+    "quest detail callback cannot duplicate entries on tooltip refresh")
+questDetails["Broken Fang"]={{title="Fangs for the Hunter",
+    id=1234,have=6,required=6,complete=true}}
+questLoot=Hover(101)
+assert(questLoot:find("6 / 6 collected",1,true)
+    and questLoot:find("Objective complete",1,true),
+    "completed objectives still identify quest until hand-in")
+questDetails["Broken Fang"]={
+    {title="Fangs for the Hunter",id=1234,have=2,required=6},
+    {title="Another Fang Quest",id=9876,have=1,required=4}
+}
+questLoot=Hover(101)
+assert(questLoot:find("Needed for 2 accepted quests",1,true)
+    and questLoot:find("Fangs for the Hunter  ·  2/6",1,true)
+    and questLoot:find("Another Fang Quest  ·  1/4",1,true),
+    "items shared between accepted quests show all matching quest titles")
 activeQuest["Broken Fang"]=nil
+questDetails["Broken Fang"]=nil
 SlashCmdList.CHALKBOX("keep |Hitem:101:0|h[Broken Fang]|h")
 assert(ChalkBoxDB.keep["id:101"] ~= nil,"keep command should use item ID")
 assert(Hover(101):find("KEEP",1,true),"user protection overrides vendor advice")
+activeQuest["Broken Fang"]=true
+questDetails["Broken Fang"]={{title="Fangs for the Hunter",
+    id=1234,have=2,required=6}}
+local protectedQuest=Hover(101)
+assert(protectedQuest:find("Personal protection",1,true)
+    and protectedQuest:find("Needed for: Fangs for the Hunter",1,true),
+    "personal KEEP reason stays visible alongside verified quest name")
+activeQuest["Broken Fang"]=nil
+questDetails["Broken Fang"]=nil
 local before=#tip.lines
 onTooltip(tip)
 assert(#tip.lines==before and before>=3,
@@ -192,4 +234,4 @@ merchantOpen=false
 assert(Hover(101)=="","junk remains quiet")
 hasLW=false
 assert(Hover(102)=="","profession hint must disappear when profession is absent")
-print("PASS: camp supplies wood/flint/kit/tent, quiet unrelated loot, profession relevance, quest protection and vendor separation")
+print("PASS: native LootSense quest title/progress, multi-quest and completed objectives, personal KEEP protection, merchant separation and prior camp/profession hints")
