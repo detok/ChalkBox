@@ -14,7 +14,7 @@ Quality-of-life tools for **World of Warcraft: Forever** — loot discoveries, q
 
 ChalkBox installs as **one `ChalkBox` folder**. Its bundled recipe data needs no separate download. Features are managed through Blizzard's native **Options → AddOns → ChalkBox** pages, or by typing `/chalk`.
 
-> **Current release: 2.2.13 (GitHub prerelease).** ChalkBox targets WoW Forever. The code has automated Lua 5.1 tests, but client-specific UI behavior still needs real in-game verification. Retail and ordinary Classic compatibility are **not claimed**.
+> **Current release: 2.2.14 (GitHub prerelease).** ChalkBox targets WoW Forever. The code has automated Lua 5.1 tests, but client-specific UI behavior still needs real in-game verification. Retail and ordinary Classic compatibility are **not claimed**.
 
 ## See it in-game
 
@@ -40,7 +40,7 @@ ChalkBox installs as **one `ChalkBox` folder**. Its bundled recipe data needs no
 
 ## Install or upgrade
 
-1. Open [GitHub Releases](https://github.com/detok/ChalkBox/releases) and select **ChalkBox-2.2.13.zip** (or the newest release appropriate for your client). **Do not** use GitHub's automatically generated Source code ZIP or the separate CurseForge media ZIP.
+1. Open [GitHub Releases](https://github.com/detok/ChalkBox/releases) and select **ChalkBox-2.2.14.zip** (or the newest release appropriate for your client). **Do not** use GitHub's automatically generated Source code ZIP or the separate CurseForge media ZIP.
 2. Extract the single **ChalkBox** directory to your game's `Interface/AddOns/` folder. Confirm the path ends in `Interface/AddOns/ChalkBox/ChalkBox.toc` — not `ChalkBox/ChalkBox/ChalkBox.toc`.
 3. Start Forever, check the AddOns list, then type `/chalk`.
 4. On an upgrade, replace only the addon folder. **Preserve WoW's SavedVariables** to keep your preferences, historical loot, market scans and layouts.
@@ -64,9 +64,11 @@ For the full installation, first-use and recovery walkthrough, see [Getting star
 
 [Complete verified command reference](docs/COMMANDS.md)
 
-## What's new in 2.2.13?
+## What's new in 2.2.14?
 
-**QuestSense Navigation now displays only a floating arrow.** Right-click for Auto / Next / Hide; hover for quest name and distance, left-drag to reposition. No box, borders or permanent buttons.
+**QuestSense Navigation now points using corrected WoW world coordinates.** It follows whichever quest you selected in Blizzard's quest log or super-tracked in the world, and points to your corpse while dead/ghosted when its real map position is available. The floating arrow and right-click controls remain unchanged.
+
+**Previously in 2.2.13:** **QuestSense Navigation now displays only a floating arrow.** Right-click for Auto / Next / Hide; hover for quest name and distance, left-drag to reposition. No box, borders or permanent buttons.
 
 **Previously in 2.2.12:** QuestSense Navigation adds an optional movable outdoor quest compass, based on real Forever quest waypoints. Enable it under **QuestSense → Navigation** or with `/chalk nav on`. It automatically follows your super-tracked quest or the nearest known objective, with easy manual selection. It never changes your Blizzard quest watches or map pins, and won't invent directions inside dungeons or where GPS is unavailable.
 
