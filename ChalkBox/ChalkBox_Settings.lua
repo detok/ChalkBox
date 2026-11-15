@@ -66,6 +66,13 @@ local function Panel(titleText, subtitle)
     panel:SetSize(560, 450)
     panel.name = titleText
     panel:Hide()
+    -- ChalkBox-owned reading surface: the native options window can be
+    -- translucent over bright 3D scenery and player names.
+    -- Keep this behind all controls without changing Blizzard's frame.
+    local surface=panel:CreateTexture(nil,"BACKGROUND")
+    surface:SetPoint("TOPLEFT",panel,"TOPLEFT",12,-98)
+    surface:SetPoint("BOTTOMRIGHT",panel,"BOTTOMRIGHT",-12,8)
+    surface:SetColorTexture(0.02,0.02,0.025,0.88)
     Label(panel, titleText, "GameFontNormalHuge", 24, -22, 395)
     Label(panel, subtitle, "GameFontHighlightSmall", 24, -59, 505)
     local line = panel:CreateTexture(nil, "ARTWORK")
@@ -412,7 +419,7 @@ local function MakeAuction()
             end
         end)
     Toggle(panel,"Show disenchant estimates on gear tooltips",nil,
-        -342,function()
+        -361,function()
             return type(ChalkBox_DisenchantTooltipsEnabled)=="function" and
                 ChalkBox_DisenchantTooltipsEnabled()
         end,function(on)
@@ -421,9 +428,9 @@ local function MakeAuction()
             end
         end)
     Label(panel,"Scan Market: browse asks  ·  Full listings: 15m cooldown.",
-        "GameFontHighlightSmall",28,-385,500)
+        "GameFontHighlightSmall",28,-402,500)
     Label(panel,"DE uses Classic odds; prices are asks, not sales.",
-        "GameFontHighlightSmall",28,-407,500)
+        "GameFontHighlightSmall",28,-423,500)
     panel:AddRefresh(function()
         local st=ChalkBox_AuctionStatus and ChalkBox_AuctionStatus() or {}
         market:SetText(st.realm and
@@ -1133,11 +1140,11 @@ end
 -- QuietGuard relies on Blizzard's own native guild/trade/channel blocks
 -- and only handles duel or optional party invites when available.
 local function MakeGuard()
-    local panel=Panel("QuietGuard","Quiet social filters, no chat spam and no new windows.")
+    local panel=Panel("QuietGuard","All filters are off initially. Enable only the requests you want blocked.")
     local opts={
         {"guild","Block unsolicited guild invitations",-112},
         {"duel","Auto-decline duel challenges",-170},
-        {"party","Auto-decline party invites (OFF by default)",-228},
+        {"party","Auto-decline party invites",-228},
         {"trade","Block unsolicited trade requests",-286},
         {"channel","Block channel invitations",-344},
     }

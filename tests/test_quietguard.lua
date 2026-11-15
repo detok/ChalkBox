@@ -25,13 +25,22 @@ local function Fire(event,...)
     assert(frame.events[event]);frame.onEvent(frame,event,...)
 end
 Fire("ADDON_LOADED","ChalkBox")
-assert(ChalkBoxDB.guard.guild and ChalkBoxDB.guard.duel)
-assert(not ChalkBoxDB.guard.party and not ChalkBoxDB.guard.trade and not ChalkBoxDB.guard.channel)
-assert(guild==true,"guild invites disabled using the native setting")
-assert(cvars.blockTrades=="0","trade is opt-in, not blocked by default")
+for _,key in ipairs({"guild","duel","party","trade","channel"}) do
+    assert(ChalkBoxDB.guard[key]==false,key.." must start disabled on first load")
+end
+assert(guild==false and cvars.blockTrades=="0" and
+    cvars.blockChannelInvites=="0",
+    "fresh install must not alter native social blocking")
+Fire("PLAYER_ENTERING_WORLD")
+Fire("DUEL_REQUESTED","Stranger")
+assert(declined==0 and #hidden==0,
+    "duel invite must be untouched until protection is explicitly enabled")
+ChalkBox_GuardSet("guild",true)
+ChalkBox_GuardSet("duel",true)
+assert(guild==true,"explicit guild filter uses native setting")
 Fire("DUEL_REQUESTED","Stranger")
 assert(declined==1 and hidden[#hidden]=="DUEL_REQUESTED",
-    "duel invite should be automatically cancelled and its popup hidden")
+    "explicitly enabled duel protection still cancels requests")
 Fire("PARTY_INVITE_REQUEST","Friend")
 assert(declined==1,"party invites should be untouched by default")
 ChalkBox_GuardSet("party",true)
@@ -54,8 +63,13 @@ assert(cvars.blockTrades=="0" and cvars.blockChannelInvites=="0",
     "original native settings restored when filters disabled")
 ChalkBox_GuardSet("guild",false)
 assert(guild==false,"guild setting restored if we changed it")
+-- Upgrades must not silently disable filters someone intentionally enabled.
+ChalkBoxDB.guard={guild=true,duel=true,party=false,trade=false,channel=false}
+Fire("ADDON_LOADED","ChalkBox")
+assert(ChalkBoxDB.guard.guild and ChalkBoxDB.guard.duel and guild,
+    "existing explicit opt-in preferences survive subsequent loads")
 local status=ChalkBox_GuardStatus()
 assert(status.duelBlocked==1 and status.partyBlocked==1)
 ChalkBox_GuardCommand("status")
 assert(#notes>0,"manual status is available without spamming each invite")
-print("PASS: QuietGuard default guild/duel block; party/trade/channel opt-in; native reversible prefs, combat skip, status")
+print("PASS: QuietGuard fresh-install all-off defaults; saved opt-ins, native reversible prefs, combat skip, status")

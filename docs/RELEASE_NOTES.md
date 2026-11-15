@@ -1,21 +1,18 @@
-# ChalkBox 2.2.5 — Know which quest needs that item
+# ChalkBox 2.2.6 — UI defaults and readability
 
-## LootSense: Quest name and progress
-When a bag or loot item matches an *accepted* quest's item-collection objective, ChalkBox can show:
+## The Bar
+New installations match the approved 2048px reference strip: **left** Level/XP, XP/hr; **center** Session time, Time to level, Rested XP; **right** Bags, Gear, Repair estimate, Junk value, Gold/net, World latency. The optional Pet display is disabled until selected. This is a starting arrangement, not a forced migration: per-character saved placements/alignment and account-wide stat toggles are respected. Older existing Bars with no explicit resale mode keep Total, and freshly configured Bars start on Junk. Reset Layout intentionally restores the new positions.
 
-- **KEEP** — Needed for: Keeper of the Flame
-- **1 / 5 collected**
+## QuietGuard
+All guild, duel, party, trade, and channel filtering is now **off by default on fresh installs**. A player can enable any option in Options > AddOns > ChalkBox > QuietGuard. Prior explicit ON selections stay ON across upgrades; changing the defaults does not rewrite Blizzard's own social settings.
 
-If more than one accepted quest uses that item, the tooltip lists all matching quest names and counts. Completed objectives remain shown as complete until the quest is turned in or removed, preserving the existing do-not-sell safety. User KEEP protection still takes priority, but a known active quest can additionally be displayed.
+## Native options polish
+All ChalkBox settings pages receive a neutral, dark readability underlay, drawn only inside ChalkBox's own panel, so bright scenery and floating names cannot drown out option text. AuctionSense's scan-age explanatory line now has room before the DisenchantSense checkbox; the two footer hints are repositioned without affecting any controls.
 
-This reads the quest title and objective progress from **Core.lua's existing quest cache**, created from the native Forever `C_QuestLog.GetQuestObjectives`. No new queries on hover or third-party database. The game's item-collection objective names must match the item's visible name; unusual objectives and quest-class items without an accepted matching objective safely show general quest protection **without guessing a quest title**.
+## Compatibility
+- No forced resets of SavedVariables or user choices; no settings-schema migration.
+- No changes to scanning, trading, quest tracking, loot protection, map geometry, combat, or protected UI actions.
+- New Lua 5.1 regressions cover fresh defaults, preserved opt-ins, restored arrangements, and AuctionSense text geometry.
+- Client-side appearance still requires a visual check with the native WoW Forever Options window.
 
-Vendor BUY FOR QUEST and DO NOT SELL instructions, quest watch settings and all other tooltips remain unchanged.
-
-## Discoveries: Native map-like backdrop
-The World Map-owned Discoveries side panel uses Forever's own `gamepad-mapquestlog-bgtile-2k` tiled map background, darkened enough to keep small text readable. The original solid-color background is retained as a safe fallback when that native atlas is unavailable, including during theme changes. Nothing moves or recolors the underlying World Map itself. Discoveries area/source/sort dropdowns, saved selections, popup layering and map dock logic stay intact.
-
-## Safety and tests
-Two focused changes only: quest evidence in existing LootSense, and purely cosmetic panel artwork. No item-use methods, protected combat UI, AH displayMode calls, auction/DE engine changes, external API, SavedVariables migration, new windows, or automatic quest tracking.
-
-Install `ChalkBox-2.2.5.zip` over the previous ChalkBox folder, preserve SavedVariables and type `/reload`. The full automated Lua 5.1/packaging suite must pass before publication. WoW Forever's in-client appearance and the localized quest objective names still require live verification.
+Install `ChalkBox-2.2.6.zip` over the existing addon folder, preserving SavedVariables, then type `/reload`.

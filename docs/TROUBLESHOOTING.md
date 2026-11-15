@@ -153,7 +153,7 @@ Run **`/chalk bar status`**. Try `/chalk bar reserve on`, change its top/bottom 
 
 ## Guild invite or duel blocked unexpectedly
 
-Go to **Options → AddOns → ChalkBox → QuietGuard**. The guild/duel filters default to on. Temporarily disable these if you expect an invitation. Party and trade blocking are off by default.
+Go to **Options → AddOns → ChalkBox → QuietGuard**. All five filters default OFF for newly configured installs. Previously saved ON filters remain enabled after upgrade; turn off a filter explicitly if you wish to receive that invitation. Blizzard's own built-in social-block settings can also block requests independently.
 
 ## Emota isn't doing anything
 

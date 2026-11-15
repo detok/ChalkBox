@@ -1,9 +1,9 @@
 -- Native Blizzard AddOns options regression (Lua 5.1, no client).
-local frames, widgets, printed = {}, {}, {}
+local frames, widgets, printed, fonts = {}, {}, {}, {}
 local registered, opened, categories = {}, {}, {}
 _G.UIParent={}
 _G.DEFAULT_CHAT_FRAME={AddMessage=function(_,str) printed[#printed+1]=str end}
-_G.ChalkBoxDB={lootAdvice=true,bar="top",barReserve=true,emota={auto=false,idleAuto=true,debug=false,idleVariety=false,contextual=true,jokeFrequency=50},guard={guild=true,duel=true,party=false,trade=false,channel=false},camp={enabled=true,toast=true,supplies=true,buffs=true,classCare=true,interval=45,
+_G.ChalkBoxDB={lootAdvice=true,bar="top",barReserve=true,emota={auto=false,idleAuto=true,debug=false,idleVariety=false,contextual=true,jokeFrequency=50},guard={guild=false,duel=false,party=false,trade=false,channel=false},camp={enabled=true,toast=true,supplies=true,buffs=true,classCare=true,interval=45,
     toastOptions={locked=true,opacity=0.92}},meter={shown=true,locked=false,mode="dps",session="current",rows=8,scale=1,opacity=0.94,iconMode="class"},keep={["id:11"]="Test Trinket"}}
 _G.ChalkBoxZoneDB={enabled=true,mode="smart",limit=10,managed={},muted={}}
 _G.SlashCmdList={CHALKBOX=function(command)
@@ -62,7 +62,7 @@ _G.ChalkBox_ForgeStatus=function()
 end
 _G.ChalkBox_MacroForgeRefresh=function() end
 local defaults={rate=true,eta=true,time=true,gold=true,bags=true,
-    gear=true,rested=true,latency=false,pet=true,bagvalue=false,repair=true}
+    gear=true,rested=true,latency=true,pet=false,bagvalue=true,repair=true}
 _G.ChalkBoxDB.barStats={}
 for k,v in pairs(defaults) do ChalkBoxDB.barStats[k]=v end
 _G.ChalkBox_BarStatEnabled=function(key)
@@ -240,11 +240,12 @@ _G.CreateFrame=function(kind,name,parent)
     function f:SetWidth(w) self.w=w end
     function f:SetJustifyH(value) self.justify=value end
     function f:CreateFontString()
-        local ff={}
-        function ff:SetPoint(...) end
+        local ff={parent=self}
+        function ff:SetPoint(...) self.anchor={...} end
         function ff:SetWidth(w) self.width=w end
         function ff:SetJustifyH(value) end
         function ff:SetText(value) self.value=value end
+        fonts[#fonts+1]=ff
         return ff
     end
     function f:CreateTexture()
@@ -380,6 +381,18 @@ local auctionChecks=FindCheckByParentTitle("AuctionSense")
 assert(#auctionChecks==2,
     "AuctionSense has separate market-price and DE estimate toggles")
 categories["AuctionSense"].panel:Show()
+local function AuctionLabel(label)
+    for _,font in ipairs(fonts) do
+        if font.parent==categories["AuctionSense"].panel and font.value==label then
+            return font
+        end
+    end
+end
+local hint=AuctionLabel("Only when a market scan exists; always includes scan age.")
+local nextOption=AuctionLabel("Show disenchant estimates on gear tooltips")
+assert(hint and nextOption and hint.anchor and nextOption.anchor
+    and hint.anchor[5]-nextOption.anchor[5]>=24,
+    "AuctionSense detail and next checkbox have enough vertical breathing room")
 assert(auctionChecks[2].checked,
     "new DE estimate option starts enabled without rewriting auction state")
 auctionChecks[1]:Click(false)
@@ -491,15 +504,15 @@ assert(printed[#printed]=="bar layout reset","reset layout button reaches contro
 categories["The Bar Stats"].panel:Show()
 local statsChecks=FindCheckByParentTitle("The Bar Stats")
 assert(#statsChecks==11,"eleven independent stats include bag value and repair estimate")
-assert(statsChecks[1].checked==true and statsChecks[4].checked==false,
-    "bag space is on by default and optional latency starts off")
+assert(statsChecks[1].checked==true and statsChecks[4].checked==true,
+    "bag space and World latency are enabled in the reference Bar")
 statsChecks[4]:Click(true)
 assert(ChalkBoxDB.barStats.latency==true,
     "latency checkbox persists the new module preference")
 statsChecks[2]:Click(false)
 assert(ChalkBoxDB.barStats.gear==false,"gear checkbox disables the module")
-assert(not statsChecks[10].checked and statsChecks[11].checked,
-    "vendor value starts optional while repair status starts enabled")
+assert(statsChecks[10].checked and statsChecks[11].checked,
+    "Junk value and repair status start enabled in the reference Bar")
 statsChecks[10]:Click(true)
 assert(ChalkBoxDB.barStats.bagvalue,
     "new vendor total module can be enabled through native settings")
@@ -519,8 +532,8 @@ assert(ChalkBoxDB.barStats.gear and ChalkBoxDB.barStats.latency,
     "All preset enables optional modules")
 Control("Balanced"):Click()
 assert(ChalkBoxDB.barStats.gear and ChalkBoxDB.barStats.repair and
-    not ChalkBoxDB.barStats.latency,
-    "Balanced preset restores repair and gear while leaving latency off")
+    ChalkBoxDB.barStats.latency and not ChalkBoxDB.barStats.pet,
+    "Balanced preset restores repair, gear and World ping without pet status")
 local emotaChecks=FindCheckByParentTitle("Emota")
 categories["Emota"].panel:Show()
 assert(#emotaChecks==5)
@@ -585,8 +598,10 @@ assert(printed[#printed]=="try JOKE","preview button tests selected catalog entr
 local guardChecks=FindCheckByParentTitle("QuietGuard")
 assert(#guardChecks==5,"QuietGuard page should have five real social toggles")
 categories["QuietGuard"].panel:Show()
-assert(guardChecks[1].checked==true and guardChecks[2].checked==true)
-assert(guardChecks[3].checked==false)
+assert(not guardChecks[1].checked and not guardChecks[2].checked
+    and not guardChecks[3].checked and not guardChecks[4].checked
+    and not guardChecks[5].checked,
+    "all QuietGuard toggles start unchecked")
 guardChecks[3]:Click(true)
 assert(ChalkBoxDB.guard.party==true)
 guardChecks[2]:Click(false)

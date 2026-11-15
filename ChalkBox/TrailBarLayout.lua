@@ -1,9 +1,9 @@
 -- ChalkBox 1.9: deterministic, per-character TrailBar layout preferences.
 -- Never touches protected game frames. Records order/section/justification only.
 local DEFAULT={
-    left={"level","rate","bags","gear"},
-    center={"eta","rested","pet"},
-    right={"time","latency","bagvalue","repair","gold"},
+    left={"level","rate"},
+    center={"time","eta","rested"},
+    right={"bags","gear","repair","bagvalue","gold","latency","pet"},
 }
 local orderedKeys={"level","rate","bags","gear","eta","rested","pet","time","latency","bagvalue","repair","gold"}
 local valid={}
