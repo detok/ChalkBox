@@ -1,20 +1,20 @@
-# ChalkBox 2.2.7 — MacroForge workbench polish
+# ChalkBox 2.2.8 — Discoveries loot locations and native UI polish
 
-## MacroForge — cleaner, easier to follow
-The familiar two-column MacroForge wizard now sits over the same native World Map atlas used by Discoveries, under a readable dark theme glaze. If the atlas is unavailable on a Forever build, it safely falls back to solid charcoal. Thin inset frames organize the purpose templates, spell assignments, spellbook, options, macro preview, saved builds and macro naming without replacing the native controls.
+## Discoveries: where did I loot this?
+DropSense now records the character's position **when the loot window opened**, if the player is outdoors and Forever returns a readable position on that zone's map. In Discoveries, hover an item to see up to three of its most recently recorded locations, with the zone and percentage map coordinates. Up to six distinct spots are kept per item/area. Repeated samples within 2.5 map percentage points are grouped with a count, so common farming routes do not balloon the saved data. The same bounded history is stored separately for a confidently identified creature source.
 
-The macro preview is now a true multiline edit box in a clipped, scrollable framed area. Long generated text grows inside the scroll child rather than escaping a single-line InputBox border. Ctrl+C / Select Text / explicit Install New still use the original macro pipeline. The active assignment remains highlighted. The saved-build warning text now has a bounded, wrapped space with a gap before the macro-name section.
+Locations are **observed loot-window positions**, not precise NPC spawn/death locations. If the loot source is ambiguous, only the zone's item location is recorded; source-specific drop probabilities are unaffected. Instances, unsupported coordinate APIs and old records without positions show no fabricated points. This feature is additive to the existing `ChalkBoxZoneDB.dropSense` version-2 data, leaving all old item quantities, source windows and drop histories unchanged. No automatic map pinning in this release.
 
-## The Bar — finish editing from right-click
-Right-click empty Bar space while the editor is active to choose **Done editing**. Right-click a stat during Edit Mode still cycles its text alignment. All existing drag positions, alignment and Bar preferences remain unchanged.
+## Restore Blizzard's own settings background
+Remove the opaque ChalkBox background rectangle from Options > AddOns. Blizzard's original background and transparency show through again; native controls, page grouping and settings are unaffected.
 
-## MacroForge shortcut under AddOns
-Under **Options → AddOns → ChalkBox → MacroForge**, there is an opt-in **Show MacroForge in AddOn Compartment** checkbox (OFF by default). On supported clients, this adds a separate MacroForge shortcut next to the existing ChalkBox entry in the minimap AddOns dropdown. The launcher opens the existing editor only on click. If the native registration API is unavailable, the preference is saved without unsafe menu manipulation. Blizzard does not expose a dependable public unregister method, so turning the shortcut off after registering it requires `/reload`.
+## Restore map artwork in Discoveries and MacroForge
+Both windows reuse the existing native World Map parchment atlas when available. Dark glazes are lighter so the art can actually be seen, with readable local control backgrounds. If the client temporarily lacks the atlas, each window retries the same atlas when it reopens. If it remains unavailable, existing solid backgrounds remain a safe fallback. The WorldMapFrame itself is not modified.
 
-## Safety and verification
-- Macro generation, learned-spell scanning, user recipes, installed macros, GCD/combat restrictions, quests and auction logic are unchanged.
-- No native World Map frames, protected Blizzard menus or saved character preferences are modified. Only the opt-in `ChalkBoxDB.macroCompartment` Boolean is new.
-- Automated Lua 5.1 UI tests cover framed sections, active selection, long preview scrolling, bounded warnings, map-art fallback, compartment opt-in, Bar editor exit and original copy/install actions.
-- Visual alignment and AddOn Compartment availability still require a live WoW Forever client check.
+## Safety, testing and installation
+- All data remains local to the character. The journal records only when DropSense is already enabled, and only for actual observed item loot windows.
+- No changes to protected Blizzard interactions, auctions, quests, combat, macro generation or saved preferences.
+- Lua 5.1 regression coverage includes map coordinate validation, source attribution, deduplication and six-spot cap, dungeon and API fallback, background opacity and map atlas retry, and ordinary native settings transparency.
+- Artwork appearance and any client-specific atlas behavior still require a final WoW Forever in-game visual check.
 
-Install `ChalkBox-2.2.7.zip` over the existing ChalkBox folder, preserve SavedVariables, and type `/reload`.
+Install `ChalkBox-2.2.8.zip` over the existing addon directory, preserve SavedVariables, and enter `/reload`.

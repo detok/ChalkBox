@@ -1,5 +1,5 @@
 -- Native Blizzard AddOns options regression (Lua 5.1, no client).
-local frames, widgets, printed, fonts = {}, {}, {}, {}
+local frames, widgets, printed, fonts, textures = {}, {}, {}, {}, {}
 local registered, opened, categories = {}, {}, {}
 _G.UIParent={}
 _G.DEFAULT_CHAT_FRAME={AddMessage=function(_,str) printed[#printed+1]=str end}
@@ -262,8 +262,12 @@ _G.CreateFrame=function(kind,name,parent)
         return ff
     end
     function f:CreateTexture()
-        return {SetPoint=function() end,SetSize=function() end,
-            SetColorTexture=function() end}
+        local texture={parent=self}
+        function texture:SetPoint(...) self.anchor={...} end
+        function texture:SetSize(w,h) self.w=w;self.h=h end
+        function texture:SetColorTexture(...) self.color={...} end
+        textures[#textures+1]=texture
+        return texture
     end
     function f:Hide() self.shown=false end
     function f:Show() self.shown=true;if self.script.OnShow then self.script.OnShow(self) end end
@@ -342,6 +346,12 @@ local loader=frames[#frames]
 assert(loader.event=="PLAYER_LOGIN","must register settings when the client is ready")
 loader.script.OnEvent(loader,"PLAYER_LOGIN")
 assert(#registered==20,"native pages include AuctionSense and all original categories")
+for _,texture in ipairs(textures) do
+    assert(not (texture.color and texture.color[1]==0.02
+        and texture.color[2]==0.02 and texture.color[3]==0.025
+        and texture.color[4]==0.88),
+        "ChalkBox settings must not paint a black sheet over Blizzard's canvas")
+end
 assert(shortcutRefreshes==1,
     "compartment registration is attempted on login only when requested")
 assert(categories.home.name=="ChalkBox")

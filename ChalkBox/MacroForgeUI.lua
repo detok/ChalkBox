@@ -30,8 +30,8 @@ local function Theme()
         r,g,b,a=ChalkBox_ThemeBackground(0.97)
     end
     -- Readable even with a transparent global theme.
-    local alpha=window.hasMapArt and math.max(0.84,math.min(a,0.92))
-        or math.max(0.94,a)
+    -- Keep enough contrast for macro code without hiding the native map art.
+    local alpha=window.hasMapArt and 0.42 or math.max(0.94,a)
     if window.back then window.back:SetColorTexture(r,g,b,alpha) end
     if window.accent then
         local ar,ag,ab=0.86,0.66,0.38
@@ -43,7 +43,7 @@ local function Theme()
     for _,t in ipairs(themeTextures) do
         if t and t.SetColorTexture then
             t:SetColorTexture(math.min(1,r*3+0.055),
-                math.min(1,g*3+0.06),math.min(1,b*3+0.08),0.91)
+                math.min(1,g*3+0.06),math.min(1,b*3+0.08),0.77)
         end
     end
 end
@@ -404,17 +404,34 @@ local function Create()
     -- Native map parchment under an opaque-enough reading surface.
     local art=f:CreateTexture(nil,"BACKGROUND",nil,0)
     art:SetAllPoints(f)
-    local hasArt=false
-    if art.SetAtlas then
+    local function LoadNativeArt()
+        if type(art.SetAtlas)~="function" then return false end
+        local exists=C_Texture and C_Texture.GetAtlasExists
+        if type(exists)=="function" then
+            local ok,available=pcall(exists,MAP_ATLAS)
+            if ok and available==false then return false end
+        end
         local ok,result=pcall(art.SetAtlas,art,MAP_ATLAS,false)
-        hasArt=ok and result~=false
-    end
-    if hasArt then
+        if not ok or result==false then return false end
+        if type(art.GetAtlas)=="function" then
+            local got,atlas=pcall(art.GetAtlas,art)
+            if got and atlas~=nil and atlas~=MAP_ATLAS then return false end
+        end
         if art.SetHorizTile then art:SetHorizTile(true) end
         if art.SetVertTile then art:SetVertTile(true) end
-    elseif art.Hide then art:Hide() end
+        if art.SetVertexColor then art:SetVertexColor(1,1,1,1) end
+        if art.Show then art:Show() end
+        return true
+    end
     f.mapArt=art
-    f.hasMapArt=hasArt
+    f.hasMapArt=LoadNativeArt()
+    if not f.hasMapArt and art.Hide then art:Hide() end
+    f.RefreshMapArt=function()
+        if not f.hasMapArt then
+            f.hasMapArt=LoadNativeArt()
+            if not f.hasMapArt and art.Hide then art:Hide() end
+        end
+    end
     local back=f:CreateTexture(nil,"BACKGROUND",nil,1)
     back:SetAllPoints(f)
     f.back=back
@@ -543,6 +560,8 @@ function ChalkBox_OpenMacroForge()
     libraryIndex=1
     if search then search:SetText("") end
     Refresh()
+    if window.RefreshMapArt then window:RefreshMapArt() end
+    Theme()
     window:Show()
     return true
 end

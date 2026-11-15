@@ -117,13 +117,15 @@ local function Tint()
     -- Keep the map's parchment/tiled background visible beneath a dark
     -- glaze so the existing light-on-dark controls stay easy to read.
     -- If a Forever build lacks the atlas, retain the original opaque body.
-    Paint(panel.back,r,g,b,panel.hasMapArt and 0.62 or a)
+    -- Parchment should be clearly visible, not buried under a near-opaque
+    -- charcoal texture. Row strips still provide local text contrast.
+    Paint(panel.back,r,g,b,panel.hasMapArt and 0.38 or a)
     Paint(panel.edge,ar,ag,ab,0.82)
     Paint(panel.stripe,ar,ag,ab,1)
     if type(panel.SetBackdropColor)=="function" then
         -- This undercoat is below the map tile; the visible inner glaze
         -- is handled separately by panel.back.
-        panel:SetBackdropColor(r,g,b,a)
+        panel:SetBackdropColor(r,g,b,panel.hasMapArt and 0.20 or a)
     end
     if type(panel.SetBackdropBorderColor)=="function" then
         panel:SetBackdropBorderColor(ar,ag,ab,1)
@@ -747,6 +749,31 @@ local function Row(parent,index)
                 GameTooltip:AddLine("Select a creature for drop rate.",
                     0.75,0.75,0.8)
             end
+            -- A loot location is where the player opened that outdoor
+            -- loot window, not a claim about the exact creature death spot.
+            local spots=item.locations
+            if mode=="outdoor" and type(spots)=="table" and #spots>0 then
+                local info=type(ChalkBox_DropAreaInfo)=="function"
+                    and ChalkBox_DropAreaInfo(selectedArea) or nil
+                local zone=info and info.name or "this zone"
+                GameTooltip:AddLine("Looted near "..zone..":",
+                    0.86,0.66,0.38)
+                for i=#spots,math.max(1,#spots-2),-1 do
+                    local spot=spots[i]
+                    if type(spot)=="table" and type(spot.x)=="number"
+                        and type(spot.y)=="number" then
+                        GameTooltip:AddLine(
+                            ("%.1f, %.1f  (%d loot%s)"):format(
+                                spot.x/10,spot.y/10,spot.count or 1,
+                                (spot.count or 1)==1 and "" or "s"),
+                            0.70,0.90,0.80)
+                    end
+                end
+                if #spots>3 then
+                    GameTooltip:AddLine(("%d more recorded locations"):format(
+                        #spots-3),0.65,0.70,0.74)
+                end
+            end
             GameTooltip:Show()
         end
     end)
@@ -933,25 +960,36 @@ local function EnsurePanel()
     art:SetPoint("TOPLEFT",f,"TOPLEFT",2,-2)
     art:SetPoint("BOTTOMRIGHT",f,"BOTTOMRIGHT",-2,2)
     f.mapArt=art
-    local loaded=false
-    if type(art.SetAtlas)=="function" then
+    local function LoadNativeArt()
+        if type(art.SetAtlas)~="function" then return false end
+        -- SetAtlas may be available even when this particular atlas is not.
+        local exists=C_Texture and C_Texture.GetAtlasExists
+        if type(exists)=="function" then
+            local ok,available=pcall(exists,MAP_TILE_ATLAS)
+            if ok and available==false then return false end
+        end
         local ok,result=pcall(art.SetAtlas,art,MAP_TILE_ATLAS,false)
-        loaded=ok and result~=false
-    end
-    if loaded then
-        if type(art.SetHorizTile)=="function" then
-            art:SetHorizTile(true)
+        if not ok or result==false then return false end
+        if type(art.GetAtlas)=="function" then
+            local got,atlas=pcall(art.GetAtlas,art)
+            if got and atlas~=nil and atlas~=MAP_TILE_ATLAS then return false end
         end
-        if type(art.SetVertTile)=="function" then
-            art:SetVertTile(true)
-        end
+        if type(art.SetHorizTile)=="function" then art:SetHorizTile(true) end
+        if type(art.SetVertTile)=="function" then art:SetVertTile(true) end
         if type(art.SetVertexColor)=="function" then
             art:SetVertexColor(1,1,1,1)
         end
-    elseif type(art.Hide)=="function" then
-        art:Hide()
+        if type(art.Show)=="function" then art:Show() end
+        return true
     end
-    f.hasMapArt=loaded
+    f.hasMapArt=LoadNativeArt()
+    if not f.hasMapArt and type(art.Hide)=="function" then art:Hide() end
+    f.RefreshMapArt=function()
+        if not f.hasMapArt then
+            f.hasMapArt=LoadNativeArt()
+            if not f.hasMapArt and type(art.Hide)=="function" then art:Hide() end
+        end
+    end
     local bg=f:CreateTexture(nil,"BACKGROUND",nil,1)
     bg:SetPoint("TOPLEFT",f,"TOPLEFT",2,-2)
     bg:SetPoint("BOTTOMRIGHT",f,"BOTTOMRIGHT",-2,2)
@@ -1074,6 +1112,7 @@ function ChalkBox_OpenMapDiscoveries()
         selectedArea=DefaultArea()
     end
     refresh()
+    if panel.RefreshMapArt then panel:RefreshMapArt() end
     Tint()
     panel:Show()
     if type(panel.Raise)=="function" then panel:Raise() end

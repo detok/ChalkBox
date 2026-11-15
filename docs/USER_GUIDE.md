@@ -1,6 +1,6 @@
 # ChalkBox User Guide
 
-**Version 2.2.7 · World of Warcraft: Forever**
+**Version 2.2.8 · World of Warcraft: Forever**
 
 ChalkBox puts several small tools in one addon. Everything is managed from **Options → AddOns → ChalkBox**, or **/chalk**. Choose the modules you want; the rest can stay out of sight.
 
@@ -22,6 +22,14 @@ The native sidebar contains related pages under their parent module:
 | **Emota** | Race Behavior, Emote Catalog |
 
 Select the module first, then its child page. The same top heading and return-to-ChalkBox navigation appear throughout. Older settings keys and SavedVariables are retained.
+
+## Discoveries: observed loot locations (2.2.8)
+
+When you loot an item outdoors, DropSense attempts to capture **your map position at the time the loot window opens**. The Discoveries item hover shows up to three of the latest observed locations as zone map coordinates (e.g., 42.6, 71.4), along with grouped repeat counts. Each item in a zone and each verified creature source retains at most six recent distinct positions, grouped within a small local radius. These are not promised death or spawn coordinates, and old drops, dungeon items and missing-position events never invent them. The original item quantities, windows and observed drop rates remain separate. The map itself is not changed or covered with new pins.
+
+## Native settings and parchment (2.2.8)
+
+ChalkBox pages now leave Blizzard's ordinary AddOns settings background transparent, rather than drawing a black overlay. Discoveries and MacroForge use a lighter glaze over the native map atlas, with a fallback to solid dark if the art is unavailable; reopening a window retries the atlas.
 
 ## MacroForge workbench (2.2.7)
 

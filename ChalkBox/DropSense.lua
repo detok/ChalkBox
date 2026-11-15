@@ -3,6 +3,10 @@
 -- An observed frequency is reported ONLY for a known single creature source.
 local addonName=...
 local MAX_ITEMS,MAX_AREAS,MAX_SOURCES,MAX_AREA_ITEMS=5000,240,150,750
+-- Preserve only a few distinct last-seen loot positions per area/item.
+-- Samples are rounded to 0.1%, deduped spatially and never extrapolated.
+local MAX_SPOTS=6
+local SPOT_RADIUS2=25*25 -- 2.5 map percentage points in tenths
 local MAX_COUNT=100000000
 local frame=CreateFrame("Frame")
 local opened=false
@@ -208,6 +212,57 @@ local function Item(s,id,link)
     end
     return row
 end
+-- This is the player's position at LOOT_OPENED, not the corpse's
+-- guaranteed death position. No coordinates are attributed inside instances.
+local function LootPoint(entry)
+    if not entry or entry.kind~="outdoor" or not Integer(entry.mapID) then return end
+    local fn=C_Map and C_Map.GetPlayerMapPosition
+    if type(fn)~="function" then return end
+    local ok,point=pcall(fn,entry.mapID,"player")
+    if not ok or not Public(point) or point==nil then return end
+    local read,x,y=pcall(function()
+        if type(point.GetXY)=="function" then return point:GetXY() end
+        return point.x,point.y
+    end)
+    if not read or not Number(x) or not Number(y)
+        or x>1 or y>1 or (x==0 and y==0) then return end
+    return {x=math.floor(x*1000+0.5),y=math.floor(y*1000+0.5)}
+end
+local function RememberSpot(row,point)
+    if not point or type(row)~="table" then return end
+    if type(row.locations)~="table" then row.locations={} end
+    local spots=row.locations
+    local selected
+    for i=#spots,1,-1 do
+        local old=spots[i]
+        if type(old)=="table" and Integer(old.x) and Integer(old.y) then
+            local dx,dy=old.x-point.x,old.y-point.y
+            if dx*dx+dy*dy<=SPOT_RADIUS2 then
+                selected=table.remove(spots,i)
+                break
+            end
+        end
+    end
+    selected=selected or {x=point.x,y=point.y,count=0}
+    selected.x,selected.y=point.x,point.y
+    selected.count=Add(selected.count,1)
+    spots[#spots+1]=selected
+    while #spots>MAX_SPOTS do table.remove(spots,1) end
+end
+local function ReadSpots(row)
+    if type(row)~="table" or type(row.locations)~="table" then return end
+    local result={}
+    -- A bounded read-only snapshot; never expose the mutable saved table.
+    for i=math.max(1,#row.locations-MAX_SPOTS+1),#row.locations do
+        local p=row.locations[i]
+        if type(p)=="table" and Integer(p.x) and Integer(p.y)
+            and p.x<=1000 and p.y<=1000 then
+            result[#result+1]={x=p.x,y=p.y,
+                count=Integer(p.count) and p.count or 1}
+        end
+    end
+    return #result>0 and result or nil
+end
 local function Source(guid)
     if type(guid)~="string" or #guid>120 then return end
     local kind=guid:match("^(%a+)%-")
@@ -286,6 +341,8 @@ local function Capture()
     lastSourceGUID=guid;lastSourceAt=now or 0
     local location=Location()
     local area=Area(location)
+    -- Only sample a real map coordinate from an outdoor loot event.
+    local point=area and LootPoint(location) or nil
     local sourceKey,sourceName,creature=Source(guid)
     local sourceRow
     if area then
@@ -321,6 +378,7 @@ local function Capture()
                 if entry then
                     entry.quantity=Add(entry.quantity,amount)
                     entry.windows=Add(entry.windows,1)
+                    RememberSpot(entry,point)
                 end
                 if sourceRow then
                     local hit=sourceRow.items[id]
@@ -328,6 +386,7 @@ local function Capture()
                         sourceRow.items[id]=hit end
                     hit.windows=Add(hit.windows,1)
                     hit.quantity=Add(hit.quantity,amount)
+                    RememberSpot(hit,point)
                 end
             end
         end
@@ -412,10 +471,12 @@ function ChalkBox_DropRead(item,areaKey,sourceKey)
         if not hit then return result end
         result.areaQuantity=hit.quantity
         result.areaWindows=hit.windows
+        result.locations=ReadSpots(hit)
         if sourceKey and type(area.sources[sourceKey])=="table" then
             local source=area.sources[sourceKey]
             local observed=source.items[id]
             local hits=observed and observed.windows or 0
+            result.locations=ReadSpots(observed)
             if source.windows>0 then
                 result.sourceName=source.name
                 result.hits=hits
@@ -530,6 +591,7 @@ function ChalkBox_DropAreaItems(key,sourceKey,search)
                 low=item.low,high=item.high,
                 sourceName=sourceName,
                 multipleSources=not sourceName,
+                locations=item.locations,
             }
         end
     end
