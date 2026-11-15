@@ -164,8 +164,8 @@ assert(ChalkBoxZoneDB.questNavigator.offsetY==-242,
 assert(ChalkBox_NavCommand("reset") and
     ChalkBoxZoneDB.questNavigator.offsetX==nil,
     "user can reset arrow positioning without altering quest data")
-assert(ChalkBox_NavCommand("auto"))
 super=nil
+assert(ChalkBox_NavCommand("auto"))
 st=ChalkBox_NavStatus()
 assert(st.questID==111 and st.mode=="Smart",
     "Auto picks the closest known world waypoint when none is supertracked")
