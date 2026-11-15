@@ -349,12 +349,12 @@ assert(FindMenu(allModules.children,"OFF Durability").text:
 FindMenu(allModules.children,"OFF Durability").func()
 assert(ChalkBoxDB.barStats.gear,"module restored through bar background menu")
 local gearMove=ChalkBox_BarContextItems("gear")
-FindMenu(gearMove,"Right").func()
+FindMenu(gearMove,"Left").func()
 local moved=false
-for _,key in ipairs(ChalkBox_BarLayoutGet().right) do
+for _,key in ipairs(ChalkBox_BarLayoutGet().left) do
     if key=="gear" then moved=true end
 end
-assert(moved,"context menu moves modules to another third")
+assert(moved,"context menu moves gear from its new right-side default")
 FindMenu(FindMenu(gearMove,"Align").children,"Center").func()
 assert(ChalkBox_BarLayoutGet().align.gear=="center",
     "context menu applies per-module text alignment")
