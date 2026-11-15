@@ -203,6 +203,10 @@ assert(ChalkBoxDB.bar=="top","default info bar is at top")
 Fire("PLAYER_ENTERING_WORLD")
 local bar
 for _,frame in ipairs(frames) do if frame.name=="ChalkBoxInfoBar" then bar=frame end end
+-- Validate the approved wide-screen screenshot layout before testing
+-- narrower widths and automatic metric suppression below.
+bar.width=2048
+if bar.scripts.OnSizeChanged then bar.scripts.OnSizeChanged(bar) end
 assert(bar and bar.visible and bar.anchor=="TOPRIGHT",
     "top bar must stay visible as its own combat-safe overlay")
 assert(bar.points[2] and bar.points[2][4]==0,
