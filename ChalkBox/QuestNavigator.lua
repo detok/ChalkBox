@@ -44,10 +44,13 @@ local function DB()
     end
     if saved.enabled~=true then saved.enabled=false end
     if saved.locked~=true then saved.locked=false end
-    -- Preserve both legacy choices and add a literal original minimap
-    -- arrow choice. Invalid values fall back to the current HD default.
+    -- The original old-school minimap glyph is now the fresh default.
+    -- Existing explicit/previously-saved styles must never be overwritten.
     if saved.arrowStyle~="classic" and saved.arrowStyle~="original"
-        and saved.arrowStyle~="hd" then saved.arrowStyle="hd" end
+        and saved.arrowStyle~="hd" then saved.arrowStyle="original" end
+    if not Number(saved.arrowSize) then saved.arrowSize=48 end
+    saved.arrowSize=math.max(32,math.min(72,
+        math.floor((saved.arrowSize-32)/4+0.5)*4+32))
     if not ID(saved.questID) then saved.questID=nil end
     if not Number(saved.offsetX) or not Number(saved.offsetY)
         or math.abs(saved.offsetX)>1500 or math.abs(saved.offsetY)>1000 then
@@ -418,10 +421,9 @@ end
 local function Build()
     if frame or not UIParent or type(CreateFrame)~="function" then return end
     local f=CreateFrame("Frame","ChalkBoxQuestNavigator",UIParent)
-    -- Arrow-sized hit area only. No dialog frame, backdrop, bronze edges,
-    -- text panel, quest title, or permanently visible buttons.
-    -- Still no panel: just a 64px arrow and a discreet distance below.
-    f:SetSize(76,90)
+    -- Arrow-sized hit area only. No border or background panel.
+    -- The displayed size follows a per-character 32–72 px slider.
+    f:SetSize(60,74)
     if type(f.SetFrameStrata)=="function" then f:SetFrameStrata("DIALOG") end
     if type(f.SetClampedToScreen)=="function" then
         f:SetClampedToScreen(true)
@@ -484,12 +486,11 @@ local function Build()
         end
     end
     ArrowStyle()
-    a:SetSize(64,64)
     a:SetPoint("TOP",f,"TOP",0,-2)
     f.ApplyArrowStyle=ArrowStyle
     local distance=f:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-    distance:SetPoint("TOP",f,"TOP",0,-69)
-    distance:SetWidth(76)
+    distance:SetPoint("TOP",f,"TOP",0,-55)
+    distance:SetWidth(60)
     if type(distance.SetJustifyH)=="function" then
         distance:SetJustifyH("CENTER")
     end
@@ -502,6 +503,17 @@ local function Build()
     distance:SetText("—")
     f.distanceLabel=distance
     f.arrow=a
+    local function ApplyArrowSize()
+        local db=DB()
+        local pixels=db and db.arrowSize or 48
+        f:SetSize(pixels+12,pixels+26)
+        a:SetSize(pixels,pixels)
+        distance:ClearAllPoints()
+        distance:SetPoint("TOP",f,"TOP",0,-pixels-7)
+        distance:SetWidth(pixels+12)
+    end
+    f.ApplyArrowSize=ApplyArrowSize
+    ApplyArrowSize()
     f:SetScript("OnMouseUp",function(self,button)
         if button=="RightButton" then ChalkBox_NavOpenMenu(self) end
     end)
@@ -539,7 +551,8 @@ function ChalkBox_NavStatus()
     local db=DB()
     return {enabled=db and db.enabled or false,
         locked=db and db.locked or false,
-        arrowStyle=db and db.arrowStyle or "classic",
+        arrowStyle=db and db.arrowStyle or "original",
+        arrowSize=db and db.arrowSize or 48,
         manualID=db and db.questID or nil,
         questID=target and target.id or nil,
         targetType=target and target.kind or "quest",
@@ -591,6 +604,12 @@ function ChalkBox_NavCommand(input)
     elseif action=="hd" or action=="classic" or action=="original" then
         db.arrowStyle=action
         if frame and frame.ApplyArrowStyle then frame.ApplyArrowStyle() end
+    elseif action:match("^size%s+%d+$") then
+        local requested=tonumber(action:match("%d+"))
+        if not Number(requested) then return false end
+        db.arrowSize=math.max(32,math.min(72,
+            math.floor((requested-32)/4+0.5)*4+32))
+        if frame and frame.ApplyArrowSize then frame.ApplyArrowSize() end
     elseif action=="lock" or action=="unlock" then
         db.locked=action=="lock"
     elseif action=="reset" then
@@ -619,7 +638,7 @@ function ChalkBox_NavCommand(input)
             db.questID=id
             db.enabled=true
         else
-            Message("Use /chalk nav on|off|auto|next|prev|follow ID|original|classic|hd|lock|unlock|reset|status")
+            Message("Use /chalk nav on|off|auto|next|prev|follow ID|original|classic|hd|size 32-72|lock|unlock|reset|status")
             return false
         end
     end
