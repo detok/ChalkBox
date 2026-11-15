@@ -14,7 +14,7 @@ Quality-of-life tools for **World of Warcraft: Forever** — loot discoveries, q
 
 ChalkBox installs as **one `ChalkBox` folder**. Its bundled recipe data needs no separate download. Features are managed through Blizzard's native **Options → AddOns → ChalkBox** pages, or by typing `/chalk`.
 
-> **Current release: 2.2.15 (GitHub prerelease).** ChalkBox targets WoW Forever. The code has automated Lua 5.1 tests, but client-specific UI behavior still needs real in-game verification. Retail and ordinary Classic compatibility are **not claimed**.
+> **Current release: 2.2.16 (GitHub prerelease).** ChalkBox targets WoW Forever. The code has automated Lua 5.1 tests, but client-specific UI behavior still needs real in-game verification. Retail and ordinary Classic compatibility are **not claimed**.
 
 ## See it in-game
 
@@ -31,8 +31,8 @@ ChalkBox installs as **one `ChalkBox` folder**. Its bundled recipe data needs no
 | [**LootSense & Professions**](docs/USER_GUIDE.md#lootsense-and-professions) | See why an item is worth keeping: quest objectives and progress, your personal KEEP list, confirmed learned recipes and possible crafting uses. No automatic selling. |
 | [**DropSense & Discoveries**](docs/USER_GUIDE.md#dropsense-and-discoveries) | Record loot you actually observe; browse zones, dungeons and identified creatures from the World Map. Outdoor items can include a handful of observed loot-window coordinates. Rates are personal observations, not official drop odds. |
 | [**AuctionSense, AuctionInsights & DisenchantSense**](docs/USER_GUIDE.md#auction-tools-and-disenchanting) | Manually scan asking prices in the native Auction House, browse your own inventory values and observed mail receipts, and review clearly labeled disenchant estimates. No automated trading or disenchanting. |
-| [**QuestSense**](docs/USER_GUIDE.md#questsense) | Maintain Blizzard's accepted-quest tracker in Smart, Nearby or All mode. Smart focuses on verified current-dungeon quests when supported, and restores other watches on exit. **Optional Navigation:** a floating arrow to confirmed outdoor quest waypoints, with Auto/Next/Hide on right-click, small yards below, and selectable classic or sharp HD artwork. |
-| [**MacroForge**](docs/USER_GUIDE.md#macroforge) | Build and save macros from learned spells, inspect the exact output, copy it or explicitly install a *new* macro outside combat. Never automates a rotation. |
+| [**QuestSense**](docs/USER_GUIDE.md#questsense) | Maintain Blizzard's accepted-quest tracker in Smart, Nearby or All mode. Smart focuses on verified current-dungeon quests when supported, and restores other watches on exit. **Optional Navigation:** a floating arrow with Auto/Next/Hide, yards underneath, and three artwork choices. Right-click Blizzard's quest tracker header for quick Off / Smart / Nearby and navigation controls. |
+| [**MacroForge**](docs/USER_GUIDE.md#macroforge) | Build and save macros from learned spells, inspect the exact output, copy it or explicitly install a *new* macro outside combat. A MacroForge tab on Blizzard's `/macro` editor opens the workbench alongside it when screen space allows. Never automates a rotation. |
 | [**The Bar & Repair Learning**](docs/USER_GUIDE.md#the-bar-and-repair-learning) | A slim configurable display for XP, bags, durability, repair estimates, junk value, gold, ping and more. Right-click to edit and finish your custom layout. |
 | [**Combat Meter & Adventure Journal**](docs/USER_GUIDE.md#combat-meter-and-session-journal) | Optional meter and manual reports, plus a framed, persistent per-character recap of observed sessions; a full event Chronicle is planned, not yet recording. |
 | [**Adventure Prep, Emota & QuietGuard**](docs/USER_GUIDE.md#adventure-prep-emota-and-quietguard) | Camping reminders, optional idle emotes and opt-in invite blocking. |
@@ -40,7 +40,7 @@ ChalkBox installs as **one `ChalkBox` folder**. Its bundled recipe data needs no
 
 ## Install or upgrade
 
-1. Open [GitHub Releases](https://github.com/detok/ChalkBox/releases) and select **ChalkBox-2.2.15.zip** (or the newest release appropriate for your client). **Do not** use GitHub's automatically generated Source code ZIP or the separate CurseForge media ZIP.
+1. Open [GitHub Releases](https://github.com/detok/ChalkBox/releases) and select **ChalkBox-2.2.16.zip** (or the newest release appropriate for your client). **Do not** use GitHub's automatically generated Source code ZIP or the separate CurseForge media ZIP.
 2. Extract the single **ChalkBox** directory to your game's `Interface/AddOns/` folder. Confirm the path ends in `Interface/AddOns/ChalkBox/ChalkBox.toc` — not `ChalkBox/ChalkBox/ChalkBox.toc`.
 3. Start Forever, check the AddOns list, then type `/chalk`.
 4. On an upgrade, replace only the addon folder. **Preserve WoW's SavedVariables** to keep your preferences, historical loot, market scans and layouts.
@@ -64,9 +64,11 @@ For the full installation, first-use and recovery walkthrough, see [Getting star
 
 [Complete verified command reference](docs/COMMANDS.md)
 
-## What's new in 2.2.15?
+## What's new in 2.2.16?
 
-**AuctionSense Full Scan** accepts usable listing prices even when item names are still caching, with clearer 15-minute cooldown messages. **QuestSense Navigation** now keeps its selected quest in Blizzard's native objective tracker, and Discoveries briefly pulses a dot at a recorded outdoor loot-window location on item hover. The minimal arrow adds **yards underneath** and a **Sharp HD / Classic** style switch under QuestSense → Navigation.
+**QuestSense now has a right-click menu on Blizzard's existing quest-tracker header:** QuestSense Settings, Off, Smart, Nearby and Navigation On/Off. Three arrow appearances—Original WoW, Blizzard Navigation and ChalkBox HD—are available under QuestSense → Navigation. **MacroForge** adds a small tab to the native `/macro` editor to open the existing full workbench beside it on wide screens; the standalone editor remains available.
+
+**Previously in 2.2.15:** **AuctionSense Full Scan** accepts usable listing prices even when item names are still caching, with clearer 15-minute cooldown messages. **QuestSense Navigation** now keeps its selected quest in Blizzard's native objective tracker, and Discoveries briefly pulses a dot at a recorded outdoor loot-window location on item hover. The minimal arrow adds **yards underneath** and a **Sharp HD / Classic** style switch under QuestSense → Navigation.
 
 **Previously in 2.2.14:** **QuestSense Navigation now points using corrected WoW world coordinates.** It follows whichever quest you selected in Blizzard's quest log or super-tracked in the world, and points to your corpse while dead/ghosted when its real map position is available. The floating arrow and right-click controls remain unchanged.
 

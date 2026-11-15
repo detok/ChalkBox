@@ -21,8 +21,8 @@ ChalkBox is **one Lua 5.1 addon** for WoW Forever. No separate addon, backend pr
 | Loot tracking / journal | `DropSense.lua`, `MapDiscoveries.lua` | Loot-window observations, source/area aggregation, outdoor position samples and native World Map sidecar |
 | Market / DE | `AuctionSense.lua`, `AuctionSenseUI.lua`, `AuctionInsights.lua`, `DisenchantSense.lua` | Explicit AH read scans, realm/faction snapshots, bag/sales insights and modeled DE outcomes |
 | Quest navigation | `QuestNavigator.lua` | Standalone, optional, read-only waypoint/facing arrow; per-character settings, no quest-watch / user-map-pin writes |
-| Quests | `QuestSense.lua` | Native watch-list reconciliation, conservative zone and instance matching, saved manual watches |
-| Macro wizard | `MacroForge.lua`, `MacroForgeUI.lua` | Learned spell validation and macro generation; presentation and explicit copy/install |
+| Quests | `QuestSense.lua`, `QuestTrackerMenu.lua` | Native watch-list reconciliation, conservative zone and instance matching, saved manual watches |
+| Macro wizard | `MacroForge.lua`, `MacroForgeUI.lua`, `MacroForgeDock.lua` | Learned spell validation and macro generation; presentation and explicit copy/install |
 | HUD / screen | `TrailBar.lua`, `TrailBarStats.lua`, `TrailBarLayout.lua`, `ScreenLayout.lua`, `BagLayout.lua` | Stats, per-character layout, safe native top chrome shift, bounded separate bag offset |
 | Combat | `CombatMeter.lua`, `NativeMeterPrint.lua` | Optional native-data window and gated manual reports |
 | Camp / character behavior | `CampSense.lua`, `CampAura.lua`, `ReminderToast.lua`, `Emota.lua`, `PersonalityContext.lua`, `QuietGuard.lua` | Readable buff/prep hints, native emotes and opt-in social filtering |
@@ -57,6 +57,7 @@ When the client cannot provide data, label it **unknown**, preserve the current 
 - Guard APIs with `type(func)=="function"` and safe reads; Forever may expose secret/unavailable values.
 - No automatic buying, selling, posting, disenchants, inventory moves, combat rotations, macro presses, protected frame actions, or unsolicited messages.
 - Defer watch changes in combat and while the World Map/quest log is open. Restore manually selected watches after filtering instead of clearing all watches.
+- The optional `MacroForgeDock.lua` attaches a small native macro-window button, but never replaces MacroFrame scripts or editor controls. It side-docks the existing `MacroForgeUI.lua` only when the display has room; `/chalk macro` remains standalone. `QuestTrackerMenu.lua` uses an additive `HookScript` on the existing objective tracker header instead of replacing Blizzard quest-row context menus.
 - MacroForge can **display** code, allow Ctrl+C, or explicitly create a new macro outside combat; its generated commands obey Blizzard's physical-keypress and cooldown rules.
 - Keep Blizzard's native Settings surface transparent. MapDiscoveries should **dock** to the map without altering WorldMapFrame geometry. The art atlas has a readable fallback when unavailable.
 - The Bar may shift eligible Blizzard top frames safely; never move `UIParent` or protected action bars. Bag adjustment is deferred during combat and first bank initialization.

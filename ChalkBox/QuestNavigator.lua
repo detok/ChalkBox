@@ -44,7 +44,10 @@ local function DB()
     end
     if saved.enabled~=true then saved.enabled=false end
     if saved.locked~=true then saved.locked=false end
-    if saved.arrowStyle~="classic" then saved.arrowStyle="hd" end
+    -- Preserve both legacy choices and add a literal original minimap
+    -- arrow choice. Invalid values fall back to the current HD default.
+    if saved.arrowStyle~="classic" and saved.arrowStyle~="original"
+        and saved.arrowStyle~="hd" then saved.arrowStyle="hd" end
     if not ID(saved.questID) then saved.questID=nil end
     if not Number(saved.offsetX) or not Number(saved.offsetY)
         or math.abs(saved.offsetX)>1500 or math.abs(saved.offsetY)>1000 then
@@ -460,6 +463,11 @@ local function Build()
             -- from our SVG into a bundled native WoW 32-bit TGA.
             a:SetTexture("Interface\\AddOns\\ChalkBox\\assets\\QuestArrowHD")
             return
+        elseif db and db.arrowStyle=="original" then
+            -- The very first ChalkBox compass artwork, before we
+            -- adopted the new Blizzard tracked-navigation atlas.
+            a:SetTexture("Interface\\Minimap\\MinimapArrow")
+            return
         end
         local atlasOK=false
         if type(a.SetAtlas)=="function" then
@@ -580,7 +588,7 @@ function ChalkBox_NavCommand(input)
         else index=(index-2+#items)%#items+1 end
         db.questID=items[index].id
         db.enabled=true
-    elseif action=="hd" or action=="classic" then
+    elseif action=="hd" or action=="classic" or action=="original" then
         db.arrowStyle=action
         if frame and frame.ApplyArrowStyle then frame.ApplyArrowStyle() end
     elseif action=="lock" or action=="unlock" then
@@ -611,7 +619,7 @@ function ChalkBox_NavCommand(input)
             db.questID=id
             db.enabled=true
         else
-            Message("Use /chalk nav on|off|auto|next|prev|follow ID|hd|classic|lock|unlock|reset|status")
+            Message("Use /chalk nav on|off|auto|next|prev|follow ID|original|classic|hd|lock|unlock|reset|status")
             return false
         end
     end

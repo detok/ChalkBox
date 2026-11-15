@@ -1,12 +1,16 @@
-# ChalkBox 2.2.15 — Auction, Quests, Discoveries and HD Navigation
+# ChalkBox 2.2.16 — QuestSense & MacroForge Integration
 
-- **AuctionSense Full Scan** handles valid listing prices even before auction-item names finish caching. Clearer feedback differentiates uncached item names from server throttling and the roughly 15-minute account-wide cooldown. Browse Scan remains available.
-- **QuestSense + Blizzard tracking:** The quest followed by the navigation arrow now stays visible in Blizzard's native objective tracker. Manual watches remain untouched, including across Nearby filters.
-- **Discoveries map ping:** Hover an item with a recorded outdoor loot location to see a small **pulsing gold dot** on the matching World Map, disappearing immediately when you stop hovering. It marks the player's observed loot-window location, not an NPC's verified spawn.
-- **Arrow improvements:** A small **yard-distance label** sits underneath the minimal arrow. Choose **Sharp HD** (new crisp 256px artwork) or **Classic Blizzard** appearance in QuestSense → Navigation settings; your selected quest and saved position persist.
+### QuestSense right where you need it
+- **Right-click the header of Blizzard's quest tracker** for a small ChalkBox menu: **QuestSense Settings**, **Off**, **Smart**, **Nearby**, and **Navigation On/Off**.
+- The menu supplements Blizzard's tracker without replacing native quest interactions. Some custom trackers/Forever builds may not expose a hookable header; the normal settings and slash commands still work.
+- QuestSense → Navigation now offers **three arrow looks**: **Original WoW**, **Blizzard Navigation**, and **ChalkBox HD**. Existing saved choices stay intact.
 
-ChalkBox remains one optional addon that extends existing WoW Forever screens, without automating combat, trading or quest completion.
+### MacroForge beside /macro
+- Blizzard's built-in macro editor gains a small **MacroForge** tab that opens ChalkBox's full macro-building workbench next to it on displays with enough space.
+- Native macro editing and selection stay untouched. On narrower screens MacroForge remains an independent window. Existing `/chalk macro` continues to work.
 
-Full history: https://github.com/detok/ChalkBox/blob/main/CHANGELOG.md
+No replacement quest tracker, macro editor, unsafe combat actions, or SavedVariables migration. This is a Beta release until client-specific visual placement is verified.
 
-Playable addon: ChalkBox-2.2.15.zip — https://github.com/detok/ChalkBox/releases/tag/v2.2.15
+Playable ZIP: **ChalkBox-2.2.16.zip** — https://github.com/detok/ChalkBox/releases/tag/v2.2.16
+
+Full changes: https://github.com/detok/ChalkBox/blob/main/CHANGELOG.md

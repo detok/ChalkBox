@@ -193,12 +193,19 @@ assert(nativeFocus[#nativeFocus]==222,
 assert(ChalkBox_NavCommand("classic") and
     nav.arrow.atlas=="Navigation-Tracked-Arrow" and
     ChalkBox_NavStatus().arrowStyle=="classic",
-    "classic arrow switches back to original Blizzard atlas")
+    "Blizzard Navigation style selects the tracked-arrow atlas")
+assert(ChalkBox_NavCommand("original") and
+    nav.arrow.texture=="Interface\\Minimap\\MinimapArrow" and
+    ChalkBox_NavStatus().arrowStyle=="original",
+    "Original WoW style restores the first version's minimap artwork")
 assert(ChalkBox_NavCommand("hd") and
     nav.arrow.texture==
         "Interface\\AddOns\\ChalkBox\\assets\\QuestArrowHD" and
     ChalkBox_NavStatus().arrowStyle=="hd",
     "HD mode can be restored without resetting the chosen quest")
+ChalkBoxZoneDB.questNavigator.arrowStyle="original"
+assert(ChalkBox_NavStatus().arrowStyle=="original",
+    "older character style choices are not silently migrated to HD")
 assert(nav.backdrop==nil and nav.back==nil and not nav.title
     and not nav.distance and not nav.mode and not nav.children[1],
     "floating compass has no box, labels, border or visible action buttons")
