@@ -11,14 +11,16 @@ local function IsListed(layout,key)
     return count
 end
 local first=ChalkBox_BarLayoutGet()
-assert(first.left[1]=="level" and first.center[1]=="eta" and
-    first.right[#first.right]=="gold","original order preserved for existing users")
+assert(table.concat(first.left,",")=="level,rate"
+    and table.concat(first.center,",")=="time,eta,rested"
+    and table.concat(first.right,",")=="bags,gear,repair,bagvalue,gold,latency,pet",
+    "new characters receive the approved left/center/right Bar arrangement")
 assert(ChalkBox_BarLayoutMove("gold","left",2),
     "users can move any module between groups")
 local result=ChalkBox_BarLayoutGet()
 assert(result.left[2]=="gold" and IsListed(result,"gold")==1,
     "moving gold into left must preserve one instance, at chosen index")
-assert(#result.right==4,"moving gold preserves time, latency, resale and repair in the right section")
+assert(#result.right==6,"moving gold preserves every other metric on the right")
 assert(ChalkBox_BarLayoutMove("level","right",1),
     "even mandatory level can be placed in the right group")
 result=ChalkBox_BarLayoutGet()
@@ -51,13 +53,15 @@ assert(result.align.bags=="right" and result.align.gold==nil,
 local saved=ChalkBoxZoneDB
 _G.ChalkBoxZoneDB={}
 local newChar=ChalkBox_BarLayoutGet()
-assert(newChar.left[1]=="level" and newChar.right[#newChar.right]=="gold"
-    and not newChar.align.bags,
+assert(newChar.left[1]=="level" and newChar.right[1]=="bags"
+    and newChar.right[#newChar.right]=="pet" and not newChar.align.bags,
     "new character starts with the default layout independently")
 _G.ChalkBoxZoneDB=saved
 ChalkBox_BarLayoutReset()
 result=ChalkBox_BarLayoutGet()
-assert(result.left[1]=="level" and result.center[1]=="eta"
-    and result.right[#result.right]=="gold" and next(result.align)==nil,
-    "Reset Layout restores original positions and alignments")
+assert(table.concat(result.left,",")=="level,rate"
+    and table.concat(result.center,",")=="time,eta,rested"
+    and table.concat(result.right,",")=="bags,gear,repair,bagvalue,gold,latency,pet"
+    and next(result.align)==nil,
+    "Reset Layout restores the new approved positions and alignments")
 print("PASS: TrailBar drag/drop ordering model, personal storage, alignment, corruption and resets")
