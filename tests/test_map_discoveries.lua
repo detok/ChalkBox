@@ -9,8 +9,8 @@ local fonts={}
 local function Frame(kind,name,parent)
     local f={kind=kind,name=name,parent=parent,shown=false,text=""}
     function f:SetSize(w,h) self.w=w;self.h=h end
-    function f:GetWidth() return self.w or 500 end
-    function f:GetHeight() return self.h or 400 end
+    function f:GetWidth() return self.w end
+    function f:GetHeight() return self.h end
     function f:SetPoint(...) self.point={...} end
     function f:ClearAllPoints() self.point=nil end
     function f:SetFrameStrata(n) self.strata=n end
