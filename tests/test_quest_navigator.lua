@@ -212,5 +212,9 @@ assert(ChalkBox_NavStatus().manualID==444)
 assert(ChalkBox_NavCommand("off") and not nav:IsShown()
     and not ChalkBox_NavStatus().enabled,
     "navigation hides cleanly without changing QuestSense tracker")
-assert(#created==2,"one event listener and one single compass frame")
+local named=0
+for _,obj in ipairs(created) do
+    if obj.name=="ChalkBoxQuestNavigator" then named=named+1 end
+end
+assert(named==1,"one compass only; repeated toggles must reuse its frame")
 print("PASS: isolated optional navigation, trusted quest waypoints, continent-0 compass, supertrack/manual/nearest priority, instance/cross-map guards, drag lock, persistence and quest-log recovery")
