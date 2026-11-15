@@ -44,6 +44,7 @@ FILES = (
     "DropSense.lua",
     "AuctionSense.lua",
     "AuctionSenseUI.lua",
+    "DisenchantSense.lua",
     "MapDiscoveries.lua",
     "UpdateCheck.lua",
     "MacroForge.lua",

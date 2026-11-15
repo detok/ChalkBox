@@ -318,6 +318,9 @@ local function Ensure()
             end
             tip:AddLine("Asking prices, not sales",
                 COLOR.muted[1],COLOR.muted[2],COLOR.muted[3])
+            if type(ChalkBox_DisenchantMarketHint)=="function" then
+                pcall(ChalkBox_DisenchantMarketHint,tip,item.itemID)
+            end
             EndTooltip(tip)
         end)
         row:SetScript("OnLeave",HideTooltip)

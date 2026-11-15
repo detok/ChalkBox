@@ -177,6 +177,11 @@ function tip:Show() self.shown=true end
 function tip:Hide() self.shown=false end
 _G.GameTooltip=tip
 local browseScans,fullScans,reads=0,0,0
+local deMarketReads={}
+_G.ChalkBox_DisenchantMarketHint=function(tip,id)
+    deMarketReads[#deMarketReads+1]=id
+    return false
+end
 local stamp=500
 local status={
     available=true,fullAvailable=true,open=true,busy=false,
@@ -324,6 +329,8 @@ end
 assert(hoverRow,"each price row exposes a hover summary")
 hoverRow.scripts.OnEnter(hoverRow)
 assert(tip.shown and tip.owner==hoverRow)
+assert(deMarketReads[#deMarketReads]==2589,
+    "Market item hover includes read-only DE intelligence without changing scan data")
 local lowSeen,avgUnknown,unitsSeen,sourceSeen=false,false,false,false
 for _,entry in ipairs(tip.lines) do
     if entry.text=="Low ask / unit" and entry.value=="15s 0c" then

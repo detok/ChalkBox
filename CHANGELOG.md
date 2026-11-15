@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.2.2 — Disenchant economics (test release)
+- Add DisenchantSense, a read-only layer connecting LootSense gear tooltips with AuctionSense's same-realm/faction prices. No new windows or scans.
+- Support Classic-based, probability-weighted disenchant outcomes for green/blue weapons and armor with item levels 5–65. We distinguish actual item level from required character level, plus armor vs weapon probabilities.
+- Value possible dust, essence and shard yields using the lowest asking price per material. If even one material price is missing, mixed or older than 24 hours, show price coverage without inventing a total or recommending an action.
+- Compare complete modeled DE values to a gear item's asking price or vendor value. Comparisons are conditional if tradeable and represent gross *asking* values, not actual sales/profits.
+- Hold Shift on gear tooltips for outcome chances, quantity bands and material prices. Market row hover uses the same calculation. /chalk de [item link] provides a readable breakdown and /chalk de on|off toggles tooltip estimates.
+- A matching checkbox lives in AuctionSense's existing native Options page. Existing KEEP/quest protections suppress recommendations to destroy items. All functionality is display-only, with no item-use, trade, AH displayMode or protected bag changes.
+- Add regression tests for expected values, partial/stale/mixed market data, blue/green models, protected tooltips, command routing and auction integration.
+
+
 ## 2.2.1 — AuctionSense item-use taint safety hotfix (test release)
 - Fix a concrete high-risk taint path: the Market tab called Blizzard `AuctionHouseFrame:SetDisplayMode()` with an addon-owned mode. Forever's protected bag-item click path consults `AuctionHouseFrame:IsListingAuctions()`, which reads that state and can block using a soulbound item such as the Cozy Sleeping Bag until `/reload`.
 - Market now displays as the same native-looking auction inset and index artwork while *only* temporarily hiding the unprotected frames of the currently active Blizzard AH page. It restores those frames on returning to the native tab, without modifying Blizzard's trading display mode or adding custom data to AuctionHouseFrame.

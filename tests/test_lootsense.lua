@@ -40,6 +40,14 @@ _G.ChalkBox_RecipeAdvice=function(id,name)
         return "POTENTIAL USE: Camp Tent (Leatherworking, not confirmed learned)",0.84,0.88,0.48
     end
 end
+local deCommands, deCalls={},{}
+_G.ChalkBox_DisenchantCommand=function(arg)
+    deCommands[#deCommands+1]=arg
+end
+_G.ChalkBox_DisenchantTooltip=function(_,link,isProtected)
+    deCalls[#deCalls+1]={link=link,protected=isProtected}
+    return false
+end
 local meterCommands={}
 _G.ChalkBox_MeterCommand=function(cmd) meterCommands[#meterCommands+1]=cmd end
 local bagCommands={}
@@ -135,6 +143,16 @@ assert(Hover(211527):find("BONUS XP",1,true) and
     not Hover(211527):find("Item insight",1,true),
     "sleeping bag has a single useful XP heading, no generic brand")
 assert(Hover(103)=="","no unverified auction prediction")
+assert(deCalls[#deCalls].link:find("item:103",1,true),
+    "read-only disenchant evidence is requested for gear tooltips")
+SlashCmdList.CHALKBOX("de |Hitem:103:0|h[Green Trinket]|h")
+assert(deCommands[#deCommands]=="|Hitem:103:0|h[Green Trinket]|h",
+    "slash routing supports linked items without changing protected actions")
+SlashCmdList.CHALKBOX("keep |Hitem:103:0|h[Green Trinket]|h")
+Hover(103)
+assert(deCalls[#deCalls].protected,
+    "personally protected items suppress DE trade recommendations")
+SlashCmdList.CHALKBOX("forget |Hitem:103:0|h[Green Trinket]|h")
 assert(Hover(104)=="","no generic equipment reviews")
 assert(Hover(106):find("KEEP",1,true),"quest class should stay protected")
 assert(Hover(107)=="","uncached quality should not produce sell advice")

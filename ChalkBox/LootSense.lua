@@ -185,6 +185,14 @@ local function OnItemTooltip(tooltip)
     if type(ChalkBox_AuctionTooltip)=="function" then
         pcall(ChalkBox_AuctionTooltip,tooltip,link)
     end
+    -- Read-only DE economics: never auto-cast, alter bag buttons, or suggest
+    -- destroying protected/quest items. The item tooltip owns the display.
+    if type(ChalkBox_DisenchantTooltip)=="function" then
+        local protected=IsProtected(name,link) or
+            (type(ChalkBox_IsTrackedQuestItem)=="function" and
+                ChalkBox_IsTrackedQuestItem(name))
+        pcall(ChalkBox_DisenchantTooltip,tooltip,link,protected)
+    end
     if db.lootAdvice==false then return end
 
     -- A cached item link and tooltip name are already enough to identify
@@ -297,6 +305,10 @@ SlashCmdList.CHALKBOX = function(input)
         if tonumber(learnedCount)==0 then
             Note("Open a crafting window, let its recipe list load, and /chalk loot scan. Then re-hover the item.")
         end
+    elseif command=="de" or command=="disenchant" then
+        if type(ChalkBox_DisenchantCommand)=="function" then
+            ChalkBox_DisenchantCommand(argument)
+        else Note("DE estimates unavailable in this client.") end
     elseif command=="auction" or command=="auctions" or command=="ah" then
         if type(ChalkBox_AuctionCommand)=="function" then
             ChalkBox_AuctionCommand(argument)
@@ -382,6 +394,7 @@ SlashCmdList.CHALKBOX = function(input)
         Note("Explore: /chalk drops map | map status | map on|off | /chalk drops status | chance 5 20")
         Note("Build: /chalk macro opens MacroForge | /chalk forge rescan refreshes your spellbook.")
         Note("Auctions: at an auctioneer, open the AuctionSense tab. /chalk auction scan = browse prices; /chalk auction full = full listing request (15m cooldown).")
+        Note("Disenchant: hover green/blue gear for modeled outcomes or /chalk de [item link]. /chalk de on|off toggles tooltip estimates.")
         Note("Updates: /chalk update shows your installed version and GitHub Releases link.")
     end
 end
