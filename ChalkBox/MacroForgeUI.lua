@@ -401,9 +401,31 @@ local function Create()
     f:SetScript("OnDragStop",function(self)
         if self.StopMovingOrSizing then self:StopMovingOrSizing() end
     end)
-    local back=f:CreateTexture(nil,"BACKGROUND")
+    -- Native map parchment under an opaque-enough reading surface.
+    local art=f:CreateTexture(nil,"BACKGROUND",nil,0)
+    art:SetAllPoints(f)
+    local hasArt=false
+    if art.SetAtlas then
+        local ok,result=pcall(art.SetAtlas,art,MAP_ATLAS,false)
+        hasArt=ok and result~=false
+    end
+    if hasArt then
+        if art.SetHorizTile then art:SetHorizTile(true) end
+        if art.SetVertTile then art:SetVertTile(true) end
+    elseif art.Hide then art:Hide() end
+    f.mapArt=art
+    f.hasMapArt=hasArt
+    local back=f:CreateTexture(nil,"BACKGROUND",nil,1)
     back:SetAllPoints(f)
     f.back=back
+    Inset(f,"purpose",14,-86,758,59)
+    Inset(f,"slots",14,-150,408,213)
+    Inset(f,"spellbook",430,-150,342,258)
+    Inset(f,"options",14,-367,408,104)
+    Inset(f,"saved",430,-410,342,152)
+    Inset(f,"preview",14,-474,408,181)
+    Inset(f,"name",430,-568,342,87)
+    f.sections=sectionFrames
     local accent=f:CreateTexture(nil,"ARTWORK")
     accent:SetPoint("TOPLEFT",f,"TOPLEFT",0,0)
     accent:SetPoint("TOPRIGHT",f,"TOPRIGHT",0,0)
@@ -476,21 +498,22 @@ local function Create()
             end)
     end
     Font(f,"MACRO PREVIEW","GameFontNormal",23,-480,210)
-    local preview=Edit(f,370,97,24,-500)
+    local preview,viewport=Preview(f,24,-500,371,103)
     macroText=preview
-    if preview.SetMultiLine then preview:SetMultiLine(true) end
-    if preview.SetFontObject and ChatFontNormal then
-        preview:SetFontObject(ChatFontNormal)
-    end
+    f.previewViewport=viewport
+    f.previewEditor=preview
     Font(f,"Select Text highlights this preview so you can copy with Ctrl+C.",
-        "GameFontHighlightSmall",24,-605,392)
-    warningText=Font(f,"","GameFontHighlightSmall",436,-485,330)
+        "GameFontHighlightSmall",24,-609,392)
+    warningText=Font(f,"","GameFontHighlightSmall",438,-497,319)
+    if warningText.SetHeight then warningText:SetHeight(59) end
+    if warningText.SetJustifyV then warningText:SetJustifyV("TOP") end
+    if warningText.SetWordWrap then warningText:SetWordWrap(true) end
     statusText=Font(f,"","GameFontHighlightSmall",24,-75,712)
-    Font(f,"MACRO NAME","GameFontNormal",439,-560,170)
-    nameEdit=Edit(f,214,22,438,-578)
-    Button(f,"Select Text",121,25,-618,function() SelectAll() end)
-    Button(f,"Install New",121,153,-618,function() Install() end)
-    Button(f,"Native Macros",109,280,-618,function() Native() end)
+    Font(f,"MACRO NAME","GameFontNormal",439,-576,170)
+    nameEdit=Edit(f,214,22,438,-600)
+    Button(f,"Select Text",121,25,-625,function() SelectAll() end)
+    Button(f,"Install New",121,153,-625,function() Install() end)
+    Button(f,"Native Macros",109,280,-625,function() Native() end)
     -- Saved recipes have no impact on Blizzard's own macro list.
     Font(f,"SAVED BUILDS","GameFontNormal",438,-417,196)
     libraryText=Font(f,"No saved builds","GameFontHighlightSmall",438,-440,318)
