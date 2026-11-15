@@ -28,6 +28,12 @@ def test():
         assert archive.read(current).startswith(f"# ChalkBox {version()}".encode("utf-8")), (
             "Published media kit includes a changelog matching the installed addon"
         )
+        # Keep the publisher commands in sync with the canonical handbook.
+        from build_curseforge_kit import ROOT
+        commands = "ChalkBox-CurseForge-Kit/Copy-and-Checklist/copy/COMMANDS.md"
+        assert archive.read(commands) == (ROOT / "docs/COMMANDS.md").read_bytes(), (
+            "Publisher commands must match the canonical in-repo guide"
+        )
         assert not any(name.lower().endswith((".ttf", ".otf", ".woff"))
                        for name in names)
         assert b"NOT the installable addon" in archive.read(
