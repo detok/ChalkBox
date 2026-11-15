@@ -484,7 +484,12 @@ local function MakeForge()
     Label(panel,"branches or a deliberate /castsequence for repeat presses.",
         "GameFontHighlightSmall",27,-165,497)
     Button(panel,"Open MacroForge",28,-208,244,function()
-        if type(ChalkBox_OpenMacroForge)=="function" then
+        -- Open the native macro editor as one experience; the dock
+        -- controller will hide Settings and position our workbench
+        -- beside Blizzard when the client offers enough room.
+        if type(ChalkBox_MacroForgeFromSettings)=="function" then
+            ChalkBox_MacroForgeFromSettings()
+        elseif type(ChalkBox_OpenMacroForge)=="function" then
             ChalkBox_OpenMacroForge()
         else Note("MacroForge UI could not be loaded in this client.") end
     end)
