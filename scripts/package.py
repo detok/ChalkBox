@@ -72,6 +72,8 @@ FILES = (
     "CombatMeter.lua",
     "NativeMeterPrint.lua",
     "ChalkBox_Settings.lua",
+    "QuestTrackerMenu.lua",
+    "MacroForgeDock.lua",
     "assets/Icon.tga",
     "assets/QuestArrowHD.tga",
 )
