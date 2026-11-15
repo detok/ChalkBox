@@ -1,6 +1,6 @@
 # QuestSense Navigation
 
-**Available in ChalkBox 2.2.13 · WoW Forever · optional and OFF by default**
+**Available in ChalkBox 2.2.14 · WoW Forever · optional and OFF by default**
 
 QuestSense now includes a small movable **quest compass**, without installing TomTom or a separate questing addon. This is an original, deliberately simple **outdoor straight-line navigation** tool, not a full travel-path planner.
 
@@ -9,7 +9,7 @@ QuestSense now includes a small movable **quest compass**, without installing To
 - **Options → AddOns → ChalkBox → QuestSense → Navigation** → check **Show navigation arrow**.
 - Or type `/chalk nav on`.
 
-The navigator is **only a small floating arrow**, without a surrounding window, text panel, or buttons. **Left-drag** it to a comfortable position, **right-click** for Auto / Next / Hide, and **hover** for the selected quest and straight-line yard distance. The arrow dims to gray if the client cannot safely calculate a direction. Use **Lock arrow position** in settings to prevent accidental movement. Position and manual quest choice persist **per character**. It starts hidden for new characters.
+The navigator is **only a small floating arrow**, without a surrounding window, text panel, or buttons. **Left-drag** it to a comfortable position, **right-click** for Auto / Next / Hide, and **hover** for the selected quest and straight-line yard distance. The arrow dims to gray if the client cannot safely calculate a direction. **When dead or ghosted, your corpse has priority** if the game exposes its map marker; resurrection returns you to your quest. Use **Lock arrow position** in settings to prevent accidental movement. Position and manual quest choice persist **per character**. It starts hidden for new characters.
 
 The arrow shows direction when available; its hover tooltip displays the selected quest name and *straight-line yards* when the game gives enough location data. The display belongs to ChalkBox only; your Blizzard World Map, personal waypoint and native quest tracker are left alone.
 
@@ -17,7 +17,7 @@ The arrow shows direction when available; its hover tooltip displays the selecte
 
 | Control | What it does |
 | --- | --- |
-| **Auto** (arrow's right-click menu or settings) | Prefer a valid Blizzard super-tracked quest, otherwise select the nearest accepted quest with a verified outdoor waypoint in the player's region |
+| **Auto** (arrow's right-click menu or settings) | Follow the most recently selected quest in the Blizzard quest log or the active super-tracked quest; only fall back to a stable nearby quest when nothing is selected |
 | **Next** (arrow's right-click menu) | Manually cycle to the next accepted quest with a real waypoint |
 | **Hide** (arrow's right-click menu) | Turn off the small navigator without disabling QuestSense or discarding your quest watches |
 | **Previous Quest** (settings) | Cycle backwards through valid quest destinations |
@@ -41,9 +41,9 @@ The arrow shows direction when available; its hover tooltip displays the selecte
 
 ## Where the location comes from
 
-The compass asks the *game* for `C_QuestLog.GetNextWaypoint(questID)`. When that returns no usable data, it may use a matching **accepted quest's actual map marker** on the current map or a supported parent zone map.
+The compass asks the *game* for `C_QuestLog.GetNextWaypointForMap(questID, mapID)` on your current map, then `C_QuestLog.GetNextWaypoint(questID)`. When that returns no usable data, it may use a matching **accepted quest's actual map marker** on the current map or a supported parent zone map.
 
-It reads `C_Map.GetBestMapForUnit`, `C_Map.GetPlayerMapPosition`, `C_Map.GetWorldPosFromMapPos` and `GetPlayerFacing` for outdoors player-relative direction and yards. In the absence of a manually selected target, it can read `C_SuperTrack.GetSuperTrackedQuestID` to honor Blizzard's selected quest without ever writing to super-tracking.
+It reads `C_Map.GetBestMapForUnit`, `C_Map.GetPlayerMapPosition`, `C_Map.GetWorldPosFromMapPos` and `GetPlayerFacing` for outdoors player-relative direction and yards. It reads `C_SuperTrack.GetSuperTrackedQuestID` for the actively super-tracked quest and `C_QuestLog.GetSelectedQuest` to detect a changed selection in the Quest Log, without ever writing to those APIs. **While dead/ghosted**, it reads `C_DeathInfo.GetCorpseMapPosition` for the current map and supported parents. The native navigation atlas points up before rotation; actual WoW world X is north/south and Y is west/east, so bearing uses `atan2(worldDeltaY, worldDeltaX) - GetPlayerFacing()`.
 
 **No copied route database. No invented objective coordinates. No actual route or ETA calculation.** Distances are straight lines, not travel times, road distances or flight paths.
 
