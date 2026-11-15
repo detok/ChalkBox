@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.3 — Forever disenchant accuracy and safety (test release)
+- Replace the homegrown DisenchantSense 2.2.2 outcome table with an **offline, MIT-licensed, pinned Forever reference** from APGM82/DisenchantForever. Source files, full license, build provenance and annotations ship inside the regular ChalkBox addon; no API, companion installation, or third-party addon needed.
+- Derive possible disenchant ranges from Forever client-derived `ItemDisenchantLoot` brackets by item class, item quality and **effective item level**. Yield percentages and quantities remain openly attributed **Classic VMaNGOS/CMaNGOS reference estimates**, not proven Forever server outcomes.
+- Respect the client-generated **NO_DISENCHANT** and special-loot item-ID exception lists. No generic dust/shard valuation for either. Add eligible 5–15 uncommon weapons and source-supported epic brackets; correct rare 56–60 to one Large Brilliant Shard and confine reference Nexus Crystal probabilities to the correct higher tier.
+- **Unconfirmed rare 5–15 reward:** display the uncertainty, withhold the market value and any buy/sell/DE verdict instead of assuming a shard outcome.
+- Keep price/age/mixed-variant guards, existing tooltip and Market hover, saved settings, KEEP/quest protections and the 2.2.1 item-use taint fix. No additional hooks, bag buttons, auctions, spellcasts, or schema changes.
+- Expand tests across all Forever bracket boundaries, source exceptions, price completeness, item metadata, tooltip odds, and integration tests. Keep the bundled source MIT license in the ZIP.
+
+
 ## 2.2.2 — Disenchant economics (test release)
 - Add DisenchantSense, a read-only layer connecting LootSense gear tooltips with AuctionSense's same-realm/faction prices. No new windows or scans.
 - Support Classic-based, probability-weighted disenchant outcomes for green/blue weapons and armor with item levels 5–65. We distinguish actual item level from required character level, plus armor vs weapon probabilities.
