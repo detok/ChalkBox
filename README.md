@@ -6,13 +6,13 @@
 
 **A collection of useful tools for World of Warcraft: Forever.**
 
-[Download 2.2.1 — Item-use taint safety](https://github.com/detok/ChalkBox/releases/tag/v2.2.1) · [Report a bug](https://github.com/detok/ChalkBox/issues/new/choose) · [User guide](docs/USER_GUIDE.md)
+[Download 2.2.2 — Disenchant economics](https://github.com/detok/ChalkBox/releases/tag/v2.2.2) · [Report a bug](https://github.com/detok/ChalkBox/issues/new/choose) · [User guide](docs/USER_GUIDE.md)
 
 </div>
 
 ChalkBox adds small improvements around the parts of the game you use every day: finding useful loot, managing quests, tracking progress, preparing for camp, and setting up your action buttons. Pick the modules you want and turn off the rest.
 
-**2.2.1 Item-use and AH taint safety:** The Bar is full-width and now draws behind Blizzard portrait artwork. It can shift eligible default-positioned Blizzard top frames down 18px without resizing the root UI; protected/custom frames are never moved. Emota does not dispatch emotes during combat. The adjustable separate-bag position is restored with combat/bank deferral. In-bag reagent borders remain paused to avoid modifying protected item buttons; learned-recipe tooltips and other ChalkBox features remain available.
+**2.2.2 Disenchant economics + item-use safety:** The Bar is full-width and now draws behind Blizzard portrait artwork. It can shift eligible default-positioned Blizzard top frames down 18px without resizing the root UI; protected/custom frames are never moved. Emota does not dispatch emotes during combat. The adjustable separate-bag position is restored with combat/bank deferral. In-bag reagent borders remain paused to avoid modifying protected item buttons; learned-recipe tooltips and other ChalkBox features remain available.
 
 It installs as **one addon**, including its profession recipe data. You don't need to download any companion packages.
 
@@ -37,7 +37,7 @@ These are real in-game captures, cropped around the addon controls. Character na
 | **DropSense + Map Discoveries** | Saves the items observed in your loot windows. Browse them by outdoor zone, dungeon, or known creature source from a searchable window attached to the world map. |
 | **MacroForge** | Builds copy-ready macros from abilities in your actual spellbook. Includes openers, trinket attempts, modifier keys, mouseover targeting, and manual cast sequences. |
 | **LootSense + ProfessionSense** | Helps identify quest items, personally protected items, reagents in learned recipes, and possible crafting uses. Includes the Forever recipe catalog. |
-| **The Bar** | An optional 18px screen-edge strip for XP, level progress, bags, rested XP, gold, gear, repair estimates, and other selected stats. Uses an independent safe overlay; never repositions Blizzard's root frame. |
+| **DisenchantSense** | Adds read-only Classic-based DE yield and asking-value comparisons to gear tooltips and Market hover, with full probabilities on Shift. Uses the same realm/faction market snapshots; no automatic disenchanting. |\n| **The Bar** | An optional 18px screen-edge strip for XP, level progress, bags, rested XP, gold, gear, repair estimates, and other selected stats. Uses an independent safe overlay; never repositions Blizzard's root frame. |
 | **Repair Learning** | Remembers real repair quotes and uses them to estimate the cost of damaged gear away from a merchant. An estimated price is marked with a tilde. |
 | **Session Journal** | Keeps a recap of the current session and up to 20 previous sessions: XP, gold changes, quest turn-ins, sampled loot, and other recorded events. |
 | **QuestSense** | Manages accepted-quest watches in Blizzard's native tracker. |
@@ -108,7 +108,7 @@ MacroForge doesn't automate rotations or bypass the global cooldown. Installing 
 
 ## Install
 
-1. Download **[ChalkBox-2.2.1.zip](https://github.com/detok/ChalkBox/releases/download/v2.2.1/ChalkBox-2.2.1.zip)** from the GitHub release. Don't use the automatically generated "Source code" ZIP.
+1. Download **[ChalkBox-2.2.2.zip](https://github.com/detok/ChalkBox/releases/download/v2.2.2/ChalkBox-2.2.2.zip)** from the GitHub release. Don't use the automatically generated "Source code" ZIP.
 2. Extract the single **ChalkBox** folder into your Forever client's **Interface/AddOns** directory.
 3. Check that **Interface/AddOns/ChalkBox/ChalkBox.toc** exists. Avoid an extra nested ChalkBox folder.
 4. Launch the game and type **/chalk**.
@@ -139,7 +139,7 @@ The media kit now includes the real cropped gameplay gallery under `Screenshots/
 
 The **[CurseForge folder](curseforge/)** contains the current project description, short summary, FAQ, changelog and submission checklist, along with the original ChalkBox artwork.
 
-The release also includes a separate **[CurseForge media kit ZIP](https://github.com/detok/ChalkBox/releases/download/v2.2.1/ChalkBox-CurseForge-Media-2.2.1.zip)** with six SVG originals, PNG exports, and ready-to-use listing copy. It is **not an addon installation file**.
+The release also includes a separate **[CurseForge media kit ZIP](https://github.com/detok/ChalkBox/releases/download/v2.2.2/ChalkBox-CurseForge-Media-2.2.2.zip)** with six SVG originals, PNG exports, and ready-to-use listing copy. It is **not an addon installation file**.
 
 The illustrations are promotional graphics, not in-game screenshots. Real screenshots should be captured from the running Forever client before being used in a gallery.
 
@@ -147,7 +147,7 @@ The illustrations are promotional graphics, not in-game screenshots. Real screen
 
 ChalkBox targets **WoW Forever**. Retail and Classic Era compatibility have not been verified. Some client APIs may expose limited data, particularly for combat, loot sources and map layout.
 
-**2.2.1 is a test release** until item use after visiting the Auction House and the Market tab has been verified in WoW Forever. Automated Lua 5.1 tests and ZIP packaging run through [GitHub Actions](.github/workflows/release.yml).
+**2.2.2 is a test release** until DE tooltips, AH Market hints, and the prior item-use safety fix are verified in WoW Forever. Automated Lua 5.1 tests and ZIP packaging run through [GitHub Actions](.github/workflows/release.yml).
 
 Report issues through [GitHub Issues](https://github.com/detok/ChalkBox/issues) with the ChalkBox version, Forever client build, steps to reproduce and any Lua error.
 
