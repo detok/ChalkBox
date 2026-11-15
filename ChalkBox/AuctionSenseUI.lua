@@ -138,11 +138,14 @@ local function Refresh()
             ChalkBox_MarketSaleRows(searchText,250) or {}
         extra=type(ChalkBox_MarketSalesStatus)=="function" and
             ChalkBox_MarketSalesStatus() or {}
-        labels.details:SetText(("Seller receipts: %d  ·  Gross %s"):format(
-            extra.count or 0,Coin(extra.gross or 0)))
-        labels.info:SetText("Proceeds "..Coin(extra.proceeds or 0)..
+        labels.details:SetText(("%d receipts  ·  %d captured in last 30d"):format(
+            extra.count or 0,extra.last30 or 0))
+        labels.info:SetText((extra.count or 0)==0 and
+            "No receipts yet · Open a mailbox to capture completed seller invoices"
+            or ("Gross "..Coin(extra.gross or 0)..
+            "  ·  Proceeds "..Coin(extra.proceeds or 0)..
             "  ·  Fees "..Coin(extra.fees or 0)..
-            "  ·  Captured mail only; not every sale")
+            "  ·  Captured invoices only"))
     else
         labels.details:SetText(("%d items  ·  %s"):format(
             status.items or 0,
