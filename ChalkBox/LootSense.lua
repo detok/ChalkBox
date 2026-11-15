@@ -243,7 +243,12 @@ local function OnItemTooltip(tooltip)
             end
         end
         if details and details~="" then
-            tooltip:AddLine(details,0.92,0.91,0.84,true)
+            -- Evidence stays quieter than the action/category heading.
+            local dr,dg,db=0.85,0.87,0.88
+            if type(ChalkBox_TipColor)=="function" then
+                dr,dg,db=ChalkBox_TipColor("text")
+            end
+            tooltip:AddLine(details,dr,dg,db,true)
         end
         if quests and #quests>0 then
             if #quests==1 then
@@ -260,7 +265,11 @@ local function OnItemTooltip(tooltip)
                     if q.complete then
                         progress=progress.."  ·  Objective complete"
                     end
-                    tooltip:AddLine(progress,0.72,0.84,0.77,true)
+                    local pr,pg,pb=0.51,0.76,0.98
+                    if type(ChalkBox_TipColor)=="function" then
+                        pr,pg,pb=ChalkBox_TipColor("count")
+                    end
+                    tooltip:AddLine(progress,pr,pg,pb,true)
                 end
             else
                 -- Accepted-quest list length is bounded by the quest log.
