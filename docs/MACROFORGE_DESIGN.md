@@ -1,5 +1,7 @@
 # MacroForge — character-aware macro wizard
 
+> **Design history + current interface note (2.2.10).** The v1.12 behavior below still explains the safe macro-generation foundation. The current UI additionally has warm inset frames, a native/fallback outer border, a multiline scrolling preview, better warning spacing and an **optional, default-OFF AddOn Compartment shortcut**. Player-facing instructions live in [MacroForge handbook](USER_GUIDE.md#macroforge); consult the current Lua files before changing behavior.
+
 ## Product promise
 
 **Learn what your buttons really do. Build macros from the spells you already have.**
@@ -8,7 +10,7 @@ MacroForge ships inside ChalkBox; no extra addon, service, LLM or runtime depend
 
 The core design avoids overpromising "one-button rotations." It makes the legitimate macro language approachable for players at every level, and clear enough for serious macro users to trust.
 
-## Implemented in v1.12
+## Original implementation (v1.12 foundation)
 
 - Read class and **currently learned active spellbook abilities** using modern Forever \`C_SpellBook\` and \`C_Spell\`, with safe older-client fallback.
 - Omit **future, passive and off-spec** entries. Use localized game spell names and icons when provided; detect stale saved choices after a respec.
