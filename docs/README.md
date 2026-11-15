@@ -2,7 +2,7 @@
 
 This is the **versioned documentation home** for ChalkBox. GitHub has a Wiki feature, but keeping the primary instructions here means user guides, tests and the actual Lua implementation can be reviewed in the same pull request. Release documentation lives with the code it describes.
 
-**Current addon version: 2.2.16 · Target: World of Warcraft: Forever.** This is not a claim of verified Retail / Classic Era support. Screenshots may represent older versions; check the release notes for behavioral changes.
+**Current addon version: 2.2.17 · Target: World of Warcraft: Forever.** This is not a claim of verified Retail / Classic Era support. Screenshots may represent older versions; check the release notes for behavioral changes.
 
 ## Player guides
 
@@ -20,7 +20,7 @@ This is the **versioned documentation home** for ChalkBox. GitHub has a Wiki fea
 
 | Reference | Purpose |
 | --- | --- |
-| [Full Adventure Chronicle design](ADVENTURE_CHRONICLE_DESIGN.md) | Future verified event ledger, Today/Timeline/History plan; Gate A visuals only shipped in 2.2.16 |
+| [Full Adventure Chronicle design](ADVENTURE_CHRONICLE_DESIGN.md) | Future verified event ledger, Today/Timeline/History plan; Gate A visuals only shipped in 2.2.17 |
 | [QuestSense navigation](QUEST_NAVIGATION.md) | Optional arrow, target priorities, controls, API and test boundaries |
 | [Architecture and state](ARCHITECTURE.md) | Module boundaries, local SavedVariables and API safety |
 | [Development and tests](DEVELOPMENT.md) | Lua 5.1 environment, manifest order and test commands |
