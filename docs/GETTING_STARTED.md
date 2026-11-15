@@ -1,12 +1,12 @@
 # Getting started with ChalkBox
 
-**For WoW Forever · ChalkBox 2.2.11**
+**For WoW Forever · ChalkBox 2.2.12**
 
 ChalkBox is one addon folder. It contains the runtime modules and their bundled static recipe reference files. There is no second AddOn to install, no account to connect, and no third-party service to configure.
 
 ## 1. Choose the correct download
 
-From [GitHub Releases](https://github.com/detok/ChalkBox/releases), select the **`ChalkBox-X.Y.Z.zip`** asset for the version you intend to use. For the version described in this documentation, choose **`ChalkBox-2.2.11.zip`**.
+From [GitHub Releases](https://github.com/detok/ChalkBox/releases), select the **`ChalkBox-X.Y.Z.zip`** asset for the version you intend to use. For the version described in this documentation, choose **`ChalkBox-2.2.12.zip`**.
 
 Do **not** download the auto-generated `Source code (zip)` archive. The **`ChalkBox-CurseForge-Media-X.Y.Z.zip`** asset is artwork and publishing copy; it is **not** the addon.
 
@@ -24,7 +24,7 @@ If ChalkBox is missing, check for the common double-nested folder `Interface/Add
 - Open **Options → AddOns → ChalkBox** (or `/chalk`). Pages are grouped by purpose; some options appear under expandable child pages.
 - Open **LootSense** and hover items to see supported quest, personal KEEP and profession information. Use `/chalk keep [item]` for a manually protected item.
 - Open **DropSense**, then open the World Map and select **Discoveries**, or type `/chalk drops map`. Only loot seen since recording was enabled has observed history.
-- Open **QuestSense**. **Smart** automatically manages accepted quest watches; in a recognized party dungeon it focuses on quests actually matched to that instance. **Nearby only** uses conservative zone evidence. **All accepted** follows quest log order up to the available watch limit.
+- Open **QuestSense**. Its optional **Navigation** child page controls a movable compass based on real quest waypoints. It's OFF by default; use `/chalk nav on` to try it. **Smart** automatically manages accepted quest watches; in a recognized party dungeon it focuses on quests actually matched to that instance. **Nearby only** uses conservative zone evidence. **All accepted** follows quest log order up to the available watch limit.
 - Open **The Bar** to select stats and appearance. Fresh defaults mirror the slim top layout. Right-click empty Bar space to enter Edit Mode; after arranging it, right-click empty space again for **Done editing**. Existing layouts survive upgrades.
 - Type `/chalk macro` to build a macro from learned abilities. Read the preview and warnings; **Select Text** enables Ctrl+C. **Install New** is explicit, out-of-combat and refuses to replace an existing named macro.
 - The compact **Combat Meter** intentionally starts closed. Open it with `/chalk meter show` if desired.
