@@ -411,8 +411,39 @@ end
 local function Create()
     if window then return end
     if not UIParent or type(CreateFrame)~="function" then return end
-    local f=CreateFrame("Frame","ChalkBoxMacroForge",UIParent)
+    -- Match Discoveries' native dialog border without replacing the
+    -- movable standalone MacroForge window or any of its controls.
+    local template=type(BackdropTemplateMixin)=="table" and
+        "BackdropTemplate" or nil
+    local f=CreateFrame("Frame","ChalkBoxMacroForge",UIParent,template)
     f:SetSize(786,678)
+    if type(f.SetBackdrop)=="function" then
+        f:SetBackdrop({
+            bgFile="Interface\\Buttons\\WHITE8X8",
+            edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border",
+            tile=true,tileSize=32,edgeSize=24,
+            insets={left=8,right=8,top=8,bottom=8},
+        })
+        if type(f.SetBackdropColor)=="function" then
+            f:SetBackdropColor(0.08,0.05,0.03,0.25)
+        end
+        if type(f.SetBackdropBorderColor)=="function" then
+            f:SetBackdropBorderColor(0.86,0.68,0.40,1)
+        end
+    else
+        -- Older clients without BackdropTemplate still get a deliberate
+        -- slim bronze outline rather than an unframed gray rectangle.
+        local function OuterLine(anchor,x,y,w,h)
+            local edge=f:CreateTexture(nil,"OVERLAY")
+            edge:SetPoint("TOPLEFT",f,anchor,x,y)
+            edge:SetSize(w,h)
+            edge:SetColorTexture(0.63,0.44,0.22,0.95)
+        end
+        OuterLine("TOPLEFT",1,-1,784,2)
+        OuterLine("TOPLEFT",1,-675,784,2)
+        OuterLine("TOPLEFT",1,-2,2,673)
+        OuterLine("TOPLEFT",783,-2,2,673)
+    end
     f:SetPoint("CENTER",UIParent,"CENTER",0,0)
     if f.SetFrameStrata then f:SetFrameStrata("DIALOG") end
     if f.SetMovable then f:SetMovable(true) end
@@ -428,7 +459,8 @@ local function Create()
     end)
     -- Native map parchment under an opaque-enough reading surface.
     local art=f:CreateTexture(nil,"BACKGROUND",nil,0)
-    art:SetAllPoints(f)
+    art:SetPoint("TOPLEFT",f,"TOPLEFT",5,-5)
+    art:SetPoint("BOTTOMRIGHT",f,"BOTTOMRIGHT",-5,5)
     local function LoadNativeArt()
         if type(art.SetAtlas)~="function" then return false end
         local exists=C_Texture and C_Texture.GetAtlasExists
@@ -458,7 +490,8 @@ local function Create()
         end
     end
     local back=f:CreateTexture(nil,"BACKGROUND",nil,1)
-    back:SetAllPoints(f)
+    back:SetPoint("TOPLEFT",f,"TOPLEFT",5,-5)
+    back:SetPoint("BOTTOMRIGHT",f,"BOTTOMRIGHT",-5,5)
     f.back=back
     Inset(f,"purpose",14,-86,758,59)
     Inset(f,"slots",14,-150,408,213)
