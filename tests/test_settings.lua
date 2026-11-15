@@ -317,6 +317,12 @@ local auctionOpens,auctionScans=0,0
 _G.ChalkBox_AuctionOpen=function() auctionOpens=auctionOpens+1 end
 _G.ChalkBox_AuctionScan=function() auctionScans=auctionScans+1;return true end
 _G.ChalkBox_AuctionSetTooltips=function(value) _G.auctionTooltipEnabled=value end
+local deTooltipEnabled=true
+_G.ChalkBox_DisenchantTooltipsEnabled=function() return deTooltipEnabled end
+_G.ChalkBox_DisenchantSetTooltips=function(on)
+    deTooltipEnabled=on==true
+    ChalkBoxDB.disenchantInfo=deTooltipEnabled
+end
 assert(loadfile("ChalkBox_Settings.lua"))("ChalkBox")
 local loader=frames[#frames]
 assert(loader.event=="PLAYER_LOGIN","must register settings when the client is ready")
@@ -371,10 +377,20 @@ ControlIn("AuctionSense","Open AuctionSense Tab"):Click()
 assert(auctionOpens==1 and auctionScans==0,
     "settings never initiates an AH scan or creates a separate window")
 local auctionChecks=FindCheckByParentTitle("AuctionSense")
-assert(#auctionChecks==1,"market tooltip display has an independent toggle")
+assert(#auctionChecks==2,
+    "AuctionSense has separate market-price and DE estimate toggles")
+categories["AuctionSense"].panel:Show()
+assert(auctionChecks[2].checked,
+    "new DE estimate option starts enabled without rewriting auction state")
 auctionChecks[1]:Click(false)
-assert(_G.auctionTooltipEnabled==false,
-    "AuctionSense tooltip settings do not change LootSense or DropSense")
+assert(_G.auctionTooltipEnabled==false and deTooltipEnabled,
+    "turning off auction tooltip prices does not disable DE estimates")
+auctionChecks[2]:Click(false)
+assert(not deTooltipEnabled and ChalkBoxDB.disenchantInfo==false,
+    "DE toggle is independent and saved in account settings")
+auctionChecks[2]:Click(true)
+assert(deTooltipEnabled and ChalkBoxDB.disenchantInfo,
+    "DE toggle restores read-only valuation without an AH scan")
 assert(categories["MacroForge"],"MacroForge is a native but unobtrusive settings category")
 ChalkBox_OpenSettings("forge")
 assert(opened[#opened]==categories["MacroForge"].ID)
