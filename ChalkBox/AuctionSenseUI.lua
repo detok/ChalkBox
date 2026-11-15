@@ -12,6 +12,7 @@ local frame,tab,host,labels=nil,nil,nil,{}
 local hiddenMode=nil
 local hiddenNative={}
 local searchText,page="",1
+local view="market"  -- Market / My Items / Sales: same native AH pane.
 local seconds=0
 local cachedRows,cachedMarket,cachedTime,cachedSearch={},"",0,nil
 local COLOR={
@@ -119,27 +120,67 @@ local function Refresh()
         "Full scan unavailable"))
     Tint(labels.cooldown,cooldown>0 and COLOR.warning or
         (status.fullAvailable and COLOR.ready or COLOR.muted))
-    labels.details:SetText(("%d items  ·  %s"):format(
-        status.items or 0,
-        status.source=="browse" and "Browse prices" or
-        (status.source=="full" and
-            (tostring(status.auctions or 0).." listings") or "No scan")))
-    labels.info:SetText(status.error or
-        (status.age and status.age>86400 and
-            "OLD SCAN  |  Refresh before buying" or
-            "Asking prices  ·  not sales"))
-    Tint(labels.info,status.error and COLOR.error or
-        (status.age and status.age>86400 and COLOR.warning or COLOR.muted))
-    if cachedSearch~=searchText or
-        cachedMarket~=(status.marketKey or "") or
-        cachedTime~=(status.scannedAt or 0) then
-        cachedMarket=status.marketKey or ""
-        cachedTime=status.scannedAt or 0
-        cachedSearch=searchText
-        cachedRows=ChalkBox_AuctionRows and
-            ChalkBox_AuctionRows(searchText,12000) or {}
+    local entries
+    local extra
+    if view=="bags" then
+        entries,extra={},{}
+        if type(ChalkBox_MarketBagRows)=="function" then
+            entries,extra=ChalkBox_MarketBagRows(searchText,250)
+        end
+        extra=extra or {}
+        labels.details:SetText(("Bags: %d items  ·  %d priced"):format(
+            extra.stacks or 0,extra.priced or 0))
+        labels.info:SetText("Bag asks "..Coin(extra.marketValue or 0)..
+            "  ·  Vendor "..Coin(extra.vendorValue or 0)..
+            "  ·  Price is not a guaranteed sale")
+    elseif view=="sales" then
+        entries=type(ChalkBox_MarketSaleRows)=="function" and
+            ChalkBox_MarketSaleRows(searchText,250) or {}
+        extra=type(ChalkBox_MarketSalesStatus)=="function" and
+            ChalkBox_MarketSalesStatus() or {}
+        labels.details:SetText(("%d receipts  ·  %d captured in last 30d"):format(
+            extra.count or 0,extra.last30 or 0))
+        labels.info:SetText((extra.count or 0)==0 and
+            "No receipts yet · Open a mailbox to capture completed seller invoices"
+            or ("Gross "..Coin(extra.gross or 0)..
+            "  ·  Proceeds "..Coin(extra.proceeds or 0)..
+            "  ·  Fees "..Coin(extra.fees or 0)..
+            "  ·  Captured invoices only"))
+    else
+        labels.details:SetText(("%d items  ·  %s"):format(
+            status.items or 0,
+            status.source=="browse" and "Browse prices" or
+            (status.source=="full" and
+                (tostring(status.auctions or 0).." listings") or "No scan")))
+        labels.info:SetText(status.error or
+            (status.age and status.age>86400 and
+                "OLD SCAN  |  Refresh before buying" or
+                "Asking prices  ·  not sales"))
+        if cachedSearch~=searchText or
+            cachedMarket~=(status.marketKey or "") or
+            cachedTime~=(status.scannedAt or 0) then
+            cachedMarket=status.marketKey or ""
+            cachedTime=status.scannedAt or 0
+            cachedSearch=searchText
+            cachedRows=ChalkBox_AuctionRows and
+                ChalkBox_AuctionRows(searchText,12000) or {}
+        end
+        entries=cachedRows
     end
-    local entries=cachedRows
+    if labels.hdrLow then
+        labels.hdrLow:SetText(view=="bags" and "LOW / UNIT" or
+            (view=="sales" and "GROSS" or "LOW / UNIT"))
+        labels.hdrAverage:SetText(view=="bags" and "DE / ITEM" or
+            (view=="sales" and "PROCEEDS" or "AVG ASK"))
+        labels.hdrListings:SetText(view=="bags" and "IN BAG" or
+            (view=="sales" and "SOLD" or "LISTINGS"))
+        for _,mode in ipairs({"market","bags","sales"}) do
+            Tint(labels["mode_"..mode],view==mode and COLOR.ready or COLOR.muted)
+        end
+    end
+    Tint(labels.info,status.error and view=="market" and COLOR.error or
+        (status.age and status.age>86400 and view~="sales" and
+         COLOR.warning or COLOR.muted))
     local height=type(frame.GetHeight)=="function" and frame:GetHeight() or 345
     if type(height)~="number" or height~=height then height=345 end
     -- Header + tools occupy 157px. Keep pager and footer entirely inside
@@ -153,18 +194,35 @@ local function Refresh()
         local item=(i<=visibleRows) and entries[start+i] or nil
         if item then
             row.name:SetText(item.name or ("Item #"..tostring(item.itemID)))
-            row.low:SetText(Coin(item.low))
-            row.average:SetText(Coin(item.average))
-            row.listings:SetText(item.listings and
-                (tostring(item.listings).." lots") or "—")
-            row.note:SetText(item.mixed and
-                "VARIANTS MIXED  |  Verify exact gear" or
-                (tostring(item.quantity or 0).." units"))
-            Tint(row.note,item.mixed and COLOR.warning or COLOR.muted)
+            if view=="bags" then
+                row.low:SetText(Coin(item.low))
+                row.average:SetText(Coin(item.de))
+                row.listings:SetText(tostring(item.count or 0).."x")
+                row.note:SetText(item.note or "Compare prices")
+                Tint(row.note,(item.protected or item.bound) and COLOR.warning or
+                    COLOR.muted)
+            elseif view=="sales" then
+                row.low:SetText(Coin(item.gross))
+                row.average:SetText(Coin(item.proceeds))
+                row.listings:SetText(tostring(item.count or 1).."x")
+                row.note:SetText("Confirmed seller invoice  ·  "..Coin(item.cut).." fee")
+                Tint(row.note,COLOR.muted)
+            else
+                row.low:SetText(Coin(item.low))
+                row.average:SetText(Coin(item.average))
+                row.listings:SetText(item.listings and
+                    (tostring(item.listings).." lots") or "—")
+                row.note:SetText(item.mixed and
+                    "VARIANTS MIXED  |  Verify exact gear" or
+                    (tostring(item.quantity or 0).." units"))
+                Tint(row.note,item.mixed and COLOR.warning or COLOR.muted)
+            end
+            row.frame.marketView=view
             row.frame.marketData=item
             row.frame:Show()
         else
             row.frame.marketData=nil
+            row.frame.marketView=nil
             row.frame:Hide()
         end
     end
@@ -224,7 +282,20 @@ local function Ensure()
     labels.status=Font(f,"GameFontNormal",20,-49,550)
     labels.progress=Font(f,"GameFontHighlight",21,-67,252)
     labels.cooldown=Font(f,"GameFontHighlight",296,-67,275)
-    labels.details=Font(f,"GameFontHighlight",21,-87,520)
+    local function Mode(buttonView)
+        view=buttonView
+        searchText=""
+        page=1
+        cachedSearch=nil
+        if labels.search and labels.search.SetText then
+            labels.search:SetText("")
+        end
+        Refresh()
+    end
+    labels.mode_market=Button(f,"Prices",21,-85,78,function() Mode("market") end)
+    labels.mode_bags=Button(f,"My Items",104,-85,92,function() Mode("bags") end)
+    labels.mode_sales=Button(f,"Sales & Stats",201,-85,114,function() Mode("sales") end)
+    labels.details=Font(f,"GameFontHighlightSmall",327,-90,395)
     labels.scan=Button(f,"Scan Market",21,-106,125,function()
         if type(ChalkBox_AuctionScan)=="function" then
             local ok,reason=ChalkBox_AuctionScan()
@@ -246,6 +317,7 @@ local function Ensure()
     input:SetSize(258,24)
     input:ClearAllPoints()
     input:SetPoint("TOPRIGHT",f,"TOPRIGHT",-25,-107)
+    labels.search=input
     if input.SetAutoFocus then input:SetAutoFocus(false) end
     if input.SetMaxLetters then input:SetMaxLetters(70) end
     input:SetScript("OnTextChanged",function(self)
@@ -260,15 +332,12 @@ local function Ensure()
     find:SetPoint("RIGHT",input,"LEFT",-8,0)
     find:SetText("Find")
     Font(f,"GameFontNormal",21,-138,330):SetText("ITEM")
-    local lowHeader=Font(f,"GameFontNormal",392,-138,102)
-    lowHeader:SetText("LOW / UNIT")
-    Tint(lowHeader,COLOR.low)
-    local averageHeader=Font(f,"GameFontNormal",505,-138,102)
-    averageHeader:SetText("AVG ASK")
-    Tint(averageHeader,COLOR.average)
-    local listingHeader=Font(f,"GameFontNormal",628,-138,92)
-    listingHeader:SetText("LISTINGS")
-    Tint(listingHeader,COLOR.counts)
+    labels.hdrLow=Font(f,"GameFontNormal",392,-138,102)
+    Tint(labels.hdrLow,COLOR.low)
+    labels.hdrAverage=Font(f,"GameFontNormal",505,-138,102)
+    Tint(labels.hdrAverage,COLOR.average)
+    labels.hdrListings=Font(f,"GameFontNormal",628,-138,92)
+    Tint(labels.hdrListings,COLOR.counts)
     labels.rows={}
     for i=1,MAX_ROWS do
         local y=-157-(i-1)*24
@@ -291,6 +360,38 @@ local function Ensure()
             local tip=StartTooltip(self,item.name or
                 ("Item #"..tostring(item.itemID)))
             if not tip then return end
+            if self.marketView=="bags" then
+                Metric(tip,"In your bags",tostring(item.count or 0),COLOR.neutral)
+                Metric(tip,"Low ask / unit",Coin(item.low),
+                    item.low and COLOR.low or COLOR.muted)
+                Metric(tip,"Estimated bag ask",Coin(item.marketTotal),
+                    item.marketTotal and COLOR.low or COLOR.muted)
+                Metric(tip,"Vendor total",Coin(item.vendorTotal),
+                    COLOR.neutral)
+                Metric(tip,"DE estimate / item",Coin(item.de),
+                    item.de and COLOR.average or COLOR.muted)
+                if item.protected or item.bound then
+                    tip:AddLine(item.protected and "KEEP: protected by you" or
+                        "Bound item: check tradeability",
+                        COLOR.warning[1],COLOR.warning[2],COLOR.warning[3])
+                else
+                    tip:AddLine("Candidate only: verify bind status, fees and competition",
+                        COLOR.muted[1],COLOR.muted[2],COLOR.muted[3])
+                end
+                tip:AddLine("Asking prices are not sale proceeds",
+                    COLOR.muted[1],COLOR.muted[2],COLOR.muted[3])
+                EndTooltip(tip)
+                return
+            elseif self.marketView=="sales" then
+                Metric(tip,"Gross auction sale",Coin(item.gross),COLOR.low)
+                Metric(tip,"House cut",Coin(item.cut),COLOR.warning)
+                Metric(tip,"Returned deposit",Coin(item.deposit),COLOR.neutral)
+                Metric(tip,"Invoice proceeds",Coin(item.proceeds),COLOR.average)
+                tip:AddLine("Verified seller mail; excludes item acquisition costs",
+                    COLOR.muted[1],COLOR.muted[2],COLOR.muted[3])
+                EndTooltip(tip)
+                return
+            end
             Metric(tip,"Low ask / unit",Coin(item.low),COLOR.low)
             Metric(tip,"Avg ask / unit",Coin(item.average),
                 item.average and COLOR.average or COLOR.muted)

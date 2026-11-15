@@ -50,6 +50,7 @@ FILES = (
     "Libs/ForeverDisenchantData/NoDisenchant.lua",
     "Libs/ForeverDisenchantData/OwnLoot.lua",
     "DisenchantSense.lua",
+    "AuctionInsights.lua",
     "MapDiscoveries.lua",
     "UpdateCheck.lua",
     "MacroForge.lua",

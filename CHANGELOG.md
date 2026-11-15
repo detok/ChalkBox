@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.4 — AuctionSense: My Items and Sales & Stats (test release)
+- Expand the existing **native Auction House → Market** pane with three compact subviews: **Prices** (existing scanner), **My Items** (read-only bag price comparison) and **Sales & Stats** (verified seller-invoice receipts). No additional windows or changes to protected Blizzard tabs.
+- My Items aggregates identical item IDs across carried bags, displays fresh low asks, item counts, estimated gross listing value, vendor alternatives and disenchant expected value from the existing DisenchantSense model. User KEEP, quest, and reported bound items get prominent protection; never auto-post, sell, buy or disenchant. Stale, mixed-variant and unpriced items get NO market values.
+- Sales & Stats captures only `GetInboxInvoiceInfo` results with native invoice type `seller` when the player opens a mailbox. Skip pending `seller_temp_invoice`, buyer invoices, invalid or unavailable data. Record original gross bid, house cut, returned deposit and native-mail proceeds; show lifetime capped receipt count and totals. No mail collection, marking as read or UI modifications.
+- Store bounded sales under a new independent `ChalkBoxDB.auctionInsights` subtree, scoped by realm, faction and character. Estimate stable mail identity from invoice data and expiry time for deduplication, but acknowledge this isn't guaranteed complete or perfectly unique in identical-sale cases.
+- Preserve existing AuctionSense snapshot/state, price history, native Buy/Sell/Auctions modes, bag offset, LootSense/DE, map Discoveries and secure item-use fix. No schema migration.
+- Add tests for bag sums, KEEP/bound and stale/mixed guards, seller-mail-only accounting/dedup/realm isolation, and native Market subview navigation with protected AH state unchanged.
+
+
 ## 2.2.3 — Forever disenchant accuracy and safety (test release)
 - Replace the homegrown DisenchantSense 2.2.2 outcome table with an **offline, MIT-licensed, pinned Forever reference** from APGM82/DisenchantForever. Source files, full license, build provenance and annotations ship inside the regular ChalkBox addon; no API, companion installation, or third-party addon needed.
 - Derive possible disenchant ranges from Forever client-derived `ItemDisenchantLoot` brackets by item class, item quality and **effective item level**. Yield percentages and quantities remain openly attributed **Classic VMaNGOS/CMaNGOS reference estimates**, not proven Forever server outcomes.

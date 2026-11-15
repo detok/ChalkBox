@@ -198,6 +198,22 @@ _G.ChalkBox_AuctionRows=function()
 end
 _G.ChalkBox_AuctionScan=function() browseScans=browseScans+1;return true end
 _G.ChalkBox_AuctionFullScan=function() fullScans=fullScans+1;return true end
+local bagsRead,salesRead=0,0
+_G.ChalkBox_MarketBagRows=function()
+    bagsRead=bagsRead+1
+    return {{name="My Test Green",itemID=8888,low=1000,
+        count=2,marketTotal=2000,vendorTotal=500,
+        de=1500,note="DE candidate",protected=false,bound=false}},
+        {stacks=1,priced=1,marketValue=2000,vendorValue=500}
+end
+_G.ChalkBox_MarketSaleRows=function()
+    salesRead=salesRead+1
+    return {{name="Sold Linen",count=4,gross=10000,
+        proceeds=9600,deposit=200,cut=600,at=10000}}
+end
+_G.ChalkBox_MarketSalesStatus=function()
+    return {count=1,gross=10000,proceeds=9600,fees=600}
+end
 assert(loadfile("AuctionSenseUI.lua"))("ChalkBox")
 assert(ChalkBox_AuctionAttach())
 local tab=FindFrame("ChalkBoxAuctionSenseTab")
@@ -347,6 +363,47 @@ assert(lowSeen and avgUnknown and unitsSeen and sourceSeen,
     "row hover shows color-coded low, unavailable average, units and source")
 hoverRow.scripts.OnLeave()
 assert(not tip.shown,"hover tooltip hides on mouse leave")
+-- My Items and Sales are subviews INSIDE Market; never touch secure
+-- native auction displayMode or Blizzard's native tab registry.
+local modeBefore=nativeModeWrites
+Button("My Items"):Click()
+assert(Text("DE / ITEM") and Text("IN BAG") and Text("My Test Green")
+    and bagsRead>0 and rows[1].marketView=="bags",
+    "My Items integrates bag/DE appraisal into native Market frame")
+rows[1].scripts.OnEnter(rows[1])
+local hasBag,hasDE=false,false
+for _,entry in ipairs(tip.lines) do
+    if entry.text=="In your bags" and entry.value=="2" then hasBag=true end
+    if entry.text=="DE estimate / item" and entry.value=="15s 0c" then
+        hasDE=true
+    end
+end
+assert(hasBag and hasDE and tip.shown,"My Items hover compares unit, vendor and DE")
+rows[1].scripts.OnLeave()
+Button("Sales & Stats"):Click()
+assert(Text("GROSS") and Text("PROCEEDS") and
+    Text("Sold Linen") and salesRead>0 and
+    rows[1].marketView=="sales",
+    "Sales & Stats lists only verified seller-mail receipts")
+rows[1].scripts.OnEnter(rows[1])
+local hasProceeds,hasFee=false,false
+for _,entry in ipairs(tip.lines) do
+    if entry.text=="Invoice proceeds" and entry.value=="96s 0c" then
+        hasProceeds=true
+    elseif entry.text=="House cut" and entry.value=="6s 0c" then
+        hasFee=true
+    end
+end
+assert(hasProceeds and hasFee,"sale hover includes invoice proceeds and AH cut")
+rows[1].scripts.OnLeave()
+Button("Prices"):Click()
+assert(Text("AVG ASK") and rows[1].marketView=="market"
+    and rows[1].marketData.itemID==2589,
+    "returning to Prices restores original Market view without losing data")
+assert(nativeModeWrites==modeBefore and nativeRegistryEdits==0
+    and AuctionHouseFrame:GetDisplayMode()==AuctionHouseFrameDisplayMode.Buy,
+    "switching internal Market views never mutates Blizzard trading state")
+UseSoulboundBagItem()
 local scanButton=Button("Scan Market")
 scanButton.scripts.OnEnter(scanButton)
 assert(tip.shown and tip.lines[1].text=="Scan Market",
@@ -376,8 +433,8 @@ assert(not pane.shown and not tab.selected
     and AuctionHouseFrame:GetDisplayMode()==AuctionHouseFrameDisplayMode.Buy,
     "clicking native Buy restores the same display mode's hidden frames")
 UseSoulboundBagItem()
-assert(protectedItemUses==2,
-    "bag use remains permitted after visiting and leaving Market")
+assert(protectedItemUses==3,
+    "bag use remains permitted after switching Market subviews and leaving AH")
 tab:Click()
 assert(pane.shown and not AuctionHouseFrame.BrowseResultsFrame.shown,
     "returning to Market hides the native Buy screen again")
