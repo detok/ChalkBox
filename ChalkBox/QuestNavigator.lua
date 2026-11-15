@@ -283,7 +283,12 @@ local function Refresh()
 end
 local function Face()
     if not target then return nil,reason end
-    if not target.point then return nil,"No waypoint for selected quest" end
+    if not target.point then
+        if target.kind=="corpse" then
+            return nil,"Corpse position unavailable"
+        end
+        return nil,"No waypoint for selected quest"
+    end
     local player,why=PlayerPosition()
     if not player then return nil,why end
     local dist,dx,dy=Distance(target.point,player)
