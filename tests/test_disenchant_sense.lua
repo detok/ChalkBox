@@ -124,7 +124,7 @@ assert(tip.shown and not ChalkBox_DisenchantTooltip(tip,9001),
 local seen={}
 for _,l in ipairs(tip.lines) do seen[l]=true end
 assert(seen["DE estimate  |  Classic model (ilvl 30)"] and
-    seen["188c"] and seen["DE higher vs AH ask (if tradable)"],
+    seen["1s 88c"] and seen["DE higher vs AH ask (if tradable)"],
     "simple DE tooltip compares material EV with actual item ask")
 tip.lines={}
 assert(ChalkBox_DisenchantTooltip(tip,9001,true))
@@ -145,7 +145,7 @@ tip.lines={}
 assert(ChalkBox_DisenchantMarketHint(tip,9001))
 seen={}
 for _,l in ipairs(tip.lines) do seen[l]=true end
-assert(seen["DE model ~188c in materials"] and
+assert(seen["DE model ~1s 88c in materials"] and
     seen["DE higher vs AH ask · if tradable"],
     "Market hover shares the same read-only DE price model")
 ChalkBox_DisenchantCommand("item:9002")
