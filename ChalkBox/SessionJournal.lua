@@ -426,8 +426,8 @@ function ChalkBox_OpenSessionJournal(which)
         -- Fixed rows fit inside their own inset borders; the historical
         -- session data and navigation behavior are intentionally unchanged.
         for i=1,12 do
-            local y=i<=6 and (-112-(i-1)*21) or
-                (-266-(i-7)*21)
+            local y=i<=6 and (-109-(i-1)*20) or
+                (-264-(i-7)*21)
             textRows[i]=Font("GameFontHighlight",27,y,533)
         end
         local function Button(label,x,fn)
