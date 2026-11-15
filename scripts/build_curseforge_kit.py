@@ -79,7 +79,10 @@ def build() -> Path:
         files.append(entry(prefix + f"Artwork/PNG/Extras/ChalkBox-Icon-{size}.png",
             png_from_svg(icon, size, size)))
     for item in COPY:
-        source = SOURCE / item
+        # One canonical slash-command reference: copy the versioned handbook
+        # into the standalone publisher ZIP instead of a stale duplicate.
+        source = (ROOT / "docs/COMMANDS.md") if item == "copy/COMMANDS.md" \
+            else (SOURCE / item)
         if not source.is_file():
             raise FileNotFoundError(source)
         payload = source.read_bytes()
