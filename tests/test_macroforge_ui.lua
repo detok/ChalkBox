@@ -287,8 +287,8 @@ for i=#frames,1,-1 do
 end
 assert(not fallback.hasMapArt and fallback.back.color[4]>=0.94,
     "missing Forever map atlas falls back to an opaque panel")
-assert(not fallback.backdrop,
-    "client without BackdropTemplate does not attempt protected native methods")
+assert(not fallback.backdrop and fallback.outerBorderFallback,
+    "client without BackdropTemplate gets an alternate bronze outer frame")
 _G.testNoMapAtlas=nil
 fallback:RefreshMapArt()
 assert(fallback.hasMapArt,
