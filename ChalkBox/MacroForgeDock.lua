@@ -29,17 +29,10 @@ function ChalkBox_MacroForgeOpenBeside(native)
 end
 local function Attach()
     local native=MacroFrame
-    if not native or attached[native] or Combat() or
-        type(native.HookScript)~="function" then return false end
-    -- HookScript is additive. Never replace MacroFrame OnShow/OnHide or
-    -- register a new macro selection/editing handler.
-    local ok=pcall(native.HookScript,native,"OnHide",function()
-        if type(ChalkBox_MacroForgeHideDocked)=="function" then
-            ChalkBox_MacroForgeHideDocked(native)
-        end
-    end)
-    if not ok then return false end
-    if type(CreateFrame)~="function" then return false end
+    if not native then return false end
+    if attached[native] then return true end
+    if Combat() or type(native.HookScript)~="function" or
+        type(CreateFrame)~="function" then return false end
     -- The native Macro UI's action row is Delete | gap | New | Exit.
     -- Anchor in the real gap instead of adding a tab above the window.
     -- If this client exposes a different editor layout, do NOT cover
@@ -59,6 +52,15 @@ local function Attach()
             type(b)=="number" then room=b-a end
     end
     if room and room<86 then return false end
+    -- Only install OnHide after confirming there is a usable footer.
+    -- Otherwise a client with no room could accumulate duplicate hooks
+    -- on repeated load events.
+    local ok=pcall(native.HookScript,native,"OnHide",function()
+        if type(ChalkBox_MacroForgeHideDocked)=="function" then
+            ChalkBox_MacroForgeHideDocked(native)
+        end
+    end)
+    if not ok then return false end
     local made,button=pcall(CreateFrame,"Button",
         "ChalkBoxMacroForgeNativeButton",native,"UIPanelButtonTemplate")
     if not made or not button then return false end
