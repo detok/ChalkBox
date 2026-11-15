@@ -6,13 +6,13 @@
 
 **A collection of useful tools for World of Warcraft: Forever.**
 
-[Download 2.2.6 — Bar Defaults & UI Polish](https://github.com/detok/ChalkBox/releases/tag/v2.2.6) · [Report a bug](https://github.com/detok/ChalkBox/issues/new/choose) · [User guide](docs/USER_GUIDE.md)
+[Download 2.2.7 — MacroForge Polish](https://github.com/detok/ChalkBox/releases/tag/v2.2.7) · [Report a bug](https://github.com/detok/ChalkBox/issues/new/choose) · [User guide](docs/USER_GUIDE.md)
 
 </div>
 
 ChalkBox adds small improvements around the parts of the game you use every day: finding useful loot, managing quests, tracking progress, preparing for camp, and setting up your action buttons. Pick the modules you want and turn off the rest.
 
-**2.2.6 Bar defaults + QuietGuard opt-in + readable Settings:** New characters start with the compact Bar arrangement shown below. All QuietGuard filters start off unless explicitly enabled; saved preferences are preserved. AuctionSense settings text no longer overlaps. Previously added quest item names and World Map-style Discoveries remain available. **Safety:** The Bar is full-width and now draws behind Blizzard portrait artwork. It can shift eligible default-positioned Blizzard top frames down 18px without resizing the root UI; protected/custom frames are never moved. Emota does not dispatch emotes during combat. The adjustable separate-bag position is restored with combat/bank deferral. In-bag reagent borders remain paused to avoid modifying protected item buttons; learned-recipe tooltips and other ChalkBox features remain available.
+**2.2.7 MacroForge polish + Bar Edit Mode exit + optional AddOns launcher:** MacroForge has framed sections, a subtle native map backdrop, a contained multiline preview, and better spacing for saved-build warnings. The Bar can exit Edit Mode through its right-click menu. An optional direct MacroForge shortcut can appear beneath the minimap's AddOns dropdown. Previous 2.2.6 defaults are preserved. **Earlier improvements:** New characters start with the compact Bar arrangement shown below. All QuietGuard filters start off unless explicitly enabled; saved preferences are preserved. AuctionSense settings text no longer overlaps. Previously added quest item names and World Map-style Discoveries remain available. **Safety:** The Bar is full-width and now draws behind Blizzard portrait artwork. It can shift eligible default-positioned Blizzard top frames down 18px without resizing the root UI; protected/custom frames are never moved. Emota does not dispatch emotes during combat. The adjustable separate-bag position is restored with combat/bank deferral. In-bag reagent borders remain paused to avoid modifying protected item buttons; learned-recipe tooltips and other ChalkBox features remain available.
 
 It installs as **one addon**, including its profession recipe data. You don't need to download any companion packages.
 
