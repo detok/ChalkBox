@@ -14,7 +14,7 @@ Quality-of-life tools for **World of Warcraft: Forever** — loot discoveries, q
 
 ChalkBox installs as **one `ChalkBox` folder**. Its bundled recipe data needs no separate download. Features are managed through Blizzard's native **Options → AddOns → ChalkBox** pages, or by typing `/chalk`.
 
-> **Current release: 2.2.10 (GitHub prerelease).** ChalkBox targets WoW Forever. The code has automated Lua 5.1 tests, but client-specific UI behavior still needs real in-game verification. Retail and ordinary Classic compatibility are **not claimed**.
+> **Current release: 2.2.11 (GitHub prerelease).** ChalkBox targets WoW Forever. The code has automated Lua 5.1 tests, but client-specific UI behavior still needs real in-game verification. Retail and ordinary Classic compatibility are **not claimed**.
 
 ## See it in-game
 
@@ -34,7 +34,7 @@ ChalkBox installs as **one `ChalkBox` folder**. Its bundled recipe data needs no
 | [**QuestSense**](docs/USER_GUIDE.md#questsense) | Maintain Blizzard's accepted-quest tracker in Smart, Nearby or All mode. Smart focuses on verified current-dungeon quests when supported, and restores other watches on exit. |
 | [**MacroForge**](docs/USER_GUIDE.md#macroforge) | Build and save macros from learned spells, inspect the exact output, copy it or explicitly install a *new* macro outside combat. Never automates a rotation. |
 | [**The Bar & Repair Learning**](docs/USER_GUIDE.md#the-bar-and-repair-learning) | A slim configurable display for XP, bags, durability, repair estimates, junk value, gold, ping and more. Right-click to edit and finish your custom layout. |
-| [**Combat Meter & Session Journal**](docs/USER_GUIDE.md#combat-meter-and-session-journal) | Optional meter and manual reports, plus a rolling per-character recap of observed sessions. |
+| [**Combat Meter & Adventure Journal**](docs/USER_GUIDE.md#combat-meter-and-session-journal) | Optional meter and manual reports, plus a framed, persistent per-character recap of observed sessions; a full event Chronicle is planned, not yet recording. |
 | [**Adventure Prep, Emota & QuietGuard**](docs/USER_GUIDE.md#adventure-prep-emota-and-quietguard) | Camping reminders, optional idle emotes and opt-in invite blocking. |
 | [**Appearance, Bags & Updates**](docs/USER_GUIDE.md#appearance-bags-and-updates) | Coordinate panel colors, move separate bags safely and check your installed version. |
 
@@ -63,9 +63,11 @@ For the full installation, first-use and recovery walkthrough, see [Getting star
 
 [Complete verified command reference](docs/COMMANDS.md)
 
-## What's new in 2.2.10?
+## What's new in 2.2.11?
 
-**Smart QuestSense recognizes your current party dungeon** when the client provides dependable matching quest information. It temporarily narrows the native tracker to quests confirmed for *that instance* and restores your previous manual watches when you leave. If Forever supplies no reliable matches, ChalkBox conservatively preserves the tracker instead of inventing dungeon assignments. See [release notes](docs/RELEASE_NOTES.md) and the [full changelog](CHANGELOG.md).
+**The Adventure Journal has a matching Blizzard outer frame, warm wood artwork, and legible inset panels—even when global theme opacity is zero.** The existing session data is preserved. The future full event Chronicle is [designed here](docs/ADVENTURE_CHRONICLE_DESIGN.md), but Today/Timeline/History and milestone recording are not shipped yet.
+
+**Previously in 2.2.10:** Smart QuestSense recognizes your current party dungeon when the client provides dependable matching quest information. It temporarily narrows the native tracker to quests confirmed for *that instance* and restores your previous manual watches when you leave. If Forever supplies no reliable matches, ChalkBox conservatively preserves the tracker instead of inventing dungeon assignments. See [release notes](docs/RELEASE_NOTES.md) and the [full changelog](CHANGELOG.md).
 
 ## Documentation and support
 
