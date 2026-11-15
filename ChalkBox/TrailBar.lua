@@ -193,8 +193,8 @@ end
 -- lower-priority metrics at narrow widths. It NEVER overlaps or changes height.
 local statDefaults={
     rate=true,eta=true,time=true,gold=true,
-    bags=true,gear=true,rested=true,latency=false,pet=true,
-    bagvalue=false, -- opt-in: preserves existing users' TrailBar layout
+    bags=true,gear=true,rested=true,latency=true,pet=false,
+    bagvalue=true, -- fresh installs match the reference Bar; saved choices win
     repair=true, -- honest quote/estimate, not uncalibrated guesswork
 }
 local specs={
@@ -212,9 +212,9 @@ local specs={
     gold={width=182,group="right"},
 }
 local groups={
-    left={"level","rate","bags","gear"},
-    center={"eta","rested","pet"},
-    right={"time","latency","bagvalue","repair","gold"},
+    left={"level","rate"},
+    center={"time","eta","rested"},
+    right={"bags","gear","repair","bagvalue","gold","latency","pet"},
 }
 local dropPriority={"latency","time","pet","eta","rate","rested","gear","bagvalue","bags","repair","gold"}
 local displayed={}
@@ -1080,8 +1080,13 @@ events:SetScript("OnEvent", function(_, event, name)
         -- A saved legacy reservation is not safe: never re-enable it.
         -- Keep the Bar itself; leave Blizzard-owned UIParent unmodified.
         db.barReserve=false
+        -- Older characters had a default of Total. Keep it if their Bar
+        -- preferences already exist; only genuinely new Bars start on Junk.
+        local freshBar=type(db.barStats)~="table"
         ConfigureStats()
-        if db.barBagValueMode~="junk" then db.barBagValueMode="total" end
+        if db.barBagValueMode~="junk" and db.barBagValueMode~="total" then
+            db.barBagValueMode=freshBar and "junk" or "total"
+        end
         ApplyAppearance()
     elseif event == "PLAYER_ENTERING_WORLD" then
         if not session.started then ResetSession() end
