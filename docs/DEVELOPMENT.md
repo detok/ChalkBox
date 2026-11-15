@@ -1,63 +1,92 @@
-# Development
+# Developing ChalkBox
 
-ChalkBox is a self-contained WoW Lua 5.1 addon with no network/backend services. We test with Lua 5.1 mocks and verify a deterministic ZIP.
+**Current code baseline: 2.2.10 · Lua 5.1 · WoW Forever**
 
-## Source tree
+ChalkBox is a single self-contained addon. Most changes should be small, local and reversible. Mocked WoW APIs exercise code paths but do not establish complete real-client compatibility.
+
+## Prerequisites
+
+- Git and a GitHub account that can submit a pull request
+- **Lua 5.1** and its matching `luac5.1` syntax checker
+- **Python 3** for package builds and validation
+- **`librsvg2-bin`** / `rsvg-convert` for branded TGA and media-kit PNGs
+
+CI is defined in [`.github/workflows/release.yml`](../.github/workflows/release.yml). Do not assume a newer Lua runtime proves Lua 5.1 compatibility.
+
+## Source tree and load order
 
 ```text
-ChalkBox/                 runtime folder; copied into Interface/AddOns
-  ChalkBox.toc            Classic-era interface
-  ChalkBox_Camelot.toc    Forever/Camelot interface
-  Core.lua                quest/vendor awareness
-  ProfessionSense.lua     learned recipes and quantities from the client
-  RecipeAdvisor.lua       evidence-based adapter over bundled Forever recipe data
-  Libs/LibStub/            public-domain LibStub loader
-  Libs/LibProfessionDB-1.0/ MIT LibProfessionDB + original license + Forever data
-  CampAura.lua            Camp Benefits aura detection
-  CampSense.lua           preparation reminders and material guidance
-  ReminderToast.lua       compact onscreen notice
-  LootSense.lua           item tooltip classification and slash commands
-  QuestSense.lua          native quest tracking
-  TrailBar.lua            XP/hour and reserved screen layout
-  QuietGuard.lua          native nuisance-invite filters
-  PersonalityContext.lua  class/race/resting-area emote weights
-  Emota.lua               native idle emotes and event reactions
-  ChalkBox_Settings.lua   native Options pages
-  assets/Icon.tga
-tests/                    Lua 5.1 module regression suite
-scripts/package.py        builds one installable ZIP
-scripts/test_packages.py  validates exact ZIP contents
-.github/workflows/         CI on PRs, prereleases on new main versions
+ChalkBox/                 Game-installable addon: Lua files, two TOCs, libs
+tests/                    Mocked Lua 5.1 regression tests
+scripts/                  Icon renderer and deterministic ZIP builders/tests
+docs/                     Player guides, architecture, maintainer runbooks
+curseforge/               Listing copy, art, screenshots, upload checklists
+.github/workflows/        Pull request tests and main-branch publication
+README.md                 Project landing page
+CHANGELOG.md              Historical release history
+CONTRIBUTING.md           Contribution expectations
 ```
 
-## Local validation
+`ChalkBox/ChalkBox.toc` and `ChalkBox/ChalkBox_Camelot.toc` must have **the same Lua load order and version**. Their interface IDs deliberately differ. `scripts/package.py` `FILES` must mirror that order exactly. Read [Architecture](ARCHITECTURE.md) for module ownership and persistence.
 
-Install `lua5.1` and Python 3, then:
+## Run all checks locally
+
+From the repo root:
 
 ```bash
 find ChalkBox tests -name '*.lua' -print0 | xargs -0 luac5.1 -p
-for test in tests/test_*.lua; do (cd ChalkBox && lua5.1 "../$test"); done
+for test in tests/test_*.lua; do
+  echo "Running $test"
+  (cd ChalkBox && lua5.1 "../$test")
+done
 python3 scripts/test_packages.py
+python3 scripts/test_curseforge_kit.py
 ```
 
-This creates exactly one `dist/ChalkBox-X.Y.Z.zip`. The ZIP root is `ChalkBox/`; it includes no test files, Python files or legacy standalone addons. It **does include** the properly MIT-licensed Forever-only database and license notice.
+The addon package test builds exactly one deterministic `dist/ChalkBox-X.Y.Z.zip`, with one `ChalkBox/` root, licenses, icons, all required modules and bundled recipes, and no tests or screenshots. The **separate** media-kit test renders the PNG artwork and packages listing text and real screenshot JPGs; it is *not* an addon.
 
-## Change and release policy
+During development run the focused test first, for example:
 
-1. Branch from `main`, keep changes focused, and run every test.
-2. For runtime changes, update/add a mock regression test and explain manual in-game checks in the PR.
-3. Bump `## Version:` in **both** TOCs (keep the Classic/Forever interface IDs unchanged).
-4. Update `CHANGELOG.md`, `docs/RELEASE_NOTES.md` and user docs when behavior changes.
-5. Submit a PR. After CI passes and it's merged to `main`, the release workflow publishes **one prerelease asset** on a *new* `vX.Y.Z` tag. It never rewrites a previously published release tag.
+```bash
+(cd ChalkBox && lua5.1 ../tests/test_quest_sense.lua)
+```
 
-## WoW API guardrails
+Then run **all tests** and package validation before merge.
 
-- No automated trades, sells, inventory moves, protected actions or unsanctioned chat.
-- Use safe API/feature detection and guard against secret values.
-- Quest and explicitly protected items always outrank general profession speculation.
-- Treat unavailable data as **unknown** rather than falsely concluding safety.
-- No arbitrary runtime internet requests or scraping. Third-party data must have a verified redistribution license, intact notices and a pinned upstream source.
-- Keep native Settings UI and the 18px TrailBar behavior intact unless intentionally changing them.
-- Make social and automatic emotes opt-in or clearly controllable.
+## Change and review workflow
 
-See [Contributing](../CONTRIBUTING.md) and [Recipe data](RECIPE_DATA.md).
+1. Read current `main` and the owning module before editing. Prefer a focused feature branch.
+2. Identify evidence source, API restrictions, saved state and fallback behavior. Never guess player data when the API does not provide it.
+3. Add Lua regression tests for success **and** realistic edge cases: nil/secret APIs, combat or UI deferral, multiple quests/items, unavailability, stale data, saved choices and restoring original behavior.
+4. Keep changes local. UI changes must not silently alter a gameplay data path or interfere with Blizzard-owned controls.
+5. Update [User handbook](USER_GUIDE.md), [Commands](COMMANDS.md) and relevant architecture/design docs for observable behavior. Include [release notes](RELEASE_NOTES.md) and [changelog](../CHANGELOG.md) for a versioned release.
+6. Open a PR with a clear scope, test evidence, affected SavedVariables and **in-client checks still required**.
+7. Merge only after CI passes. Release according to [Release process](RELEASE_PROCESS.md).
+
+## Guardrails for WoW Forever
+
+- Preserve Blizzard's native UI. No automated sales, purchases, bids, inventory mutations, disenchanting, combat rotations, protected-frame modification or unsanctioned chat.
+- Handle missing and secret client values conservatively. Item/quest evidence must outrank uncertain profession hints.
+- QuestSense cannot claim a current dungeon quest without a verified match. Preserve and restore manual quest watches, and defer edits when not safe.
+- DropSense records *observed* loot, not all kills or server drop tables; outdoor location records are the player's position when opening loot.
+- AH values are observed *asks*, not sales; DE expected values are estimates and Classic-reference odds, not guaranteed outcomes.
+- MacroForge must use learned spells and explicit safe user actions. Never promise a proc-driven one-button rotation.
+- The Bar must not reposition UIParent or secure action frames; bag adjustments defer near bank setup and combat.
+- QuietGuard blocking defaults OFF and saved ON choices must be honored. Emota automatic actions remain optional.
+- Preserve third-party license notices and pinned bundled recipe data.
+
+## Docs-only PRs
+
+A docs-only change should **not bump both TOC versions or alter gameplay files**. Verify navigation, descriptions and command examples against source. The media-kit build includes documentation-derived listing copy; an existing GitHub release tag is preserved and, on the main-branch workflow, the same tag's **media kit** may be refreshed without rewriting the playable addon asset.
+
+## Checklist for a maintainable PR
+
+- The issue / expected behavior can be reproduced or explained.
+- No unrequested gameplay or SavedVariables migrations.
+- Added / updated relevant mocked tests, plus full suite green.
+- Failure behavior documented; no guessed or unsafe data.
+- Manual client steps listed separately from automated verification.
+- Player docs, release docs and publishing copy all agree.
+- MIT/vendor license files remain intact.
+
+[Architecture](ARCHITECTURE.md) · [Maintainer runbook](MAINTAINER_RUNBOOK.md) · [Release process](RELEASE_PROCESS.md) · [Contributing](../CONTRIBUTING.md)
