@@ -88,8 +88,9 @@ function ChalkBox_QuestTrackerMenuOpen(owner)
     return false
 end
 local function HookHeader(frame)
-    if not frame or hooked[frame] or
-        type(frame.HookScript)~="function" then return false end
+    if not frame then return false end
+    if hooked[frame] then return true end
+    if type(frame.HookScript)~="function" then return false end
     local ok=pcall(frame.HookScript,frame,"OnMouseUp",
         function(self,button)
             if button=="RightButton" then
