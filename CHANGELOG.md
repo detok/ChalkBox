@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.6 — Bar reference defaults, opt-in social filters, cleaner settings (test release)
+- **The Bar:** new characters start with Left: Level/XP, XP/hr; Center: Session time, Time to level, Rested XP; Right: Bags, Gear, Repair, Junk value, Gold, World latency. Pet status remains available but starts hidden. Fresh Bar profiles show Junk value (not total resale), while previously saved stats, ordering, alignment, value modes and appearances remain untouched. Reset Layout adopts the new reference arrangement.
+- **QuietGuard:** all five filters (guild, duel, party, trade, channel) start OFF when no preference exists. Explicitly saved ON/OFF preferences are retained, and native Blizzard social preferences are never forcibly cleared when ChalkBox's filter is off.
+- **Options:** add a shared dark reading surface behind ChalkBox's native options contents, retaining the game's Settings window, accents and controls. Separate AuctionSense's scan-age hint from the disenchant checkbox and realign footer notes.
+- Regression coverage: fresh/default and saved social filters, Bar initial arrangement, reset, stats and junk mode, AuctionSense spacing and original auction/DE interactions. No AH actions, protected item methods, quest behavior, data schema changes or automatic blocking.
+
 ## 2.2.5 — Named quest items and a World Map-style Discoveries backdrop (test release)
 - **LootSense** now reuses Core.lua's existing accepted-quest item-objective cache to show the exact quest title and objective progress alongside the original KEEP protection. Shared items list all matching accepted quests. Completed objectives remain named and protected until quest removal or turn-in. No external quest database, new scans, or speculative ID-to-quest mappings.
 - Extend the existing Core read-only quest lookup without changing merchant BUY FOR QUEST / DO NOT SELL warnings, QuestSense watch logic, or user KEEP priorities. Nonmatching class-12 quest items remain protected but do not invent a quest name.
