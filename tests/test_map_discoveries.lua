@@ -9,6 +9,8 @@ local fonts={}
 local function Frame(kind,name,parent)
     local f={kind=kind,name=name,parent=parent,shown=false,text=""}
     function f:SetSize(w,h) self.w=w;self.h=h end
+    function f:GetWidth() return self.w or 500 end
+    function f:GetHeight() return self.h or 400 end
     function f:SetPoint(...) self.point={...} end
     function f:ClearAllPoints() self.point=nil end
     function f:SetFrameStrata(n) self.strata=n end
@@ -110,6 +112,10 @@ WorldMapFrame.top=750
 WorldMapFrame:Show()
 WorldMapFrame.GetMapID=function() return viewed end
 WorldMapFrame.GetRight=function(self) return self.right end
+local mapCanvas=Frame("Frame","WorldMapCanvas",WorldMapFrame)
+mapCanvas:SetSize(500,400)
+WorldMapFrame.ScrollContainer={Child=mapCanvas}
+
 _G.CreateFrame=Frame
 _G.C_Map={
     GetBestMapForUnit=function() return 1436 end,
@@ -468,13 +474,34 @@ local first=FirstLootRow()
 assert(first,"journal renders interactive item rows")
 tooltipLines={}
 first.OnEnter()
+local ping
+for _,child in ipairs(frames) do
+    if child.parent==mapCanvas and child.w==18 and child.h==18 then
+        ping=child
+    end
+end
+assert(ping and ping.shown and ping.point[1]=="CENTER"
+    and ping.point[2]==mapCanvas
+    and math.abs(ping.point[4]-352.5)<0.01
+    and math.abs(ping.point[5]+84.4)<0.01,
+    "hover pulses the most recent actual loot position on the visible native canvas")
+assert(WorldMapFrame:GetMapID()==1436 and
+    ChalkBox_DiscoveriesBrowserStatus().selectedArea=="z:1436",
+    "pin leaves Blizzard's map selection and browsing state untouched")
 assert(table.concat(tooltipLines," "):find("Looted near Westfall",1,true)
     and table.concat(tooltipLines," "):find("70.5, 21.1",1,true),
     "hover names the location of observed outdoor looting")
 assert(table.concat(tooltipLines," "):find("2 loots",1,true),
     "repeated nearby observations show their count")
 first.OnLeave()
+assert(not ping.shown,"mouseout instantly removes the temporary loot marker")
 assert(not GameTooltip.shown,"mouseout closes the item hover")
+first.OnEnter()
+viewed=1437
+if ping.OnUpdate then ping.OnUpdate(ping,0.25) end
+assert(not ping.shown,
+    "map change removes an old hover location instead of misleading the user")
+viewed=1436
 
 local sawDropRate,sawDrops,sawSourceStats=false,false,false
 for _,font in ipairs(fonts) do
