@@ -18,7 +18,13 @@ local records={
     [9006]={"Green Consumable",2,30,0,0,"",100},
     [9007]={"Low Sword",2,7,2,7,"INVTYPE_WEAPON",50},
     [9008]={"Enchanter Wand",2,30,2,19,"INVTYPE_RANGEDRIGHT",50},
-    [9009]={"Uncached",2,66,4,1,"INVTYPE_CHEST",10},
+    [9009]={"Out of bracket",2,105,4,1,"INVTYPE_CHEST",10},
+    [9010]={"Low Blue",3,9,4,1,"INVTYPE_CHEST",50},
+    [9011]={"High Bracket Blue",3,65,4,1,"INVTYPE_CHEST",100},
+    [9012]={"Effective Level Sword",2,51,2,7,"INVTYPE_WEAPON",50},
+    [9013]={"Epic Armor",4,60,4,1,"INVTYPE_CHEST",300},
+    [11287]={"NO_DE flag gear",2,30,4,1,"INVTYPE_CHEST",90},
+    [279246]={"Special disenchant gear",2,35,4,1,"INVTYPE_CHEST",95},
 }
 _G.C_Item={GetItemInfo=function(item)
     local id=tonumber(item) or tostring(item):match("item:(%d+)")
@@ -26,6 +32,11 @@ _G.C_Item={GetItemInfo=function(item)
     if not row then return nil end
     return row[1],"item:"..id,row[2],row[3],25,"Armor","",
         1,row[6],nil,row[7],row[4],row[5],2,nil,nil,false
+end,
+GetDetailedItemLevelInfo=function(item)
+    local id=tonumber(item) or tostring(item):match("item:(%d+)")
+    if tonumber(id)==9012 then return 65 end
+    return nil
 end}
 local asks={
     [11083]={low=100,stale=false},
@@ -38,6 +49,11 @@ local asks={
     [14344]={low=1500,stale=false},
     [20725]={low=3000,stale=false},
     [9004]={low=1200,stale=false},
+    [9010]={low=1000,stale=false},
+    [9011]={low=1000,stale=false},
+    [9013]={low=2000,stale=false},
+    [10938]={low=100,stale=false},
+    [10940]={low=50,stale=false},
 }
 _G.ChalkBox_AuctionPrice=function(id)
     local n=type(id)=="number" and id or
@@ -47,7 +63,15 @@ end
 local printed={}
 _G.DEFAULT_CHAT_FRAME={AddMessage=function(_,msg) printed[#printed+1]=msg end}
 _G.IsShiftKeyDown=function() return false end
-assert(loadfile("DisenchantSense.lua"))("ChalkBox")
+local ns={}
+local base="Libs/ForeverDisenchantData/"
+assert(loadfile(base.."Materials.lua"))("ChalkBox",ns)
+assert(loadfile(base.."NoDisenchant.lua"))("ChalkBox",ns)
+assert(loadfile(base.."OwnLoot.lua"))("ChalkBox",ns)
+assert(ns.materials and ns.noDisenchant and ns.ownLoot)
+assert(ns.noDisenchant[11287] and ns.ownLoot[279246],
+    "client exception tables are present and correctly loaded")
+assert(loadfile("DisenchantSense.lua"))("ChalkBox",ns)
 assert(events.ADDON_LOADED,"module should initialize from addon load")
 -- Find loader script by intercepting construction in a second test instance?
 -- Mock CreateFrame registers, stores the script as a field.
@@ -75,16 +99,42 @@ assert(rare.quality==3 and #rare.outcomes==1 and
     rare.outcomes[1].id==11138 and rare.estimated==2000,
     "blue ilvl 35 produces Small Glowing Shard in Classic model")
 local high=ChalkBox_DisenchantEvaluate(9004)
-assert(high and #high.outcomes==2 and high.complete and
-    high.outcomes[1].chance==0.995 and
-    high.outcomes[2].chance==0.005 and high.estimated==1508,
-    "late Classic blues include rare nexus crystal path in EV")
+assert(high and #high.outcomes==1 and high.complete and
+    high.outcomes[1].id==14344 and high.outcomes[1].chance==1 and
+    high.estimated==1500,
+    "Forever 56-60 blues yield a Large Brilliant Shard; no phantom crystal")
+local highBracket=ChalkBox_DisenchantEvaluate(9011)
+assert(highBracket and #highBracket.outcomes==2 and highBracket.complete
+    and highBracket.outcomes[1].chance==0.99
+    and highBracket.outcomes[2].chance==0.01
+    and highBracket.estimated==1515,
+    "the crystal chance applies to the client 61+ rare bracket")
+local lowest=ChalkBox_DisenchantEvaluate(9007)
+assert(lowest and lowest.itemLevel==7 and lowest.weapon and
+    #lowest.outcomes==2 and lowest.complete
+    and lowest.outcomes[1].id==10938
+    and lowest.outcomes[1].chance==0.8
+    and lowest.estimated==135,
+    "Forever 5-15 uncommon weapons are eligible; essence weighted")
+local lowBlue=ChalkBox_DisenchantEvaluate(9010)
+assert(lowBlue and lowBlue.unconfirmed==true
+    and lowBlue.estimated==nil and lowBlue.verdict==nil,
+    "Forever 5-15 blue bracket's unverified reward must not be valued")
+local epic=ChalkBox_DisenchantEvaluate(9013)
+assert(epic and epic.quality==4 and epic.estimated==3000
+    and epic.outcomes[1].id==20725,
+    "Forever-supported 56-60 epic bracket values a Nexus Crystal")
+local scaled=ChalkBox_DisenchantEvaluate(9012)
+assert(scaled and scaled.itemLevel==65
+    and scaled.outcomes[1].id==16203,
+    "live exact item level takes priority over generic cached item level")
 assert(ChalkBox_DisenchantEvaluate(9005)==nil and
     ChalkBox_DisenchantEvaluate(9006)==nil and
-    ChalkBox_DisenchantEvaluate(9007)==nil and
     ChalkBox_DisenchantEvaluate(9008)==nil and
-    ChalkBox_DisenchantEvaluate(9009)==nil,
-    "unsupported rarities, non-equipment, low weapon ilvls and crafted wands stay quiet")
+    ChalkBox_DisenchantEvaluate(9009)==nil and
+    ChalkBox_DisenchantEvaluate(11287)==nil and
+    ChalkBox_DisenchantEvaluate(279246)==nil,
+    "unsupported items, unusable wands, explicit no-DE flags and special-loot gear stay quiet")
 asks[11084]=nil
 local partial=ChalkBox_DisenchantEvaluate(9001)
 assert(partial and not partial.complete and partial.priced==2
@@ -123,7 +173,7 @@ assert(tip.shown and not ChalkBox_DisenchantTooltip(tip,9001),
     "repeated tooltip callbacks do not duplicate DE information")
 local seen={}
 for _,l in ipairs(tip.lines) do seen[l]=true end
-assert(seen["DE estimate  |  Classic model (ilvl 30)"] and
+assert(seen["DE estimate  |  Forever bracket (ilvl 30)"] and
     seen["1s 88c"] and seen["DE higher vs AH ask (if tradable)"],
     "simple DE tooltip compares material EV with actual item ask")
 tip.lines={}
@@ -142,6 +192,17 @@ assert(seen["75%  1-2x Soul Dust"] and
     seen["5%  1-1x Large Glimmering Shard"],
     "Shift reveals fully labeled probabilities and ranges")
 tip.lines={}
+assert(ChalkBox_DisenchantTooltip(tip,9010))
+seen={}
+for _,l in ipairs(tip.lines) do seen[l]=true end
+assert(seen["Unconfirmed for this bracket"]
+    and seen["Unknown reward: no reliable 5-15 blue yield"]
+    and not seen["100%  1-1x Small Glimmering Shard"],
+    "unconfirmed blue yields must not display made-up percentages/prices")
+ChalkBox_DisenchantCommand("item:9010")
+assert(not printed[#printed-1]:find("100%",1,true),
+    "chat must not present blue 5-15 reference as observed certainty")
+tip.lines={}
 assert(ChalkBox_DisenchantMarketHint(tip,9001))
 seen={}
 for _,l in ipairs(tip.lines) do seen[l]=true end
@@ -149,6 +210,42 @@ assert(seen["DE model ~1s 88c in materials"] and
     seen["DE higher vs AH ask · if tradable"],
     "Market hover shares the same read-only DE price model")
 ChalkBox_DisenchantCommand("item:9002")
-assert(printed[#printed]:find("Forever odds may differ",1,true),
-    "chat command marks external baseline as uncertain")
-print("PASS: green/blue DE odds, item-level tiers, complete/stale/mixed prices, EV ranking, protected tooltip, Shift detail and market hints")
+assert(printed[#printed]:find("Classic reference odds",1,true),
+    "chat command separates client bracket from reference-server probabilities")
+-- Missing any mandatory static exception file must produce NO valuation.
+assert(loadfile("DisenchantSense.lua"))("ChalkBox",
+    {materials=ns.materials})
+assert(ChalkBox_DisenchantEvaluate(9001)==nil,
+    "if excluded-item tables fail to load, the model fails closed")
+assert(loadfile("DisenchantSense.lua"))("ChalkBox",ns)
+assert(ChalkBox_DisenchantEvaluate(9001),
+    "fully loaded source restores read-only item model")
+-- Verify every client-sourced bracket (both edges, class and rarity),
+-- without inventing rewards for non-disenchantable unsupported ranges.
+local ranges={
+    {5,15},{16,20},{21,25},{26,30},{31,35},
+    {36,40},{41,45},{46,50},{51,55},{56,60},{61,99},
+}
+local epicRanges={
+    {40,45},{46,50},{51,55},{56,60},{61,99}
+}
+for _,class in ipairs({2,4}) do
+    for _,quality in ipairs({2,3,4}) do
+        local correctRanges=quality==4 and epicRanges or ranges
+        for _,range in ipairs(correctRanges) do
+            for _,lvl in ipairs(range) do
+                local row=ns.materials.Find(class,quality,lvl)
+                assert(row and row[1]==range[1] and row[2]==range[2],
+                    "Forever reference bracket mismatch at "..class.."/"..quality.."/"..lvl)
+                local sum=0
+                for j=3,#row do sum=sum+row[j][1] end
+                assert(sum==100,"all bracket outcomes must total 100 percent")
+            end
+        end
+        if quality==4 then
+            assert(ns.materials.Find(class,quality,39)==nil,
+                "client disallows epic disenchant bracket below item level 40")
+        end
+    end
+end
+print("PASS: 54 client quality/class brackets, flags and special loot, Forever level/rarity boundaries, Classic odds, item-level API, partial/stale/mixed price safety, tooltip and Market")

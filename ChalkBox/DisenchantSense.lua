@@ -1,41 +1,14 @@
--- Disenchant economics: deterministic, read-only, Classic-based yields.
--- Data model (not a spell or bag hook). Forever may have custom exceptions.
--- Material prices come ONLY from AuctionSense's same-realm/faction snapshot.
--- Green/blue weapons and armor, item levels 5-65. No item actions.
-local addonName=...
+-- DisenchantSense: read-only Forever client bracket + Classic-reference odds.
+-- Data is vendored intact under Libs/ForeverDisenchantData (MIT APGM82).
+-- No network calls, automatic disenchanting, bag hooks, or item actions.
+local addonName, ns = ...
 local enabled=true
+local ref=ns and ns.materials
+local blocked=ns and ns.noDisenchant
+local special=ns and ns.ownLoot
 local function Public(v)
     return v~=nil and (type(issecretvalue)~="function" or not issecretvalue(v))
 end
-local materials={
-    [10940]="Strange Dust", [10938]="Lesser Magic Essence",
-    [10939]="Greater Magic Essence", [10978]="Small Glimmering Shard",
-    [10998]="Lesser Astral Essence", [11083]="Soul Dust",
-    [11082]="Greater Astral Essence", [11084]="Large Glimmering Shard",
-    [11134]="Lesser Mystic Essence", [11138]="Small Glowing Shard",
-    [11137]="Vision Dust", [11135]="Greater Mystic Essence",
-    [11139]="Large Glowing Shard", [11174]="Lesser Nether Essence",
-    [11177]="Small Radiant Shard", [11176]="Dream Dust",
-    [11175]="Greater Nether Essence", [11178]="Large Radiant Shard",
-    [16202]="Lesser Eternal Essence", [14343]="Small Brilliant Shard",
-    [16204]="Illusion Dust", [16203]="Greater Eternal Essence",
-    [14344]="Large Brilliant Shard", [20725]="Nexus Crystal",
-}
--- Highest item level, dust ID/quantity, essence ID/quantity, shard ID.
--- These are Classic yield bands: do not substitute required-character level.
-local bands={
-    {15,10940,1,2,10938,1,2,nil},
-    {20,10940,2,3,10939,1,2,10978},
-    {25,10940,4,6,10998,1,2,10978},
-    {30,11083,1,2,11082,1,2,11084},
-    {35,11083,2,5,11134,1,2,11138},
-    {40,11137,1,2,11135,1,2,11139},
-    {45,11137,2,5,11174,1,2,11177},
-    {50,11176,1,2,11175,1,2,11178},
-    {55,11176,2,5,16202,1,2,14343},
-    {60,16204,1,2,16203,1,2,14344},
-    {65,16204,2,5,16203,2,3,14344},
-}
 local function ID(item)
     if type(item)=="number" and item>0 and item==math.floor(item) then
         return item
@@ -61,71 +34,58 @@ local function Metadata(item)
     local ok,name,link,quality,ilvl,reqLevel,category,subtype,stack,slot,
         icon,vendor,classID,subclassID=pcall(fn,item)
     if not ok or not Public(name) or not Public(ilvl)
-        or type(ilvl)~="number" or ilvl<5 or ilvl>65
-        or (quality~=2 and quality~=3) then return nil end
-    -- Only equipment. Some enchanted wands cannot be disenchanted.
-    -- Shields and off-hands use weapon-like Classic disenchant odds.
+        or type(ilvl)~="number" or ilvl<5 or ilvl>99
+        or (quality~=2 and quality~=3 and quality~=4) then return nil end
+    -- Verify exact item ID for known exceptions; no special-yield guessing.
+    local itemID=ID(item) or ID(link)
+    if not itemID or (blocked and blocked[itemID])
+        or (special and special[itemID]) then return nil end
     if classID~=2 and classID~=4 then return nil end
+    -- Craftable wands are not guaranteed valid material candidates.
     if classID==2 and subclassID==19 then return nil end
+    -- Prefer Forever's exact/scaled effective ilvl when exposed. A missing
+    -- API is not a reason to use the character's required level instead.
+    local levelFn=(C_Item and C_Item.GetDetailedItemLevelInfo)
+        or GetDetailedItemLevelInfo
+    if type(levelFn)=="function" then
+        local valid,level=pcall(levelFn,item)
+        if valid and Public(level) and type(level)=="number"
+            and level>=1 then ilvl=level end
+    end
+    if ilvl<5 or ilvl>99 then return nil end
     -- Reject empty equipment slots, including non-equippable special items.
-    -- Some items with classID=4 cannot be disenchanted in Forever.
     if type(slot)~="string" or slot=="" or slot=="INVTYPE_BAG"
         or slot=="INVTYPE_BODY" or slot=="INVTYPE_TABARD" then
         return nil
     end
-    local weapon=classID==2 or slot=="INVTYPE_SHIELD"
-        or slot=="INVTYPE_HOLDABLE"
-    return {itemID=ID(item),name=name,quality=quality,
+    local weapon=classID==2
+    return {itemID=itemID,name=name,quality=quality,classID=classID,
         itemLevel=math.floor(ilvl),weapon=weapon,
         vendor=Public(vendor) and type(vendor)=="number"
             and vendor>=0 and vendor or nil}
 end
+-- Use the exact Forever item-quality/class/level brackets. The
+-- accompanying yields are openly licensed VMaNGOS/CMaNGOS estimates,
+-- NOT server-confirmed Forever odds. These tables are independent of
+-- recipe reagent requirements in LibProfessionDB.
 local function Outcomes(info)
-    local level=info.itemLevel
-    local tier
-    for i=1,#bands do
-        if level<=bands[i][1] then tier=bands[i];break end
+    if not ref or type(ref.Find)~="function" then return nil end
+    local row=ref.Find(info.classID,info.quality,info.itemLevel)
+    if not row then return nil end
+    local results={}
+    local sum=0
+    for i=3,#row do
+        local outcome=row[i]
+        if type(outcome)~="table" or type(outcome[1])~="number"
+            or type(outcome[2])~="number" or type(outcome[3])~="number"
+            or type(outcome[4])~="number" then return nil end
+        local pct,min,max,id=unpack(outcome)
+        if pct<=0 or min<=0 or max<min then return nil end
+        sum=sum+pct
+        results[#results+1]={id=id,min=min,max=max,chance=pct/100}
     end
-    if not tier then return nil end
-    if info.quality==3 then
-        -- Classic blues normally yield one shard. Very high Classic blues
-        -- can rarely yield a crystal instead; count both price possibilities.
-        local shard
-        if level<=25 then shard=10978
-        else shard=tier[8] end
-        if not shard then return nil end
-        if level>=56 then
-            return {{id=shard,min=1,max=1,chance=0.995},
-                {id=20725,min=1,max=1,chance=0.005}}
-        end
-        return {{id=shard,min=1,max=1,chance=1}}
-    end
-    -- The very lowest weapon levels are a special/uncertain band.
-    if info.weapon and level<10 then return nil end
-    local dustChance,essChance,shardChance
-    if not tier[8] then
-        dustChance=info.weapon and 0.20 or 0.80
-        essChance=1-dustChance
-        shardChance=0
-    elseif level<=25 then
-        dustChance=info.weapon and (level<=20 and 0.20 or 0.15) or 0.75
-        essChance=info.weapon and 0.75 or (level<=20 and 0.20 or 0.15)
-        shardChance=level<=20 and 0.05 or 0.10
-    elseif info.weapon and level>=51 then
-        dustChance,essChance,shardChance=0.22,0.75,0.03
-    else
-        dustChance=info.weapon and 0.20 or 0.75
-        essChance=info.weapon and 0.75 or 0.20
-        shardChance=0.05
-    end
-    local results={
-        {id=tier[2],min=tier[3],max=tier[4],chance=dustChance},
-        {id=tier[5],min=tier[6],max=tier[7],chance=essChance},
-    }
-    if tier[8] and shardChance>0 then
-        results[#results+1]={id=tier[8],min=1,max=1,chance=shardChance}
-    end
-    return results
+    if #results==0 or math.abs(sum-100)>0.001 then return nil end
+    return results,row.unconfirmed==true
 end
 local function ValidAsk(itemID)
     if type(ChalkBox_AuctionPrice)~="function" then return nil end
@@ -138,14 +98,18 @@ local function ValidAsk(itemID)
 end
 -- Public read-only result. nil means "not safely modeled", not zero value.
 function ChalkBox_DisenchantEvaluate(item)
-    if not enabled then return nil end
+    -- The exception files are mandatory. Without them we could recommend
+    -- disenchanting flagged or special-output gear. Fail closed instead.
+    if not enabled or not ref or type(ref.Find)~="function"
+        or type(blocked)~="table" or type(special)~="table"
+        then return nil end
     local info=Metadata(item)
     if not info then return nil end
-    local results=Outcomes(info)
+    local results,unconfirmed=Outcomes(info)
     if not results then return nil end
     local expected,priced,total=0,0,#results
     for _,entry in ipairs(results) do
-        entry.name=materials[entry.id]
+        entry.name=ref and ref.names and ref.names[entry.id]
         entry.expected=entry.chance*(entry.min+entry.max)/2
         entry.ask=ValidAsk(entry.id)
         if entry.ask then
@@ -155,8 +119,9 @@ function ChalkBox_DisenchantEvaluate(item)
         end
     end
     local itemAsk,itemPrice=ValidAsk(info.itemID or item)
-    local complete=priced==total
-    -- Partial pricing never becomes a fake total or a recommendation.
+    local complete=priced==total and not unconfirmed
+    -- Unconfirmed client-only bracket rewards cannot produce an estimate,
+    -- even with complete price coverage.
     local estimate=complete and math.floor(expected+0.5) or nil
     local better,delta
     if estimate and (itemAsk or info.vendor) then
@@ -179,10 +144,10 @@ function ChalkBox_DisenchantEvaluate(item)
         quality=info.quality,name=info.name,
         weapon=info.weapon,vendor=info.vendor,
         outcomes=results,priced=priced,total=total,
-        complete=complete,estimated=estimate,
+        complete=complete,unconfirmed=unconfirmed,estimated=estimate,
         itemAsk=itemAsk,itemPrice=itemPrice,
         verdict=better,difference=delta,
-        model="Classic baseline; Forever outcomes may differ"}
+        model="Forever client bracket; Classic reference odds"}
 end
 local function AlreadyAnnotated(tooltip)
     local name=type(tooltip.GetName)=="function" and tooltip:GetName()
@@ -214,13 +179,15 @@ end
 local function AddLines(tip,model,shift,protected)
     if not model or type(tip.AddLine)~="function" then return false end
     local r,g,b=Color("info")
-    tip:AddLine("DE estimate  |  Classic model (ilvl "..model.itemLevel..")",
+    tip:AddLine("DE estimate  |  Forever bracket (ilvl "..model.itemLevel..")",
         r,g,b)
-    if model.complete then
+    if model.unconfirmed then
+        Metric(tip,"Material outcome","Unconfirmed for this bracket","warning")
+    elseif model.complete then
         Metric(tip,"Materials · gross ask",Money(model.estimated),"value")
     else
         Metric(tip,"Material prices",
-            model.priced.."/"..model.total.." · scan missing reagents","warning")
+            model.priced.."/"..model.total.." · scan missing materials","warning")
     end
     if not protected and model.verdict then
         local role=model.difference and model.difference>0 and
@@ -230,16 +197,20 @@ local function AddLines(tip,model,shift,protected)
             role)
     end
     if shift then
-        for _,entry in ipairs(model.outcomes) do
-            local title=("%d%%  %d-%dx %s"):format(
-                math.floor(entry.chance*100+0.5),
-                entry.min,entry.max,entry.name or ("#"..entry.id))
-            Metric(tip,title,entry.ask and Money(entry.ask).."/unit" or "No price",
-                entry.ask and "count" or "muted")
-        end
         local cr,cg,cb=Color("muted")
+        if model.unconfirmed then
+            tip:AddLine("Unknown reward: no reliable 5-15 blue yield",cr,cg,cb)
+        else
+            for _,entry in ipairs(model.outcomes) do
+                local title=("%d%%  %d-%dx %s"):format(
+                    math.floor(entry.chance*100+0.5),
+                    entry.min,entry.max,entry.name or ("#"..entry.id))
+                Metric(tip,title,entry.ask and Money(entry.ask).."/unit" or "No price",
+                    entry.ask and "count" or "muted")
+            end
+        end
         tip:AddLine("Expected averages · asking prices, not sales",cr,cg,cb)
-        tip:AddLine("Forever odds may differ · no automatic DE",cr,cg,cb)
+        tip:AddLine("Forever bracket · Classic odds · no automatic DE",cr,cg,cb)
     end
     return true
 end
@@ -255,9 +226,9 @@ end
 function ChalkBox_DisenchantMarketHint(tooltip,item)
     local model=ChalkBox_DisenchantEvaluate(item)
     if not model or type(tooltip.AddLine)~="function" then return false end
-    local label=model.complete and
-        ("DE model ~"..Money(model.estimated).." in materials") or
-        ("DE prices missing ("..model.priced.."/"..model.total..")")
+    local label=model.unconfirmed and "DE outcomes unconfirmed" or
+        (model.complete and ("DE model ~"..Money(model.estimated).." in materials")
+            or ("DE prices missing ("..model.priced.."/"..model.total..")"))
     local r,g,b=Color(model.complete and "value" or "muted")
     tooltip:AddLine(label,r,g,b)
     if model.verdict then
@@ -292,19 +263,24 @@ function ChalkBox_DisenchantCommand(command)
         end
     end
     if not model then
-        Say("Shift-click a green/blue weapon or armor link: /chalk de [item].")
+        Say("Shift-click eligible green/blue/epic gear: /chalk de [item].")
         return
     end
     Say((model.name or "Item").." (ilvl "..model.itemLevel..")  |  "..
-        (model.complete and "DE est "..Money(model.estimated) or
-            ("DE missing prices "..model.priced.."/"..model.total))..
+        (model.unconfirmed and "DE outcome unconfirmed" or
+          (model.complete and "DE est "..Money(model.estimated) or
+            ("DE missing prices "..model.priced.."/"..model.total)))..
         "  |  AH ask "..Money(model.itemAsk))
-    for _,entry in ipairs(model.outcomes) do
-        Say(("%d%%: %d-%dx %s (%s/unit)"):format(
-            math.floor(entry.chance*100+0.5),entry.min,entry.max,
-            entry.name or ("Item #"..entry.id),Money(entry.ask)))
+    if model.unconfirmed then
+        Say("The reward for Forever 5-15 blues is not confirmed; no model prices shown.")
+    else
+        for _,entry in ipairs(model.outcomes) do
+            Say(("%d%%: %d-%dx %s (%s/unit)"):format(
+                math.floor(entry.chance*100+0.5),entry.min,entry.max,
+                entry.name or ("Item #"..entry.id),Money(entry.ask)))
+        end
     end
-    Say("Classic baseline · Forever odds may differ · asks, not sales.")
+    Say("Forever client bracket · Classic reference odds · asks, not sales.")
 end
 local loader=CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
