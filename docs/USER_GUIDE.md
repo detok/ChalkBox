@@ -1,6 +1,6 @@
 # ChalkBox User Guide
 
-**Version 2.2.8 · World of Warcraft: Forever**
+**Version 2.2.9 · World of Warcraft: Forever**
 
 ChalkBox puts several small tools in one addon. Everything is managed from **Options → AddOns → ChalkBox**, or **/chalk**. Choose the modules you want; the rest can stay out of sight.
 
@@ -22,6 +22,10 @@ The native sidebar contains related pages under their parent module:
 | **Emota** | Race Behavior, Emote Catalog |
 
 Select the module first, then its child page. The same top heading and return-to-ChalkBox navigation appear throughout. Older settings keys and SavedVariables are retained.
+
+## Wood and frame refinements (2.2.9)
+
+MacroForge retains its native map-derived wood texture with a matching Blizzard dialog border around the whole window. All seven functional areas now have warmer charcoal-bronze inset panels, subtle shadows and light bevels; the existing macro workbench behavior is unchanged. Discoveries keeps its original wood texture and cool gray item rows, with a warmer overall finish that complements the World Map.
 
 ## Discoveries: observed loot locations (2.2.8)
 

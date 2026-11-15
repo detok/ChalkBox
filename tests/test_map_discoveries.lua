@@ -340,18 +340,20 @@ assert(journal.hasMapArt and journal.mapArt and
 assert(journal.back and journal.back.texture==
     "Interface\\Buttons\\WHITE8X8",
     "a dark text-contrast glaze is painted over map art")
-assert(journal.back.color and journal.back.color[4]>=0.35
-    and journal.back.color[4]<=0.41
-    and journal.backdropColor[4]<=0.25,
-    "parchment remains visibly unobscured beneath the lighter reading glaze")
+assert(journal.back.color and journal.back.color[4]>=0.27
+    and journal.back.color[4]<=0.34
+    and journal.backdropColor[4]<=0.16,
+    "wood texture remains visible beneath a subtle warm reading glaze")
 assert(journal.edge and journal.edge.color and journal.edge.color[4]>=0.8,
     "journal has a visible accent border")
-assert(journal.back.color[1]==0.12 and journal.stripe.color[2]==0.8,
-    "global accent/theme color is preserved by the new map-like background")
+assert(journal.back.color[1]>journal.back.color[2]
+    and journal.back.color[2]>journal.back.color[3]
+    and journal.stripe.color[2]==0.8,
+    "brown wood tone is warmer while the global accent remains unchanged")
 _G.ChalkBox_ThemeBackground=function() error("theme unavailable") end
 ChalkBox_MapDiscoveriesThemeRefresh()
-assert(journal.back.color[4]>=0.35,
-    "theme failure must not remove the map-style reading surface")
+assert(journal.back.color[4]>=0.27,
+    "theme failure must not remove the wood reading surface")
 journal.hasMapArt=false
 ChalkBox_MapDiscoveriesThemeRefresh()
 assert(journal.back.color[4]>=0.92,
@@ -610,4 +612,4 @@ local restored=ChalkBox_DiscoveriesBrowserStatus()
 assert(not restored.followMap and restored.mode=="outdoor" and
     restored.selectedArea=="z:1437",
     "fresh browser instance restores the per-character manual zone")
-print("PASS: Discoveries readable map art and late retry, loot-location hover, map-owned compact sidecar, safe docking/fallback, dropdowns, paging, sync and saved data")
+print("PASS: warm-toned Discoveries wood with original gray rows and native border, atlas retry, location hover and map-owned UI")

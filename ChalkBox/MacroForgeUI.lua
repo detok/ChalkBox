@@ -6,6 +6,7 @@ local spellPage,libraryIndex,activeSlot=1,1,"main"
 local search,macroText,warningText,statusText,libraryText,nameEdit,selectionText
 local themeTextures={}
 local sectionFrames={}
+local sectionVisuals={}
 local MAP_ATLAS="gamepad-mapquestlog-bgtile-2k"
 local compartmentRegistered=false
 local slots={
@@ -31,8 +32,13 @@ local function Theme()
     end
     -- Readable even with a transparent global theme.
     -- Keep enough contrast for macro code without hiding the native map art.
-    local alpha=window.hasMapArt and 0.42 or math.max(0.94,a)
-    if window.back then window.back:SetColorTexture(r,g,b,alpha) end
+    local alpha=window.hasMapArt and 0.34 or math.max(0.94,a)
+    -- Warm transparent glaze, not flat slate: native map wood stays visible.
+    -- Use the same wood palette as Discoveries, without recoloring text.
+    local wr=0.065+r*0.25
+    local wg=0.042+g*0.18
+    local wb=0.027+b*0.12
+    if window.back then window.back:SetColorTexture(wr,wg,wb,alpha) end
     if window.accent then
         local ar,ag,ab=0.86,0.66,0.38
         if type(ChalkBox_ThemeAccent)=="function" then
@@ -40,10 +46,13 @@ local function Theme()
         end
         window.accent:SetColorTexture(ar,ag,ab,1)
     end
+    -- Solid warm-charcoal insets read like mounted panels on the wood.
+    -- They intentionally avoid the old theme-derived blue-gray fill.
+    local warmth=math.min(0.08,(r+g+b)*0.12)
     for _,t in ipairs(themeTextures) do
         if t and t.SetColorTexture then
-            t:SetColorTexture(math.min(1,r*3+0.055),
-                math.min(1,g*3+0.06),math.min(1,b*3+0.08),0.77)
+            t:SetColorTexture(0.105+warmth,
+                0.080+warmth*0.65,0.060+warmth*0.35,0.92)
         end
     end
 end
@@ -87,22 +96,38 @@ local function Edit(parent,width,height,x,y)
     return f
 end
 
--- Decorative inset borders surround existing Blizzard widgets; they never
--- own input and do not require the client to support BackdropTemplate.
+-- Decorative warm-charcoal inset panels: soft shadow, bronze rim, and
+-- a narrow upper bevel. They never own mouse input or protected controls.
+-- WoW native draw-layer sublevels keep these behind every Blizzard widget.
 local function Inset(parent,label,x,y,width,height)
-    local fill=parent:CreateTexture(nil,"BORDER")
-    fill:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y)
-    fill:SetSize(width,height)
+    local shadow=parent:CreateTexture(nil,"BORDER",nil,-3)
+    shadow:SetPoint("TOPLEFT",parent,"TOPLEFT",x+2,y-2)
+    shadow:SetSize(width,height)
+    shadow:SetColorTexture(0.005,0.005,0.006,0.72)
+
+    local rim=parent:CreateTexture(nil,"BORDER",nil,-2)
+    rim:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y)
+    rim:SetSize(width,height)
+    rim:SetColorTexture(0.36,0.275,0.16,0.91)
+
+    local fill=parent:CreateTexture(nil,"BORDER",nil,-1)
+    fill:SetPoint("TOPLEFT",parent,"TOPLEFT",x+1,y-1)
+    fill:SetSize(width-2,height-2)
     themeTextures[#themeTextures+1]=fill
-    local function Edge(px,py,w,h)
-        local edge=parent:CreateTexture(nil,"BORDER")
-        edge:SetPoint("TOPLEFT",parent,"TOPLEFT",px,py)
-        edge:SetSize(w,h)
-        edge:SetColorTexture(0.47,0.38,0.22,0.65)
-    end
-    Edge(x,y,width,1);Edge(x,y-height+1,width,1)
-    Edge(x,y,1,height);Edge(x+width-1,y,1,height)
+
+    local glint=parent:CreateTexture(nil,"BORDER",nil,0)
+    glint:SetPoint("TOPLEFT",parent,"TOPLEFT",x+2,y-2)
+    glint:SetSize(width-4,1)
+    glint:SetColorTexture(0.68,0.49,0.23,0.34)
+
+    local lower=parent:CreateTexture(nil,"BORDER",nil,0)
+    lower:SetPoint("TOPLEFT",parent,"TOPLEFT",x+2,y-height+2)
+    lower:SetSize(width-4,1)
+    lower:SetColorTexture(0.02,0.016,0.012,0.9)
+
     sectionFrames[label]={x=x,y=y,width=width,height=height}
+    sectionVisuals[label]={fill=fill,rim=rim,shadow=shadow,
+        glint=glint,lower=lower}
 end
 
 -- Multiline edit text lives in a clipped viewport; a single-line native
@@ -386,8 +411,40 @@ end
 local function Create()
     if window then return end
     if not UIParent or type(CreateFrame)~="function" then return end
-    local f=CreateFrame("Frame","ChalkBoxMacroForge",UIParent)
+    -- Match Discoveries' native dialog border without replacing the
+    -- movable standalone MacroForge window or any of its controls.
+    local template=type(BackdropTemplateMixin)=="table" and
+        "BackdropTemplate" or nil
+    local f=CreateFrame("Frame","ChalkBoxMacroForge",UIParent,template)
     f:SetSize(786,678)
+    if type(f.SetBackdrop)=="function" then
+        f:SetBackdrop({
+            bgFile="Interface\\Buttons\\WHITE8X8",
+            edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border",
+            tile=true,tileSize=32,edgeSize=24,
+            insets={left=8,right=8,top=8,bottom=8},
+        })
+        if type(f.SetBackdropColor)=="function" then
+            f:SetBackdropColor(0.08,0.05,0.03,0.25)
+        end
+        if type(f.SetBackdropBorderColor)=="function" then
+            f:SetBackdropBorderColor(0.86,0.68,0.40,1)
+        end
+    else
+        f.outerBorderFallback=true
+        -- Older clients without BackdropTemplate still get a deliberate
+        -- slim bronze outline rather than an unframed gray rectangle.
+        local function OuterLine(anchor,x,y,w,h)
+            local edge=f:CreateTexture(nil,"OVERLAY")
+            edge:SetPoint("TOPLEFT",f,anchor,x,y)
+            edge:SetSize(w,h)
+            edge:SetColorTexture(0.63,0.44,0.22,0.95)
+        end
+        OuterLine("TOPLEFT",1,-1,784,2)
+        OuterLine("TOPLEFT",1,-675,784,2)
+        OuterLine("TOPLEFT",1,-2,2,673)
+        OuterLine("TOPLEFT",783,-2,2,673)
+    end
     f:SetPoint("CENTER",UIParent,"CENTER",0,0)
     if f.SetFrameStrata then f:SetFrameStrata("DIALOG") end
     if f.SetMovable then f:SetMovable(true) end
@@ -401,9 +458,10 @@ local function Create()
     f:SetScript("OnDragStop",function(self)
         if self.StopMovingOrSizing then self:StopMovingOrSizing() end
     end)
-    -- Native map parchment under an opaque-enough reading surface.
+    -- Native map-derived wood under a translucent warm reading surface.
     local art=f:CreateTexture(nil,"BACKGROUND",nil,0)
-    art:SetAllPoints(f)
+    art:SetPoint("TOPLEFT",f,"TOPLEFT",5,-5)
+    art:SetPoint("BOTTOMRIGHT",f,"BOTTOMRIGHT",-5,5)
     local function LoadNativeArt()
         if type(art.SetAtlas)~="function" then return false end
         local exists=C_Texture and C_Texture.GetAtlasExists
@@ -433,7 +491,8 @@ local function Create()
         end
     end
     local back=f:CreateTexture(nil,"BACKGROUND",nil,1)
-    back:SetAllPoints(f)
+    back:SetPoint("TOPLEFT",f,"TOPLEFT",5,-5)
+    back:SetPoint("BOTTOMRIGHT",f,"BOTTOMRIGHT",-5,5)
     f.back=back
     Inset(f,"purpose",14,-86,758,59)
     Inset(f,"slots",14,-150,408,213)
@@ -443,6 +502,7 @@ local function Create()
     Inset(f,"preview",14,-474,408,181)
     Inset(f,"name",430,-568,342,87)
     f.sections=sectionFrames
+    f.sectionVisuals=sectionVisuals
     local accent=f:CreateTexture(nil,"ARTWORK")
     accent:SetPoint("TOPLEFT",f,"TOPLEFT",0,0)
     accent:SetPoint("TOPRIGHT",f,"TOPRIGHT",0,0)

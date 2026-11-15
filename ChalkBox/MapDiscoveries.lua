@@ -119,13 +119,24 @@ local function Tint()
     -- If a Forever build lacks the atlas, retain the original opaque body.
     -- Parchment should be clearly visible, not buried under a near-opaque
     -- charcoal texture. Row strips still provide local text contrast.
-    Paint(panel.back,r,g,b,panel.hasMapArt and 0.38 or a)
+    -- Warm the existing dark-wood atlas to complement the native map's
+    -- parchment. Keep item rows neutral blue-gray for scan readability.
+    local woodR=0.16+r*0.20
+    local woodG=0.092+g*0.12
+    local woodB=0.048+b*0.06
+    Paint(panel.back,panel.hasMapArt and woodR or r,
+        panel.hasMapArt and woodG or g,
+        panel.hasMapArt and woodB or b,
+        panel.hasMapArt and 0.30 or a)
     Paint(panel.edge,ar,ag,ab,0.82)
     Paint(panel.stripe,ar,ag,ab,1)
     if type(panel.SetBackdropColor)=="function" then
         -- This undercoat is below the map tile; the visible inner glaze
         -- is handled separately by panel.back.
-        panel:SetBackdropColor(r,g,b,panel.hasMapArt and 0.20 or a)
+        panel:SetBackdropColor(panel.hasMapArt and woodR or r,
+            panel.hasMapArt and woodG or g,
+            panel.hasMapArt and woodB or b,
+            panel.hasMapArt and 0.12 or a)
     end
     if type(panel.SetBackdropBorderColor)=="function" then
         panel:SetBackdropBorderColor(ar,ag,ab,1)
