@@ -645,13 +645,16 @@ function ChalkBox_DropTooltip(tooltip,link)
         end
         tooltip:AddLine(text,r,g,b,true)
     end
+    -- Separate the journal from Blizzard's item details. Counts are blue;
+    -- observed frequencies are informational, never a "good drop chance".
+    Line(" ","muted",0.65,0.70,0.73)
     Line("Drop Journal","title",0.94,0.76,0.42)
     Line(("%d found  ·  %d loots"):format(
-        item.quantity,item.windows),"info",0.40,0.83,0.78)
+        item.quantity,item.windows),"count",0.51,0.76,0.98)
     if item.rate then
-        Line(("%s  ·  %d/%d  ·  %.1f%%"):format(
+        Line(("%s  ·  %d/%d  ·  %.1f%% observed"):format(
             item.sourceName or "Creature",item.hits,item.attempts,item.rate),
-            "good",0.39,0.94,0.62)
+            "info",0.40,0.83,0.78)
     end
     if item.legacy and item.legacy.quantity>0 then
         Line(("Earlier: %d"):format(item.legacy.quantity),
