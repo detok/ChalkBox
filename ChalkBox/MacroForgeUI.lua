@@ -431,6 +431,7 @@ local function Create()
             f:SetBackdropBorderColor(0.86,0.68,0.40,1)
         end
     else
+        f.outerBorderFallback=true
         -- Older clients without BackdropTemplate still get a deliberate
         -- slim bronze outline rather than an unframed gray rectangle.
         local function OuterLine(anchor,x,y,w,h)
@@ -457,7 +458,7 @@ local function Create()
     f:SetScript("OnDragStop",function(self)
         if self.StopMovingOrSizing then self:StopMovingOrSizing() end
     end)
-    -- Native map parchment under an opaque-enough reading surface.
+    -- Native map-derived wood under a translucent warm reading surface.
     local art=f:CreateTexture(nil,"BACKGROUND",nil,0)
     art:SetPoint("TOPLEFT",f,"TOPLEFT",5,-5)
     art:SetPoint("BOTTOMRIGHT",f,"BOTTOMRIGHT",-5,5)
