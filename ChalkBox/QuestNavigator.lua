@@ -438,7 +438,7 @@ local function Build()
         atlasOK=ok and result~=false
         if atlasOK and type(a.GetAtlas)=="function" then
             local read,name=pcall(a.GetAtlas,a)
-            if read and name~=nil and name~="Navigation-Tracked-Arrow" then
+            if not read or name~="Navigation-Tracked-Arrow" then
                 atlasOK=false
             end
         end
