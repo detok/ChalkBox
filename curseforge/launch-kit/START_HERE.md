@@ -1,4 +1,6 @@
-# ChalkBox 2.2.17 — publisher's launch kit
+# ChalkBox 2.2.18 (unpublished candidate) — publisher's launch kit
+
+**Draft only:** the below 2.2.17 download links point to the previously published assets. The 2.2.18 package must be built, tested, and checked in-game before these are replaced for publication.
 
 **This is the separate `ChalkBox-CurseForge-Media-2.2.17.zip`. It is NOT a playable addon.**
 
