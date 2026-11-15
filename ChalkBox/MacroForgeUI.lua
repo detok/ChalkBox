@@ -86,6 +86,123 @@ local function Edit(parent,width,height,x,y)
     end
     return f
 end
+
+-- Decorative inset borders surround existing Blizzard widgets; they never
+-- own input and do not require the client to support BackdropTemplate.
+local function Inset(parent,label,x,y,width,height)
+    local fill=parent:CreateTexture(nil,"BORDER")
+    fill:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y)
+    fill:SetSize(width,height)
+    themeTextures[#themeTextures+1]=fill
+    local function Edge(px,py,w,h)
+        local edge=parent:CreateTexture(nil,"BORDER")
+        edge:SetPoint("TOPLEFT",parent,"TOPLEFT",px,py)
+        edge:SetSize(w,h)
+        edge:SetColorTexture(0.47,0.38,0.22,0.65)
+    end
+    Edge(x,y,width,1);Edge(x,y-height+1,width,1)
+    Edge(x,y,1,height);Edge(x+width-1,y,1,height)
+    sectionFrames[label]={x=x,y=y,width=width,height=height}
+end
+
+-- Multiline edit text lives in a clipped viewport; a single-line native
+-- InputBox border cannot contain a variable-length macro preview.
+local function Preview(parent,x,y,width,height)
+    local backing=parent:CreateTexture(nil,"ARTWORK")
+    backing:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y)
+    backing:SetSize(width,height)
+    backing:SetColorTexture(0.012,0.014,0.018,0.93)
+    local function Edge(px,py,w,h)
+        local t=parent:CreateTexture(nil,"ARTWORK")
+        t:SetPoint("TOPLEFT",parent,"TOPLEFT",px,py)
+        t:SetSize(w,h)
+        t:SetColorTexture(0.40,0.33,0.21,0.78)
+    end
+    Edge(x,y,width,1);Edge(x,y-height+1,width,1)
+    Edge(x,y,1,height);Edge(x+width-1,y,1,height)
+    local viewport=CreateFrame("ScrollFrame",nil,parent)
+    viewport:SetSize(width-14,height-10)
+    viewport:SetPoint("TOPLEFT",parent,"TOPLEFT",x+7,y-5)
+    local editor=CreateFrame("EditBox",nil,viewport)
+    editor:SetSize(width-23,height-12)
+    if editor.SetAutoFocus then editor:SetAutoFocus(false) end
+    if editor.SetMultiLine then editor:SetMultiLine(true) end
+    if editor.SetFontObject and ChatFontNormal then
+        editor:SetFontObject(ChatFontNormal)
+    end
+    editor:SetPoint("TOPLEFT",viewport,"TOPLEFT",0,0)
+    if viewport.SetScrollChild then viewport:SetScrollChild(editor) end
+    if editor.SetScript then
+        editor:SetScript("OnEscapePressed",function(self)
+            if self.ClearFocus then self:ClearFocus() end
+        end)
+        editor:SetScript("OnTextChanged",function(self)
+            local h=self.GetStringHeight and self:GetStringHeight() or 0
+            if type(h)~="number" then h=0 end
+            if self.SetHeight then self:SetHeight(math.max(height-12,h+16)) end
+            if viewport.SetVerticalScroll then viewport:SetVerticalScroll(0) end
+        end)
+    end
+    if viewport.EnableMouseWheel then viewport:EnableMouseWheel(true) end
+    if viewport.SetScript then
+        viewport:SetScript("OnMouseWheel",function(self,delta)
+            if not self.SetVerticalScroll then return end
+            local range=self.GetVerticalScrollRange and
+                self:GetVerticalScrollRange() or 0
+            if type(range)~="number" or range<=0 then return end
+            local position=self.GetVerticalScroll and
+                self:GetVerticalScroll() or 0
+            self:SetVerticalScroll(math.max(0,math.min(range,position-delta*24)))
+        end)
+    end
+    return editor,viewport
+end
+
+-- Blizzard exposes RegisterAddon but not a reliable public unregister API.
+-- Keep the existing ChalkBox compartment entry and add one opt-in launcher.
+-- Turning off an already registered launcher requires /reload.
+local function CompartmentEnabled()
+    return type(ChalkBoxDB)=="table" and ChalkBoxDB.macroCompartment==true
+end
+function ChalkBox_MacroForgeCompartmentStatus()
+    return {
+        enabled=CompartmentEnabled(),
+        available=AddonCompartmentFrame~=nil and
+            type(AddonCompartmentFrame.RegisterAddon)=="function",
+        registered=compartmentRegistered,
+        reloadRequired=compartmentRegistered and not CompartmentEnabled(),
+    }
+end
+function ChalkBox_MacroForgeCompartmentRefresh()
+    if compartmentRegistered then return true end
+    if not CompartmentEnabled() then return false end
+    local compartment=AddonCompartmentFrame
+    if not compartment or type(compartment.RegisterAddon)~="function" then
+        return false
+    end
+    if type(InCombatLockdown)=="function" and InCombatLockdown() then
+        return false
+    end
+    local ok,registered=pcall(compartment.RegisterAddon,compartment,{
+        text="MacroForge",
+        icon="Interface\\AddOns\\ChalkBox\\assets\\Icon",
+        notCheckable=true,
+        func=function()
+            if type(ChalkBox_OpenMacroForge)=="function" then
+                ChalkBox_OpenMacroForge()
+            end
+        end,
+    })
+    compartmentRegistered=ok and registered~=false
+    return compartmentRegistered
+end
+function ChalkBox_MacroForgeCompartmentSet(on)
+    if type(ChalkBoxDB)~="table" then return false end
+    ChalkBoxDB.macroCompartment=on==true
+    if on then return ChalkBox_MacroForgeCompartmentRefresh() end
+    return true
+end
+
 local function SpellLabel(id)
     if not id then return "(none)" end
     for _,spell in ipairs(ChalkBox_ForgeScan()) do
