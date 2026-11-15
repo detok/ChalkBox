@@ -5,6 +5,9 @@ local presetButtons,slotButtons,spellRows,checks={},{},{},{}
 local spellPage,libraryIndex,activeSlot=1,1,"main"
 local search,macroText,warningText,statusText,libraryText,nameEdit,selectionText
 local themeTextures={}
+local sectionFrames={}
+local MAP_ATLAS="gamepad-mapquestlog-bgtile-2k"
+local compartmentRegistered=false
 local slots={
     {"main","Main spell"},{"shift","Shift"},{"alt","Alt"},
     {"ctrl","Ctrl"},{"sequenceSecond","Sequence #2"},
@@ -26,7 +29,10 @@ local function Theme()
     if type(ChalkBox_ThemeBackground)=="function" then
         r,g,b,a=ChalkBox_ThemeBackground(0.97)
     end
-    if window.back then window.back:SetColorTexture(r,g,b,a) end
+    -- Readable even with a transparent global theme.
+    local alpha=window.hasMapArt and math.max(0.84,math.min(a,0.92))
+        or math.max(0.94,a)
+    if window.back then window.back:SetColorTexture(r,g,b,alpha) end
     if window.accent then
         local ar,ag,ab=0.86,0.66,0.38
         if type(ChalkBox_ThemeAccent)=="function" then
@@ -37,7 +43,7 @@ local function Theme()
     for _,t in ipairs(themeTextures) do
         if t and t.SetColorTexture then
             t:SetColorTexture(math.min(1,r*3+0.055),
-                math.min(1,g*3+0.06),math.min(1,b*3+0.08),0.93)
+                math.min(1,g*3+0.06),math.min(1,b*3+0.08),0.91)
         end
     end
 end
@@ -136,7 +142,13 @@ local function Refresh()
     for i,slot in ipairs(slots) do
         local label=slot[2].."  ·  "..SpellLabel(draft[slot[1]])
         if #label>29 then label=label:sub(1,26).."..." end
-        slotButtons[i]:SetText((activeSlot==slot[1] and "› " or "")..label)
+        local selected=activeSlot==slot[1]
+        slotButtons[i]:SetText((selected and "› " or "")..label)
+        if selected and slotButtons[i].LockHighlight then
+            slotButtons[i]:LockHighlight()
+        elseif not selected and slotButtons[i].UnlockHighlight then
+            slotButtons[i]:UnlockHighlight()
+        end
     end
     for i,opt in ipairs(switches) do
         checks[i]:SetChecked(draft[opt[1]]==true)
