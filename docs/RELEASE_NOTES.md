@@ -1,18 +1,20 @@
-# ChalkBox 2.2.6 — UI defaults and readability
+# ChalkBox 2.2.7 — MacroForge workbench polish
 
-## The Bar
-New installations match the approved 2048px reference strip: **left** Level/XP, XP/hr; **center** Session time, Time to level, Rested XP; **right** Bags, Gear, Repair estimate, Junk value, Gold/net, World latency. The optional Pet display is disabled until selected. This is a starting arrangement, not a forced migration: per-character saved placements/alignment and account-wide stat toggles are respected. Older existing Bars with no explicit resale mode keep Total, and freshly configured Bars start on Junk. Reset Layout intentionally restores the new positions.
+## MacroForge — cleaner, easier to follow
+The familiar two-column MacroForge wizard now sits over the same native World Map atlas used by Discoveries, under a readable dark theme glaze. If the atlas is unavailable on a Forever build, it safely falls back to solid charcoal. Thin inset frames organize the purpose templates, spell assignments, spellbook, options, macro preview, saved builds and macro naming without replacing the native controls.
 
-## QuietGuard
-All guild, duel, party, trade, and channel filtering is now **off by default on fresh installs**. A player can enable any option in Options > AddOns > ChalkBox > QuietGuard. Prior explicit ON selections stay ON across upgrades; changing the defaults does not rewrite Blizzard's own social settings.
+The macro preview is now a true multiline edit box in a clipped, scrollable framed area. Long generated text grows inside the scroll child rather than escaping a single-line InputBox border. Ctrl+C / Select Text / explicit Install New still use the original macro pipeline. The active assignment remains highlighted. The saved-build warning text now has a bounded, wrapped space with a gap before the macro-name section.
 
-## Native options polish
-All ChalkBox settings pages receive a neutral, dark readability underlay, drawn only inside ChalkBox's own panel, so bright scenery and floating names cannot drown out option text. AuctionSense's scan-age explanatory line now has room before the DisenchantSense checkbox; the two footer hints are repositioned without affecting any controls.
+## The Bar — finish editing from right-click
+Right-click empty Bar space while the editor is active to choose **Done editing**. Right-click a stat during Edit Mode still cycles its text alignment. All existing drag positions, alignment and Bar preferences remain unchanged.
 
-## Compatibility
-- No forced resets of SavedVariables or user choices; no settings-schema migration.
-- No changes to scanning, trading, quest tracking, loot protection, map geometry, combat, or protected UI actions.
-- New Lua 5.1 regressions cover fresh defaults, preserved opt-ins, restored arrangements, and AuctionSense text geometry.
-- Client-side appearance still requires a visual check with the native WoW Forever Options window.
+## MacroForge shortcut under AddOns
+Under **Options → AddOns → ChalkBox → MacroForge**, there is an opt-in **Show MacroForge in AddOn Compartment** checkbox (OFF by default). On supported clients, this adds a separate MacroForge shortcut next to the existing ChalkBox entry in the minimap AddOns dropdown. The launcher opens the existing editor only on click. If the native registration API is unavailable, the preference is saved without unsafe menu manipulation. Blizzard does not expose a dependable public unregister method, so turning the shortcut off after registering it requires `/reload`.
 
-Install `ChalkBox-2.2.6.zip` over the existing addon folder, preserving SavedVariables, then type `/reload`.
+## Safety and verification
+- Macro generation, learned-spell scanning, user recipes, installed macros, GCD/combat restrictions, quests and auction logic are unchanged.
+- No native World Map frames, protected Blizzard menus or saved character preferences are modified. Only the opt-in `ChalkBoxDB.macroCompartment` Boolean is new.
+- Automated Lua 5.1 UI tests cover framed sections, active selection, long preview scrolling, bounded warnings, map-art fallback, compartment opt-in, Bar editor exit and original copy/install actions.
+- Visual alignment and AddOn Compartment availability still require a live WoW Forever client check.
+
+Install `ChalkBox-2.2.7.zip` over the existing ChalkBox folder, preserve SavedVariables, and type `/reload`.
