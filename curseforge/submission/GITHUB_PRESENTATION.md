@@ -1,10 +1,10 @@
 # GitHub presentation
 
-ChalkBox's README is the public landing page. It has an overview of the current modules, download links, a short install guide, and pointers to troubleshooting. Keep it aligned with the latest tested release.
+ChalkBox's README is a compact public landing page. It points to the **versioned documentation home**, a practical getting-started guide, a player handbook, verified slash commands, developer/maintainer runbooks and troubleshooting. Keep it aligned with the latest tested release.
 
 ## Suggested repository About text
 
-**Quality-of-life tools for WoW Forever: MacroForge, DropSense, LootSense, The Bar, QuestSense, CampSense and session history.**
+**Quality-of-life tools for WoW Forever: loot discoveries, dungeon-aware quests, macros, auction insights and a compact HUD.**
 
 Website: https://github.com/detok/ChalkBox/releases
 
@@ -23,6 +23,10 @@ A GitHub social-preview card is uploaded through the repository Settings page; e
 
 ## Keep the release honest
 
-The current product includes DropSense/Map Discoveries, MacroForge, LootSense, ProfessionSense, The Bar, repair learning, combat tools, Session Journal, QuestSense, Adventure Prep, themes and optional QoL modules. Don't describe conceptual MapSense, automatic combat rotations, official drop tables or fabricated maps as shipped.
+The current product includes DropSense/Discoveries (recent outdoor loot locations), MacroForge, LootSense, ProfessionSense, AuctionSense/Insights, DisenchantSense, The Bar, repair learning, Combat Meter, Session Journal, dungeon-aware QuestSense, Adventure Prep, themes and optional emote/invite controls. Archive screenshots are genuine but show earlier versions; don't use them as proof of the current wood UI. Don't describe conceptual MapSense, automatic combat rotations, official drop tables or fabricated maps as shipped.
 
 Credit: **Detok Whitemaine**. Retain the MIT license and bundled third-party notices.
+
+
+**Documentation index:** https://github.com/detok/ChalkBox/blob/main/docs/README.md
+**Maintainer and release runbooks:** https://github.com/detok/ChalkBox/blob/main/docs/RELEASE_PROCESS.md

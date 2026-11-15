@@ -31,7 +31,7 @@ COPY = [
     "copy/SHORT_COPY.md", "copy/QUICK_START.md",
     "copy/COMMANDS.md", "copy/FAQ.md",
     "copy/FEATURE_PROOF.md", "copy/SUPPORT_AND_CREDITS.md",
-    "copy/FILE_CHANGELOG_2.1.1.md", "submission/PUBLISH_CHECKLIST.md",
+    "copy/FILE_CHANGELOG_CURRENT.md", "submission/PUBLISH_CHECKLIST.md",
     "submission/QA_AND_POLICY.md", "submission/GITHUB_PRESENTATION.md",
     "artwork/SCREENSHOT_PLAN.md", "launch-kit/START_HERE.md",
 ]
@@ -79,11 +79,20 @@ def build() -> Path:
         files.append(entry(prefix + f"Artwork/PNG/Extras/ChalkBox-Icon-{size}.png",
             png_from_svg(icon, size, size)))
     for item in COPY:
-        source = SOURCE / item
+        # One canonical slash-command reference: copy the versioned handbook
+        # into the standalone publisher ZIP instead of a stale duplicate.
+        source = (ROOT / "docs/COMMANDS.md") if item == "copy/COMMANDS.md" \
+            else (SOURCE / item)
         if not source.is_file():
             raise FileNotFoundError(source)
-        files.append(entry(prefix + "Copy-and-Checklist/" + item,
-            source.read_bytes()))
+        payload = source.read_bytes()
+        if item == "copy/FILE_CHANGELOG_CURRENT.md":
+            heading = f"# ChalkBox {v}".encode("utf-8")
+            if not payload.startswith(heading):
+                raise ValueError(
+                    "Current CurseForge file changelog must match both TOC versions"
+                )
+        files.append(entry(prefix + "Copy-and-Checklist/" + item, payload))
     # Publish real gameplay captures separately from the graphic artwork.
     # The game addon ZIP never contains screenshots.
     for filename in SCREENSHOTS:

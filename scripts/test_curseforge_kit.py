@@ -2,7 +2,7 @@
 """Check branding assets and listing documents inside the CurseForge media ZIP."""
 from __future__ import annotations
 from zipfile import ZipFile
-from build_curseforge_kit import build, ART, COPY, SCREENSHOTS
+from build_curseforge_kit import build, ART, COPY, SCREENSHOTS, version
 
 PNG = b"\x89PNG\r\n\x1a\n"
 
@@ -23,7 +23,17 @@ def test():
         assert all(archive.read(name).startswith(PNG)
                    for name in names if name.endswith(".png"))
         assert any(name.endswith("/Project-Icon-512.png") for name in names)
-        assert any(name.endswith("/FILE_CHANGELOG_2.1.1.md") for name in names)
+        current = "ChalkBox-CurseForge-Kit/Copy-and-Checklist/copy/FILE_CHANGELOG_CURRENT.md"
+        assert current in names
+        assert archive.read(current).startswith(f"# ChalkBox {version()}".encode("utf-8")), (
+            "Published media kit includes a changelog matching the installed addon"
+        )
+        # Keep the publisher commands in sync with the canonical handbook.
+        from build_curseforge_kit import ROOT
+        commands = "ChalkBox-CurseForge-Kit/Copy-and-Checklist/copy/COMMANDS.md"
+        assert archive.read(commands) == (ROOT / "docs/COMMANDS.md").read_bytes(), (
+            "Publisher commands must match the canonical in-repo guide"
+        )
         assert not any(name.lower().endswith((".ttf", ".otf", ".woff"))
                        for name in names)
         assert b"NOT the installable addon" in archive.read(

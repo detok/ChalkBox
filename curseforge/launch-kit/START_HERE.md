@@ -1,37 +1,32 @@
-# ChalkBox 2.1.1 — publisher's kit
+# ChalkBox 2.2.10 — publisher's launch kit
 
-This is the source for the separate **ChalkBox-CurseForge-Media-2.1.1.zip**. It contains art, PNG exports, listing copy, and a submission checklist. **Do not upload the media ZIP as your game addon.**
+**This is the separate `ChalkBox-CurseForge-Media-2.2.10.zip`. It is NOT a playable addon.**
 
-## What goes where
+The playable archive is **`ChalkBox-2.2.10.zip`**, available from [GitHub Releases](https://github.com/detok/ChalkBox/releases/tag/v2.2.10). Inside it is one game-installable `ChalkBox/` directory.
 
-| Use | File in the media kit |
+## Where each media-kit file goes
+
+| Publishing purpose | Source inside media ZIP |
 | --- | --- |
-| CurseForge avatar | Artwork/PNG/Upload-Ready/Project-Icon-512.png (512 × 512 pixels) |
-| Social and promotional banner | Artwork/PNG/Upload-Ready/ChalkBox-Social-Banner-1200x630.png |
-| Main listing description | Copy-and-Checklist/copy/PROJECT_DESCRIPTION.md |
-| Short summary and metadata | Copy-and-Checklist/copy/PROJECT_FIELDS.md |
-| Current file changelog | Copy-and-Checklist/copy/FILE_CHANGELOG_2.1.1.md |
-| In-game screenshots | Screenshots/ — 10 real client JPGs; see Copy-and-Checklist/screenshots/README.md |
+| Square project avatar | `Artwork/PNG/Upload-Ready/Project-Icon-512.png` |
+| Header and social artwork | `Artwork/PNG/Upload-Ready/ChalkBox-Social-Banner-1200x630.png` |
+| Full page copy | `Copy-and-Checklist/copy/PROJECT_DESCRIPTION.md` |
+| Short listing / metadata | `Copy-and-Checklist/copy/PROJECT_FIELDS.md` and `SHORT_COPY.md` |
+| **Current file changelog** | `Copy-and-Checklist/copy/FILE_CHANGELOG_CURRENT.md` |
+| Player command reference | `Copy-and-Checklist/copy/COMMANDS.md` — generated from the canonical repo handbook |
+| Genuine game captures | `Screenshots/` — ten actual WoW Forever JPGs |
+| Complete publisher QA checklist | `Copy-and-Checklist/submission/PUBLISH_CHECKLIST.md` |
 
-**For the actual addon file**, use **ChalkBox-2.1.1.zip** from the GitHub Releases page. The media package is a separate download.
-
-All six original SVG designs are included under Artwork/SVG. The media ZIP provides nine rendered artwork PNGs and ten real-gameplay screenshots, including the fixed Discoveries journal. Three extra sizes of the project icon are also provided. Hero and feature-grid illustrations are organized under **Editorial-Only**, not the screenshot gallery.
-
-## Credit and compatibility
-
-ChalkBox is maintained by **Detok Whitemaine**. It is an independent project, not affiliated with Blizzard Entertainment.
-
-The addon targets WoW Forever. Verify whether CurseForge offers a suitable game flavor and compatible version selector before submitting; don't claim support for Retail or Classic Era without testing.
+Editorial SVG and PNG hero/feature illustrations are **not** screenshots. The existing gameplay images are genuine, but were captured on an earlier UI release; review them before claiming they show the current appearance.
 
 ## Before publishing
 
-- [ ] Install and test ChalkBox 2.1.1.
-- [ ] Confirm nested settings pages expand and the optional DPS meter starts closed.
-- [ ] Confirm Discoveries search, dungeon/source dropdowns, and map-button dragging.
-- [ ] Confirm MacroForge detects spells, validates and copies macros.
-- [x] Review and crop real client screenshots (the gallery is included).
-- [ ] Check compatible game versions in the CurseForge author form.
-- [ ] Upload the addon ZIP under Files and the 512px PNG under Project Logo.
-- [ ] Wait for moderation approval before sharing a CurseForge listing URL.
+1. Verify that the actual CurseForge portal offers a supported **game flavor and client version compatible with WoW Forever**. Never select Retail/Classic merely to pass the form.
+2. Confirm CI and the local addon/media package tests are green, both TOC versions match and the playable ZIP has one `ChalkBox/` root.
+3. Perform in-client smoke tests for the changed modules. Smart QuestSense in a dungeon and the current wood-framed UI have client-specific behaviors not proven by mocked Lua tests alone.
+4. Update the current file changelog to match the current TOC version. Historical `FILE_CHANGELOG_X.Y.Z.md` pages are archives.
+5. Review the screen captures, credits and licenses; remove sensitive chat and identifiable account information.
+6. Upload the playable addon ZIP as a **game file**, and use the separate media contents in appropriate art/description fields.
+7. Share a CurseForge URL **only after the listing exists and approval is verified**.
 
-The full checklist is in submission/PUBLISH_CHECKLIST.md. Source code and issues: https://github.com/detok/ChalkBox.
+[Full release process](https://github.com/detok/ChalkBox/blob/main/docs/RELEASE_PROCESS.md) · [Publisher checklist](../submission/PUBLISH_CHECKLIST.md) · [Source](https://github.com/detok/ChalkBox)

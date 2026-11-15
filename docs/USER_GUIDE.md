@@ -1,192 +1,133 @@
-# ChalkBox User Guide
+# ChalkBox player handbook
 
-**Version 2.2.10 · World of Warcraft: Forever**
+**ChalkBox 2.2.10 · World of Warcraft: Forever**
 
-ChalkBox puts several small tools in one addon. Everything is managed from **Options → AddOns → ChalkBox**, or **/chalk**. Choose the modules you want; the rest can stay out of sight.
+ChalkBox is a set of optional quality-of-life features inside **one addon**. Use Blizzard's **Options → AddOns → ChalkBox** pages or type `/chalk` (also `/cb`). Features that display observations are not proofs of unseen game data; ChalkBox should be conservative when Forever withholds information.
 
-## Finding your way around settings
+For installation and updates, start with [Getting started](GETTING_STARTED.md). For exact slash syntax, see [Commands](COMMANDS.md).
 
-The ChalkBox home page has three groups:
+## Find your way around
 
-- **Discover & Track:** LootSense, DropSense, QuestSense and Session Journal.
-- **Combat & HUD:** The Bar, Combat Meter, MacroForge and Adventure Prep.
-- **Personalize & Manage:** Global Appearance, Emota, QuietGuard and Updates.
+The ChalkBox home page groups modules under **Discover & Track**, **Combat & HUD**, and **Personalize & Manage**. Several settings have nested pages in Blizzard's left sidebar, such as **The Bar → Modules / Appearance**, **LootSense → Appearance**, **Emota → Race Behavior / Emote Catalog**, and **Adventure Prep → Toast Appearance**.
 
-The native sidebar contains related pages under their parent module:
-
-| Parent module | Nested pages |
-| --- | --- |
-| **The Bar** | Modules, Appearance |
-| **LootSense** | Appearance |
-| **Adventure Prep** | Toast Appearance |
-| **Emota** | Race Behavior, Emote Catalog |
-
-Select the module first, then its child page. The same top heading and return-to-ChalkBox navigation appear throughout. Older settings keys and SavedVariables are retained.
-
-## Wood and frame refinements (2.2.9)
-
-MacroForge retains its native map-derived wood texture with a matching Blizzard dialog border around the whole window. All seven functional areas now have warmer charcoal-bronze inset panels, subtle shadows and light bevels; the existing macro workbench behavior is unchanged. Discoveries keeps its original wood texture and cool gray item rows, with a warmer overall finish that complements the World Map.
-
-## Discoveries: observed loot locations (2.2.8)
-
-When you loot an item outdoors, DropSense attempts to capture **your map position at the time the loot window opens**. The Discoveries item hover shows up to three of the latest observed locations as zone map coordinates (e.g., 42.6, 71.4), along with grouped repeat counts. Each item in a zone and each verified creature source retains at most six recent distinct positions, grouped within a small local radius. These are not promised death or spawn coordinates, and old drops, dungeon items and missing-position events never invent them. The original item quantities, windows and observed drop rates remain separate. The map itself is not changed or covered with new pins.
-
-## Native settings and parchment (2.2.8)
-
-ChalkBox pages now leave Blizzard's ordinary AddOns settings background transparent, rather than drawing a black overlay. Discoveries and MacroForge use a lighter glaze over the native map atlas, with a fallback to solid dark if the art is unavailable; reopening a window retries the atlas.
-
-## MacroForge workbench (2.2.7)
-
-MacroForge keeps its original spellbook wizard with clearly framed sections and a native map-style background when available. Macro Preview is a multiline, scrolling text editor: choose **Select Text** then **Ctrl+C** to copy. **Install New** explicitly creates a new named macro; it does not overwrite existing macros or run a rotation. Warnings beneath Saved Builds are separated from the macro-name area.
-
-To add a direct minimap AddOns dropdown shortcut, visit **Options → AddOns → ChalkBox → MacroForge** and enable **Show MacroForge in AddOn Compartment**. The switch is off by default. It requires native `AddonCompartmentFrame:RegisterAddon` support; once registered, turn it off and `/reload` to hide it. The ordinary ChalkBox entry remains.
-
-While arranging **The Bar**, right-click an empty part of the Bar and choose **Done editing**. Right-clicking a stat while editing still cycles its text alignment.
-
-## The Bar and QuietGuard (2.2.6)
-
-Fresh Bar layouts follow this ordering: **Left:** Level, XP/h. **Center:** Session time, Time to level, Rested XP. **Right:** free bag slots, gear condition, repair cost, junk resale value, gold/net change, World latency. Pet status remains available in **The Bar → Modules**, off initially. Existing account stat choices, character-specific drag positions and alignment are preserved; **Reset Layout** intentionally adopts the new arrangement. Older Bars without a saved bag valuation mode stay on Total; brand-new Bars begin on Junk.
-
-All five QuietGuard protections (guild, duel, party, trade, channel) now default to OFF. They are opt-in through the QuietGuard page. Saved selections from earlier versions remain unchanged. Blizzard-native social preferences may still block invitations independently.
-
-## First bank visit (2.0.11)
-
-When a character opens their bank for the first time, ChalkBox no longer decorates bank item buttons or runs bag-anchor moves while Blizzard's bank interface is initializing. The bank stays native, and normal bag highlighting and configured separate-bag positioning resume after it closes. If a blocked-action dialog still occurs, record the exact blocked function or screenshot (and any Lua error stack), since a live-client trace is required to confirm its cause.
-
-## AuctionSense (2.1.1 test release)
-
-Open Blizzard's Auction House and click the **AuctionSense** tab alongside the native Buy/Sell/Auctions tabs. The addon panel is embedded in Blizzard's AH, rather than opening a second window.
-
-**Scan Market** (recommended) runs a full browse query and gathers the lowest per-unit asking price and available quantity for each item. It loads additional browse pages when the server is ready. *Avg Ask* and lot counts are shown only for actual full-listing snapshots; browse summaries cannot establish them. **Full listings (15m)** requests the more expensive ReplicateItems data and may be unavailable or server-throttled on Forever. Neither scan happens automatically.
-
-If the server doesn't answer a browse request within 12 seconds, AuctionSense shows a clear failure. If a scan fails or the AH closes, your previous complete prices remain intact. Prices are local observations of asking prices, not confirmed sales.
-
- (2.1.0 test release)
-
-AuctionSense is a separate ChalkBox module for reading auction *asking prices*. Open **Options → AddOns → ChalkBox → AuctionSense** or type `/chalk auction`. Visit an auctioneer, then click **Scan Market**. This manually requests a full snapshot from Forever's `C_AuctionHouse` API. The server may enforce an account-wide cooldown of around 15 minutes between successful requests.
-
-The Market window has a direct item search and shows **Low** (cheapest listed unit buyout), **Avg Ask** (quantity-weighted average listed unit buyout), **Listings**, **Quantity**, last scan, and the realm/faction being viewed. Old scans are labeled; variant equipment is marked. No auction sale, purchase, bid or posting is automated. AuctionSense never promises a listing actually sold.
-
-After a scan, item tooltips may show a short AuctionSense section. Disable it in the AuctionSense options or with `/chalk auction tooltip off`. The data remains in your local SavedVariables and is available through `ChalkBox_AuctionPrice(item)` and `ChalkBox_AuctionValue(item,quantity)` for other ChalkBox modules. Value estimates reject old or mixed-variant snapshots. **No third-party addon code was incorporated.**
-
-## DropSense and Map Discoveries
-
-**2.1.0:** The direct Area / Dungeon zone list is now a top-level clickable overlay, rather than being drawn behind the Discoveries content on Forever. Click the Area field for the list; it remains anchored to the field, scrolls/pages normally, and closes when the journal closes. The AddOns selection icon has also been updated to the current CurseForge ChalkBox logo.
-
-
-**2.0.11:** The Area / Dungeon field opens a direct list of all recorded zones and dungeons, with mouse-wheel navigation and paging. Choose a location to browse independently, or choose Follow world map to resync. Found counts item copies, Drops counts the times an item appeared, and Rate is based on *looted corpses from an identifiable creature*, not every kill or official odds.
-
-
-**2.0.9 — Browse anywhere:** Open the Area / Dungeon dropdown in Discoveries to see **Follow world map**, **Outdoor zones**, and **Dungeons**. The grouped lists contain every location where this character has recorded loot; you can pick any of them without moving the native map. Selecting one pauses map sync and switches to its tab. Choose Follow world map in the dropdown (or toggle the existing top-right Map sync control) to follow the map again. Turning sync off restores the last location you manually chose. Preferences survive relogging and do not change existing loot history or map-button position.
-
-
-**2.0.5:** The standalone Discoveries journal has a corrected layout and text initialization. Open it from the world map button or `/chalk drops map` to browse area, source and sort filters, search, and collected items.
-
-**2.0.5:** The standalone journal now appears above the native map with an opaque themed reading surface and border. Bag markers and vendor-value calculations are also batched to reduce inventory hitching.
-
-
-**2.0.5:** The Discoveries journal keeps a legible background and border even when the global theme background strength is set to zero.
-
-**DropSense** collects every readable item it encounters in a loot window while tracking is enabled. Data is saved for the character and survives logout. Open the normal world map and click **Discoveries**, or type **/chalk drops map**.
-
-The Discoveries browser provides:
-- **Outdoor / Dungeons** views, kept separate.
-- **Area / Dungeon**, **Creature Source** and **Sort** dropdowns.
-- Search by item name or item ID.
-- Item icons, quantities, observed loot-window counts and pagination.
-- A percentage only when ChalkBox can attribute readable windows to one known creature source.
-
-**Drop percentages are not official.** ChalkBox doesn't know the server loot table or observe every killed creature. Mixed-source and unknown-source loot is still recorded, but won't get a misleading creature-specific rate. New accounts have automatic tracking enabled; an explicit older opt-out remains respected.
-
-### Move the map button
-
-Drag **Discoveries** anywhere comfortable on the world map. It remembers its position per character. Right-click the button to reset, use **DropSense → Reset Map Button**, or type **/chalk drops map reset**.
-
-If the button disappears after another map addon changes the layout, type **/chalk drops map**. Run **/chalk drops map status** and include the output in a bug report.
+The **Global Appearance** page controls ChalkBox's palette and panel visibility. These controls do not recolor Blizzard's own World Map or game menus. If a window is missing, check its own module's enabled/display setting before assuming the entire addon failed.
 
 ## LootSense and professions
 
-LootSense helps explain why something in your bags might be valuable to *you*. It checks personal **KEEP** protections, supported quest information, ingredients used by recipes you've actually learned, and possible crafting uses from the bundled Forever reference.
+**Use it for:** Understanding why the item under your cursor might matter.
 
-Under **LootSense → Appearance**, choose whether to see confirmed crafting uses, possible/unverified uses, camping hints and verified ingredient markers in native bags. Quest and manual KEEP evidence remains the priority.
+- Quest items receive priority over general crafting hints. When the currently accepted quest objective can be matched to the item, a tooltip can show the **quest's title and collected/required progress**. Some items still simply say **KEEP — Quest Item** when a dependable objective match is unavailable; ChalkBox does not invent a quest title.
+- **Personal KEEP** is a user decision. Shift-click an item into `/chalk keep [item]`, or use the LootSense settings page. Remove with `/chalk forget [item]` or the saved list controls.
+- **Learned-recipe ingredients** are distinguished from **potential reference-catalog uses**. Open your profession window and use **Scan Open Profession** or `/chalk loot scan` if current learned recipes are not reflected.
+- **RecipeAdvisor / ProfessionSense** use observed character profession data plus a bundled Forever-only recipe catalog. A catalog entry does not mean your character has learned that recipe.
+- **LootSense Appearance** offers filters for extra ingredient insights. Quest protection and personal KEEP selections remain higher priority. Bag item-button decoration is intentionally conservative to avoid protected-action issues.
 
-Type **/chalk keep [item]** to protect an item and **/chalk forget [item]** to remove your protection. These commands don't sell or destroy items.
+**Does not:** Automatically sell, delete, move, equip, disenchant or declare an unknown item safe to discard.
 
-**ProfessionSense** reads the recipes available through your character's open profession interface. Open a profession window, then use the refresh controls if newly learned recipes haven't appeared yet.
+## DropSense and Discoveries
 
-## MacroForge
+**Use it for:** Building your own observed loot journal.
 
-Type **/chalk macro**, or open **MacroForge** in settings. The builder scans the learned, active spells in your character's spellbook. Choose a template: Engage, Burst + Trinkets, Modifier Keys, Manual Sequence or Mouseover Utility.
+1. Ensure **DropSense → Record drops automatically** is on, or type `/chalk drops on`.
+2. Open a readable loot window. Observed item appearances are recorded; re-opening the same corpse should not count as another loot attempt.
+3. Open the **World Map → Discoveries** button or type `/chalk drops map`. The journal docks beside the map; you can reposition the map button and reset it with `/chalk drops map reset`.
+4. Select **Outdoor** or **Dungeons**; use **Area / Dungeon**, **Creature**, **Sort**, and **Search Items**. The area picker can follow the current map or browse a previously recorded location independently.
+5. Hover an item row to inspect observations. **Rate** is computed only with a sufficiently identifiable creature source. With a mixed or unknown source, the journal does **not** pretend that the item has a creature-specific chance.
 
-Select the abilities and any optional pet, Auto Shot, trinket or targeting actions. MacroForge shows the generated text, warns about unlearned spells and checks the 255-byte length.
+### Where did I loot it?
 
-**Select Text** highlights the macro so you can press **Ctrl+C**, then paste it in WoW's native **/macro** window. **Install New** is an optional, explicit out-of-combat command that creates a new character macro if the client supports it. Existing same-named macros are not overwritten.
+In version 2.2.8 and later, each item can retain up to **six distinct recent outdoor locations** in a zone. Hover the item to see up to three recent samples and how often nearby loot observations clustered there. If the creature was identified confidently, creature-specific samples are tracked separately. **These are your character's map coordinates when the loot window opened**, not confirmed spawn, death or official drop-location coordinates.
 
-Save up to 16 build recipes per character. After a respec, revisit a saved recipe and replace abilities you no longer know.
+Older records, dungeon observations and readings without an accessible map position have no made-up coordinates. The journal does not place permanent pins automatically.
 
-MacroForge is a design tool. It cannot automate a rotation, skip spells based on procs or cooldowns, or bypass the global cooldown.
+### What the numbers mean
 
-## The Bar
+**Found** describes item quantity observed, **Loots** is the number of loot windows in which it appeared, and **Rate** is an *observed window frequency* from an identified source. It is **not** the official server drop rate, and unlooted kills are not counted. The `/chalk drops chance 5 20` calculator uses a chance *you supply* rather than one discovered from server data.
 
-**2.0.7:** Hover details show the metric's key numbers or current state, without repeated explanations. Repair values are still marked as quotes or estimates. Detailed help remains in module settings.
+## Auction tools and disenchanting
 
+These are three related but distinct systems:
 
-**2.0.6:** Right-click a displayed stat for a small stat-only menu. Right-click the empty Bar background to manage modules, position, and layout. Green choices are enabled, gray choices are disabled, gold marks the current position/alignment, cyan opens more controls, and amber marks hide/reset actions.
- and repair learning
+| Area | What it does | What it cannot prove |
+| --- | --- | --- |
+| **AuctionSense** | A native Auction House tab for explicit market scans, searchable observed asking prices, quantities and scan age | That an item actually sold for its asking price |
+| **AuctionInsights** | **My Items** bag appraisal and **Sales & Stats** based on captured seller mail/invoices in the native AH context | A complete lifetime account sales ledger |
+| **DisenchantSense** | Read-only probability/value hints for eligible gear, using supported Forever brackets, Classic-reference probabilities and available auction asks | A guaranteed outcome, exact undisclosed Forever odds or automatic disenchanting |
 
-**The Bar** is a compact screen-edge strip. Configure its top/bottom placement, screen reservation and modules under the main Bar page and **Modules**. The **Appearance** page manages opacity and the editable layout. Right-click an individual Bar stat for quick module controls.
+**To scan:** Visit an auctioneer, open Blizzard's Auction House and choose the **AuctionSense** tab. Press **Scan Market** for the normal browse snapshot. **Full listings** is a separate, more expensive request; on supported servers it can have roughly a 15-minute cooldown. Scans happen only when you start them. The panel shows the realm/faction market, observation time and available data; stale or mixed equipment variants can make a value unreliable.
 
-Choose the information that fits your screen: XP/rate/ETA, rested XP, gear condition, bags, gold, pet status, latency and optional bag vendor value. On narrow screens, less important modules may be hidden to keep the strip readable.
+If a browse result does not provide listing-level information, an **average ask or number of listings cannot be assumed**. Do not interpret listing asks as real completed sales. Existing complete snapshots should survive an incomplete or failed scan.
 
-The **Repair** stat shows an exact price only when a repair merchant exposes it. ChalkBox remembers real repair quotes and can show a marked **~ estimate** elsewhere. No price is displayed as exact without a current quote; it never spends your money.
-
-The **Bag Value** stat can show the vendor resale value of junk or all inspected bag items. It doesn't automatically sell anything.
-
-## Combat Meter
-
-The extra compact meter is **closed each time you log in**. Open it from **Combat Meter** settings or type **/chalk meter show**. Hide it with **/chalk meter hide**.
-
-The window supports DPS, damage, healing, taken damage and interruptions when the client exposes the necessary Blizzard data. It has configurable rows, class/spec icons, opacity, movable/locked positions and a resize grip.
-
-**PRINT** sends a short report to PARTY only when you deliberately click it and the data is safe to report. **RESET** asks before clearing shared Blizzard combat sessions. ChalkBox can also provide a separate manual print action from the native Blizzard meter where available.
+**To use the estimates:** Enable optional auction/disenchant tooltip hints in AuctionSense settings. For a specific item, shift-click it into `/chalk de [item]`. Tooltips may show ranges, partial price coverage or an unconfirmed bracket. Nothing is automatically bought, posted, mailed, sold or disenchanted.
 
 ## QuestSense
 
-**2.2.10 — Smart tracks the current dungeon:** In Smart mode, entering a party dungeon automatically focuses the native quest tracker on quests confidently tied to *that exact dungeon*, from dungeon map POIs and/or matching quest-log section/title. Existing nonlocal manual watches are held and restored on exit. If the game provides no verified matches, it keeps your current watches instead of guessing. A generic Dungeon tag alone cannot identify the correct dungeon. It respects player unwatch choices, defers changes during combat or while the map/quest log is open, and leaves Nearby/All modes unchanged. Select **Tracking Diagnostics** or type `/chalk quests status` to inspect the current instance match.
+**Use it for:** Managing Blizzard's *existing accepted-quest tracker*, not automatically selecting the best leveling route.
 
-**2.0.8 — Nearby only:** Tracks accepted quests with a confirmed current-zone match and keeps refreshing as you move. Out-of-area manual watches are temporarily hidden—not forgotten—and return automatically when you revisit their area or choose Smart/All. The filter does not calculate walking distance or invent quest coordinates. When reliable zone evidence is unavailable, your current watches are preserved instead of being wiped.
+Enable **Automatic quest tracking** and choose:
 
+| Mode | Behavior |
+| --- | --- |
+| **Smart (recommended)** | Scores accepted quests using nearby map/header evidence and recently accepted quests. **In a recognized party dungeon**, narrows watches to accepted quests confirmed for that specific instance from dungeon map information or a directly matching quest-log section/title. |
+| **Nearby only** | Conservatively tracks quests matched to your current zone, temporarily hiding remote watches and restoring prior manual selections as they become relevant |
+| **All accepted** | Attempts accepted quests in quest-log order, subject to the available auto-watch capacity |
 
-QuestSense organizes watch choices for accepted quests inside Blizzard's existing quest tracker. The Smart, Nearby and All modes are selectable from settings. It doesn't create unverified quest coordinates, auto-complete objectives or replace the native map.
+The automatic limit is **5, 10, 15 or 20**, with a fresh default of **10**. Manually watched quests get preference. QuestSense respects deliberate manual unwatching and saves suspended manual watches for restoration.
 
-## Adventure Prep
+**Dungeon caveat:** Forever may not return complete dungeon quest-map information. If ChalkBox cannot verify any matching quests for the current dungeon, **it preserves the existing tracker**, rather than hiding everything or guessing from a generic "Dungeon" tag. It does not make dungeon decisions while combat, the World Map or the quest log makes editing unsafe. Check `/chalk quests status` for the actual instance, matched count and reason.
 
-Adventure Prep looks for supported information about **Camp Benefits**, tents/rested XP, usable camping kits and certain class/pet needs. The compact toast tries to provide a useful next action rather than repeating an unchanged checklist.
+QuestSense **does not** estimate enemy difficulty, quest XP per hour, exact travel distance, or a best questing route. Smart is a watch-priority system rather than a routing agent.
 
-Open **Adventure Prep → Toast Appearance** to adjust the reminder position, transparency and lock state. Type **/chalk prep test** to preview the toast and move it. Tent use and Camp Benefits are different mechanisms; the addon doesn't assume one automatically proves the other.
+## MacroForge
 
-## Session Journal
+**Use it for:** Building legitimate WoW macros from your character's currently learned, active spells.
 
-Use **/chalk session** for the current adventure and **/chalk session last** for the previous one. It retains up to 20 completed sessions per character.
+Type `/chalk macro` or open **MacroForge** in settings. Choose **Engage Target**, **Burst + Trinkets**, **Modifier Keys**, **Manual Sequence**, or **Mouseover Utility**. Select a slot on the left and a spell on the right. Check options such as pet attack, Auto Shot or trinket attempts where relevant.
 
-Recorded details include observed XP, levels, net gold, quest turn-ins, sampled loot, known loot regions, camp notices and confirmed merchant repair quotes. No data is guessed for activity before ChalkBox was installed.
+The framed workbench shows generated macro text in a **multiline, scrollable preview**. **Select Text**, then press **Ctrl+C** to paste the text into WoW's `/macro` editor. **Install New** is an explicit, out-of-combat action that creates a *new* character macro and refuses to overwrite an existing one. **Saved Builds** retains named recipes, which are revalidated against your current spellbook.
 
-## Appearance, personality and safety
+The code is bounded by WoW's macro size limit and secure action restrictions. Auto Shot, pet commands and trinket lines are separate attempts, **not promised additional casts**. A `/castsequence` advances when game rules permit the next step; it cannot automatically skip a failed cooldown. MacroForge cannot run a combat rotation, bypass the global cooldown or react to procs without a new physical keypress.
 
-- **Global Appearance:** shared ChalkBox background color, accent and background strength. Each module keeps its own supported position or opacity settings.
-- **Emota:** opt-in contextual character emotes, with **Race Behavior** and **Emote Catalog** nested under Emota.
-- **QuietGuard:** optional invite filtering.
-- **Bag Position:** adjust Blizzard's separate bag-window offset.
-- **Updates:** installed version and a copyable GitHub Releases address. WoW addons cannot fetch GitHub directly. Optional, default-off group-version comparison only notices other ChalkBox installations.
+An optional **Show MacroForge in AddOn Compartment** checkbox adds a shortcut below the minimap calendar on compatible clients. It starts off; disabling an already registered extra entry may require `/reload`.
 
-## Install, updates and troubleshooting
+## The Bar and Repair Learning
 
-Download the installable **ChalkBox-2.1.1.zip** from the [release page](https://github.com/detok/ChalkBox/releases/tag/v2.1.1). Extract the single ChalkBox folder into **Interface/AddOns**. Don't extract an extra nested ChalkBox folder.
+**Use it for:** A compact, configurable 18px screen-edge summary.
 
-When updating, **keep your SavedVariables**. Use **/chalk** to check preferences and **/chalk update** to see the installed version.
+New Bar profiles start with **Left:** level/progress, XP/hour; **Center:** elapsed session time, time to level, rested XP; **Right:** bag slots, gear condition, repair estimate, junk vendor value, gold/net, world latency. The pet metric remains available but begins hidden. Older saved arrangements and valuation modes are not silently overwritten.
 
-If anything looks wrong, include the ChalkBox version, Forever client build, the command you used and any Lua error. For missing map controls, send the full output of **/chalk drops map status**.
+The Bar has **Balanced**, **Minimal**, **All**, and per-stat settings, plus opacity and position controls. Its width can hide the lowest-priority metrics on a small screen. Right-click an ordinary stat for its controls. Right-click **empty Bar space → Edit layout**; drag modules to the left/center/right groups, then right-click empty space again for **Done editing**. Reset Layout restores the current release's default arrangement.
 
-[GitHub issues](https://github.com/detok/ChalkBox/issues) · [Troubleshooting](TROUBLESHOOTING.md) · [Changelog](../CHANGELOG.md)
+The optional **Shift top UI below the Bar** uses selective Blizzard-frame positioning; ChalkBox does **not** resize or move `UIParent` or protected action bars. Separate bag offset is configurable from -120px to +120px and deferred when the bank/combat state would make it unsafe.
 
-ChalkBox is maintained by **Detok Whitemaine**. It is not affiliated with Blizzard Entertainment.
+**Repair Learning** uses real observed merchant repair quotes to estimate future repair costs away from the merchant. An estimate is visibly prefixed with `~`. It is not an exact quote; currency, conditions and vendor discounts can vary. `/chalk bar repair reset` clears the stored repair-learning samples.
+
+## Combat Meter and Session Journal
+
+The optional compact **Combat Meter starts hidden**. Open it from settings or `/chalk meter show`, then choose supported DPS, damage, healing, interrupts or other native combat categories and a session (Current, Last or Overall). You can lock, move, resize or recolor its supported controls.
+
+**PRINT** is a deliberate user action to report a supported fight summary to normal **PARTY**, when client safety restrictions allow it. Native Blizzard meter integration may separately provide its own optional manual/automatic reporting preferences. Some Forever combat values are protected, especially during combat; the addon must not invent readable DPS figures. **RESET** requires confirmation.
+
+**Session Journal** keeps the current session and up to **20 prior** snapshots of supported observed statistics: XP, gold, completed quests, sampled loot, camp reminders and other available events. It does not retroactively invent events from before installation. Use `/chalk session` or `/chalk session last`.
+
+## Adventure Prep, Emota and QuietGuard
+
+**Adventure Prep** is a reminder/checklist system for known camping, tent/rested XP, food/buffs, supplies and class/pet-care signals. A tent's rested-XP effect does not prove the separate **Camp Benefits** effect is active. If the client cannot verify tent use, **Tent Used** / `/chalk prep tent done` acknowledges it for one hour of the current session; it does not grant an in-game buff. Toast appearance, lock and transparency are configurable.
+
+**Emota** optionally tries native character emotes, jokes and idle behaviors with randomized pacing, race/class flavor and supported contextual checks. Automatic reactions are **opt-in** and avoid interruption during combat. Preview with `/chalk emota idle preview` and tune behavior under Emota's nested pages. The addon cannot guarantee a native emote animation merely because the request returned successfully.
+
+**QuietGuard** uses optional guild, duel, party, trade and channel-request filters. **All five start OFF on a fresh installation.** A previously saved ON selection remains ON across upgrades. Blizzard's own social blocking settings can also block invitations independently of ChalkBox.
+
+## Appearance, bags and updates
+
+**Global Appearance** controls ChalkBox's background/accent choices while leaving Blizzard's native Settings transparency alone. Discoveries and MacroForge share a warm, wood/map-derived visual family, with safe fallbacks when the requested native atlas is unavailable. It does not re-skin the game itself.
+
+**Bags** offers a bounded vertical offset for separate bag windows; layout changes defer around combat and bank frame initialization rather than manipulating protected inventory buttons.
+
+**Updates** displays the installed addon version and a GitHub Releases URL you can copy. It **does not fetch a live GitHub version over the Internet from the WoW client**. An optional group-member version comparison uses versions seen from other ChalkBox players in the group; absence of a newer peer isn't proof there is no newer GitHub release.
+
+## Getting help
+
+Start with [Troubleshooting](TROUBLESHOOTING.md), then [Commands](COMMANDS.md) for diagnostics. When filing a bug, supply the ChalkBox version, actual WoW Forever client build, location or dungeon if applicable, reproduction steps and any Lua stack. Avoid sharing private chat or account details.
+
+[Documentation home](README.md) · [Getting started](GETTING_STARTED.md) · [Release notes](RELEASE_NOTES.md)

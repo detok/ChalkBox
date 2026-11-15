@@ -2,7 +2,7 @@
 
 ## One download, no dependencies
 
-ChalkBox 1.6 bundles a local Forever-only snapshot of **LibProfessionDB 1.9.1**. WoW loads its static recipe records directly from `ChalkBox/Libs/LibProfessionDB-1.0/Data/`, before ChalkBox's own modules. The bundle includes **2,511 WoW Forever recipes** (ten professions, including the Forever additions), without the other game-flavour trees.
+Beginning with ChalkBox 1.6, the addon bundled a local Forever-only snapshot (still shipped in 2.2.10) of **LibProfessionDB 1.9.1**. WoW loads its static recipe records directly from `ChalkBox/Libs/LibProfessionDB-1.0/Data/`, before ChalkBox's own modules. The bundle includes **2,511 WoW Forever recipes** (ten professions, including the Forever additions), without the other game-flavour trees.
 
 The original library was authored by **Pimptasty** and is available on [CurseForge](https://www.curseforge.com/wow/addons/libprofessiondb/files/9095167) under the **MIT license**. The specific Forever-only data files and library implementation used in this release were obtained from the [ComradeCraft vendored snapshot](https://github.com/JF10R/comradeCraft/tree/master/ComradeCraft/Libs/LibProfessionDB-1.0), which identifies itself as LibProfessionDB 1.9.1, and matched against the author's published API and data description.
 

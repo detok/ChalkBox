@@ -1,37 +1,33 @@
-# CurseForge project setup — ChalkBox
+# ChalkBox — CurseForge project fields
 
-Use these values when creating the project. Check the current CurseForge upload form for supported game versions before submitting anything.
+**Publication reference for playable ChalkBox 2.2.10 (GitHub prerelease).** Always verify the current official publisher form and the actual compatible WoW Forever game flavor before uploading.
 
-| Field | Value |
+| Field | Value or guidance |
 | --- | --- |
 | Name | ChalkBox |
-| Author / byline | Detok Whitemaine |
-| Summary | A WoW Forever addon for loot discoveries, macros, quests, camping, combat stats and a customizable HUD. |
-| Alternate shorter summary | Loot, macros, quests and adventure tools for WoW Forever. |
-| Game | World of Warcraft |
-| Game version | **Select only a client version you have tested.** WoW Forever may not be offered as a supported flavor. |
-| Categories | Choose relevant options offered by the portal (for example, Inventory, Map, Quests or Utility). |
-| License | MIT, with bundled library licenses preserved |
+| Author | Detok Whitemaine |
+| Summary | A WoW Forever addon for loot discoveries, smarter quest tracking, macros, auction insights and a customizable HUD |
+| Alternate summary | Loot, quests, macros, prices and adventure tools in one WoW Forever addon |
+| Game | World of Warcraft — **select only a genuinely compatible supported flavor** |
+| Categories | Relevant portal-supported inventory, quests, map, UI or utility categories |
+| License | MIT for ChalkBox original code; bundled dependency licenses retained |
 | Source | https://github.com/detok/ChalkBox |
 | Issues | https://github.com/detok/ChalkBox/issues |
-| Description | PROJECT_DESCRIPTION.md |
-| File changelog | FILE_CHANGELOG_2.1.1.md |
-| File upload | **ChalkBox-2.1.1.zip** from GitHub Releases |
-| Project avatar | **Artwork/PNG/Upload-Ready/Project-Icon-512.png** from the separate media kit |
-| Release type | Beta/test until current-client acceptance tests are complete |
+| Full description | `copy/PROJECT_DESCRIPTION.md` |
+| File changelog | **`copy/FILE_CHANGELOG_CURRENT.md`** (version must match both TOCs) |
+| Current playable file | **`ChalkBox-2.2.10.zip`** from GitHub Releases |
+| Separate media kit | **`ChalkBox-CurseForge-Media-2.2.10.zip`** — never install or upload as addon |
+| Project avatar | `Artwork/PNG/Upload-Ready/Project-Icon-512.png` from the media kit |
+| Release type | Prerelease/test until the current Forever client is fully verified |
 
-**Do not upload** the CurseForge media ZIP as the game file. It contains listing text and images, not a loadable addon directory.
+The media ZIP contains six SVG originals, nine PNGs and ten real WoW Forever screenshot JPGs. **Editorial-Only** artwork is illustrative and must never be labeled a gameplay screenshot. The existing gallery captures may show an earlier UI.
 
-**The avatar is a 512×512 original design.** The media kit also includes SVG masters and promotional PNGs. Editorial concept images are not gameplay screenshots.
+**GitHub About description (suggested):** "Quality-of-life tools for WoW Forever: loot discoveries, quests, macros, auction insights and a customizable HUD."
 
-## GitHub metadata
+**GitHub website (suggested):** https://github.com/detok/ChalkBox/releases
 
-Recommended About description:
+**Suggested topics:** `world-of-warcraft`, `wow-addon`, `wow-forever`, `lua`, `macro-builder`, `quality-of-life`.
 
-> Quality-of-life tools for WoW Forever: MacroForge, DropSense, LootSense, The Bar, QuestSense, CampSense and session history.
+Do not assert a CurseForge listing URL or approval until it exists and has been verified in the author portal. Don't claim official Blizzard affiliation or untested client compatibility.
 
-Website: https://github.com/detok/ChalkBox/releases
-
-Suggested topics: world-of-warcraft, wow-addon, wow-forever, lua, macro-builder, quality-of-life.
-
-**Project and CurseForge listing URLs:** only add a link after the destination actually exists and is approved.
+[Publishing guide](../../docs/RELEASE_PROCESS.md) · [Current changelog](FILE_CHANGELOG_CURRENT.md)

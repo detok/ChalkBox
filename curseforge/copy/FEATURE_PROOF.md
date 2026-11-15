@@ -1,31 +1,30 @@
-# Feature inventory and testing notes
+# ChalkBox feature claims and evidence (2.2.10)
 
-This is a factual reference for keeping the ChalkBox listing current. It isn't a promise that every UI configuration has been tested.
+Use this file when reviewing release announcements and the CurseForge listing. It reflects shipped code and automated tests; **live-client validation is still a separate step**.
 
-| Module | Shipped behavior | Important limit |
+| Feature | Shipped behavior | Must not claim |
 | --- | --- | --- |
-| DropSense | Automatically records readable item appearances and quantities | Not every kill or a server drop table |
-| Map Discoveries | Searchable outdoor/dungeon/source journal and movable map button | Some client/map-skin layouts may vary |
-| LootSense | KEEP, quest and profession item context | Never sells items or guarantees an item is disposable |
-| ProfessionSense | Learned recipe inspection plus bundled reference data | Learned data depends on readable professions |
-| MacroForge | Learned-spell macro templates, validation, saved builds, copy/new install | Cannot run a rotation or bypass GCD |
-| The Bar | Compact modular edge HUD with right-click arrangement | Less important stats can be hidden by limited space |
-| Repair Learning | Exact vendor quotes and marked away-from-merchant estimates | Bag damage and discounts can affect estimates |
-| Combat Meter | Optional manual window, reports, icon modes | Starts closed; protected API restrictions apply |
-| Session Journal | Records the current and 20 prior sessions | No fabricated historical sessions |
-| QuestSense | Native accepted-quest watches | No guessed pins or routes |
-| Adventure Prep | Readable camp/rest and pet reminders | Tent/rested XP and Camp Benefits are different |
-| Appearance | Shared theme and local opacity options | Doesn't recolor Blizzard's interface |
-| Emota / QuietGuard / Bags | Optional emotes, invite protection and bag positioning | Per-client behavior must be checked |
+| LootSense, ProfessionSense | Personal KEEP, quest item name/progress when matched, observed learned recipe evidence and bundled potential recipe uses | That unknown items are safe to sell; every custom quest item has a matched title |
+| DropSense | Readable loot-window item/source tracking, zones and dungeons, up to six recent outdoor loot-window positions | Official server odds, every kill counted, exact corpse/spawn location |
+| Discoveries | Searchable, sortable map-docked personal journal, source/area filters, item hover, warm frame | Every zone already has a history or every atlas exists on each client |
+| AuctionSense | Manual browse market asking prices, optional server-throttled full listings, scan age and market context | Realized sales, automatic trades, unprovided listing averages |
+| AuctionInsights | Read-only bag appraisal and observed seller-mail Sales & Stats in the native AH | Complete lifetime sales/profit data |
+| DisenchantSense | Read-only modeled outcomes and value estimates when supported | Guaranteed drops, exact unknown Forever odds, automated DE |
+| QuestSense | Native tracker management: Smart, Nearby, All; verified dungeon-specific Smart filtering with safe fallback | Best XP route, unverified custom dungeon matches, travel distances |
+| MacroForge | Learned-spell wizard, templates, saved recipes, scroll preview, manual copy and explicit new install | Automated rotations, secure action bypasses, silent overwrite |
+| The Bar + Repair Learning | Compact configurable edge HUD, saved layouts, safe chrome shift, observed quote estimates | Protected UI relocation or exact repair quote when away from merchant |
+| Combat Meter | Optional meter, selected native statistics and gated manual PARTY reports | Always-readable combat data, automatic unrestricted spam |
+| Session Journal | Current and up to 20 prior observed sessions | Retroactive history |
+| Adventure Prep | Camping/rest/supply reminders, bounded toast and manual tent acknowledgement | That the tent proves an independent Camp Benefits buff |
+| Emota / QuietGuard | Opt-in emote attempts and default-OFF social request filters | Guaranteed emote animation or automatic invite blocking for a new user |
+| Appearance / Bags / Updates | Local ChalkBox theming, safe separate-bag offset, installed version and release link | Restyling Blizzard's entire UI or direct in-game GitHub HTTP polling |
 
-## 2.0.2 acceptance checks
+## Visual and distribution claims
 
-- Nested settings groups expand and direct links still reach their intended pages.
-- Optional compact meter stays hidden across login and reload.
-- Map Discoveries button is visible, draggable and resettable; menus and search remain responsive.
-- MacroForge lists learned spells and doesn't overwrite a native macro.
-- SavedVariables retain prior loot, macro, bar, repair and session history.
-- The CurseForge media package contains six SVG originals and nine PNG exports.
-- Genuine in-game screenshots are captured before public gallery submission.
+- Current visual direction: wood-derived Discoveries/MacroForge with a native outer frame, separate readable inset sections and fallback if requested atlas art is unavailable.
+- The ten JPGs under `curseforge/screenshots/` are **genuine gameplay captures from an earlier build**. They are not proof the latest 2.2.10 UI has been visually accepted.
+- Editorial SVG/PNG illustrations are separate from gameplay captures.
+- The game ZIP is one root `ChalkBox/`; CurseForge media ZIP is for publisher assets only.
+- No claim of official Blizzard endorsement or verified Retail/ordinary Classic support.
 
-The project is maintained by **Detok Whitemaine**. Source and bug reports: https://github.com/detok/ChalkBox.
+For test evidence and client QA, see [Maintainer runbook](https://github.com/detok/ChalkBox/blob/main/docs/MAINTAINER_RUNBOOK.md) and the repository CI. For a new release update the table when implementation actually changes.

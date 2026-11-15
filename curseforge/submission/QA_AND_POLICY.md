@@ -1,40 +1,40 @@
-# ChalkBox — pre-submission checks
+# ChalkBox pre-submission quality and policy checks
 
-This checklist is for a publisher preparing the addon for the CurseForge author portal.
+**Current release: 2.2.10 · developed for WoW Forever**
 
-## Product and wording
+This checklist is a publisher's guardrail. It does not authorize selecting a falsely compatible game flavor or claiming an unapproved CurseForge listing.
 
-- [ ] The title and summary clearly describe ChalkBox's **real, shipped modules**.
-- [ ] The description mentions the WoW Forever target client without claiming an official Blizzard relationship.
-- [ ] The feature list matches the code. No MapSense continuous map engine, AI combat bot, official drop tables or guaranteed vendor estimates are advertised.
-- [ ] The current file changelog matches version **2.1.1** and real changes.
-- [ ] **Detok Whitemaine** appears only as the creator credit, not as fake endorsements or testimonials.
+## Product claims
 
-## Installable file
+- [ ] Describe only shipped modules, based on [Feature proof](../copy/FEATURE_PROOF.md) and [User handbook](../../docs/USER_GUIDE.md).
+- [ ] QuestSense is a **watch-list manager**, not an XP routing bot; dungeon Smart matching is conservative and requires verified instance evidence.
+- [ ] DropSense personal loot-window rates are not official server odds; recorded outdoor locations are **player positions at loot open**, not guaranteed creature spawn points.
+- [ ] AuctionSense reports manual **asks**, AuctionInsights captures only observed supported seller mail, and DE probabilities may rely on Classic-reference data. Never claim actual sale profit or guaranteed results.
+- [ ] MacroForge compiles from learned spells but never performs a one-key rotation or a protected combat action without the player.
+- [ ] QuietGuard defaults off for fresh installations; Emota automation is optional.
+- [ ] The file changelog and project copy describe version **2.2.10**, not old 2.1.1 features alone.
 
-- [ ] Upload **ChalkBox-2.1.1.zip**, not the separate CurseForge media kit or the GitHub source archive.
-- [ ] The ZIP has exactly one top-level **ChalkBox** folder and both Forever TOC manifests.
-- [ ] Lua tests and packaging tests passed. The addon loads and saved settings persist after a real client test.
-- [ ] Original bundled licenses are intact (including the separate LibProfessionDB MIT notice).
-- [ ] The optional compact meter starts closed; nested settings pages remain reachable.
+## Package
 
-## Visual material
+- [ ] Upload `ChalkBox-2.2.10.zip` as the game addon only if the Forever client flavor is genuinely supported on the portal.
+- [ ] Confirm exactly one root `ChalkBox/` with both TOCs and original license files; no screenshots/media-kit files in the game ZIP.
+- [ ] The separate `ChalkBox-CurseForge-Media-2.2.10.zip` contains publishing assets; it is **not** a game file.
+- [ ] CI Lua 5.1 regression, package validation, current changelog version and media ZIP checks passed.
+- [ ] Changes were smoke-tested inside the real supported game build, with unresolved client risks disclosed.
 
-- [ ] The project avatar is the original **Project-Icon-512.png**, a 512px square PNG.
-- [ ] The hero and feature overview artwork are labeled as illustrations.
-- [ ] Actual gameplay images come from the running WoW Forever client.
-- [ ] Screenshots do not expose private whispers, account details or personal information.
-- [ ] Graphic dimensions and supported file types are checked against the live submission page.
+## Screenshots, artwork and rights
 
-## Platform compatibility
+- [ ] The 512px project avatar is an original brand graphic from `Artwork/PNG/Upload-Ready/`.
+- [ ] All screenshots are actual captured WoW Forever gameplay. Some archived captures are from an older release; they should not be described as the current UI without checking.
+- [ ] Distinguish `Editorial-Only` SVG/PNG illustrations from client screenshots.
+- [ ] Crop or redact private chat, account names and other personal content.
+- [ ] The original source MIT and each bundled vendor library's license remain intact.
 
-- [ ] Confirm that CurseForge offers a **supported game version/flavor** compatible with the actual Forever client before uploading. Don't select Retail or Classic Era merely to get past the form.
-- [ ] Keep the MIT license, source repository and issue tracker links accurate.
-- [ ] Follow the current [CurseForge submission guide](https://support.curseforge.com/support/solutions/articles/9000199552-project-submission-guide-and-tips) and [moderation policy](https://support.curseforge.com/support/solutions/articles/9000197279-moderation-policies).
-- [ ] Treat the project as **unpublished** until the author portal has approved it.
+## Portal and approval
 
-## After approval
+- [ ] Check the current [CurseForge project submission guidance](https://support.curseforge.com/support/solutions/articles/9000199552-project-submission-guide-and-tips) and [moderation rules](https://support.curseforge.com/support/solutions/articles/9000197279-moderation-policies).
+- [ ] Select a compatible game client version; don't use regular Retail/Classic categories as a workaround.
+- [ ] Use **Detok Whitemaine** as the project author. No claim of Blizzard affiliation.
+- [ ] Share the CurseForge project URL only after verifying it actually exists and is approved.
 
-- [ ] Verify the CurseForge download and listed client version.
-- [ ] Add the genuine listing URL to GitHub.
-- [ ] Replace any temporary test-release wording once client acceptance testing is complete.
+[Full publisher checklist](PUBLISH_CHECKLIST.md) · [Release process](../../docs/RELEASE_PROCESS.md)
