@@ -10,6 +10,8 @@ local lastStats={accepted=0,candidates=0,watched=0,auto=0,added=0,removed=0,mode
 local recentlyAccepted={}
 local seenManual,seenManualZone={},nil
 local hooksInstalled=false
+-- The compass delegates native watch writes to QuestSense.
+local navFocusID
 local function Public(value)
     return (type(issecretvalue)~="function" or not issecretvalue(value)) and value~=nil
 end
@@ -222,7 +224,7 @@ local function Reconcile()
         return
     end
     if not settings.enabled and not settings.cleanup
-        and next(settings.suspendedManual)==nil then return end
+        and next(settings.suspendedManual)==nil and not navFocusID then return end
     local mode=settings.mode or "smart"
     local dungeon=settings.enabled and mode=="smart" and CurrentDungeon() or nil
     local allowed,why=CanEdit(dungeon~=nil)
@@ -252,6 +254,30 @@ local function Reconcile()
     end
     local accepted={}
     for _,quest in ipairs(quests) do accepted[quest.id]=true end
+    local focusID=ValidID(navFocusID) and accepted[navFocusID] and
+        navFocusID or nil
+    -- Keep the chosen quest inside Blizzard's existing objective tracker.
+    -- Treat it as a manual watch: never auto-trim or suspend it.
+    if focusID then
+        settings.muted[focusID]=nil
+        settings.managed[focusID]=nil
+        settings.suspendedManual[focusID]=nil
+        if not watched[focusID] then
+            if Count(watched)<MaxWatches() then
+                local ok=pcall(C_QuestLog.AddQuestWatch,focusID)
+                if ok then
+                    local after=Watches()
+                    if after and after[focusID] then
+                        watched=after
+                        seenManual[focusID]=true
+                    else pending=true end
+                else pending=true end
+            else
+                pending=true
+                lastReason="watch list full; selected quest not added"
+            end
+        end
+    end
     local scores,nearby,zoneReady=Relevant(quests,zoneID,names)
     local dungeonQuests=dungeon and DungeonMatches(quests,dungeon) or nil
     local dungeonCount=Count(dungeonQuests)
@@ -327,7 +353,7 @@ local function Reconcile()
     for id in pairs(watched) do
         if not settings.managed[id] then
             if settings.enabled and focusOnly and accepted[id]
-                and not localQuests[id] then
+                and not localQuests[id] and id~=focusID then
                 toSuspend[id]=true
             else
                 manualRetained=manualRetained+1
@@ -458,7 +484,7 @@ QueueUpdate=function()
         return
     end
     if not settings.enabled and not settings.cleanup
-        and next(settings.suspendedManual)==nil then return end
+        and next(settings.suspendedManual)==nil and not navFocusID then return end
     queued=true
     if C_Timer and type(C_Timer.After)=="function" then
         C_Timer.After(0.4,Reconcile)
@@ -477,6 +503,14 @@ local function SetupHooks()
         end
     end
 end
+-- This is only invoked by an enabled navigator when a player chooses
+-- a different accepted quest. It never changes Blizzard quest selection.
+function ChalkBox_QuestNavFocus(id)
+    id=ValidID(id) and id or nil
+    if id==navFocusID then return end
+    navFocusID=id
+    if id then QueueUpdate() end
+end
 function ChalkBox_QuestStatus()
     local zoneID,name=CurrentZone()
     return {enabled=settings and settings.enabled~=false,
@@ -489,7 +523,8 @@ function ChalkBox_QuestStatus()
         hidden=Count(settings and settings.suspendedManual),
         restored=lastStats.restored or 0,
         api=API(),pending=pending,
-        dungeon=lastStats.dungeon,dungeonMatches=lastStats.dungeonMatches}
+        dungeon=lastStats.dungeon,dungeonMatches=lastStats.dungeonMatches,
+        navigationWatch=navFocusID}
 end
 function ChalkBox_QuestCommand(text)
     if not settings then return end
