@@ -8,7 +8,7 @@ Latest releases: https://github.com/detok/ChalkBox/releases
 
 When reporting a bug, include the ChalkBox version, Forever build, steps to reproduce and any Lua error. For map issues, include the output of /chalk drops map status. Screenshots help, but remove private chat and account information.
 
-ChalkBox is licensed under MIT. Bundled libraries retain their original license and notices; see the repository LICENSE and NOTICE files.
+ChalkBox is licensed under MIT. Bundled libraries retain their original license and notices; see the repository [LICENSE](../../LICENSE), and the separate license files under `ChalkBox/` and `ChalkBox/Libs/`. There is no top-level NOTICE file.
 
 Not affiliated with or endorsed by Blizzard Entertainment. World of Warcraft is a trademark of Blizzard Entertainment.
 
