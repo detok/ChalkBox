@@ -1,4 +1,4 @@
-# ChalkBox feature claims and evidence (2.2.14)
+# ChalkBox feature claims and evidence (2.2.15)
 
 Use this file when reviewing release announcements and the CurseForge listing. It reflects shipped code and automated tests; **live-client validation is still a separate step**.
 
@@ -7,10 +7,10 @@ Use this file when reviewing release announcements and the CurseForge listing. I
 | LootSense, ProfessionSense | Personal KEEP, quest item name/progress when matched, observed learned recipe evidence and bundled potential recipe uses | That unknown items are safe to sell; every custom quest item has a matched title |
 | DropSense | Readable loot-window item/source tracking, zones and dungeons, up to six recent outdoor loot-window positions | Official server odds, every kill counted, exact corpse/spawn location |
 | Discoveries | Searchable, sortable map-docked personal journal, source/area filters, item hover, warm frame | Every zone already has a history or every atlas exists on each client |
-| AuctionSense | Manual browse market asking prices, optional server-throttled full listings, scan age and market context | Realized sales, automatic trades, unprovided listing averages |
+| AuctionSense | Manual browse market asking prices, optional server-throttled full listings accepting uncached names with valid IDs/prices, scan age and market context | Realized sales, automatic trades, unprovided listing averages |
 | AuctionInsights | Read-only bag appraisal and observed seller-mail Sales & Stats in the native AH | Complete lifetime sales/profit data |
 | DisenchantSense | Read-only modeled outcomes and value estimates when supported | Guaranteed drops, exact unknown Forever odds, automated DE |
-| QuestSense Navigation | Bare movable arrow with native/legacy Auto/Next/Hide on right-click and quest/yard distance on hover; real accepted quest waypoints and conservative unavailable state | No route database, instant dungeon GPS or modification of Blizzard map pins or quest watches |
+| QuestSense Navigation | Bare arrow with 256px HD or classic art, yard-distance label and native/legacy right-click menu; selected quest stays watched in Blizzard's tracker; real accepted quest waypoints and conservative unavailable state | No route database, instant dungeon GPS or modification of Blizzard map pins or quest watches |
 | QuestSense | Native tracker management: Smart, Nearby, All; verified dungeon-specific Smart filtering with safe fallback | Best XP route, unverified custom dungeon matches, travel distances |
 | MacroForge | Learned-spell wizard, templates, saved recipes, scroll preview, manual copy and explicit new install | Automated rotations, secure action bypasses, silent overwrite |
 | The Bar + Repair Learning | Compact configurable edge HUD, saved layouts, safe chrome shift, observed quote estimates | Protected UI relocation or exact repair quote when away from merchant |

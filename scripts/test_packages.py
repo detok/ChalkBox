@@ -49,6 +49,19 @@ def test() -> None:
         ) == (64, 64) and icon[16] == 32 and icon[17] == 0x28, (
             "AddOn selection icon must be an uncompressed 64px RGBA WoW TGA"
         )
+        quest_arrow = archive.read("ChalkBox/assets/QuestArrowHD.tga")
+        assert len(quest_arrow) == 18 + 256 * 256 * 4 and quest_arrow[2] == 2 and (
+            int.from_bytes(quest_arrow[12:14], "little"),
+            int.from_bytes(quest_arrow[14:16], "little")
+        ) == (256, 256) and quest_arrow[16] == 32 and quest_arrow[17] == 0x28, (
+            "HD QuestSense arrow must be a correctly encoded 256px transparent TGA"
+        )
+        assert quest_arrow[18+3] == 0 and any(
+            quest_arrow[18+i+3] > 180 for i in range(0, len(quest_arrow)-18, 4)
+        ), "QuestSense arrow must have both transparent corners and opaque artwork"
+        assert (SOURCE / "assets/QuestArrowHD.svg").is_file(), (
+            "Keep editable vector source for the high-resolution arrow"
+        )
         assert (ROOT / "curseforge/artwork/chalkbox-project-icon-512.svg").is_file(), (
             "Missing canonical ChalkBox artwork"
         )

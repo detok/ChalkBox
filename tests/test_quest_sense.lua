@@ -344,4 +344,41 @@ assert(watches[301] and not ChalkBoxZoneDB.suspendedManual[301]
     "leaving a dungeon restores manual watches and regular Smart tracking")
 assert(not ChalkBox_QuestStatus().dungeon,
     "dungeon diagnostics clear after returning outdoors")
+-- When the arrow points at a quest, add it to Blizzard's existing
+-- watch list even if automatic QuestSense management was disabled.
+ChalkBox_QuestCommand("off")
+Flush()
+assert(type(ChalkBox_QuestNavFocus)=="function")
+ChalkBox_QuestNavFocus(201)
+Flush()
+assert(watches[201] and not ChalkBoxZoneDB.managed[201]
+    and ChalkBox_QuestStatus().navigationWatch==201,
+    "navigation-selected quest becomes a native, manually owned watch")
+-- Target changes never clear other player's manual watch selections.
+ChalkBox_QuestNavFocus(401)
+Flush()
+assert(watches[201] and watches[401] and
+    not ChalkBoxZoneDB.managed[401],
+    "changing arrow target adds selected quest without removing other watches")
+ChalkBox_QuestNavFocus(nil)
+-- Native watch writes defer safely while in combat.
+watches[201]=nil
+inCombat=true
+ChalkBox_QuestNavFocus(201)
+Flush()
+assert(not watches[201] and ChalkBox_QuestStatus().pending,
+    "selected quest watch defers through combat lockdown")
+inCombat=false
+Fire("PLAYER_REGEN_ENABLED")
+Flush()
+assert(watches[201] and watches[401],
+    "selected quest appears when combat ends, while prior watches remain")
+-- Nearby filtering must not hide the very quest the arrow points at.
+ChalkBox_QuestCommand("on")
+ChalkBox_QuestCommand("zone")
+currentMap=3
+Flush()
+assert(watches[201] and not ChalkBoxZoneDB.suspendedManual[201],
+    "selected quest stays visible in Blizzard's tracker across zone filtering")
+ChalkBox_QuestNavFocus(nil)
 print("PASS: Forever Smart dungeon-only tracking, safe instance identity, manual watch restoration, unknown-data fallback, Nearby sync, and watch ownership")

@@ -1,12 +1,12 @@
 # Getting started with ChalkBox
 
-**For WoW Forever · ChalkBox 2.2.14**
+**For WoW Forever · ChalkBox 2.2.15**
 
 ChalkBox is one addon folder. It contains the runtime modules and their bundled static recipe reference files. There is no second AddOn to install, no account to connect, and no third-party service to configure.
 
 ## 1. Choose the correct download
 
-From [GitHub Releases](https://github.com/detok/ChalkBox/releases), select the **`ChalkBox-X.Y.Z.zip`** asset for the version you intend to use. For the version described in this documentation, choose **`ChalkBox-2.2.14.zip`**.
+From [GitHub Releases](https://github.com/detok/ChalkBox/releases), select the **`ChalkBox-X.Y.Z.zip`** asset for the version you intend to use. For the version described in this documentation, choose **`ChalkBox-2.2.15.zip`**.
 
 Do **not** download the auto-generated `Source code (zip)` archive. The **`ChalkBox-CurseForge-Media-X.Y.Z.zip`** asset is artwork and publishing copy; it is **not** the addon.
 

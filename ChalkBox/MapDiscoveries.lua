@@ -168,6 +168,87 @@ local function MapID()
     end
     if type(id)=="number" and id>0 then return id end
 end
+-- One transient loot-position pulse on Blizzard's *existing* map canvas.
+-- Never move the map, call AddPin, store an extra map marker, or infer a
+-- corpse/creature spawn from where a loot window happened to open.
+local lootPulse,hoverSpot
+local function PulseClear()
+    hoverSpot=nil
+    if lootPulse and type(lootPulse.Hide)=="function" then
+        lootPulse:Hide()
+    end
+end
+local function PulseCanvas()
+    local scroll=WorldMapFrame and WorldMapFrame.ScrollContainer
+    if not scroll then return end
+    local canvas=scroll.Child
+    if not canvas and type(scroll.GetCanvas)=="function" then
+        canvas=Call(scroll.GetCanvas,scroll)
+    end
+    if canvas and type(canvas.GetWidth)=="function" and
+        type(canvas.GetHeight)=="function" and
+        type(canvas.CreateTexture)=="function" then return canvas end
+end
+local function PulsePosition()
+    if not lootPulse or not hoverSpot or
+        not panel or (type(panel.IsShown)=="function" and
+        not panel:IsShown()) or mode~="outdoor" then return false end
+    if selectedArea~="z:"..tostring(MapID() or "") then return false end
+    local canvas=PulseCanvas()
+    if canvas~=lootPulse.canvas then return false end
+    local w,h=Call(canvas.GetWidth,canvas),Call(canvas.GetHeight,canvas)
+    if not ValidOffset(w) or not ValidOffset(h) or w<=0 or h<=0 then
+        return false
+    end
+    lootPulse:ClearAllPoints()
+    lootPulse:SetPoint("CENTER",canvas,"TOPLEFT",
+        hoverSpot.x*w/1000,-hoverSpot.y*h/1000)
+    return true
+end
+local function PulseHover(item)
+    PulseClear()
+    if mode~="outdoor" or type(item)~="table"
+        or type(item.locations)~="table" or #item.locations<1
+        or selectedArea~="z:"..tostring(MapID() or "") then return end
+    -- Recent observation only. Does not imply this is the mob's spawn.
+    local spot=item.locations[#item.locations]
+    if type(spot)~="table" or not ValidOffset(spot.x)
+        or not ValidOffset(spot.y) or spot.x<0 or spot.x>1000
+        or spot.y<0 or spot.y>1000 then return end
+    local canvas=PulseCanvas()
+    if not canvas then return end
+    if not lootPulse or lootPulse.canvas~=canvas then
+        local dot=CreateFrame("Frame",nil,canvas)
+        dot.canvas=canvas
+        dot:SetSize(18,18)
+        if type(dot.EnableMouse)=="function" then dot:EnableMouse(false) end
+        if type(dot.SetFrameLevel)=="function" and
+            type(canvas.GetFrameLevel)=="function" then
+            dot:SetFrameLevel(canvas:GetFrameLevel()+8)
+        end
+        local ring=dot:CreateTexture(nil,"ARTWORK")
+        ring:SetAllPoints(dot)
+        ring:SetColorTexture(1,0.70,0.27,0.70)
+        local center=dot:CreateTexture(nil,"OVERLAY")
+        center:SetSize(6,6)
+        center:SetPoint("CENTER",dot,"CENTER",0,0)
+        center:SetColorTexture(1,0.96,0.74,1)
+        dot.ring=ring;dot.clock=0
+        dot:SetScript("OnUpdate",function(self,dt)
+            if type(dt)~="number" or dt<0 then return end
+            self.clock=(self.clock+dt)%1.3
+            if self.ring and type(self.ring.SetAlpha)=="function" then
+                self.ring:SetAlpha(0.24+0.64*math.abs(
+                    math.sin(self.clock/1.3*math.pi)))
+            end
+            if not PulsePosition() then PulseClear() end
+        end)
+        lootPulse=dot
+    end
+    hoverSpot={x=spot.x,y=spot.y}
+    if PulsePosition() then lootPulse:Show()
+    else PulseClear() end
+end
 local function MapName(id)
     local info=Call(C_Map and C_Map.GetMapInfo,id)
     if type(info)=="table" and Public(info.name) and
@@ -744,6 +825,7 @@ local function Row(parent,index)
     if type(frame.EnableMouse)=="function" then frame:EnableMouse(true) end
     frame:SetScript("OnEnter",function()
         local item=r.item
+        PulseHover(item)
         if not item or not GameTooltip or
             type(GameTooltip.SetHyperlink)~="function" then return end
         GameTooltip:SetOwner(frame,"ANCHOR_RIGHT")
@@ -789,6 +871,7 @@ local function Row(parent,index)
         end
     end)
     frame:SetScript("OnLeave",function()
+        PulseClear()
         if GameTooltip then GameTooltip:Hide() end
     end)
     return r
@@ -816,6 +899,7 @@ local function ClearRow(row)
     if type(row.frame.Hide)=="function" then row.frame:Hide() end
 end
 refresh=function()
+    PulseClear()
     if not panel then return end
     EnsureSelection()
     local info=type(ChalkBox_DropAreaInfo)=="function" and
@@ -959,7 +1043,10 @@ local function EnsurePanel()
     end
     -- Sidecars are docked, not draggable independent dialogs.
     if type(f.EnableMouse)=="function" then f:EnableMouse(true) end
-    f:SetScript("OnHide",ClosePickers)
+    f:SetScript("OnHide",function()
+        PulseClear()
+        ClosePickers()
+    end)
     -- A dedicated visible border and inset body keep the journal legible
     -- even when the shared theme requests a fully transparent background.
     local edge=f:CreateTexture(nil,"BACKGROUND",nil,-1)

@@ -310,7 +310,10 @@ local function Commit(scan)
     if scan.mode=="browse" then
         Finish(("Saved %d items from market browse"):format(found))
     else
-        Finish(("Saved %d items from %d auctions"):format(found,scan.total))
+        local partial=(scan.partial or 0)>0 and
+            (" (%d listings with uncached names)"):format(scan.partial) or ""
+        Finish(("Saved %d items from %d auctions%s"):format(
+            found,scan.total,partial))
     end
     Note("Saved "..found.." items. Asking prices only, not sales.")
 end
@@ -324,7 +327,9 @@ local function ReadRow(scan,index)
         not Integer(count) or count<1 or not Safe(buyout) then
         return false
     end
-    if allInfo==false then return false end
+    -- Valid ID, quantity and buyout arrive before the item name cache.
+    -- A pending name must not discard a real auction asking price.
+    if allInfo==false then scan.partial=(scan.partial or 0)+1 end
     if not Integer(buyout) or buyout<=0 then
         scan.bidOnly=scan.bidOnly+1
         return true
@@ -337,8 +342,8 @@ local function ReadRow(scan,index)
             scan.tooMany=true
             return true
         end
-        row={name=type(name)=="string" and name:sub(1,76)
-                or ("Item #"..id),
+        row={name=Safe(name) and type(name)=="string"
+                and name~="" and name:sub(1,76) or ("Item #"..id),
             low=math.ceil(buyout/count),listings=0,
             quantity=0,totalCopper=0}
         scan.rows[id]=row
@@ -587,7 +592,7 @@ local function StartScan(mode)
     end
     -- A full replicate can be very expensive and server-throttled.
     -- Wait state must exist before the client can fire a synchronous event.
-    job={mode="full",phase="waiting",key=key,waited=0}
+    job={mode="full",phase="waiting",key=key,waited=0,partial=0}
     progress=0
     lastMode=mode
     lastError=nil
@@ -600,14 +605,18 @@ local function StartScan(mode)
             job.waited=job.waited+
                 (type(elapsed)=="number" and elapsed or 0)
             if job.waited>=25 then
-                Abort("Full scan got no response. Possible server cooldown.")
+                Abort("Full Scan timed out with no server response. "..
+                    "The 15-minute account-wide replicate cooldown may be active; "..
+                    "Browse Scan is still available.")
             end
         end
     end)
     UIRefresh()
     local ok,accepted=pcall(ah.ReplicateItems)
     if not ok or accepted==false then
-        Abort("Full scan refused. It may be on server cooldown.")
+        Abort("Full Scan refused by the client/server. "..
+            "The 15-minute account-wide replicate cooldown may be active; "..
+            "use Browse Scan until it is available.")
         return false,state
     end
     UIRefresh()

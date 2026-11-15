@@ -7,6 +7,7 @@ from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 from render_addon_icon import render_icon
+from render_quest_arrow import render_arrow
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "ChalkBox"
@@ -72,6 +73,7 @@ FILES = (
     "NativeMeterPrint.lua",
     "ChalkBox_Settings.lua",
     "assets/Icon.tga",
+    "assets/QuestArrowHD.tga",
 )
 
 
@@ -87,6 +89,7 @@ def build() -> Path:
     # The playable addon uses the same newer brand mark as CurseForge,
     # rendered to the 32-bit TGA format the WoW addon list actually supports.
     render_icon()
+    render_arrow()
     versions = {version_of(SOURCE / name) for name in FILES if name.endswith(".toc")}
     if len(versions) != 1:
         raise ValueError(f"TOC versions differ: {versions}")

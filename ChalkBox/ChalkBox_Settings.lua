@@ -731,7 +731,7 @@ end
 
 local function MakeQuestNavigation()
     local panel=Panel("QuestSense / Navigation",
-        "Follow verified quest waypoints without changing the quest tracker.")
+        "Follow quests through Blizzard's own tracker and map waypoints.")
     local function Run(action)
         if type(ChalkBox_NavCommand)=="function" then
             ChalkBox_NavCommand(action)
@@ -761,15 +761,23 @@ local function MakeQuestNavigation()
             return st and st.locked
         end,
         function(on) Run(on and "lock" or "unlock") end)
-    Button(panel,"Previous Quest",27,-317,158,
+    Toggle(panel,"Use sharp HD arrow (instead of classic)",
+        "Same north-pointing shape, rendered at 256px.",
+        -290,
+        function()
+            local st=ChalkBox_NavStatus and ChalkBox_NavStatus()
+            return st and st.arrowStyle=="hd"
+        end,
+        function(on) Run(on and "hd" or "classic") end)
+    Button(panel,"Previous Quest",27,-352,158,
         function() Run("prev") end)
-    Button(panel,"Reset Position",196,-317,142,
+    Button(panel,"Reset Position",196,-352,142,
         function() Run("reset") end)
-    Button(panel,"Status",349,-317,148,
+    Button(panel,"Status",349,-352,148,
         function() Run("status") end)
-    local info=Label(panel,"","GameFontHighlight",28,-375,500)
-    Label(panel,"No quest database. No automatic map pins or watch changes.",
-        "GameFontHighlightSmall",28,-415,505)
+    local info=Label(panel,"","GameFontHighlight",28,-391,500)
+    Label(panel,"Selected quest stays in Blizzard's native watch list.",
+        "GameFontHighlightSmall",28,-419,505)
     panel:AddRefresh(function()
         local st=ChalkBox_NavStatus and ChalkBox_NavStatus()
         if not st then info:SetText("Navigation not loaded.");return end
