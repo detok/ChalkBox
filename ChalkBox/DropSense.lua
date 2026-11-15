@@ -225,7 +225,7 @@ local function LootPoint(entry)
         return point.x,point.y
     end)
     if not read or not Number(x) or not Number(y)
-        or x>1 or y>1 then return end
+        or x>1 or y>1 or (x==0 and y==0) then return end
     return {x=math.floor(x*1000+0.5),y=math.floor(y*1000+0.5)}
 end
 local function RememberSpot(row,point)
