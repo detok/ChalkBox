@@ -14,7 +14,8 @@ local navigation = {
         {key="loothighlight", title="Appearance"}}},
     {key="drops", title="DropSense"},
     {key="auction", title="AuctionSense"},
-    {key="quests", title="QuestSense"},
+    {key="quests", title="QuestSense", children={
+        {key="questnav", title="Navigation"}}},
     {key="journal", title="Session Journal"},
     {key="bar", title="The Bar", children={
         {key="barstats", title="Modules"},
@@ -710,7 +711,10 @@ local function MakeQuests()
     end
     Button(panel,"Refresh Quests",27,-348,198,function() Run("refresh") end)
     Button(panel,"Tracking Diagnostics",234,-348,210,function() Run("status") end)
-    local info=Label(panel,"","GameFontHighlightSmall",28,-397,498)
+    Button(panel,"Navigation Arrow",27,-379,198,function()
+        Activate("questnav")
+    end)
+    local info=Label(panel,"","GameFontHighlightSmall",28,-419,498)
     panel:AddRefresh(function()
         local st=ChalkBox_QuestStatus and ChalkBox_QuestStatus() or nil
         if not st then info:SetText("QuestSense not loaded yet.");return end
@@ -721,6 +725,57 @@ local function MakeQuests()
             "  |  "..tostring(st.hidden or 0).." hidden"..
             "  |  limit "..tostring(st.limit)..
             (st.pending and "  |  updating when safe" or ""))
+    end)
+    return panel
+end
+
+local function MakeQuestNavigation()
+    local panel=Panel("QuestSense / Navigation",
+        "Follow verified quest waypoints without changing the quest tracker.")
+    local function Run(action)
+        if type(ChalkBox_NavCommand)=="function" then
+            ChalkBox_NavCommand(action)
+        end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end
+    Toggle(panel,"Show navigation arrow",
+        "Uses Blizzard's own quest coordinates. Starts off until enabled.",
+        -110,
+        function()
+            local st=ChalkBox_NavStatus and ChalkBox_NavStatus()
+            return st and st.enabled
+        end,
+        function(on) Run(on and "on" or "off") end)
+    Label(panel,"FOLLOW A QUEST","GameFontNormalLarge",28,-179,480)
+    Button(panel,"Auto: Tracked / Nearest",27,-209,222,
+        function() Run("auto") end)
+    Button(panel,"Next Quest",262,-209,121,
+        function() Run("next") end)
+    Button(panel,"Hide",392,-209,105,
+        function() Run("off") end)
+    Toggle(panel,"Lock arrow position",
+        "When unlocked, drag the arrow to place it anywhere you like.",
+        -253,
+        function()
+            local st=ChalkBox_NavStatus and ChalkBox_NavStatus()
+            return st and st.locked
+        end,
+        function(on) Run(on and "lock" or "unlock") end)
+    Button(panel,"Previous Quest",27,-317,158,
+        function() Run("prev") end)
+    Button(panel,"Reset Position",196,-317,142,
+        function() Run("reset") end)
+    Button(panel,"Status",349,-317,148,
+        function() Run("status") end)
+    local info=Label(panel,"","GameFontHighlight",28,-375,500)
+    Label(panel,"No quest database. No automatic map pins or watch changes.",
+        "GameFontHighlightSmall",28,-415,505)
+    panel:AddRefresh(function()
+        local st=ChalkBox_NavStatus and ChalkBox_NavStatus()
+        if not st then info:SetText("Navigation not loaded.");return end
+        info:SetText((st.enabled and "ON" or "OFF").."  |  "..
+            (st.title or "No quest destination").."  |  "..
+            tostring(st.candidates).." known waypoints")
     end)
     return panel
 end
@@ -1371,6 +1426,7 @@ local function Register()
     panels.loot = MakeLoot()
     panels.loothighlight = MakeLootAppearance()
     panels.quests = MakeQuests()
+    panels.questnav = MakeQuestNavigation()
     panels.bar = MakeBar()
     panels.barstats = MakeBarStats()
     panels.barappearance = MakeBarAppearance()
