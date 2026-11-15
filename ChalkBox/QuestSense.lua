@@ -256,6 +256,7 @@ local function Reconcile()
     for _,quest in ipairs(quests) do accepted[quest.id]=true end
     local focusID=ValidID(navFocusID) and accepted[navFocusID] and
         navFocusID or nil
+    local navigationBlocked=false
     -- Keep the chosen quest inside Blizzard's existing objective tracker.
     -- Treat it as a manual watch: never auto-trim or suspend it.
     if focusID then
@@ -270,10 +271,10 @@ local function Reconcile()
                     if after and after[focusID] then
                         watched=after
                         seenManual[focusID]=true
-                    else pending=true end
-                else pending=true end
+                    else navigationBlocked=true end
+                else navigationBlocked=true end
             else
-                pending=true
+                navigationBlocked=true
                 lastReason="watch list full; selected quest not added"
             end
         end
@@ -285,7 +286,7 @@ local function Reconcile()
     -- dependable association. Preserve the tracker instead of hiding every
     -- manual quest on an unverified guess.
     if dungeon and dungeonCount==0 then
-        pending=false
+        pending=navigationBlocked
         lastReason="no verified quests for "..dungeon.name..
             "; preserving current watches"
         lastStats={accepted=#quests,candidates=0,watched=before,
@@ -457,10 +458,12 @@ local function Reconcile()
     end
     busy=false
     settings.cleanup=nil
-    pending=failed>0
+    pending=failed>0 or navigationBlocked
     recentlyAccepted={}
-    lastReason=failed>0 and ("watch API rejected "..failed..
-        " change(s); retry when safe") or "ready"
+    lastReason=navigationBlocked and
+        "selected quest could not be added; native tracker full or API rejected" or
+        (failed>0 and ("watch API rejected "..failed..
+        " change(s); retry when safe") or "ready")
     local manualNow=0
     seenManual={}
     for id in pairs(watched) do
