@@ -167,8 +167,11 @@ _G.ChalkBox_DropAreaItems=function(key,source,search)
     if key=="z:1436" then
         list=source and {{id="100",name="Linen Cloth",quantity=8,
             windows=4,hits=4,attempts=12,rate=33.333,
-            sourceName="Defias Bandit"}}
-        or {{id="100",name="Linen Cloth",quantity=8,windows=4},
+            sourceName="Defias Bandit",
+            locations={{x=426,y=714,count=1},{x=705,y=211,count=2}}}}
+        or {{id="100",name="Linen Cloth",quantity=8,windows=4,
+            locations={{x=426,y=714,count=1},{x=705,y=211,count=2},
+                {x=515,y=313,count=1},{x=673,y=498,count=3}}},
             {id="200",name="Bone",quantity=2,windows=2}}
     elseif key=="d:36:1" then list={{id="500",name="Dungeon Trinket",
         quantity=1,windows=1}}
@@ -186,6 +189,16 @@ _G.ChalkBox_DropAreaItems=function(key,source,search)
     return result
 end
 _G.C_Item={GetItemIconByID=function(id) return 100000+id end}
+local tooltipLines={}
+_G.GameTooltip={
+    SetOwner=function() end,
+    SetHyperlink=function(_,link)
+        assert(link:find("^item:"))
+    end,
+    AddLine=function(_,line) tooltipLines[#tooltipLines+1]=line end,
+    Show=function(self) self.shown=true end,
+    Hide=function(self) self.shown=false end,
+}
 local menuEntries={}
 local function MenuRoot(entries)
     return {
@@ -327,22 +340,35 @@ assert(journal.hasMapArt and journal.mapArt and
 assert(journal.back and journal.back.texture==
     "Interface\\Buttons\\WHITE8X8",
     "a dark text-contrast glaze is painted over map art")
-assert(journal.back.color and journal.back.color[4]>=0.58
-    and journal.back.color[4]<=0.66,
-    "map texture remains visible without sacrificing readable text contrast")
+assert(journal.back.color and journal.back.color[4]>=0.35
+    and journal.back.color[4]<=0.41
+    and journal.backdropColor[4]<=0.25,
+    "parchment remains visibly unobscured beneath the lighter reading glaze")
 assert(journal.edge and journal.edge.color and journal.edge.color[4]>=0.8,
     "journal has a visible accent border")
 assert(journal.back.color[1]==0.12 and journal.stripe.color[2]==0.8,
     "global accent/theme color is preserved by the new map-like background")
 _G.ChalkBox_ThemeBackground=function() error("theme unavailable") end
 ChalkBox_MapDiscoveriesThemeRefresh()
-assert(journal.back.color[4]>=0.58,
+assert(journal.back.color[4]>=0.35,
     "theme failure must not remove the map-style reading surface")
 journal.hasMapArt=false
 ChalkBox_MapDiscoveriesThemeRefresh()
 assert(journal.back.color[4]>=0.92,
     "without a native atlas the panel safely falls back to its old opaque body")
 journal.hasMapArt=true
+ChalkBox_MapDiscoveriesThemeRefresh()
+-- Native atlas unavailable at first map open, then available on re-open:
+-- retry the same texture, never substitute a fake native map texture.
+journal.hasMapArt=false
+_G.C_Texture={GetAtlasExists=function() return false end}
+journal:RefreshMapArt()
+assert(not journal.hasMapArt,"missing atlas must not be reported as loaded")
+C_Texture.GetAtlasExists=function() return true end
+journal:RefreshMapArt()
+assert(journal.hasMapArt,
+    "late-available map art is retried without recreating the journal")
+_G.C_Texture=nil
 ChalkBox_MapDiscoveriesThemeRefresh()
 local filterCount=0
 for _,f in ipairs(frames) do
@@ -430,6 +456,24 @@ assert(ChalkBox_DiscoveriesBrowserStatus().selectedSource=="c:12345",
 local selected=ChalkBox_DiscoveriesDropdownItems("source")
 assert(selected[3].text:find("Defias Bandit",1,true),
     "known-creature source can be selected in a genuine menu")
+local function FirstLootRow()
+    for _,f in ipairs(frames) do
+        if f.parent==journal and f.w==452 and f.h==34 and
+            f.OnEnter then return f end
+    end
+end
+local first=FirstLootRow()
+assert(first,"journal renders interactive item rows")
+tooltipLines={}
+first.OnEnter()
+assert(table.concat(tooltipLines," "):find("Looted near Westfall",1,true)
+    and table.concat(tooltipLines," "):find("70.5, 21.1",1,true),
+    "hover names the location of observed outdoor looting")
+assert(table.concat(tooltipLines," "):find("2 loots",1,true),
+    "repeated nearby observations show their count")
+first.OnLeave()
+assert(not GameTooltip.shown,"mouseout closes the item hover")
+
 local sawDropRate,sawDrops,sawSourceStats=false,false,false
 for _,font in ipairs(fonts) do
     if font.text=="LOOTS" then sawDrops=true end
@@ -566,4 +610,4 @@ local restored=ChalkBox_DiscoveriesBrowserStatus()
 assert(not restored.followMap and restored.mode=="outdoor" and
     restored.selectedArea=="z:1437",
     "fresh browser instance restores the per-character manual zone")
-print("PASS: Discoveries map-owned compact sidecar, safe docking/fallback, reliable creature/sort picker, zone paging, sync, saved data and map lifecycle")
+print("PASS: Discoveries readable map art and late retry, loot-location hover, map-owned compact sidecar, safe docking/fallback, dropdowns, paging, sync and saved data")
