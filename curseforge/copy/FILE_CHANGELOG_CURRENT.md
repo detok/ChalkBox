@@ -2,6 +2,8 @@
 
 - Clearer Drop Journal spacing and blue counts; observed sample rates are teal and explicitly labeled, never presented as guaranteed odds.
 - Consistent neutral LootSense explanations and blue quest-progress counts.
+- AuctionSense market tooltips use gold for price values rather than implying a favorable deal.
+- Clearer DropSense options wording and inactive bag-outline labels.
 - No changes to loot rates, quest/profession decisions, settings or saved observations.
 
 Beta: review visual layout inside WoW Forever before uploading.
