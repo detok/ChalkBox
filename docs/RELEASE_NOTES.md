@@ -1,29 +1,33 @@
-# ChalkBox 2.2.14 — Quest Compass Direction and Corpse Navigation
+# ChalkBox 2.2.15 — AuctionSense, Quest Tracking, Discoveries & HD Arrow
 
-## Accurate direction, without losing the minimal arrow
+## Full Scan now accepts valid listings before their names are cached
 
-The optional QuestSense arrow uses corrected **WoW world-coordinate geometry**: world X is north/south, world Y is west/east. The previous bearing computation reversed those axes, causing incorrect headings. The arrow now prefers Blizzard's north-up `Navigation-Tracked-Arrow` atlas, updates smoothly as your character turns, normalizes headings across the north/south wrap and stabilizes at very short distances instead of spinning.
+**Scan Market (browse)** requests the server's regular paginated browsing summaries, usually lighter and without a full-listing cooldown. **Full listings (replicate)** asks the server for a complete set of individual auction records, letting ChalkBox calculate actual observed listing counts, stack quantities, lowest buyout per item and a quantity-weighted *asking-price* average. The game's successful full-request throttle is approximately **15 minutes account-wide**.
 
-## Point toward the quest you actually selected
+Previously, ChalkBox rejected individual full-scan listings when `hasAllInfo` was false—even if the item ID, stack count and buyout were already valid. That could discard usable prices, then abort a valid snapshot. Version 2.2.15 keeps **verified numeric listing data** in that situation, labels uncached item names as `Item #ID`, and reports how many rows lacked complete names.
 
-**Auto now follows the quest selected in the Blizzard quest log or actively super-tracked in the game's objective tracker**, instead of unexpectedly hopping to a different nearby quest whenever a waypoint is missing. Selecting a different quest in the game releases a stale manual Next/Follow override. The compass prefers a real current-map next waypoint when supplied, then the quest's next step and genuine map POIs. It never invents coordinates.
+The reader still rejects invalid IDs, quantities and buyouts, never mistakes bid-only prices for buyouts, never synthesizes actual sale prices, and preserves the last complete market on a failed or interrupted scan. Full Scan can still be legitimately refused or time out when the **server throttles** the replicate request (including if another addon made the last successful request); ChalkBox now explains this separately and leaves the working Browse Scan available.
 
-If you have **no actively selected/tracked quest**, Auto may use a nearby known quest; it keeps that fallback target stable while you move instead of constantly switching to whichever quest becomes a few yards closer. Manually choosing Next or Follow still works.
+## Your selected quest stays in Blizzard's tracker
 
-## Corpse recovery overrides quests
+When **QuestSense Navigation** is enabled and following an accepted quest, QuestSense adds that quest to **Blizzard's existing quest-watch list** if it is not already watched. This is a manual-style watch, not an extra ChalkBox objective tracker: it is not counted as one of ChalkBox's auto-managed quests, will not delete other manual watches to free space, and remains visible across Nearby filtering while explicitly followed. It defers protected watch changes while combat or map/quest-log UI are open, and will report a full watch-list limit rather than dropping another user's selection.
 
-While dead or ghosted, the arrow attempts to point to **your actual corpse**, using `C_DeathInfo.GetCorpseMapPosition` for the current map or a suitable parent map. It labels the destination **Your corpse** on hover. **Resurrection restores your previous quest selection**—no saved settings or quest-watch changes.
+Quest selection and super-tracking are **not** changed by ChalkBox. Navigation remains off by default. Hiding the arrow does not remove your watched quest.
 
-If Forever doesn't expose your corpse location, player position, or facing (especially inside instances), the arrow remains muted with a specific tooltip message rather than pretending it knows which way to go.
+## Discoveries — transient loot-location pulse
 
-## No new UI clutter
+While the World Map is displaying a zone with your recorded outdoor loot observations, **hover a Discoveries item** to pulse a small gold dot at the **latest observed player position when the loot window opened**. The dot exists only while hovering: it disappears on mouse-out, page/filter changes, or map changes. It is anchored to Blizzard's visible map canvas and does not create permanent pins or change the map location.
 
-It's still **only the floating arrow**, with the familiar **right-click Auto / Next / Hide** menu and hover tooltip. Your saved position, lock, manual selection, and opt-in preference are preserved. This change reads game data; it doesn't alter Blizzard's quest watches, map pins, super-tracking, or protected gameplay actions.
+No marker appears for dungeon loot, old records without coordinates, or a different area than the visible map. This is a personal observation—not a guaranteed creature spawn/death coordinate.
 
-## Verification
+## A cleaner arrow with optional HD rendering
 
-Lua 5.1 mock regressions cover all four compass directions, facing rotation, zero-distance stability, selected/super-tracked quest changes, current-map waypoint preference, corpse override and resurrection, parent-map corpse coordinates, absent position data, and existing settings/menus.
+The floating arrow remains minimal. A **small distance in yards now sits underneath it**, while hover still shows full quest and GPS status. In **QuestSense → Navigation**, choose between **Sharp HD Arrow** (new 256-pixel original north-up TGA derived from editable vector art) and **Classic Arrow** (the original Blizzard navigation atlas, with fallback). The arrow's direction, Auto / Next / Hide right-click menu, drag lock, saved position and corpus/quest targeting stay the same. No new dependency or secondary addon is required.
 
-**Real Forever-client confirmation remains necessary**, particularly arrow atlas orientation and corpse data availability on the specific build.
+## Compatibility and verification
 
-Install `ChalkBox-2.2.14.zip` over the current addon folder, keep SavedVariables, and use `/reload`.
+- Lua 5.1 regression tests cover partial full-listing metadata, price preservation, native selected-quest watches, deferred safe updates, a disappearing map-canvas pulse, arrow style switching and distance display.
+- Package tests verify the 256-pixel alpha TGA and both exact, reproducible release ZIPs.
+- **Live Forever checks remain necessary** for the server's replicate throttle behavior, the map canvas geometry while zooming, and the new arrow graphic on different UI scales. This is a Beta build.
+
+Install `ChalkBox-2.2.15.zip` over your addon files, keep SavedVariables, then `/reload`.
