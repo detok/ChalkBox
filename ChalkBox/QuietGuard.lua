@@ -135,8 +135,9 @@ frame:SetScript("OnEvent",function(_,event,name)
         if type(ChalkBoxDB)~="table" then ChalkBoxDB={} end
         if type(ChalkBoxDB.guard)~="table" then ChalkBoxDB.guard={} end
         db=ChalkBoxDB.guard
-        if db.guild==nil then db.guild=true end
-        if db.duel==nil then db.duel=true end
+        -- Fresh installs are opt-in; leave every explicitly saved choice alone.
+        if db.guild==nil then db.guild=false end
+        if db.duel==nil then db.duel=false end
         db.party=db.party==true
         db.trade=db.trade==true
         db.channel=db.channel==true
