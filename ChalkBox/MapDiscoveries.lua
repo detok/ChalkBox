@@ -117,13 +117,15 @@ local function Tint()
     -- Keep the map's parchment/tiled background visible beneath a dark
     -- glaze so the existing light-on-dark controls stay easy to read.
     -- If a Forever build lacks the atlas, retain the original opaque body.
-    Paint(panel.back,r,g,b,panel.hasMapArt and 0.62 or a)
+    -- Parchment should be clearly visible, not buried under a near-opaque
+    -- charcoal texture. Row strips still provide local text contrast.
+    Paint(panel.back,r,g,b,panel.hasMapArt and 0.38 or a)
     Paint(panel.edge,ar,ag,ab,0.82)
     Paint(panel.stripe,ar,ag,ab,1)
     if type(panel.SetBackdropColor)=="function" then
         -- This undercoat is below the map tile; the visible inner glaze
         -- is handled separately by panel.back.
-        panel:SetBackdropColor(r,g,b,a)
+        panel:SetBackdropColor(r,g,b,panel.hasMapArt and 0.20 or a)
     end
     if type(panel.SetBackdropBorderColor)=="function" then
         panel:SetBackdropBorderColor(ar,ag,ab,1)
@@ -933,25 +935,36 @@ local function EnsurePanel()
     art:SetPoint("TOPLEFT",f,"TOPLEFT",2,-2)
     art:SetPoint("BOTTOMRIGHT",f,"BOTTOMRIGHT",-2,2)
     f.mapArt=art
-    local loaded=false
-    if type(art.SetAtlas)=="function" then
+    local function LoadNativeArt()
+        if type(art.SetAtlas)~="function" then return false end
+        -- SetAtlas may be available even when this particular atlas is not.
+        local exists=C_Texture and C_Texture.GetAtlasExists
+        if type(exists)=="function" then
+            local ok,available=pcall(exists,MAP_TILE_ATLAS)
+            if ok and available==false then return false end
+        end
         local ok,result=pcall(art.SetAtlas,art,MAP_TILE_ATLAS,false)
-        loaded=ok and result~=false
-    end
-    if loaded then
-        if type(art.SetHorizTile)=="function" then
-            art:SetHorizTile(true)
+        if not ok or result==false then return false end
+        if type(art.GetAtlas)=="function" then
+            local got,atlas=pcall(art.GetAtlas,art)
+            if got and atlas~=nil and atlas~=MAP_TILE_ATLAS then return false end
         end
-        if type(art.SetVertTile)=="function" then
-            art:SetVertTile(true)
-        end
+        if type(art.SetHorizTile)=="function" then art:SetHorizTile(true) end
+        if type(art.SetVertTile)=="function" then art:SetVertTile(true) end
         if type(art.SetVertexColor)=="function" then
             art:SetVertexColor(1,1,1,1)
         end
-    elseif type(art.Hide)=="function" then
-        art:Hide()
+        if type(art.Show)=="function" then art:Show() end
+        return true
     end
-    f.hasMapArt=loaded
+    f.hasMapArt=LoadNativeArt()
+    if not f.hasMapArt and type(art.Hide)=="function" then art:Hide() end
+    f.RefreshMapArt=function()
+        if not f.hasMapArt then
+            f.hasMapArt=LoadNativeArt()
+            if not f.hasMapArt and type(art.Hide)=="function" then art:Hide() end
+        end
+    end
     local bg=f:CreateTexture(nil,"BACKGROUND",nil,1)
     bg:SetPoint("TOPLEFT",f,"TOPLEFT",2,-2)
     bg:SetPoint("BOTTOMRIGHT",f,"BOTTOMRIGHT",-2,2)
@@ -1074,6 +1087,7 @@ function ChalkBox_OpenMapDiscoveries()
         selectedArea=DefaultArea()
     end
     refresh()
+    if panel.RefreshMapArt then panel:RefreshMapArt() end
     Tint()
     panel:Show()
     if type(panel.Raise)=="function" then panel:Raise() end
