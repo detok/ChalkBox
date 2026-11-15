@@ -1,6 +1,6 @@
 # ChalkBox — CurseForge publishing assets
 
-**Current playable release: 2.2.10 · WoW Forever**
+**Current playable release: 2.2.11 · WoW Forever**
 
 This folder is for publishing **the separate addon ZIP and supporting listing materials**. It does not replace the installed ChalkBox addon, and it must not be distributed as a game-addon bundle.
 
@@ -8,8 +8,8 @@ This folder is for publishing **the separate addon ZIP and supporting listing ma
 
 | Artifact | Use |
 | --- | --- |
-| [ChalkBox-2.2.10.zip](https://github.com/detok/ChalkBox/releases/download/v2.2.10/ChalkBox-2.2.10.zip) | **Actual game addon**; one `ChalkBox/` directory |
-| [ChalkBox-CurseForge-Media-2.2.10.zip](https://github.com/detok/ChalkBox/releases/download/v2.2.10/ChalkBox-CurseForge-Media-2.2.10.zip) | **Publisher media kit only**; PNG/SVG art, authentic game JPGs, listing copy and checklists |
+| [ChalkBox-2.2.11.zip](https://github.com/detok/ChalkBox/releases/download/v2.2.11/ChalkBox-2.2.11.zip) | **Actual game addon**; one `ChalkBox/` directory |
+| [ChalkBox-CurseForge-Media-2.2.11.zip](https://github.com/detok/ChalkBox/releases/download/v2.2.11/ChalkBox-CurseForge-Media-2.2.11.zip) | **Publisher media kit only**; PNG/SVG art, authentic game JPGs, listing copy and checklists |
 
 Do not upload the media ZIP as the addon, or the automatic GitHub source ZIP as a game file.
 
