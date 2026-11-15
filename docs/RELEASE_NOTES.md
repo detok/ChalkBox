@@ -1,26 +1,28 @@
-# ChalkBox 2.2.3 — More accurate disenchant guidance, completely offline
+# ChalkBox 2.2.4 — Your Items & Your Sales, inside Market
 
-This is a **data-correction release** for DisenchantSense. It retains the familiar LootSense item tooltip, AuctionSense Market hover and single-addon installation.
+## Three views, one familiar Auction House tab
+At any auctioneer choose Blizzard Auction House → **Market**, then select:
+- **Prices:** The existing scan and pricing browser, unchanged.
+- **My Items:** See items across your carried bags, combined by item ID. Review actual fresh lowest asks, item counts, vendor total and modeled disenchant expected value. Hovers show the details; protect/quest/bound items are never recommended for auctioning.
+- **Sales & Stats:** Actual **seller-mail invoice** receipts captured when you visit a mailbox. Displays captured sale count, gross sale price, house fees and proceeds (including returned deposit). Readable compact row list, hover details, and search.
 
-### What changed
-- Now uses the **Forever client's item-class, rarity and item-level disenchant brackets**, taken from an openly MIT-licensed reference. These are offline files inside ChalkBox—no web API, account, subscription, companion executable or second addon.
-- Ships the source's **NO_DISENCHANT** list and **special disenchant-loot** list; affected items do **not** get misleading general material valuations.
-- Adds low-level green weapons, supported rare and epic brackets, and corrected crystal/shard transitions. When available, uses the effective item level from the game client, not the required character level.
-- The 5–15 **blue** bracket's output is not confirmed by the source; it is flagged **Unconfirmed** and never assigned a speculative expected value or trading recommendation.
+The Buy, Sell and Auctions tabs remain Blizzard's own. Market has no transaction buttons. Any suggested pricing is advisory and must be verified in the real Sell tab.
 
-### What remains an estimate
-The **Forever bracket** is client-derived; dust/essence/shard **probabilities and quantities** are from VMaNGOS Classic and cross-checked with CMaNGOS. They may differ on Forever servers. The values are expected *gross asking values* from your AuctionSense scans, **not realized sales or profit**. Missing, stale or mixed material prices still block an expected total and a financial comparison.
+## How the receipt history works
+ChalkBox observes **completed** native seller invoices from `GetInboxInvoiceInfo` during mailbox events; it skips pending sale notifications and buyer invoices. You do **not** have to click a ChalkBox scan to register those invoices.
 
-### Controls
-Hover green, blue or supported epic equipment. Hold **Shift** for outcome breakdowns. At an auctioneer, use **Market → Scan Market** to collect asking prices. Type `/chalk de [item link]` for the model's chat breakdown, `/chalk de off` to hide, or change the existing **AuctionSense → Show disenchant estimates** checkbox.
+Blizzard's supported mail APIs do not expose a stable unique mailbox ID suitable for perfect lifetime deduplication. ChalkBox uses a bounded per-character invoice signature and expiry-time approximation, avoiding repeat counts for an unchanged mailbox. Very similar invoices can sometimes be merged or counted separately. Items sold before installing the update or mail that disappears before being observed cannot be recovered. This is an **observed receipts ledger**, not full account transaction history. Mail gold is not automatically collected. The totals are *gross sale / after-cut invoice proceeds*, **not net trading profit**, as purchasing costs, unsold fees and all unsaved sales are excluded.
 
-### Copyright / provenance
-The reference is MIT-licensed by APGM82. Bundled files and unmodified MIT terms are in `ChalkBox/Libs/ForeverDisenchantData/`; the bundled README contains the pinned Git commit and source build details: https://github.com/APGM82/DisenchantForever.
+## Market pricing limits
+Asking prices are not completed sales. Old (>24h), mixed-variant or missing prices are never used as a numeric appraisal. Bind/tradeability needs to be verified in-game; character KEEP and quest items remain protected. Disenchant expected value uses Forever-client brackets and Classic-reference yield probabilities and may not exactly match Forever servers.
 
-### Safety
-No item usage, no casting, no bag button changes, no automatic auction transactions, no network access, no mutation of Blizzard's auction display mode, no SavedVariables migration. Existing AuctionSense, map-owned Discoveries, bag offset, Emota, macro builder and damage meter remain untouched.
+## Safety and compatibility
+No additional auction requests, posting, buying, mail retrieval, protected frame edits, item buttons or event-driven spellcasts. No external services, other addons, or new windows. AuctionSense's 2.2.1 taint hotfix, the original Market scanner, DisenchantSense and all ChalkBox modules remain. Sales stored in new `ChalkBoxDB.auctionInsights` data without rewriting the existing AuctionSense snapshot.
 
-### Test release
-Lua 5.1 syntax, all existing+new regression tests, full ZIP integrity and media kit are checked by GitHub Actions. Actual rendered tooltips and any Forever-server-specific output still need in-game verification. Do not destroy valuable items solely from estimated market prices.
+## In-game checks
+1. Install `ChalkBox-2.2.4.zip` over your existing addon, keep SavedVariables, `/reload`.
+2. Visit an auctioneer: Market → Prices → Scan Market, then My Items. Check quantity, fresh low ask, vendor and DE in the hover.
+3. Visit a mailbox containing an actual **seller** invoice. Open the mailbox, then return to Auction House → Market → Sales & Stats and verify the receipt.
+4. Reopen the mailbox and verify the same invoice isn't counted again. Switch back to Buy, use your bags, and confirm no blocked item use.
 
-Install `ChalkBox-2.2.3.zip` over the existing addon, preserve SavedVariables and `/reload`.
+Automated Lua 5.1, full addon suite and ZIP checks run in GitHub Actions. In-client Forever confirmation is still required.
