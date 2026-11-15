@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.14 — Correct QuestSense bearings, follow selected quests and find your corpse
+- Correct the compass bearing using WoW's actual world-coordinate axes: **+X north, +Y west**. Prefer the client-native north-up navigation atlas; stabilize bearings near the destination and across angle wrap.
+- **Follow the selected quest:** honor current Blizzard super-tracking and user selection in the quest log; choosing another quest releases stale manual overrides. When a selected quest has no reliable coordinates, show unavailable instead of silently following an unrelated quest. When nothing is selected, keep the fallback quest stable rather than repeatedly switching to the nearest.
+- **Corpse recovery:** while dead/ghosted, follow the actual corpse marker returned by the current/parent map. If the marker is unavailable, clearly withhold directions. On resurrection, return to the previous quest selection.
+- Retain the **arrow-only UI** with right-click Auto/Next/Hide, saved drag/lock, and tooltip. No existing QuestSense watch list, user waypoint, or Blizzard super-tracking writes.
+- Add directional regression checks for all cardinals and facing changes, next-waypoint resolution, target selection events, corpse-parent fallback, and death/resurrection safety.
+
 ## 2.2.13 — QuestSense arrow-only UI
 - Simplify the optional quest compass to **only the floating 64px MinimapArrow**. Remove its permanent opaque box, outer border, title/distance panel and visible action buttons. Preserve existing target, position, locking, waypoint reads, navigation logic and saved settings.
 - **Right-click the arrow** for the three native menu actions: **Auto (follow tracked)**, **Next quest**, **Hide arrow**. Support both native MenuUtil and legacy EasyMenu clients, with QuestSense settings as a compatibility fallback.

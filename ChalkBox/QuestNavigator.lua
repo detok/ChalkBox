@@ -4,6 +4,9 @@
 local addonName=...
 local frame,chosen,reason,options,refreshTimer=nil,nil,"Navigation off",{},0
 local target
+-- Manual Next/Follow remains possible, but selecting a new Blizzard quest
+-- should release a stale manual override. Only state changes trigger it.
+local lastTracked,lastSelected,observedSelection,selectedFocus=nil,nil,false,nil
 local function Public(v)
     return v~=nil and (type(issecretvalue)~="function" or
         not issecretvalue(v))
@@ -70,8 +73,15 @@ local function MapPoint(mapID,x,y)
     return {mapID=mapID,x=x,y=y}
 end
 local function QuestPoint(id,playerMap)
-    -- Prefer Blizzard's explicit *next* waypoint: it may include the
-    -- intermediate travel stop rather than the final quest objective.
+    -- The active quest's current-map travel stop is more useful than
+    -- an objective on a remote map. Both calls are read-only game APIs.
+    if ID(playerMap) then
+        local x,y=Call(C_QuestLog and
+            C_QuestLog.GetNextWaypointForMap,id,playerMap)
+        local localPoint=MapPoint(playerMap,x,y)
+        if localPoint then return localPoint end
+    end
+    -- Prefer the explicitly routed *next* step before raw POIs.
     local m,x,y=Call(C_QuestLog and C_QuestLog.GetNextWaypoint,id)
     local p=MapPoint(m,x,y)
     if p then return p end
@@ -156,11 +166,77 @@ local function Accepted()
     end
     return result
 end
+local function Ghost()
+    local ghost=Call(UnitIsGhost,"player")
+    local dead=Call(UnitIsDeadOrGhost,"player")
+    local trackedCorpse=Call(C_SuperTrack and
+        C_SuperTrack.IsSuperTrackingCorpse)
+    return ghost==true or dead==true or trackedCorpse==true
+end
+local function CorpsePoint()
+    local mapID=Map()
+    local visited={}
+    -- Graveyards are sometimes on a sub-map while the corpse is
+    -- exposed on its parent zone. Never fabricate a corpse position.
+    for _=1,8 do
+        if not ID(mapID) or visited[mapID] then break end
+        visited[mapID]=true
+        local pos=Call(C_DeathInfo and
+            C_DeathInfo.GetCorpseMapPosition,mapID)
+        local x,y=XY(pos)
+        local point=MapPoint(mapID,x,y)
+        if point then return point end
+        local info=Call(C_Map and C_Map.GetMapInfo,mapID)
+        if type(info)~="table" or not ID(info.parentMapID) then break end
+        mapID=info.parentMapID
+    end
+end
+local function GameSelection(db)
+    -- A super-tracked quest is the actual focused quest in Blizzard's
+    -- world-map/objective tracker. The quest-log row selection is also
+    -- readable, and can change independently when the player clicks it.
+    local s=Call(C_SuperTrack and C_SuperTrack.GetSuperTrackedQuestID)
+    local selected=Call(C_QuestLog and C_QuestLog.GetSelectedQuest)
+    s=ID(s) and s or nil
+    selected=ID(selected) and selected or nil
+    if not observedSelection then
+        observedSelection=true
+        lastTracked=s;lastSelected=selected
+        -- A stale saved Next/Follow from a previous login must not
+        -- override the newly selected game quest on first load.
+        if (s or selected) and db.questID and
+            db.questID~=(s or selected) then db.questID=nil end
+    else
+        if s~=lastTracked then
+            db.questID=nil;selectedFocus=nil
+            lastTracked=s
+        end
+        if selected~=lastSelected then
+            db.questID=nil
+            selectedFocus=selected
+            lastSelected=selected
+        end
+    end
+    if selectedFocus then return selectedFocus,"Selected" end
+    if s then return s,"Tracked" end
+    if selected then return selected,"Selected" end
+    return nil,"Auto"
+end
 local function Refresh()
     local db=DB()
     if not db or not db.enabled then
         target=nil;reason="Navigation off"
         if frame then frame:Hide() end
+        return
+    end
+    -- Corpse recovery always wins. Keep the prior manually chosen
+    -- quest intact, and restore it when the character is alive again.
+    if Ghost() then
+        local point=CorpsePoint()
+        target={kind="corpse",name="Your corpse",point=point}
+        chosen="Corpse"
+        reason=point and "Ready" or "Corpse position unavailable"
+        if frame then frame:Show() end
         return
     end
     local accepted=Accepted()
@@ -171,41 +247,48 @@ local function Refresh()
         return
     end
     options=accepted
-    local manual
-    if db.questID then
-        for _,q in ipairs(options) do
-            if q.id==db.questID then manual=q;break end
-        end
-        if not manual then db.questID=nil end
+    local gameID,gameSource=GameSelection(db)
+    local manual,focused
+    for _,q in ipairs(options) do
+        if db.questID and q.id==db.questID then manual=q end
+        if gameID and q.id==gameID then focused=q end
     end
+    if db.questID and not manual then db.questID=nil end
     local player,why=PlayerPosition()
-    local super=Call(C_SuperTrack and C_SuperTrack.GetSuperTrackedQuestID)
-    local preferred
-    local nearest,nearestDistance
+    local nearest,nearestDistance,previous
     for _,q in ipairs(options) do
         if q.point then
-            if ID(super) and q.id==super and
-                (not player or Distance(q.point,player)) then preferred=q end
             local dist=player and Distance(q.point,player)
             if dist and (not nearestDistance or dist<nearestDistance) then
                 nearest,nearestDistance=q,dist
             end
+            if not gameID and target and target.id==q.id and
+                (not player or dist) then previous=q end
         end
     end
     local first
     for _,q in ipairs(options) do
         if q.point then first=q;break end
     end
-    target=manual or preferred or nearest or first
-    chosen=manual and "Manual" or (preferred and "Tracked" or "Smart")
+    -- Never quietly switch the selected quest to a different one
+    -- just because its POI is missing or temporarily unreadable.
+    target=manual or focused or
+        (gameID and {id=gameID,name="Tracked quest #"..gameID}) or
+        previous or nearest or first
+    chosen=manual and "Manual" or (gameID and gameSource or "Auto")
     reason=player and "Ready" or (why or "No coordinates")
     if not target then reason="No accepted quest waypoints"
-    elseif not target.point then reason="Waiting for quest waypoint" end
+    elseif not target.point then reason="Selected quest waypoint unavailable" end
     if frame then frame:Show() end
 end
 local function Face()
     if not target then return nil,reason end
-    if not target.point then return nil,"No waypoint for selected quest" end
+    if not target.point then
+        if target.kind=="corpse" then
+            return nil,"Corpse position unavailable"
+        end
+        return nil,"No waypoint for selected quest"
+    end
     local player,why=PlayerPosition()
     if not player then return nil,why end
     local dist,dx,dy=Distance(target.point,player)
@@ -213,9 +296,16 @@ local function Face()
     if type(math.atan2)~="function" then
         return nil,"Directional math unavailable"
     end
-    -- World X increases westward; world Y increases northward.
-    -- Facing is 0 north and grows counterclockwise in Forever.
-    local angle=math.atan2(dx,dy)-player.facing
+    -- WoW world-space axes are rotated from map UI axes:
+    -- +X is north, +Y is west. Facing 0 = north, CCW positive.
+    -- The previous atan2(dx,dy) reversed the axes and sent the
+    -- compass east/west for north/south quests.
+    if dist<7 then
+        return {distance=dist,angle=0,arrived=true},"Arrived"
+    end
+    local angle=math.atan2(dy,dx)-player.facing
+    -- Keep the displayed heading continuous across the -pi/pi seam.
+    angle=math.atan2(math.sin(angle),math.cos(angle))
     return {distance=dist,angle=angle},"Ready"
 end
 local function UpdateDisplay()
@@ -236,7 +326,7 @@ local function UpdateDisplay()
         frame.arrow:SetRotation(data.angle)
         frame.readout=math.floor(data.distance+0.5).." yd (straight line)"
         if type(frame.arrow.SetVertexColor)=="function" then
-            if data.distance<30 then
+            if data.arrived or data.distance<30 then
                 frame.arrow:SetVertexColor(0.40,0.86,0.52,1)
             else
                 frame.arrow:SetVertexColor(0.96,0.76,0.38,1)
@@ -346,7 +436,24 @@ local function Build()
     end)
     Pos(f)
     local a=f:CreateTexture(nil,"ARTWORK")
-    a:SetTexture("Interface\\Minimap\\MinimapArrow")
+    -- Blizzard's navigation arrow atlas has a defined north-up
+    -- orientation. Prefer it to the minimap glyph, whose native
+    -- visual orientation is not guaranteed across clients.
+    local atlasOK=false
+    if type(a.SetAtlas)=="function" then
+        local ok,result=pcall(a.SetAtlas,a,
+            "Navigation-Tracked-Arrow",false)
+        atlasOK=ok and result~=false
+        if atlasOK and type(a.GetAtlas)=="function" then
+            local read,name=pcall(a.GetAtlas,a)
+            if not read or name~="Navigation-Tracked-Arrow" then
+                atlasOK=false
+            end
+        end
+    end
+    if not atlasOK then
+        a:SetTexture("Interface\\Minimap\\MinimapArrow")
+    end
     a:SetAllPoints(f)
     f.arrow=a
     f:SetScript("OnMouseUp",function(self,button)
@@ -372,9 +479,9 @@ local function Build()
     f:SetScript("OnUpdate",function(self,elapsed)
         if not Number(elapsed) or elapsed<0 then return end
         refreshTimer=refreshTimer+elapsed
-        if refreshTimer>=2.5 then refreshTimer=0;Refresh() end
+        if refreshTimer>=0.7 then refreshTimer=0;Refresh() end
         self._display=(self._display or 0)+elapsed
-        if self._display>=0.15 then
+        if self._display>=0.075 then
             self._display=0
             UpdateDisplay()
         end
@@ -388,6 +495,7 @@ function ChalkBox_NavStatus()
         locked=db and db.locked or false,
         manualID=db and db.questID or nil,
         questID=target and target.id or nil,
+        targetType=target and target.kind or "quest",
         title=target and target.name or nil,
         mode=chosen or "Smart",reason=reason,
         candidates=(function()
@@ -474,7 +582,10 @@ local listener=CreateFrame("Frame")
 for _,name in ipairs({"ADDON_LOADED","PLAYER_ENTERING_WORLD",
     "QUEST_LOG_UPDATE","QUEST_ACCEPTED","QUEST_REMOVED",
     "QUEST_TURNED_IN","SUPER_TRACKING_CHANGED",
-    "ZONE_CHANGED_NEW_AREA","PLAYER_REGEN_ENABLED"}) do
+    "ZONE_CHANGED_NEW_AREA","PLAYER_REGEN_ENABLED",
+    "QUEST_LOG_SELECTION_CHANGED","PLAYER_DEAD","PLAYER_ALIVE",
+    "PLAYER_UNGHOST","CORPSE_IN_RANGE","CORPSE_OUT_OF_RANGE",
+    "PLAYER_CORPSE_POSITION_UPDATE"}) do
     pcall(listener.RegisterEvent,listener,name)
 end
 listener:SetScript("OnEvent",function(_,name,arg)

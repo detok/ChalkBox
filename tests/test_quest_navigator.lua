@@ -7,6 +7,10 @@ local inInstance=false
 local logLoading=false
 local facing=0
 local super=222
+local selected=nil
+local ghost=false
+local corpseVisible=true
+local localQuestWaypoint=nil
 local destinations={
     [111]={1,0.5,0.2},
     [222]={1,0.8,0.5},
@@ -28,6 +32,19 @@ _G.UIParent={
     GetTop=function() return 1000 end
 }
 _G.GetPlayerFacing=function() return facing end
+_G.UnitIsGhost=function(unit)
+    assert(unit=="player")
+    return ghost
+end
+_G.UnitIsDeadOrGhost=function(unit)
+    assert(unit=="player")
+    return ghost
+end
+_G.C_DeathInfo={GetCorpseMapPosition=function(mapID)
+    if corpseVisible and mapID==1 then
+        return {x=0.2,y=0.5}
+    end
+end}
 _G.IsInInstance=function() return inInstance,inInstance and "party" or "none" end
 _G.C_QuestLog={
     GetNumQuestLogEntries=function()
@@ -38,19 +55,28 @@ _G.C_QuestLog={
         local d=destinations[id]
         if d then return d[1],d[2],d[3] end
     end,
+    GetNextWaypointForMap=function(id,mapID)
+        if localQuestWaypoint==id and mapID==1 then
+            return 0.7,0.5
+        end
+    end,
+    GetSelectedQuest=function() return selected end,
     GetQuestsOnMap=function(mapID)
         if mapID==1 then return {{questID=555,mapID=1,x=0,y=0}} end
         return {}
     end,
 }
-_G.C_SuperTrack={GetSuperTrackedQuestID=function() return super end}
+_G.C_SuperTrack={
+    GetSuperTrackedQuestID=function() return super end,
+    IsSuperTrackingCorpse=function() return ghost end,
+}
 _G.C_Map={
     GetBestMapForUnit=function(unit)
         assert(unit=="player")
         return currentMap
     end,
     GetMapInfo=function(id)
-        return {name="Zone "..id,mapType=3,parentMapID=0}
+        return {name="Zone "..id,mapType=3,parentMapID=(id==5 and 1 or 0)}
     end,
     GetPlayerMapPosition=function(id,unit)
         assert(unit=="player")
@@ -60,8 +86,11 @@ _G.C_Map={
     GetWorldPosFromMapPos=function(id,pos)
         local continent=(id==3) and 1 or 0
         local offset=id==2 and 2000 or 0
-        return continent,{x=1000-pos.x*1000+offset,
-            y=1000-pos.y*1000+offset}
+        -- Actual WoW world axes: X points north/south, Y west/east.
+        -- Increasing map X goes east (world Y decreases); increasing
+        -- map Y goes south (world X decreases).
+        return continent,{x=1000-pos.y*1000+offset,
+            y=1000-pos.x*1000+offset}
     end
 }
 _G.DEFAULT_CHAT_FRAME={AddMessage=function() end}
@@ -118,6 +147,8 @@ _G.CreateFrame=function(kind,name,parent,template)
     function f:CreateTexture()
         local t={shown=true}
         function t:SetTexture(v) self.texture=v end
+        function t:SetAtlas(v) self.atlas=v end
+        function t:GetAtlas() return self.atlas end
         function t:SetAllPoints() self.all=true end
         function t:SetColorTexture(...) self.color={...} end
         function t:SetPoint(...) self.point={...} end
@@ -148,6 +179,8 @@ local nav=frames.ChalkBoxQuestNavigator
 assert(nav and nav:IsShown() and nav.movable and nav.clamped
     and nav.w==64 and nav.h==64,
     "navigation is a movable, uncluttered 64px arrow hit area")
+assert(nav.arrow.atlas=="Navigation-Tracked-Arrow",
+    "native north-up arrow atlas avoids the minimap glyph orientation")
 assert(nav.backdrop==nil and nav.back==nil and not nav.title
     and not nav.distance and not nav.mode and not nav.children[1],
     "floating compass has no box, labels, border or visible action buttons")
@@ -183,6 +216,102 @@ assert(nav.arrow.shown and math.abs(nav.arrow.angle+math.pi/2)<0.01,
     "world coordinate X, continent 0 and north-facing rotation work")
 assert(nav.readout:find("yd",1,true),
     "tooltip retains useful straight-line yards without a text box")
+-- All cardinals on the actual WoW axis convention, plus turning the
+-- character in place. These would fail with the old reversed atan2.
+local function RefreshArrow()
+    ChalkBox_NavCommand("status")
+    return nav.arrow.angle
+end
+local function CloseAngle(actual,expected)
+    local diff=math.atan2(math.sin(actual-expected),
+        math.cos(actual-expected))
+    return math.abs(diff)<0.01
+end
+assert(ChalkBox_NavCommand("follow 111"))
+assert(CloseAngle(RefreshArrow(),0),
+    "north target must point straight forward facing north")
+destinations[111]={1,0.8,0.5}
+assert(CloseAngle(RefreshArrow(),-math.pi/2),
+    "east target must turn right, not south")
+destinations[111]={1,0.5,0.8}
+assert(CloseAngle(math.abs(RefreshArrow()),math.pi),
+    "south target must point backward")
+destinations[111]={1,0.2,0.5}
+assert(CloseAngle(RefreshArrow(),math.pi/2),
+    "west target must turn left")
+facing=math.pi/2
+assert(CloseAngle(RefreshArrow(),0),
+    "turning west makes the west-facing destination point forward")
+facing=0
+destinations[111]={1,0.5,0.5}
+assert(CloseAngle(RefreshArrow(),0) and
+    nav.arrow.color[2]>0.8,
+    "arriving within 7yd freezes unstable zero-distance heading")
+destinations[111]={1,0.5,0.2}
+assert(CloseAngle(RefreshArrow(),0))
+-- Current-map next waypoint takes priority over a remote or stale
+-- overall objective when the client provides it.
+localQuestWaypoint=111
+assert(CloseAngle(RefreshArrow(),-math.pi/2),
+    "prefer explicit next step for selected quest on current map")
+localQuestWaypoint=nil
+assert(CloseAngle(RefreshArrow(),0))
+-- Clicking a different quest in Blizzard's quest log must override an
+-- old manual Next/Follow target even if the supertracked ID is unchanged.
+selected=222
+assert(ChalkBox_NavCommand("status"))
+assert(ChalkBox_NavStatus().questID==222 and
+    ChalkBox_NavStatus().mode=="Selected",
+    "live quest log selection takes priority over stale manual choice")
+selected=111
+ChalkBox_NavCommand("status")
+assert(ChalkBox_NavStatus().questID==111,
+    "a second quest selection updates without closing the arrow")
+selected=nil
+ChalkBox_NavCommand("status")
+assert(ChalkBox_NavStatus().questID==222,
+    "clearing log selection restores the supertracked quest")
+super=333
+ChalkBox_NavCommand("status")
+assert(ChalkBox_NavStatus().questID==333,
+    "changing the game supertracked quest overrides stale navigator choice")
+super=222
+ChalkBox_NavCommand("status")
+assert(ChalkBox_NavStatus().questID==222,
+    "tracked quest changes remain authoritative")
+-- Corpse overrides even an explicitly manually followed quest, and
+-- previous quest choice returns automatically after resurrection.
+assert(ChalkBox_NavCommand("follow 111"))
+ghost=true
+ChalkBox_NavCommand("status")
+assert(ChalkBox_NavStatus().targetType=="corpse" and
+    ChalkBox_NavStatus().title=="Your corpse" and
+    CloseAngle(nav.arrow.angle,math.pi/2),
+    "while ghosted, corpse west of the player overrides all quests")
+assert(nav.readout:find("yd",1,true),
+    "corpse arrow uses genuine position and distance when available")
+-- Parent-map fallback finds the same corpse while ghosted on a
+-- local minimap/subzone that does not itself expose the death marker.
+currentMap=5
+ChalkBox_NavCommand("status")
+assert(ChalkBox_NavStatus().targetType=="corpse" and
+    CloseAngle(nav.arrow.angle,math.pi/2),
+    "corpse marker is retrieved from a parent map when necessary")
+currentMap=1
+corpseVisible=false
+ChalkBox_NavCommand("status")
+assert(nav.readout=="Corpse position unavailable" and
+    nav.arrow.color[4]==0.4 and
+    ChalkBox_NavStatus().targetType=="corpse",
+    "unknown corpse location never sends a ghost toward a quest")
+corpseVisible=true
+ghost=false
+ChalkBox_NavCommand("status")
+assert(ChalkBox_NavStatus().targetType=="quest" and
+    ChalkBox_NavStatus().questID==111 and
+    ChalkBox_NavStatus().mode=="Manual",
+    "resurrection restores the manual quest without losing settings")
+
 assert(ChalkBox_NavCommand("follow 111"))
 assert(ChalkBox_NavStatus().mode=="Manual" and
     ChalkBox_NavStatus().questID==111 and
@@ -214,8 +343,8 @@ assert(ChalkBox_NavCommand("reset") and
 super=nil
 assert(ChalkBox_NavCommand("auto"))
 st=ChalkBox_NavStatus()
-assert(st.questID==111 and st.mode=="Smart",
-    "Auto picks the closest known world waypoint when none is supertracked")
+assert(st.questID==111 and st.mode=="Auto",
+    "Auto retains the previously chosen valid quest rather than jumping when no quest is supertracked")
 inInstance=true
 ChalkBox_NavCommand("status")
 assert(nav.arrow.shown and nav.arrow.color[4]==0.40 and
