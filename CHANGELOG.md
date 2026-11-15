@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.17 — QuestSense arrow size/default and MacroForge native UI polish
+- **Original WoW classic arrow** is now the default on fresh characters; existing HD/Blizzard style preferences are preserved.
+- **Arrow size slider** under QuestSense → Navigation: 32–72px in 4px steps, with a smaller 48px default, saved per character. Adjusts the compact arrow and yard-distance label without affecting navigation math or quest selection. Chat: `/chalk nav size 48`.
+- **MacroForge native footer button** now sits next to Blizzard's Delete button and before New/Exit when the client's own controls are available and have room; otherwise it does not cover the native interface.
+- **Settings → Open MacroForge** now closes the options overlay, opens the actual Blizzard macro editor if supported, and docks the existing workbench beside it at a readable scale if there is screen space. Narrow-screen or unsupported editors safely keep the standalone Forge.
+- Additional Lua 5.1 regression coverage for native editor controls, window workflow, arrow sizes and preserved saved state. No macro write changes or SavedVariables migrations.
+
 ## 2.2.16 — Native quest-tracker context menu, 3 arrow styles and MacroForge macro-editor integration
 - **QuestSense quick menu:** Right-click Blizzard's quest tracker header for **QuestSense Settings**, **Off**, **Smart**, **Nearby**, and **Navigation On/Off**. Additive header-only hook using modern/legacy game menus; never replaces quest-row interactions, the tracker, or Blizzard map pins.
 - **Three arrow appearances** in QuestSense → Navigation: **Original WoW** (first minimap arrow), **Blizzard Navigation** (newer native atlas), and **ChalkBox HD** (256px art). Existing HD/Classic preferences are preserved, and all navigation logic remains unchanged.
