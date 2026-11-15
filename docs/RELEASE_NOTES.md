@@ -1,39 +1,27 @@
-# ChalkBox 2.2.16 — QuestSense Tracker Menu and MacroForge beside /macro
+# ChalkBox 2.2.17 — Playtest polish: smaller classic arrow and native MacroForge workflow
 
-## QuestSense, straight from Blizzard's tracker
+## QuestSense navigation
 
-**Right-click the header of Blizzard's built-in quest tracker** to open a small, optional ChalkBox context menu when that native header accepts mouse hooks.
+- **Original WoW** is now the default arrow appearance for **newly initialized** navigator settings. This is the older `Interface\\Minimap\\MinimapArrow` look. Characters that already selected HD or Blizzard Navigation keep their saved choice; no existing preference is overwritten.
+- Arrow size defaults to **48 pixels** (previously 64), with a new **32–72 px** slider in **Options → AddOns → ChalkBox → QuestSense → Navigation**. It adjusts the arrow and the small distance label together, with 4-pixel steps, without changing GPS math, target selection, corpse tracking, lock state or saved position. The choice is saved per character.
+- All three familiar arrow styles remain: **Original WoW**, **Blizzard Navigation**, and **ChalkBox HD**. Use `/chalk nav size 32` through `/chalk nav size 72` if desired.
 
-- **QuestSense Settings:** opens ChalkBox → QuestSense under Blizzard's AddOns options.
-- **Off:** disables QuestSense's automatic watch management (without wiping your own manual watch selections).
-- **Smart:** enables Smart tracking, including supported dungeon quest focus.
-- **Nearby:** enables the current-zone-only quest mode.
-- **Navigation On/Off:** toggles the existing small quest arrow without changing Blizzard's super-tracked selection.
+## MacroForge opens where you expect it
 
-The menu is attached with a non-destructive **HookScript**, only on Blizzard's real tracker header (or its existing parent tracker where a header isn't exposed). Quest-row actions, left-clicks and Blizzard's own menus are not replaced. Existing modern `MenuUtil` and legacy `EasyMenu` are used when available. If a client has neither, it safely opens the regular QuestSense settings instead. Some Forever UI versions or third-party replacement trackers may not expose a safe hook; use `/chalk quests` or the existing AddOns settings in that case.
+**The MacroForge button inside ChalkBox's AddOns settings now opens the native macro editor workflow**, not another window behind the open Settings panel:
 
-## Three arrow appearances, one navigation system
+1. Close only Blizzard's settings panel, not every game window.
+2. Safely open Blizzard's existing `/macro` window when the client provides it.
+3. Open our full existing MacroForge workbench alongside the native editor at the largest readable scale that fits. No native macro list/editor/buttons are modified.
 
-Under **Options → AddOns → ChalkBox → QuestSense → Navigation**, choose:
+A **small MacroForge button is now anchored inside the bottom button row** of Blizzard's standard macro window, after **Delete** and before **New / Exit**. The button is only attached when the client exposes those actual native controls and their spacing permits it. This replaces the easy-to-miss tab above the frame.
 
-- **Original WoW:** `Interface\\Minimap\\MinimapArrow`, the first ChalkBox arrow appearance.
-- **Blizzard Navigation:** the newer `Navigation-Tracked-Arrow` atlas, with the original minimap glyph as a compatibility fallback.
-- **ChalkBox HD:** the bundled original 256px transparent TGA version.
+If Forever exposes an alternate macro layout, Blizzard's native window is left untouched and the ordinary `/chalk macro` standalone workbench remains. If the screen is too narrow for two complete windows, Forge also falls back to standalone instead of pushing the macro editor offscreen. The docked window hides when the native editor closes.
 
-The previous `classic` and `hd` character preferences are preserved. `/chalk nav original`, `/chalk nav classic`, or `/chalk nav hd` switch the same graphic from chat. Arrow rotation, proximity color changes, yards below the arrow, corpse/quest priorities, positioning and right-click Auto / Next / Hide behavior are unchanged.
+**Safety:** No automatic macro creation, replacement, or editing; native macro content and saved Forge recipes remain intact. Docking is explicit, outside combat for native UI actions.
 
-## MacroForge in Blizzard's own macro editor
+## Verification
 
-When the native `/macro` window (`MacroFrame`) is available, ChalkBox adds a modest **MacroForge** tab just above its frame. Click to open the existing fully featured MacroForge workbench as an **adjacent sidecar** when screen width permits. Click again to close it. Closing Blizzard's macro editor also closes only a docked Forge workbench.
+Mocked Lua 5.1 regressions cover classic default, size persistence and clamping, distance placement, locking/dragging, live native footer placement, settings-to-macro UI transition, safe missing-layout fallback, and existing MacroForge editing behavior. Native button positions and actual frame sizes still need confirmation from the Forever client—particularly the footer screenshot and resolution/UI-scale combinations.
 
-**No native macro list, editor, selection, character/account tab, icon, or Save button is modified.** This integration simply opens the existing ChalkBox workbench. Macro installation remains a separate explicit action, outside combat, and never overwrites an existing macro. The standalone `/chalk macro` command still works.
-
-If the macro editor is not exposed on that client, or the screen is too narrow for both full windows, nothing is forced to move or shrink: the normal standalone Forge still works. The addon does not replace the native macro UI or require any other addon.
-
-## Testing and limitations
-
-- Lua 5.1 regression tests cover header-only native hooks, modern/legacy/no-menu clients, Off/Smart/Nearby and navigation commands, three arrow styles, MacroFrame load-on-demand attachment and dock/undock/close behavior.
-- Retain all SavedVariables and existing quest watches, native macros and MacroForge saved builds.
-- **Actual Forever-client confirmation is still required** for exact tracker header accessibility and available on-screen docking space. Keep this a Beta build until that is confirmed.
-
-Install `ChalkBox-2.2.16.zip` over your previous addon folder, preserve SavedVariables, and type `/reload`.
+This release remains **Beta** pending that visual check. Replace the existing addon folder with `ChalkBox-2.2.17.zip`, keep SavedVariables and use `/reload`.

@@ -20,6 +20,17 @@ _G.CreateFrame=function(kind,name,parent,template)
     return f
 end
 local native={hooks={},shown=true}
+local frameDelete={
+    GetParent=function() return native end,
+    GetRight=function() return 200 end,
+}
+local frameNew={GetLeft=function() return 294 end}
+local frameExit={}
+_G.MacroDeleteButton=frameDelete
+_G.MacroNewButton=frameNew
+_G.MacroExitButton=frameExit
+function native:IsShown() return self.shown end
+function native:Show() self.shown=true end
 function native:HookScript(key,fn)
     assert(key=="OnHide")
     self.hooks[#self.hooks+1]=fn
@@ -53,8 +64,11 @@ listener.OnEvent(listener,"ADDON_LOADED","Blizzard_MacroUI")
 assert(#buttons==1 and #native.hooks==1
     and buttons[1].parent==native
     and buttons[1].text=="MacroForge"
-    and buttons[1].point[1]=="BOTTOMLEFT",
-    "one modest tab is added above existing native /macro frame")
+    and buttons[1].point[1]=="LEFT"
+    and buttons[1].point[2]==frameDelete
+    and buttons[1].point[3]=="RIGHT"
+    and buttons[1].w==82 and buttons[1].h==22,
+    "MacroForge button sits in the real gap beside Delete, before New and Exit")
 listener.OnEvent(listener,"PLAYER_ENTERING_WORLD")
 listener.OnEvent(listener,"ADDON_LOADED","OtherAddon")
 assert(#buttons==1 and #native.hooks==1,
@@ -83,4 +97,48 @@ assert(status.shown and not status.docked,
     "no-screen-room fallback preserves standalone Forge instead")
 native.hooks[1]()
 assert(status.shown,"closing native macro editor does not close standalone Forge")
-print("PASS: opt-in native MacroFrame tab, lazy load, docking, close/restore, small-screen fallback, combat and no macro edits")
+-- Settings button must never strand the Forge behind Options.
+local settings={shown=true,closed=0}
+function settings:IsShown() return self.shown end
+function settings:Hide() self.shown=false;self.closed=self.closed+1 end
+_G.SettingsPanel=settings
+local shownMacro=0
+_G.MacroFrame_Show=function()
+    native:Show()
+    shownMacro=shownMacro+1
+end
+_G.ChalkBox_MacroForgeDockTo=function(owner)
+    assert(owner==native)
+    status.docked=true
+    return true
+end
+native.shown=false
+status.docked=false;status.shown=false
+assert(ChalkBox_MacroForgeFromSettings() and
+    settings.closed==1 and not settings.shown and
+    native:IsShown() and shownMacro==1 and
+    status.docked and status.shown,
+    "settings closes before it opens the native macro editor and docks Forge")
+-- With no exposed native MacroFrame, settings still closes and the
+-- standalone builder remains accessible.
+_G.MacroFrame=nil
+settings.shown=true
+status.docked=false;status.shown=false
+_G.C_AddOns={LoadAddOn=function()
+    return false,"not available"
+end}
+assert(ChalkBox_MacroForgeFromSettings() and not settings.shown
+    and not status.docked and status.shown,
+    "missing native macro UI gracefully falls back to standalone")
+-- Missing footer controls must not install a hook or an overlapping button.
+local absent={hooks={}}
+function absent:HookScript(_,fn) self.hooks[#self.hooks+1]=fn end
+_G.MacroFrame=absent
+_G.MacroDeleteButton=nil
+_G.MacroNewButton=nil
+_G.MacroExitButton=nil
+local beforeButtons=#buttons
+assert(not ChalkBox_MacroForgeNativeStatus().attached and
+    #absent.hooks==0 and #buttons==beforeButtons,
+    "a different native macro layout is never covered by guessed controls")
+print("PASS: native /macro footer button beside Delete/New/Exit, late-load and no-overlap safeguards, settings closes then docks, standalone fallback and no macro edits")

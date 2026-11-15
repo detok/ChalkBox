@@ -1,4 +1,4 @@
-# ChalkBox feature claims and evidence (2.2.16)
+# ChalkBox feature claims and evidence (2.2.17)
 
 Use this file when reviewing release announcements and the CurseForge listing. It reflects shipped code and automated tests; **live-client validation is still a separate step**.
 
@@ -12,7 +12,7 @@ Use this file when reviewing release announcements and the CurseForge listing. I
 | DisenchantSense | Read-only modeled outcomes and value estimates when supported | Guaranteed drops, exact unknown Forever odds, automated DE |
 | QuestSense Navigation | Bare arrow with Original WoW, Blizzard Navigation or 256px HD art, yard-distance label and native/legacy right-click menu; selected quest stays watched in Blizzard's tracker; real accepted quest waypoints and conservative unavailable state | No route database, instant dungeon GPS or modification of Blizzard map pins or quest watches |
 | QuestSense | Native tracker management: Smart, Nearby, All; verified dungeon-specific Smart filtering with safe fallback | Best XP route, unverified custom dungeon matches, travel distances |
-| MacroForge native macro integration | Optional button above the existing Blizzard /macro frame, same standalone wizard docks beside it only if room; native macro controls untouched | Full replacement editor or automatic macro overwrite |
+| MacroForge native macro integration | Optional footer button beside Delete/New/Exit in the native /macro editor, same standalone wizard docks beside it only if room; native macro controls untouched | Full replacement editor or automatic macro overwrite |
 | MacroForge | Learned-spell wizard, templates, saved recipes, scroll preview, manual copy and explicit new install | Automated rotations, secure action bypasses, silent overwrite |
 | The Bar + Repair Learning | Compact configurable edge HUD, saved layouts, safe chrome shift, observed quote estimates | Protected UI relocation or exact repair quote when away from merchant |
 | Combat Meter | Optional meter, selected native statistics and gated manual PARTY reports | Always-readable combat data, automatic unrestricted spam |

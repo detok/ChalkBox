@@ -1,6 +1,6 @@
 # Troubleshooting ChalkBox
 
-**Current baseline: 2.2.16 · World of Warcraft: Forever**
+**Current baseline: 2.2.17 · World of Warcraft: Forever**
 
 This page covers issues you can diagnose safely without deleting SavedVariables, reinstalling unrelated addons or modifying Blizzard's protected interface.
 
@@ -11,23 +11,23 @@ This page covers issues you can diagnose safely without deleting SavedVariables,
 | Problem | First thing to check |
 | --- | --- |
 | Addon missing from the AddOns list | Wrong game directory, double-nested extracted folder or incomplete download — use the **addon** ZIP, not Source code or media ZIP |
-| ChalkBox settings look strange | Confirm version 2.2.16; native Settings pages should **not** have a solid black sheet over Blizzard's background |
+| ChalkBox settings look strange | Confirm version 2.2.17; native Settings pages should **not** have a solid black sheet over Blizzard's background |
 | Discoveries button or journal missing | Open the native World Map; run `/chalk drops map` and `/chalk drops map status` |
 | Discoveries shows no items | Run `/chalk drops status`; only **observed, readable** loot windows are saved; choose a zone/dungeon with prior observations |
 | No coordinates for an item | Only later outdoor loot-window observations with usable map coordinates get location samples; dungeon and older rows have no invented positions |
 | Map-derived wood texture missing | Native atlas may be unavailable on this client; reopen the window after `/reload`, note exact client build and attach a screenshot |
 | QuestSense tracks unexpected quests | Verify Smart / Nearby / All mode, `/chalk quests status`, whether the map/quest log/combat is preventing updates |
 | QuestSense tracker menu absent | It is attached only if the native Blizzard header/tracker allows a safe mouse hook; custom replacement trackers may not. Use Options → AddOns → ChalkBox → QuestSense, or `/chalk quests` |
-| MacroForge tab missing in `/macro` | The integration attaches only to an exposed native `MacroFrame` when Blizzard loads it; other replacement editors may not support it. `/chalk macro` always opens standalone; cramped screens intentionally skip side docking |
+| MacroForge tab missing in `/macro` | The integration requires an exposed native `MacroFrame` with Delete/New/Exit footer buttons and enough room between them. It intentionally leaves other layouts untouched. Opening Forge from ChalkBox settings closes Options and attempts the native /macro dock. `/chalk macro` always opens standalone; cramped screens intentionally skip side docking |
 | Quest compass missing or not pointing | It starts OFF. Enable under QuestSense → Navigation or `/chalk nav on`; right-click the bare arrow for Auto / Next / Hide, or hover for its quest and yard distance. Inspect `/chalk nav status`; missing waypoints, dungeons and different regions with unavailable world coordinates deliberately suppress the direction. **Your corpse** takes priority while a ghost if Forever exposes its position; if your quest selection changes, Auto follows it and retains that quest even when its waypoint temporarily disappears |
 | Dungeon quests aren't filtered | Enter a **party** instance with accepted quests; Smart needs trustworthy instance/quest map or matching dungeon-header information |
 | MacroForge has no spells | Open the character's actual active spellbook, click **Rescan Spellbook** or use `/chalk forge rescan` |
 | Macro text is weird or too long | Review the generated preview and warnings; `/castsequence` and multiple `/cast` lines cannot bypass cooldown/GCD requirements |
-| Full Scan fails but Browse Scan works | Full Scan uses a heavier account-wide replicate API with a roughly 15-minute successful-request cooldown; another addon can consume it. Version 2.2.16 accepts valid numeric listings before item names cache. Run `/chalk auction status` for the specific refusal or timeout; continue using Browse Scan meanwhile |
+| Full Scan fails but Browse Scan works | Full Scan uses a heavier account-wide replicate API with a roughly 15-minute successful-request cooldown; another addon can consume it. Version 2.2.17 accepts valid numeric listings before item names cache. Run `/chalk auction status` for the specific refusal or timeout; continue using Browse Scan meanwhile |
 | AuctionSense scan does nothing | Visit an auctioneer and open the **AuctionSense** tab; request a scan manually, check server cooldown and `/chalk auction status` |
 | DE estimate is absent | Not all gear/brackets or AH materials have reliable outcome or price data; try `/chalk de [item]` |
 | Bar hides or overlaps something | Check Bar status, top chrome shift, screen width and existing saved per-character layout |
-| Adventure Journal is transparent or borderless | Open `/chalk session`; version 2.2.16 has a native border and opaque fallback even with global opacity 0. If art is missing, note the client build and retry after reopen; v1 session data should remain intact |
+| Adventure Journal is transparent or borderless | Open `/chalk session`; version 2.2.17 has a native border and opaque fallback even with global opacity 0. If art is missing, note the client build and retry after reopen; v1 session data should remain intact |
 | Compact Combat Meter empty | It **starts hidden**; use `/chalk meter show`. Native data can be unavailable or protected |
 | QuietGuard blocks an invite unexpectedly | Check saved ON filters and **Blizzard's own built-in social settings** |
 | Emota appears inactive | Automatic emotes require opt-in; idle pacing is intentionally slow and no automated emotes run in combat |

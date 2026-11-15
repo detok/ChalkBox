@@ -53,6 +53,11 @@ end
 local openedForge=0
 local forgeRescanned=0
 _G.ChalkBox_OpenMacroForge=function() openedForge=openedForge+1;return true end
+_G.ChalkBox_MacroForgeFromSettings=function()
+    openedForge=openedForge+1
+    printed[#printed+1]="native macro workflow"
+    return true
+end
 _G.ChalkBox_ForgeScan=function(force)
     if force then forgeRescanned=forgeRescanned+1 end
     return {{name="Hunter's Mark",id=1130}}
@@ -454,7 +459,8 @@ assert(forgeNote and forgeNote.anchor[5]<=-355,
 ChalkBox_OpenSettings("forge")
 assert(opened[#opened]==categories["MacroForge"].ID)
 ControlIn("MacroForge","Open MacroForge"):Click()
-assert(openedForge==1,"standalone builder opens only on explicit settings click")
+assert(openedForge==1 and printed[#printed]=="native macro workflow",
+    "settings opens one native macro/Forge experience rather than layering windows")
 ControlIn("MacroForge","Rescan Spellbook"):Click()
 assert(forgeRescanned==1,"explicit rescan refreshes available abilities")
 local dropChecks=FindCheckByParentTitle("DropSense")
@@ -502,6 +508,20 @@ assert(ChalkBoxDB.lootCategories.potential==false,
     "potential use hints can be hidden without disabling verified recipe advice")
 lootCheck[2]:Click(true)
 Control("Scan Open Profession"):Click()
+local navState={enabled=true,locked=false,arrowStyle="original",
+    arrowSize=48,title="Westfall",candidates=4}
+_G.ChalkBox_NavStatus=function() return navState end
+_G.ChalkBox_NavCommand=function(command)
+    if command:match("^size %d+$") then
+        navState.arrowSize=tonumber(command:match("%d+"))
+    elseif command=="hd" or command=="classic" or command=="original" then
+        navState.arrowStyle=command
+    elseif command=="on" or command=="off" then
+        navState.enabled=command=="on"
+    end
+    printed[#printed+1]="nav "..command
+    return true
+end
 local questCheck=FindCheckByParentTitle("QuestSense")[1]
 categories["QuestSense"].panel:Show()
 questCheck:Click(false)
@@ -529,7 +549,23 @@ assert(ControlIn("QuestSense Navigation","Auto: Tracked / Nearest")
 assert(ControlIn("QuestSense Navigation","Original WoW")
     and ControlIn("QuestSense Navigation","Blizzard Navigation")
     and ControlIn("QuestSense Navigation","ChalkBox HD"),
-    "three mutually exclusive arrow styles live under QuestSense Navigation")
+    "three arrow styles remain available in QuestSense Navigation")
+local arrowSizeSlider
+for _,f in ipairs(frames) do
+    if f.kind=="Slider" and
+        f.parent==categories["QuestSense Navigation"].panel then
+        arrowSizeSlider=f;break
+    end
+end
+assert(arrowSizeSlider and arrowSizeSlider.min==32 and
+    arrowSizeSlider.max==72 and arrowSizeSlider.step==4
+    and arrowSizeSlider.value==48,
+    "arrow size slider loads saved per-character size with bounded range")
+arrowSizeSlider:SetValue(36)
+assert(navState.arrowSize==36 and printed[#printed]=="nav size 36",
+    "dragging the arrow slider immediately updates the existing navigator")
+ControlIn("QuestSense Navigation","Original WoW"):Click()
+assert(navState.arrowStyle=="original","classic appearance remains selectable")
 local barChecks=FindCheckByParentTitle("The Bar")
 assert(#barChecks==4,
     "full-width Bar has its own top-chrome shift setting")
@@ -723,7 +759,8 @@ local sliders={}
 for _,frame in ipairs(frames) do
     if frame.kind=="Slider" then sliders[#sliders+1]=frame end
 end
-assert(#sliders==10,"restored horizontal bag slider is present alongside other settings")
+assert(#sliders==11,
+    "QuestSense arrow size joins the existing ten sliders without removing any")
 local appearanceSlider,highlightSlider
 for _,frame in ipairs(sliders) do
     if frame.parent==categories["The Bar Appearance"].panel then

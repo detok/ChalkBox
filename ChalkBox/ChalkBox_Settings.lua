@@ -484,7 +484,12 @@ local function MakeForge()
     Label(panel,"branches or a deliberate /castsequence for repeat presses.",
         "GameFontHighlightSmall",27,-165,497)
     Button(panel,"Open MacroForge",28,-208,244,function()
-        if type(ChalkBox_OpenMacroForge)=="function" then
+        -- Open the native macro editor as one experience; the dock
+        -- controller will hide Settings and position our workbench
+        -- beside Blizzard when the client offers enough room.
+        if type(ChalkBox_MacroForgeFromSettings)=="function" then
+            ChalkBox_MacroForgeFromSettings()
+        elseif type(ChalkBox_OpenMacroForge)=="function" then
             ChalkBox_OpenMacroForge()
         else Note("MacroForge UI could not be loaded in this client.") end
     end)
@@ -731,7 +736,7 @@ end
 
 local function MakeQuestNavigation()
     local panel=Panel("QuestSense / Navigation",
-        "Follow quests through Blizzard's own tracker and map waypoints.")
+        "Follow a chosen quest using Blizzard's existing watch list and waypoints.")
     local function Run(action)
         if type(ChalkBox_NavCommand)=="function" then
             ChalkBox_NavCommand(action)
@@ -739,47 +744,71 @@ local function MakeQuestNavigation()
         if panel.OnRefresh then panel.OnRefresh() end
     end
     Toggle(panel,"Show navigation arrow",
-        "Uses Blizzard's own quest coordinates. Starts off until enabled.",
-        -110,
+        "Arrow and distance are optional. Drag to position when unlocked.",
+        -103,
         function()
             local st=ChalkBox_NavStatus and ChalkBox_NavStatus()
             return st and st.enabled
         end,
         function(on) Run(on and "on" or "off") end)
-    Label(panel,"FOLLOW A QUEST","GameFontNormalLarge",28,-179,480)
-    Button(panel,"Auto: Tracked / Nearest",27,-209,222,
+    Label(panel,"FOLLOW A QUEST","GameFontNormalLarge",28,-156,480)
+    Button(panel,"Auto: Tracked / Nearest",27,-184,222,
         function() Run("auto") end)
-    Button(panel,"Next Quest",262,-209,121,
+    Button(panel,"Next Quest",262,-184,121,
         function() Run("next") end)
-    Button(panel,"Hide",392,-209,105,
+    Button(panel,"Hide",392,-184,105,
         function() Run("off") end)
     Toggle(panel,"Lock arrow position",
-        "When unlocked, drag the arrow to place it anywhere you like.",
-        -253,
+        "When unlocked, left-drag the arrow anywhere on your screen.",
+        -224,
         function()
             local st=ChalkBox_NavStatus and ChalkBox_NavStatus()
             return st and st.locked
         end,
         function(on) Run(on and "lock" or "unlock") end)
-    Label(panel,"Arrow appearance","GameFontNormal",28,-292,460)
-    Button(panel,"Original WoW",27,-315,153,
+    Label(panel,"ARROW APPEARANCE","GameFontNormalLarge",28,-270,480)
+    Button(panel,"Original WoW",27,-295,153,
         function() Run("original") end)
-    Button(panel,"Blizzard Navigation",189,-315,169,
+    Button(panel,"Blizzard Navigation",189,-295,169,
         function() Run("classic") end)
-    Button(panel,"ChalkBox HD",367,-315,148,
+    Button(panel,"ChalkBox HD",367,-295,148,
         function() Run("hd") end)
-    Button(panel,"Previous Quest",27,-352,158,
+    Label(panel,"Arrow size","GameFontNormal",28,-328,170)
+    local slider=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
+    slider:SetSize(312,18)
+    slider:SetPoint("TOPLEFT",panel,"TOPLEFT",45,-353)
+    slider:SetMinMaxValues(32,72)
+    if type(slider.SetValueStep)=="function" then
+        slider:SetValueStep(4)
+    end
+    local sizeText=Label(panel,"48px","GameFontHighlight",384,-353,95)
+    local loading=false
+    slider:SetScript("OnValueChanged",function(_,value)
+        if loading or type(value)~="number" then return end
+        local n=math.max(32,math.min(72,
+            math.floor((value-32)/4+0.5)*4+32))
+        if type(ChalkBox_NavCommand)=="function" then
+            ChalkBox_NavCommand("size "..n)
+        end
+        sizeText:SetText(tostring(n).."px")
+    end)
+    Button(panel,"Previous Quest",27,-386,158,
         function() Run("prev") end)
-    Button(panel,"Reset Position",196,-352,142,
+    Button(panel,"Reset Position",196,-386,142,
         function() Run("reset") end)
-    Button(panel,"Status",349,-352,148,
+    Button(panel,"Status",349,-386,148,
         function() Run("status") end)
-    local info=Label(panel,"","GameFontHighlight",28,-391,500)
-    Label(panel,"Selected quest stays in Blizzard's native watch list.",
-        "GameFontHighlightSmall",28,-419,505)
+    local info=Label(panel,"","GameFontHighlightSmall",28,-425,505)
     panel:AddRefresh(function()
         local st=ChalkBox_NavStatus and ChalkBox_NavStatus()
-        if not st then info:SetText("Navigation not loaded.");return end
+        if not st then
+            info:SetText("Navigation not loaded.")
+            return
+        end
+        loading=true
+        slider:SetValue(st.arrowSize or 48)
+        loading=false
+        sizeText:SetText(tostring(st.arrowSize or 48).."px")
         local style=st.arrowStyle=="original" and "Original WoW" or
             (st.arrowStyle=="classic" and "Blizzard" or "HD")
         info:SetText((st.enabled and "ON" or "OFF").."  |  "..

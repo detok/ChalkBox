@@ -166,6 +166,7 @@ _G.CreateFrame=function(kind,name,parent,template)
     function f:CreateFontString()
         local t={}
         function t:SetPoint(...) self.point={...} end
+        function t:ClearAllPoints() self.point=nil end
         function t:SetWidth(w) self.w=w end
         function t:SetJustifyH(h) self.align=h end
         function t:SetWordWrap(v) self.wrap=v end
@@ -181,13 +182,27 @@ assert(not st.enabled and not frames.ChalkBoxQuestNavigator,
 assert(ChalkBox_NavCommand("on"))
 local nav=frames.ChalkBoxQuestNavigator
 assert(nav and nav:IsShown() and nav.movable and nav.clamped
-    and nav.w==76 and nav.h==90,
-    "navigator stays a small arrow with space underneath for yards")
-assert(nav.arrow.texture==
-    "Interface\\AddOns\\ChalkBox\\assets\\QuestArrowHD",
-    "new default HD option uses the bundled 256px custom TGA")
+    and nav.w==60 and nav.h==74 and
+    nav.arrow.w==48 and nav.arrow.h==48,
+    "new navigator uses a compact 48px arrow with yards below")
+assert(nav.arrow.texture=="Interface\\Minimap\\MinimapArrow" and
+    ChalkBox_NavStatus().arrowStyle=="original",
+    "fresh characters default to the original classic WoW arrow")
 assert(nav.distanceLabel and nav.distanceLabel.text:find("yd",1,true),
     "yard count appears underneath the arrow, not only on tooltip")
+assert(ChalkBox_NavCommand("size 32") and
+    ChalkBox_NavStatus().arrowSize==32 and nav.arrow.w==32 and
+    nav.w==44 and nav.h==58 and
+    nav.distanceLabel.point[5]==-39,
+    "smallest slider size rescales arrow and the distance label together")
+assert(ChalkBox_NavCommand("size 71") and
+    ChalkBox_NavStatus().arrowSize==72 and nav.arrow.w==72 and
+    nav.w==84 and nav.h==98 and
+    nav.distanceLabel.point[5]==-79,
+    "maximum slider size remains within 72px")
+assert(ChalkBox_NavCommand("size 48") and
+    ChalkBoxZoneDB.questNavigator.arrowSize==48 and nav.w==60,
+    "selected arrow size persists per character without affecting target")
 assert(nativeFocus[#nativeFocus]==222,
     "selected quest is passed to QuestSense for native watch-list inclusion")
 assert(ChalkBox_NavCommand("classic") and
@@ -360,7 +375,7 @@ assert(ChalkBox_NavCommand("unlock"))
 nav.scripts.OnDragStart(nav)
 assert(nav.started,"unlocked arrow can be dragged")
 nav.scripts.OnDragStop(nav)
-assert(ChalkBoxZoneDB.questNavigator.offsetY==-255,
+assert(ChalkBoxZoneDB.questNavigator.offsetY==-263,
     "release position persists a bounded user offset")
 assert(ChalkBox_NavCommand("reset") and
     ChalkBoxZoneDB.questNavigator.offsetX==nil,
