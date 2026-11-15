@@ -1,37 +1,43 @@
-# Frequently asked questions
+# ChalkBox — frequently asked questions
 
-**Is this one addon or several?**  
-One. Install a single ChalkBox folder. The recipe reference data is included.
+**Is this a single addon?**  
+Yes. The playable ZIP contains one `ChalkBox` folder and all bundled runtime recipe data. The CurseForge media ZIP contains artwork and documentation, not an addon.
 
-**Which WoW client does it support?**  
-ChalkBox is built for WoW Forever. Retail and Classic Era haven't been verified. Check the client version available in CurseForge before submitting a file.
+**Which game version?**  
+Developed for **WoW Forever**. Retail / regular Classic support has not been verified. Check your client's actual interface and CurseForge's compatible game version choices.
 
-**Can ChalkBox show official drop rates?**  
-No. DropSense records items seen in readable loot windows. An observed percentage applies only to clearly identified creature sources with a usable sample. It isn't the server's drop table or a rate for every kill.
+**Does ChalkBox sell items, buy auctions or run combat automatically?**  
+No. LootSense is advisory, AuctionSense scans only when you ask, DE estimates are read-only, and MacroForge cannot automate a rotation or bypass Blizzard's GCD/key-press restrictions.
 
-**Can I move the Discoveries button?**  
-Yes. Drag it on the world map. Right-click to reset, or use /chalk drops map reset. If the button isn't visible, /chalk drops map opens the browser independently.
+**Why does a quest item say only KEEP — Quest Item?**  
+The game identified quest relevance, but ChalkBox did not find a reliable match to an accepted quest objective. When it can, it shows the quest name and collection progress.
 
-**Does MacroForge run my rotation?**  
-No. It creates macros from learned spells. You still press the buttons, and WoW's normal cooldown and secure-action rules apply. Saved recipes can be regenerated after you change talents.
+**What does Smart QuestSense choose?**  
+It manages which *accepted quests* appear in Blizzard's tracker. It does not optimize leveling routes. In a party dungeon with verified quest-match data, it focuses on quests for that **specific instance**. If no match is reliable, it preserves the tracker rather than hide everything.
 
-**Will MacroForge overwrite my existing macros?**  
-No. Copy the generated text yourself, or explicitly choose Install New outside combat. If a macro with that name already exists, ChalkBox refuses to replace it.
+**Can Discoveries show where an item dropped?**  
+For newer **outdoor loot observations**, it can show the player's recorded position when the loot window opened, up to six recent distinct sites. This is not a guaranteed NPC spawn/death location, and old/dungeon observations have no invented coordinates.
 
-**Why is the small DPS meter not visible after login?**  
-It starts closed by design. Type /chalk meter show or open it from Combat Meter settings. It doesn't delete fight data when hidden.
+**Are the drop percentages official?**  
+No. They are personal observed loot-window rates for identified sources. Unlooted kills and uncertain-source drops cannot produce an official drop chance.
 
-**Will ChalkBox auto-sell junk or spend my gold?**  
-No. Bag value and repair figures are informational. A repair estimate marked ~ isn't a merchant's exact quote.
+**Do AuctionSense prices mean items sold?**  
+No, they are current or historical **asking prices**, not confirmed transactions. The AH may throttle scans. AuctionInsights' observed seller mail also does not establish a complete lifetime ledger.
 
-**Where is my history?**  
-WoW saves ChalkBox's data in its SavedVariables. Session Journal and DropSense history are per character. Keep those files when upgrading.
+**Does MacroForge overwrite macros?**  
+No. You copy the generated text yourself or explicitly choose Install New outside combat. Duplicate-name checks refuse to overwrite native macros. Saved recipes are character-specific.
 
-**Does the Updates page check GitHub in-game?**  
-No. WoW Lua can't make a direct HTTPS request. It displays your installed version and a release link. The optional group version comparison detects only newer ChalkBox versions seen among group members.
+**Why is the Combat Meter not open after login?**  
+It starts closed on purpose. Use `/chalk meter show` or the settings page. Client combat data can be protected.
 
-**How do I adjust the settings?**  
-Type /chalk. Module pages are grouped in the main menu. Expand The Bar, LootSense, Emota, or Adventure Prep for their additional pages.
+**Do the QuietGuard filters block invites by default?**  
+No. All five start off on fresh installations. Saved ON choices remain on after upgrades. Blizzard's own social blocking settings are independent.
 
-**Where can I report a bug?**  
-https://github.com/detok/ChalkBox/issues — include the ChalkBox version, your client build, reproduction steps and any Lua errors.
+**Can it check GitHub live from the game?**  
+Not directly. The Updates page shows the installed version and a copyable releases URL, plus optional comparison with versions observed among other ChalkBox group members.
+
+**How do I update without losing settings?**  
+Replace `Interface/AddOns/ChalkBox/` with the newer game ZIP contents; **keep SavedVariables**. Use `/reload`.
+
+**Where are the commands and support docs?**  
+[Commands](https://github.com/detok/ChalkBox/blob/main/docs/COMMANDS.md) · [Handbook](https://github.com/detok/ChalkBox/blob/main/docs/USER_GUIDE.md) · [Troubleshooting](https://github.com/detok/ChalkBox/blob/main/docs/TROUBLESHOOTING.md) · [GitHub issues](https://github.com/detok/ChalkBox/issues).
