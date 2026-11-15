@@ -3,11 +3,17 @@
 local frames,fonts,printed={}, {},{}
 _G.UIParent={}
 _G.ChalkBoxDB={}
+_G.BackdropTemplateMixin={}
 _G.DEFAULT_CHAT_FRAME={AddMessage=function(_,s) printed[#printed+1]=s end}
 _G.ChatFontNormal={}
-local function Create(kind,name,parent)
+local function Create(kind,name,parent,template)
     local f={kind=kind,name=name,parent=parent,shown=false,
         text="",checked=false,scripts={}}
+    if template=="BackdropTemplate" then
+        function f:SetBackdrop(spec) self.backdrop=spec end
+        function f:SetBackdropColor(...) self.backdropFill={...} end
+        function f:SetBackdropBorderColor(...) self.backdropBorder={...} end
+    end
     function f:SetSize(w,h) self.w=w;self.h=h end
     function f:SetHeight(h) self.h=h end
     function f:GetStringHeight()
@@ -50,8 +56,8 @@ local function Create(kind,name,parent)
     function f:CreateTexture()
         local t={}
         function t:SetAllPoints() end
-        function t:SetPoint() end
-        function t:SetSize() end
+        function t:SetPoint(...) self.anchor={...} end
+        function t:SetSize(w,h) self.w=w;self.h=h end
         function t:SetHeight() end
         function t:SetColorTexture(...) self.color={...} end
         function t:SetTexture(value) self.texture=value end
@@ -159,15 +165,31 @@ for _,f in ipairs(frames) do
 end
 assert(window and window:IsShown() and window.w==786 and
     window.h==678,"builder is a standalone movable, themed window")
-assert(window.back.color[4]>=0.39 and window.back.color[4]<=0.45
+assert(window.back.color[4]>=0.30 and window.back.color[4]<=0.37
+    and window.back.color[1]>window.back.color[2]
+    and window.back.color[2]>window.back.color[3]
     and window.mapArt.atlas==
     "gamepad-mapquestlog-bgtile-2k" and window.mapArt.horizontal
     and window.mapArt.vertical,
     "native map art is tiled under a dark readable theme glaze")
+assert(window.backdrop and window.backdrop.edgeFile==
+    "Interface\\DialogFrame\\UI-DialogBox-Border"
+    and window.backdropBorder and window.backdropBorder[4]==1,
+    "MacroForge's standalone window gets Discoveries' native outer border")
 for _,key in ipairs({"purpose","slots","spellbook","options","saved",
     "preview","name"}) do
+    local visual=window.sectionVisuals[key]
     assert(window.sections[key] and window.sections[key].width>0,
         "each MacroForge group has its own decorative inset: "..key)
+    assert(visual and visual.shadow and visual.rim and visual.glint
+        and visual.fill and visual.lower,
+        "each inset has a bronze rim, bevel and soft shadow: "..key)
+    assert(visual.fill.color[1]>visual.fill.color[2]
+        and visual.fill.color[2]>visual.fill.color[3]
+        and visual.fill.color[4]>=0.9,
+        "warm charcoal insets replace the former gray sheet")
+    assert(visual.shadow.color[4]>0.6,
+        "the workbench panels have visible depth without changing controls")
 end
 assert(window.sections.saved.y-window.sections.saved.height>=
     window.sections.name.y,"saved warning area ends above macro naming section")
@@ -254,6 +276,7 @@ assert(#registrations==1,"native registration remains until reload")
 -- A client without the native atlas must still get an opaque readable
 -- editor; never leave a see-through dark map placeholder.
 _G.testNoMapAtlas=true
+_G.BackdropTemplateMixin=nil
 assert(loadfile("MacroForgeUI.lua"))("ChalkBox")
 assert(ChalkBox_OpenMacroForge())
 local fallback=frames[#frames]
@@ -264,11 +287,13 @@ for i=#frames,1,-1 do
 end
 assert(not fallback.hasMapArt and fallback.back.color[4]>=0.94,
     "missing Forever map atlas falls back to an opaque panel")
+assert(not fallback.backdrop,
+    "client without BackdropTemplate does not attempt protected native methods")
 _G.testNoMapAtlas=nil
 fallback:RefreshMapArt()
 assert(fallback.hasMapArt,
     "MacroForge retries the same native atlas after it becomes available")
 ChalkBox_OpenMacroForge()
-assert(fallback.back.color[4]<=0.45,
-    "refreshed MacroForge parchment remains visible after late atlas load")
-print("PASS: lazy framed MacroForge with visible map art, fallback and retry, scrollable multiline preview, warning bounds, compartment opt-in, copy/install and saved recipes")
+assert(fallback.back.color[4]<=0.37,
+    "refreshed MacroForge warm wood remains visible after late atlas load")
+print("PASS: warm wood MacroForge with matching dialog border and shadowed bronze insets, map fallback, preview, warnings, compartment and saved macros")
