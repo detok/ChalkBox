@@ -1,6 +1,6 @@
 # ChalkBox player handbook
 
-**ChalkBox 2.2.13 · World of Warcraft: Forever**
+**ChalkBox 2.2.14 · World of Warcraft: Forever**
 
 ChalkBox is a set of optional quality-of-life features inside **one addon**. Use Blizzard's **Options → AddOns → ChalkBox** pages or type `/chalk` (also `/cb`). Features that display observations are not proofs of unseen game data; ChalkBox should be conservative when Forever withholds information.
 
@@ -76,7 +76,7 @@ The automatic limit is **5, 10, 15 or 20**, with a fresh default of **10**. Manu
 
 **Dungeon caveat:** Forever may not return complete dungeon quest-map information. If ChalkBox cannot verify any matching quests for the current dungeon, **it preserves the existing tracker**, rather than hiding everything or guessing from a generic "Dungeon" tag. It does not make dungeon decisions while combat, the World Map or the quest log makes editing unsafe. Check `/chalk quests status` for the actual instance, matched count and reason.
 
-**QuestSense → Navigation (optional):** Enable a small movable arrow from the child settings page or type `/chalk nav on`. The arrow **floats by itself**, with no background box, labels or permanent buttons. **Hover** for the quest name and straight-line distance when available; **right-click** for **Auto / Next / Hide** and **left-drag** to move. Auto follows a valid Blizzard super-tracked quest first, otherwise the closest known outdoor target. Settings provide Previous, Lock and Reset Position. It never changes Blizzard's quest watches or map pins, and displays an unavailable message rather than guessing inside dungeons. See [QuestSense navigation](QUEST_NAVIGATION.md).
+**QuestSense → Navigation (optional):** Enable a small movable arrow from the child settings page or type `/chalk nav on`. The arrow **floats by itself**, with no background box, labels or permanent buttons. **Hover** for the quest name and straight-line distance when available; **right-click** for **Auto / Next / Hide** and **left-drag** to move. Auto honors your selected quest in the Blizzard quest log or the active super-tracked quest; if neither exists, it sticks to a known outdoor target rather than changing targets constantly. **When dead or ghosted**, your corpse takes priority if Forever provides its actual map coordinates; resurrection returns to the chosen quest. Settings provide Previous, Lock and Reset Position. It never changes Blizzard's quest watches or map pins, and displays an unavailable message rather than guessing inside dungeons. See [QuestSense navigation](QUEST_NAVIGATION.md).
 
 QuestSense **does not** estimate enemy difficulty, quest XP per hour, exact travel distance, or a best questing route. Smart is a watch-priority system rather than a routing agent.
 
@@ -110,7 +110,7 @@ The optional compact **Combat Meter starts hidden**. Open it from settings or `/
 
 **PRINT** is a deliberate user action to report a supported fight summary to normal **PARTY**, when client safety restrictions allow it. Native Blizzard meter integration may separately provide its own optional manual/automatic reporting preferences. Some Forever combat values are protected, especially during combat; the addon must not invent readable DPS figures. **RESET** requires confirmation.
 
-**Adventure Journal (Session Journal)** now opens in a fully framed, warm wood window with Session Summary and Field Notes sections; it remains readable even if global background opacity is zero. The existing recording still keeps the current session and up to **20 prior** snapshots of supported observed statistics: XP, gold, completed quests, sampled loot, camp reminders and other available events. It does not retroactively invent events from before installation. Use `/chalk session` or `/chalk session last`. A future [Full Adventure Chronicle](ADVENTURE_CHRONICLE_DESIGN.md) will add validated, bounded individual milestones and Today/Timeline/History views; those features do **not** record events in 2.2.13.
+**Adventure Journal (Session Journal)** now opens in a fully framed, warm wood window with Session Summary and Field Notes sections; it remains readable even if global background opacity is zero. The existing recording still keeps the current session and up to **20 prior** snapshots of supported observed statistics: XP, gold, completed quests, sampled loot, camp reminders and other available events. It does not retroactively invent events from before installation. Use `/chalk session` or `/chalk session last`. A future [Full Adventure Chronicle](ADVENTURE_CHRONICLE_DESIGN.md) will add validated, bounded individual milestones and Today/Timeline/History views; those features do **not** record events in 2.2.14.
 
 ## Adventure Prep, Emota and QuietGuard
 
