@@ -651,12 +651,21 @@ function ChalkBox_MacroForgeDockTo(native)
     local left,right=Edge(native,"GetLeft"),Edge(native,"GetRight")
     if not screenLeft or not screenRight or not left or not right or
         left>=right or screenLeft>=screenRight then return false end
-    local scale=type(window.SetScale)=="function" and 0.82 or 1
-    local need=786*scale+12
-    local side
-    if screenRight-right>=need then side="right"
-    elseif left-screenLeft>=need then side="left"
-    else return false end
+    local side,scale
+    -- The old fixed 0.82 scale refused to dock on many perfectly
+    -- adequate UI layouts. Fit the *whole* wizard at a readable scale
+    -- instead of opening a second centered window over Blizzard's editor.
+    for _,candidate in ipairs(
+        type(window.SetScale)=="function" and
+        {0.82,0.76,0.70} or {1}) do
+        local need=786*candidate+12
+        if screenRight-right>=need then
+            side,scale="right",candidate;break
+        elseif left-screenLeft>=need then
+            side,scale="left",candidate;break
+        end
+    end
+    if not side then return false end
     if dockedTo then ChalkBox_MacroForgeUndock() end
     if type(window.GetPoint)=="function" then
         local ok,a,b,c,d,e=pcall(window.GetPoint,window,1)
