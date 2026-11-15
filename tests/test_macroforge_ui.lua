@@ -159,7 +159,8 @@ for _,f in ipairs(frames) do
 end
 assert(window and window:IsShown() and window.w==786 and
     window.h==678,"builder is a standalone movable, themed window")
-assert(window.back.color[4]==0.88 and window.mapArt.atlas==
+assert(window.back.color[4]>=0.39 and window.back.color[4]<=0.45
+    and window.mapArt.atlas==
     "gamepad-mapquestlog-bgtile-2k" and window.mapArt.horizontal
     and window.mapArt.vertical,
     "native map art is tiled under a dark readable theme glaze")
@@ -264,4 +265,10 @@ end
 assert(not fallback.hasMapArt and fallback.back.color[4]>=0.94,
     "missing Forever map atlas falls back to an opaque panel")
 _G.testNoMapAtlas=nil
-print("PASS: lazy framed map-backed MacroForge, scrollable multiline preview, warning bounds, compartment opt-in, selection/copy, install, save/load and delete")
+fallback:RefreshMapArt()
+assert(fallback.hasMapArt,
+    "MacroForge retries the same native atlas after it becomes available")
+ChalkBox_OpenMacroForge()
+assert(fallback.back.color[4]<=0.45,
+    "refreshed MacroForge parchment remains visible after late atlas load")
+print("PASS: lazy framed MacroForge with visible map art, fallback and retry, scrollable multiline preview, warning bounds, compartment opt-in, copy/install and saved recipes")
