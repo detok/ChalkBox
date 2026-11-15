@@ -220,21 +220,21 @@ local function Face()
 end
 local function UpdateDisplay()
     if not frame or not frame:IsShown() then return end
-    local title=target and target.name or "No quest waypoint"
-    if #title>34 then title=title:sub(1,31).."..." end
-    frame.title:SetText(title)
-    frame.mode:SetText(chosen or "Smart")
     local data,why=Face()
-    if not data then
-        frame.arrow:Hide()
-        frame.distance:SetText(why or reason)
-    elseif type(frame.arrow.SetRotation)~="function" then
-        frame.arrow:Hide()
-        frame.distance:SetText("Directional display unavailable")
+    -- Keep the invisible frame usable for right-click even when Forever
+    -- cannot expose GPS. Never leave a stale, misleading direction visible.
+    frame.arrow:Show()
+    if not data or type(frame.arrow.SetRotation)~="function" then
+        if type(frame.arrow.SetRotation)=="function" then
+            frame.arrow:SetRotation(0)
+        end
+        if type(frame.arrow.SetVertexColor)=="function" then
+            frame.arrow:SetVertexColor(0.57,0.57,0.57,0.40)
+        end
+        frame.readout=why or "Direction unavailable"
     else
-        frame.arrow:Show()
         frame.arrow:SetRotation(data.angle)
-        frame.distance:SetText(math.floor(data.distance+0.5).." yd  ·  straight line")
+        frame.readout=math.floor(data.distance+0.5).." yd (straight line)"
         if type(frame.arrow.SetVertexColor)=="function" then
             if data.distance<30 then
                 frame.arrow:SetVertexColor(0.40,0.86,0.52,1)
@@ -243,6 +243,61 @@ local function UpdateDisplay()
             end
         end
     end
+end
+-- Identical menu APIs to the existing Trail Bar and Discoveries.
+-- No extra always-visible buttons or background frame.
+local fallbackMenu
+local function MenuEntries()
+    return {
+        {text="Auto (follow tracked)",action=function()
+            ChalkBox_NavCommand("auto")
+        end},
+        {text="Next quest",action=function()
+            ChalkBox_NavCommand("next")
+        end},
+        {text="Hide arrow",action=function()
+            ChalkBox_NavCommand("off")
+        end},
+    }
+end
+function ChalkBox_NavOpenMenu(owner)
+    if type(InCombatLockdown)=="function" and
+        InCombatLockdown() then return false end
+    local entries=MenuEntries()
+    if type(MenuUtil)=="table" and
+        type(MenuUtil.CreateContextMenu)=="function" then
+        local ok=pcall(MenuUtil.CreateContextMenu,owner or frame,
+            function(_,root)
+                for _,entry in ipairs(entries) do
+                    root:CreateButton(entry.text,function() entry.action() end)
+                end
+            end)
+        if ok then return true end
+    end
+    if type(EasyMenu)=="function" then
+        if not fallbackMenu then
+            local ok,menu=pcall(CreateFrame,"Frame",
+                "ChalkBoxNavigationDropdown",UIParent,
+                "UIDropDownMenuTemplate")
+            if ok then fallbackMenu=menu end
+        end
+        if fallbackMenu then
+            local items={}
+            for _,entry in ipairs(entries) do
+                items[#items+1]={text=entry.text,func=entry.action,
+                    notCheckable=true}
+            end
+            local ok=pcall(EasyMenu,items,fallbackMenu,
+                "cursor",0,0,"MENU")
+            if ok then return true end
+        end
+    end
+    -- On clients without either standard popup system, the player
+    -- still has the native QuestSense Navigation settings as fallback.
+    if type(ChalkBox_OpenSettings)=="function" then
+        ChalkBox_OpenSettings("questnav")
+    end
+    return false
 end
 local function Pos(frame)
     local db=DB()
@@ -253,36 +308,13 @@ local function Pos(frame)
 end
 local function Build()
     if frame or not UIParent or type(CreateFrame)~="function" then return end
-    local template=type(BackdropTemplateMixin)=="table" and
-        "BackdropTemplate" or nil
-    local f=CreateFrame("Frame","ChalkBoxQuestNavigator",UIParent,template)
-    f:SetSize(274,116)
+    local f=CreateFrame("Frame","ChalkBoxQuestNavigator",UIParent)
+    -- Arrow-sized hit area only. No dialog frame, backdrop, bronze edges,
+    -- text panel, quest title, or permanently visible buttons.
+    f:SetSize(64,64)
     if type(f.SetFrameStrata)=="function" then f:SetFrameStrata("DIALOG") end
     if type(f.SetClampedToScreen)=="function" then
         f:SetClampedToScreen(true)
-    end
-    if type(f.SetBackdrop)=="function" then
-        f:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",
-            edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border",
-            edgeSize=16,tile=true,tileSize=16,
-            insets={left=6,right=6,top=6,bottom=6}})
-        f:SetBackdropColor(0.09,0.07,0.055,0.94)
-        f:SetBackdropBorderColor(0.76,0.57,0.32,1)
-    else
-        local back=f:CreateTexture(nil,"BACKGROUND")
-        back:SetAllPoints(f)
-        back:SetColorTexture(0.09,0.07,0.055,0.94)
-        f.back=back
-        -- Older Forever builds have no BackdropTemplate; keep a thin
-        -- complete frame rather than leaving a bare floating rectangle.
-        local function Border(x,y,w,h)
-            local line=f:CreateTexture(nil,"BORDER")
-            line:SetPoint("TOPLEFT",f,"TOPLEFT",x,y)
-            line:SetSize(w,h)
-            line:SetColorTexture(0.71,0.52,0.30,0.95)
-        end
-        Border(1,-1,272,2);Border(1,-113,272,2)
-        Border(1,-2,2,112);Border(271,-2,2,112)
     end
     f:SetMovable(true)
     f:EnableMouse(true)
@@ -315,37 +347,27 @@ local function Build()
     Pos(f)
     local a=f:CreateTexture(nil,"ARTWORK")
     a:SetTexture("Interface\\Minimap\\MinimapArrow")
-    a:SetPoint("TOPLEFT",f,"TOPLEFT",20,-27)
-    a:SetSize(48,48)
+    a:SetAllPoints(f)
     f.arrow=a
-    local function Text(style,x,y,w)
-        local t=f:CreateFontString(nil,"OVERLAY",style)
-        t:SetPoint("TOPLEFT",f,"TOPLEFT",x,y)
-        t:SetWidth(w)
-        t:SetJustifyH("LEFT")
-        if type(t.SetWordWrap)=="function" then t:SetWordWrap(false) end
-        return t
-    end
-    Text("GameFontNormal",18,-10,246):SetText("QUESTSENSE / NAVIGATION")
-    f.title=Text("GameFontHighlight",75,-31,177)
-    f.distance=Text("GameFontHighlightSmall",75,-56,190)
-    f.mode=Text("GameFontHighlightSmall",18,-85,78)
-    local function Button(label,x,w,action)
-        local b=CreateFrame("Button",nil,f,"UIPanelButtonTemplate")
-        b:SetSize(w,21)
-        b:SetPoint("BOTTOMLEFT",f,"BOTTOMLEFT",x,10)
-        b:SetText(label)
-        b:SetScript("OnClick",action)
-        return b
-    end
-    Button("Auto",102,46,function()
-        ChalkBox_NavCommand("auto")
+    f:SetScript("OnMouseUp",function(self,button)
+        if button=="RightButton" then ChalkBox_NavOpenMenu(self) end
     end)
-    Button("Next",151,50,function()
-        ChalkBox_NavCommand("next")
+    f:SetScript("OnEnter",function(self)
+        if not GameTooltip or
+            type(GameTooltip.SetOwner)~="function" or
+            type(GameTooltip.AddLine)~="function" then return end
+        GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
+        GameTooltip:AddLine(target and target.name or "QuestSense Navigation",
+            1,0.82,0.48)
+        GameTooltip:AddLine(self.readout or reason,0.9,0.9,0.85)
+        GameTooltip:AddLine("Right-click: Auto / Next / Hide",
+            0.65,0.72,0.75)
+        if type(GameTooltip.Show)=="function" then GameTooltip:Show() end
     end)
-    Button("Hide",204,54,function()
-        ChalkBox_NavCommand("off")
+    f:SetScript("OnLeave",function()
+        if GameTooltip and type(GameTooltip.Hide)=="function" then
+            GameTooltip:Hide()
+        end
     end)
     f:SetScript("OnUpdate",function(self,elapsed)
         if not Number(elapsed) or elapsed<0 then return end
