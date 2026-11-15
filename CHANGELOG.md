@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.9 — Warm wood and framed MacroForge (visual polish)
+- **MacroForge:** add the same Blizzard `UI-DialogBox-Border` frame as Discoveries around the entire movable wizard, with a thin bronze-outline fallback for clients without BackdropTemplate. Keep its native map/wood artwork and two-column layout.
+- Replace the flat blue-gray section fill with warm charcoal, a restrained bronze rim, a one-pixel beveled highlight and a subtle drop shadow. Make the selected spell, native buttons, warning area and macro preview read clearly without changing their controls or placement.
+- **Discoveries:** retain the existing map-textured wood and neutral gray-blue item rows, but adjust the wood tint warmer and slightly clearer to visually harmonize with MacroForge. Preserve map docking, item tooltips, coordinate history and other discovery behavior.
+- All visual changes only; no SavedVariables migrations, macro generation changes, protected UI actions, network access or drop-tracking changes. Updated UI regression tests cover native/fallback outer frames, wood palette and inset depth.
+
 ## 2.2.8 — Discoveries loot locations and native background fixes (test release)
 - **Discoveries:** remember up to six recent, spatially distinct outdoor player positions where each item was observed in a loot window, rounded to 0.1% map coordinates. Nearby repeats merge and count observations. When a loot source can be identified unambiguously, store its own independent item locations; mixed-source windows remain zone-only. Show the three newest spots and zone name in the item's Discoveries hover tooltip.
 - **Honest location semantics:** these are the player's position at loot-window opening, not a guaranteed corpse death point. Dungeons, unavailable/invalid map coordinates and historical pre-feature data remain without coordinates. No invented locations, automatic map markers, extra map manipulation or official drop-rate claims. Keep existing v2 SavedVariables and old loot counts intact.
