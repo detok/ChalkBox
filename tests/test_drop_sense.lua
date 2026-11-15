@@ -13,6 +13,7 @@ end
 local now=100
 _G.GetTime=function() return now end
 local mapID=1436
+local px,py=0.426,0.714
 local maps={
     [1436]={name="Westfall",mapType=3,parentMapID=13},
     [1437]={name="Redridge Mountains",mapType=3,parentMapID=13},
@@ -21,7 +22,11 @@ local maps={
 }
 _G.C_Map={
     GetBestMapForUnit=function() return mapID end,
-    GetMapInfo=function(id) return maps[id] end
+    GetMapInfo=function(id) return maps[id] end,
+    GetPlayerMapPosition=function(id,unit)
+        assert(unit=="player" and id==mapID)
+        return {GetXY=function() return px,py end}
+    end
 }
 local instance=false
 _G.GetInstanceInfo=function()
@@ -68,6 +73,13 @@ local detail=ChalkBox_DropRead(100,"z:1436","c:12345")
 assert(detail and detail.attempts==1 and detail.hits==1 and
     detail.rate==100 and detail.low<100,
     "only named unambiguous creature opportunities have observed frequency")
+assert(detail.locations and #detail.locations==1 and
+    detail.locations[1].x==426 and detail.locations[1].y==714 and
+    detail.locations[1].count==1,
+    "first outdoor loot records the player's observed zone position")
+detail.locations[1].x=0
+assert(ChalkBox_DropRead(100,"z:1436","c:12345").locations[1].x==426,
+    "position readers receive a copy, not mutable SavedVariables")
 local zone=ChalkBox_DropMapData(1436)
 assert(zone.zone.name=="Westfall" and #zone.dungeons==0)
 local firstAreaItems=ChalkBox_DropAreaItems("z:1436")
@@ -83,9 +95,10 @@ assert(clothSummary and clothSummary.hits==1 and
     "with one verified mob source, show drops / loots and rate immediately")
 assert(#ChalkBox_DropSources("z:1436")==1)
 handlers.event(nil,"LOOT_CLOSED")
-now=110;handlers.event(nil,"LOOT_OPENED")
-assert(ChalkBox_DropOptions().windows==1,
-    "same corpse reopening never double-counts")
+now=110;px,py=0.9,0.9;handlers.event(nil,"LOOT_OPENED")
+assert(ChalkBox_DropOptions().windows==1 and
+    #ChalkBox_DropRead(100,"z:1436").locations==1,
+    "same corpse reopening never double-counts or records a second point")
 handlers.event(nil,"LOOT_CLOSED")
 now=300
 guid="Creature-0-1-22-333-12345-00002B"
@@ -96,6 +109,7 @@ assert(detail.attempts==2 and detail.hits==1 and detail.rate==50,
     "only another looted bandit contributes a meaningful miss")
 handlers.event(nil,"LOOT_CLOSED")
 now=500
+px,py=0.720,0.200
 guid="Creature-0-1-22-333-99999-00002C"
 links={"|Hitem:300:0|h[Uncommon Cloak]|h",
     "|Hitem:100:0|h[Linen Cloth]|h"}
@@ -110,6 +124,9 @@ for _,item in ipairs(ambiguousArea) do
 end
 assert(ambiguousCloth and ambiguousCloth.rate==nil,
     "two identified mob types never produce a fake combined drop rate")
+assert(ambiguousCloth.locations and #ambiguousCloth.locations==2 and
+    ambiguousCloth.locations[2].x==720,
+    "zone-wide browsing retains locations from both creature types")
 local banditItems=ChalkBox_DropAreaItems("z:1436","c:12345")
 local banditCloth
 for _,item in ipairs(banditItems) do
@@ -120,6 +137,7 @@ assert(banditCloth and banditCloth.rate==50 and
     "specific creature filter reports exactly its own tracked 1/2 = 50%")
 handlers.event(nil,"LOOT_CLOSED")
 now=550
+px,py=0.730,0.210
 overrideSources={
     "Creature-0-1-22-333-12345-00002D",
     "Creature-0-1-22-333-99999-00002E"}
@@ -129,6 +147,10 @@ handlers.event(nil,"LOOT_OPENED")
 assert(ChalkBox_DropRead(100,"z:1436","c:12345").attempts==2,
     "mixed-source windows are counted as zone discoveries but not mob rolls")
 assert(ChalkBox_DropRead(400).quantity==1)
+local mixedSpot=ChalkBox_DropRead(100,"z:1436").locations
+assert(#mixedSpot==2 and mixedSpot[2].count==2 and
+    #ChalkBox_DropRead(100,"z:1436","c:12345").locations==1,
+    "nearby mixed-source loot clusters on the zone but cannot pollute a mob")
 handlers.event(nil,"LOOT_CLOSED")
 overrideSources=nil
 now=650
@@ -147,6 +169,8 @@ assert(ChalkBox_DropRead(500,"z:1436")==nil or
     ChalkBox_DropRead(500,"z:1436").areaQuantity==nil,
     "dungeon items do not leak into outdoors")
 assert(#ChalkBox_DropAreaItems(discovered.dungeons[1].key)==1)
+assert(not ChalkBox_DropRead(500,discovered.dungeons[1].key).locations,
+    "dungeons keep their area history but never invent outdoor coordinates")
 handlers.event(nil,"LOOT_CLOSED")
 now=800;instance=false;mapID=1437
 handlers.event(nil,"ZONE_CHANGED_NEW_AREA")
@@ -184,6 +208,35 @@ ChalkBox_DropSetOption("enabled",false)
 handlers.event(nil,"LOOT_OPENED")
 assert(ChalkBox_DropOptions().windows==5,
     "tracking off genuinely stops new sampling, old history remains")
+-- Bounded retention: 8 distant new sightings retain only the latest 6.
+ChalkBox_DropSetOption("enabled",true)
+mapID=1436
+handlers.event(nil,"ZONE_CHANGED_NEW_AREA")
+for i=1,8 do
+    handlers.event(nil,"LOOT_CLOSED")
+    now=1000+i*130
+    px,py=i*0.09,0.10
+    guid=("Creature-0-1-22-333-12345-%06X"):format(300+i)
+    links={"|Hitem:100:0|h[Linen Cloth]|h"}
+    handlers.event(nil,"LOOT_OPENED")
+end
+local mostRecent=ChalkBox_DropRead(100,"z:1436").locations
+assert(#mostRecent==6 and mostRecent[1].x==270 and
+    mostRecent[6].x==720,
+    "positions stay rounded and bounded to six distinct recent sites")
+assert(#ChalkBox_DropRead(100,"z:1436","c:12345").locations==6,
+    "verified creature-specific samples are bounded independently")
+-- API unavailable: a new real loot window still counts, but gets no point.
+handlers.event(nil,"LOOT_CLOSED")
+C_Map.GetPlayerMapPosition=nil
+now=2200
+guid="Creature-0-1-22-333-12345-000DDD"
+links={"|Hitem:999:0|h[Unknown Spot]|h"}
+handlers.event(nil,"LOOT_OPENED")
+assert(ChalkBox_DropRead(999,"z:1436").areaWindows==1 and
+    not ChalkBox_DropRead(999,"z:1436").locations,
+    "missing coordinate API never invents or blocks ordinary discovery")
+ChalkBox_DropSetOption("enabled",false)
 -- Previous 1.10.0 saved watches are retained as older unsited observations;
 -- never backfill invented zone/source data.
 ChalkBoxZoneDB.dropSense={version=1,enabled=false,tooltip=true,
@@ -195,4 +248,4 @@ local legacy=ChalkBox_DropRead(777)
 assert(legacy and legacy.quantity==0 and
     legacy.legacy.quantity==5 and legacy.reference==1.5 and
     not legacy.rate,"migration preserves legacy data separately, never inventing new area odds")
-print("PASS: automatic all-item loot, zone/dungeon split, same-source windows, mixed-loot safety, dedup and legacy migration")
+print("PASS: automatic all-item loot, bounded outdoor coordinates, safe source attribution, dungeons/API fallback, zone/dungeon split, mixed-loot safety, dedup and legacy migration")
