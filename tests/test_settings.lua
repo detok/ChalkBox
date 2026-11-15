@@ -759,7 +759,8 @@ local sliders={}
 for _,frame in ipairs(frames) do
     if frame.kind=="Slider" then sliders[#sliders+1]=frame end
 end
-assert(#sliders==10,"restored horizontal bag slider is present alongside other settings")
+assert(#sliders==11,
+    "QuestSense arrow size joins the existing ten sliders without removing any")
 local appearanceSlider,highlightSlider
 for _,frame in ipairs(sliders) do
     if frame.parent==categories["The Bar Appearance"].panel then
