@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!-- Crisp, original vector redraw of the same upward V-tail arrow silhouette.
+       Fully transparent canvas, suitable for a 256px WoW UI texture. -->
+  <defs>
+    <linearGradient id="edge" x1="0.12" y1="0.9" x2="0.78" y2="0.08">
+      <stop offset="0" stop-color="#35200e"/>
+      <stop offset=".37" stop-color="#795025"/>
+      <stop offset=".8" stop-color="#db9e39"/>
+      <stop offset="1" stop-color="#442913"/>
+    </linearGradient>
+    <linearGradient id="gold" x1=".18" y1=".82" x2=".82" y2=".16">
+      <stop offset="0" stop-color="#b66a16"/>
+      <stop offset=".35" stop-color="#f4b63d"/>
+      <stop offset=".64" stop-color="#ffe590"/>
+      <stop offset=".86" stop-color="#ffca52"/>
+      <stop offset="1" stop-color="#9f590e"/>
+    </linearGradient>
+    <linearGradient id="shine" x1=".0" y1=".1" x2="1" y2=".8">
+      <stop offset="0" stop-color="#fff3b3" stop-opacity=".74"/>
+      <stop offset=".49" stop-color="#fff3b3" stop-opacity=".08"/>
+      <stop offset="1" stop-color="#42270c" stop-opacity=".32"/>
+    </linearGradient>
+  </defs>
+  <path d="M128 9 L241 244 L128 202 L15 244 Z" fill="#000000" opacity=".30" transform="translate(1 2)"/>
+  <path d="M128 9 L241 244 L128 202 L15 244 Z" fill="url(#edge)" stroke="#2b1a0c" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M128 28 L224 226 L128 185 L32 226 Z" fill="url(#gold)" stroke="#f5c65d" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M128 41 L128 177 L54 211 Z" fill="url(#shine)" opacity=".82"/>
+  <path d="M128 41 L201 210 L128 177 Z" fill="#a15b13" opacity=".18"/>
+  <path d="M128 14 L128 178" fill="none" stroke="#fff0a3" stroke-width="1.7" opacity=".58"/>
+</svg>
