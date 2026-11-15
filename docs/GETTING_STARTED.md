@@ -1,12 +1,12 @@
 # Getting started with ChalkBox
 
-**For WoW Forever · ChalkBox 2.2.10**
+**For WoW Forever · ChalkBox 2.2.11**
 
 ChalkBox is one addon folder. It contains the runtime modules and their bundled static recipe reference files. There is no second AddOn to install, no account to connect, and no third-party service to configure.
 
 ## 1. Choose the correct download
 
-From [GitHub Releases](https://github.com/detok/ChalkBox/releases), select the **`ChalkBox-X.Y.Z.zip`** asset for the version you intend to use. For the version described in this documentation, choose **`ChalkBox-2.2.10.zip`**.
+From [GitHub Releases](https://github.com/detok/ChalkBox/releases), select the **`ChalkBox-X.Y.Z.zip`** asset for the version you intend to use. For the version described in this documentation, choose **`ChalkBox-2.2.11.zip`**.
 
 Do **not** download the auto-generated `Source code (zip)` archive. The **`ChalkBox-CurseForge-Media-X.Y.Z.zip`** asset is artwork and publishing copy; it is **not** the addon.
 
@@ -28,6 +28,7 @@ If ChalkBox is missing, check for the common double-nested folder `Interface/Add
 - Open **The Bar** to select stats and appearance. Fresh defaults mirror the slim top layout. Right-click empty Bar space to enter Edit Mode; after arranging it, right-click empty space again for **Done editing**. Existing layouts survive upgrades.
 - Type `/chalk macro` to build a macro from learned abilities. Read the preview and warnings; **Select Text** enables Ctrl+C. **Install New** is explicit, out-of-combat and refuses to replace an existing named macro.
 - The compact **Combat Meter** intentionally starts closed. Open it with `/chalk meter show` if desired.
+- **Adventure Journal** opens with `/chalk session` and now has a full outer frame and readable map-derived wood background. Full event Timeline and History views are a future development stage, not yet recording.
 - **QuietGuard** filters are all **off by default on fresh installs**. Activate only the social requests you want to decline.
 
 The [full handbook](USER_GUIDE.md) explains the auction, disenchant, session, camp, emote, bag and update tools too.
