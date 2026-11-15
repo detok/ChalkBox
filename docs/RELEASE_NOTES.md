@@ -1,21 +1,23 @@
-# ChalkBox 2.2.11 — Adventure Journal Frame Repair (Gate A)
+# ChalkBox 2.2.12 — QuestSense Navigation
 
-## The Journal finally looks like ChalkBox
-The **Adventure Journal / Session Journal** window now uses the same native Blizzard `UI-DialogBox-Border` outer frame and warm map-derived wood art as Discoveries. It has two legible inset sections—**Session Summary** and **Field Notes**—with bronze rims, subtle depth and the original Current / Older / Newer / Close controls.
+## A simple quest compass
+**QuestSense → Navigation** adds an optional movable arrow that follows an *actual accepted quest waypoint* returned by WoW Forever. It shows the selected quest name and a **straight-line** distance in yards when player and destination world positions are available.
 
-The window no longer disappears when global theme opacity is set to 0. Its backdrop has a readable opaque fallback when the native atlas is not available on the client. It retries the actual atlas when opened again, and **Global Appearance** now sends live accent/theme refresh notifications to the Journal.
+The compass is **off by default**. Enable it in **Options → AddOns → ChalkBox → QuestSense → Navigation**, or type `/chalk nav on`. Its compact window has **Auto / Next / Hide** controls, plus a position lock and reset in settings. Use `/chalk nav prev` for the previous verified quest or `/chalk nav follow QUEST_ID` to explicitly select an accepted quest with coordinates.
 
-## No data lost or invented
-Existing per-character `ChalkBoxZoneDB.sessionJournal.version=1` is **unchanged**, including the current and up to 20 earlier session summaries, experience, net gold, quest totals, loot windows, regions, camp prompts, merchant repair quotes, and navigation. No data migration or new recording events are introduced in this release.
+**Auto** follows Blizzard's currently super-tracked quest when that quest has a waypoint; otherwise it prefers the closest available known quest destination on the same world map region. Your manual selection takes precedence until you choose Auto again or that quest is removed.
 
-## The Full Adventure Chronicle is designed, not yet collecting milestones
-[Adventure Chronicle design](ADVENTURE_CHRONICLE_DESIGN.md) specifies the next development gates: a bounded validated event ledger (levels, completed quests, deaths, verified dungeon entry/exit, later select DropSense integrations), deduplication, evidence provenance, controls, privacy and graceful failure; then real **Today / Timeline / History** views.
+## Designed to leave the game alone
+- Uses `C_QuestLog.GetNextWaypoint`, optionally a *real* quest map marker, and supported `C_Map` world-position conversions.
+- **Does not call** `C_Map.SetUserWaypoint`, clear player map pins, change quest watches, modify Blizzard super-tracking, install another addon, or guess locations from a quest name.
+- Inside instances, or when Forever returns no player position / usable facing / cross-continent world coordinate, the arrow hides its directional indicator and shows a readable reason instead of pointing the wrong way.
+- The target and position settings are per-character under a **new optional** `ChalkBoxZoneDB.questNavigator` subtree. Existing quest/manual-watch settings are untouched.
+- If the quest log is temporarily unavailable, saved manual selections are preserved and the direction is withheld until it returns.
 
-**This version implements the visual fix only.** New event recording, chronological views and searchable history are not live yet, and old sessions will never be backfilled with made-up events.
+## Gameplay limits
+This is a **straight-line compass, not a road-aware travel guide or a full TomTom clone**. It does not automatically route boats, flights, dungeon floors or unknown quest POIs. Some Forever quests expose no waypoint; these are skipped rather than assigned invented coordinates. The arrow follows the character's facing, not the camera.
 
-## Safety and verification
-- Source change: Journal window presentation and global theme-refresh registration only. No old session data, event-counting or protection logic changed.
-- Lua 5.1 regression tests cover old session counters, unreadable native atlas, theme opacity zero, native outer border/fallback, section frames, atlas retry, active appearance changes and preservation of the existing journal schema.
-- Final visual appearance and game-specific art fallback still require real WoW Forever client confirmation.
+## Verification
+Mocked Lua 5.1 tests cover opt-in defaults, native border, continent zero, super-tracked/manual/nearest priority, selecting and cycling accepted quests, missing coordinates, instance restrictions, cross-continent destinations, drag lock/reset, and quest-log recovery. Actual arrow alignment, texture visibility and client-specific quest-map behavior should also be checked in-game.
 
-Install `ChalkBox-2.2.11.zip` over your existing ChalkBox folder, keep SavedVariables and enter `/reload`.
+Install `ChalkBox-2.2.12.zip` over the existing addon directory, keep SavedVariables and use `/reload`.
