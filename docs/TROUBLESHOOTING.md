@@ -1,6 +1,6 @@
 # Troubleshooting ChalkBox
 
-**Current baseline: 2.2.10 · World of Warcraft: Forever**
+**Current baseline: 2.2.11 · World of Warcraft: Forever**
 
 This page covers issues you can diagnose safely without deleting SavedVariables, reinstalling unrelated addons or modifying Blizzard's protected interface.
 
@@ -11,7 +11,7 @@ This page covers issues you can diagnose safely without deleting SavedVariables,
 | Problem | First thing to check |
 | --- | --- |
 | Addon missing from the AddOns list | Wrong game directory, double-nested extracted folder or incomplete download — use the **addon** ZIP, not Source code or media ZIP |
-| ChalkBox settings look strange | Confirm version 2.2.10; native Settings pages should **not** have a solid black sheet over Blizzard's background |
+| ChalkBox settings look strange | Confirm version 2.2.11; native Settings pages should **not** have a solid black sheet over Blizzard's background |
 | Discoveries button or journal missing | Open the native World Map; run `/chalk drops map` and `/chalk drops map status` |
 | Discoveries shows no items | Run `/chalk drops status`; only **observed, readable** loot windows are saved; choose a zone/dungeon with prior observations |
 | No coordinates for an item | Only later outdoor loot-window observations with usable map coordinates get location samples; dungeon and older rows have no invented positions |
@@ -23,6 +23,7 @@ This page covers issues you can diagnose safely without deleting SavedVariables,
 | AuctionSense scan does nothing | Visit an auctioneer and open the **AuctionSense** tab; request a scan manually, check server cooldown and `/chalk auction status` |
 | DE estimate is absent | Not all gear/brackets or AH materials have reliable outcome or price data; try `/chalk de [item]` |
 | Bar hides or overlaps something | Check Bar status, top chrome shift, screen width and existing saved per-character layout |
+| Adventure Journal is transparent or borderless | Open `/chalk session`; version 2.2.11 has a native border and opaque fallback even with global opacity 0. If art is missing, note the client build and retry after reopen; v1 session data should remain intact |
 | Compact Combat Meter empty | It **starts hidden**; use `/chalk meter show`. Native data can be unavailable or protected |
 | QuietGuard blocks an invite unexpectedly | Check saved ON filters and **Blizzard's own built-in social settings** |
 | Emota appears inactive | Automatic emotes require opt-in; idle pacing is intentionally slow and no automated emotes run in combat |
