@@ -1,171 +1,94 @@
-# Troubleshooting
+# Troubleshooting ChalkBox
 
-## 2.0.5: Discoveries panel has buttons but no headings, filters or text
+**Current baseline: 2.2.10 · World of Warcraft: Forever**
 
-Version 2.0.5 repairs the text-heading initialization that could stop the standalone journal before finishing its controls. Update the entire ChalkBox addon folder and run `/reload`. Open Discoveries from the map or use `/chalk drops map`. Confirm that **AREA / DUNGEON**, **CREATURE SOURCE**, **SORT BY**, **SEARCH ITEMS**, and the item-table headers are visible. If any part is still missing, enable `/console scriptErrors 1` and capture the exact error and a screenshot. Avoid deleting SavedVariables.
+This page covers issues you can diagnose safely without deleting SavedVariables, reinstalling unrelated addons or modifying Blizzard's protected interface.
 
+**First:** confirm the installed version under **ChalkBox → Updates**, type `/reload` after replacing addon files, and make sure the installed path is `Interface/AddOns/ChalkBox/ChalkBox.toc` (not a duplicate nested ChalkBox folder). Then run the module's `status` command from [Commands](COMMANDS.md).
 
+## Quick diagnosis
 
-## 2.0.5: Discoveries shows controls but not the panel, or bags hitch
+| Problem | First thing to check |
+| --- | --- |
+| Addon missing from the AddOns list | Wrong game directory, double-nested extracted folder or incomplete download — use the **addon** ZIP, not Source code or media ZIP |
+| ChalkBox settings look strange | Confirm version 2.2.10; native Settings pages should **not** have a solid black sheet over Blizzard's background |
+| Discoveries button or journal missing | Open the native World Map; run `/chalk drops map` and `/chalk drops map status` |
+| Discoveries shows no items | Run `/chalk drops status`; only **observed, readable** loot windows are saved; choose a zone/dungeon with prior observations |
+| No coordinates for an item | Only later outdoor loot-window observations with usable map coordinates get location samples; dungeon and older rows have no invented positions |
+| Map-derived wood texture missing | Native atlas may be unavailable on this client; reopen the window after `/reload`, note exact client build and attach a screenshot |
+| QuestSense tracks unexpected quests | Verify Smart / Nearby / All mode, `/chalk quests status`, whether the map/quest log/combat is preventing updates |
+| Dungeon quests aren't filtered | Enter a **party** instance with accepted quests; Smart needs trustworthy instance/quest map or matching dungeon-header information |
+| MacroForge has no spells | Open the character's actual active spellbook, click **Rescan Spellbook** or use `/chalk forge rescan` |
+| Macro text is weird or too long | Review the generated preview and warnings; `/castsequence` and multiple `/cast` lines cannot bypass cooldown/GCD requirements |
+| AuctionSense scan does nothing | Visit an auctioneer and open the **AuctionSense** tab; request a scan manually, check server cooldown and `/chalk auction status` |
+| DE estimate is absent | Not all gear/brackets or AH materials have reliable outcome or price data; try `/chalk de [item]` |
+| Bar hides or overlaps something | Check Bar status, top chrome shift, screen width and existing saved per-character layout |
+| Compact Combat Meter empty | It **starts hidden**; use `/chalk meter show`. Native data can be unavailable or protected |
+| QuietGuard blocks an invite unexpectedly | Check saved ON filters and **Blizzard's own built-in social settings** |
+| Emota appears inactive | Automatic emotes require opt-in; idle pacing is intentionally slow and no automated emotes run in combat |
 
-Install the **2.0.5 game addon ZIP** (not the media kit), confirm that you have a single `Interface/AddOns/ChalkBox` folder, then run `/reload`. Open the map and click **Discoveries**, or type `/chalk drops map`. The standalone journal should now have a full solid background and appear above the native Map & Quest Log. Bag highlight scans and optional resale-value calculations are now rate-limited.
+## Installation, updates and SaveVariables
 
-If bag opening still hitches, try temporarily switching off the **The Bar → Modules → Bag Value** option, then the **LootSense → Appearance → reagent highlights** option, testing between changes. This isolates the scanner without erasing any data. Enable `/console scriptErrors 1` if a Lua error appears.
+Get the game ZIP from [GitHub Releases](https://github.com/detok/ChalkBox/releases). It should extract into exactly one `ChalkBox/` directory. The additional CurseForge Media ZIP is publishing material, **not** a working addon.
 
+If a change isn't showing, compare the TOC version installed with the version in **ChalkBox → Updates**. Close the game when replacing files, relaunch and type `/reload`. Do **not** delete WoW's SavedVariables as your first troubleshooting step: those hold personal KEEP selections, character loot history, Bar arrangements, session history and market observations. If you truly need to isolate corrupt state, back up the files first and report the suspected key.
 
+## Discoveries: map docking, lists and artwork
 
-## 2.0.3: Discoveries controls appear without a panel
+Use `/chalk drops map` to open the journal even when the map button is hard to see. `/chalk drops map status` prints attachment and map-button diagnostics. `/chalk drops map reset` restores the draggable button.
 
-Discoveries now keeps its main background readable when **Global Appearance → background strength** is zero, and brings the journal to the front when opened. Update to 2.0.3, use `/reload`, and type `/chalk drops map`. If controls still behave oddly, enable `/console scriptErrors 1` and capture the Lua error.
+The **Area / Dungeon** dropdown displays recorded places, not every unvisited location in the game. The Creature dropdown requires identified source records. An ambiguous source does not produce a creature-specific rate. Choosing **Follow world map** (or enabling map sync) returns the journal to the map's current selection.
 
+If a popup appears behind the map or the body doesn't render, report whether the labels, buttons and item rows are individually visible, whether the whole panel has a border, and which UI scale / game client you are using. Do not substitute a random third-party art path for a native atlas that isn't available.
 
-## 2.0.2: Settings navigation or Combat Meter
+**Outdoor location feature:** Only loot events since 2.2.8 with a usable C_Map position receive location samples. A coordinate describes where the *player opened the loot window*, not precisely where the creature died. Up to six distinct sites are kept; hover shows up to three. It is normal for old/dungeon items to have no coordinates.
 
-**Nested pages:** Open Options → AddOns → ChalkBox. Select a module (for example, The Bar), then select its nested Modules or Appearance page. The home page has shortcuts to the primary modules. Saved options have not been reset or renamed.
+## QuestSense: Smart, Nearby and dungeons
 
-**DPS meter starts closed:** This is intentional. Use /chalk meter show or the Combat Meter settings page to open it. Hiding it doesn't reset Blizzard's recorded sessions.
+Run `/chalk quests status`. The output includes selected mode, accepted/candidate/watched counts, last update reason and (for a recognized dungeon) dungeon name and matched count.
 
-**Settings page won't open:** Try /chalk, then the parent page. Some Forever Settings builds do not automatically expand the parent when a nested page is opened directly; ChalkBox now opens its parent first.
+- **Smart outdoors:** Prioritizes accepted quests with map/header relevance and recently accepted quests. It doesn't calculate optimal leveling routes.
+- **Smart in a party dungeon:** Only confirmed quests for that *specific instance* are automatically selected. Previous manually tracked nonmatching quests are temporarily suspended and restored on exit. Generic Dungeon tags cannot prove which instance a quest belongs to.
+- **No confirmed dungeon matches:** ChalkBox intentionally **preserves your current tracker** rather than hiding every quest. This is safer than guessing, especially for Forever custom quests.
+- **Nearby only:** Temporarily hides remote watches and restores manually selected ones when they become relevant. It doesn't infer precise walking distance.
+- **World Map, Quest Log or combat open:** Watch-list edits can be deferred. Close the window or leave combat, then use `/chalk quests refresh`.
 
-**CurseForge file confusion:** The playable file is ChalkBox-2.0.3.zip. ChalkBox-CurseForge-Media-2.0.3.zip contains artwork and listing copy; it is not an installable addon.
+If you manually uncheck a quest, QuestSense should not immediately force it back. Capture the status output and exact mode if it does.
 
+## AuctionSense, AuctionInsights and disenchanting
 
-These steps are safe and require no SavedVariables deletion or client reset.
+**AuctionSense** runs at the native Auction House only. The standard **Scan Market** is a manual browse asking-price scan. **Full listings** is a separate request limited by server readiness/cooldown (often approximately 15 minutes). A failed or incomplete scan should not replace a previously complete snapshot with fabricated zero prices.
 
-## 2.0.1 — Discoveries button is visible, but the window or position isn't right
+Prices are **asks**, not confirmed sales. Average asking price or listing counts can be unavailable for browse-only summaries. Mixed equipment variants, old scans or missing material prices limit value accuracy. **Sales & Stats** only summarizes observed supported mail receipts; it cannot reconstruct your full trading history.
 
-Open Discoveries and use the **Area/Dungeon**, **Creature Source**, and **Sort By** dropdowns. Use search to narrow results. To move the **map button**, click and drag it to a comfortable location; ChalkBox saves that position per character. **Right-click to reset**, or click **Reset Map Button** under DropSense settings, or run `/chalk drops map reset`.
+If a new item shows no disenchant estimate, use `/chalk de [item]` to read the reason, including missing modeled bracket or unpriced outcomes. ChalkBox never disenchants an item automatically.
 
-If a dropdown appears underneath Blizzard's map or clips at a particular UI scale, send the exact Forever client build, UI scale and a real screenshot. The original standalone **/chalk drops map** remains available.
+## MacroForge, Bar and native UI
 
-**Missing item rate?** A percentage is only calculated from readable loot windows attributed to a **known specific creature**. Without that denominator, ChalkBox displays actual items/quantities instead of a fake zone-wide probability.
+MacroForge's generated preview is a **multiline scrolling editor**; it displays the macro before you copy or choose **Install New**. A macro cannot automatically select cooldown-ready spells or perform a rotation for one button press. Saved Builds are character-specific. If the optional second **AddOn Compartment** entry stays visible after disabling it, use `/reload`; a reliable native unregister method is not available on every build.
 
-## Updates button doesn't show a GitHub version
+For The Bar, right-click empty bar space to enter Edit Mode and again to select **Done editing**. Right-clicking a stat while editing controls alignment. A **Reset Layout** uses current fresh-install defaults and intentionally changes the customized arrangement, so it should be a deliberate choice. Some stats hide at narrow widths; a user-saved arrangement is not silently replaced on upgrade.
 
-WoW addon Lua cannot make HTTPS requests. `/chalk update` prints the *installed* version and the GitHub Releases link for your browser. The optional, default-off peer comparison can only tell whether a grouped ChalkBox user has a newer version; it **isn't a server check**. To get real automatic update downloads, use a compatible addon manager once ChalkBox has a verified listing.
+If Blizzard bank panels or bag buttons report a blocked action, note the exact error and whether it occurred at **first bank open**. ChalkBox intentionally defers separate-bag repositioning during bank initialization and avoids modifying protected item buttons. `/chalk bags status` shows pending offsets.
 
-## 2.0 — Discoveries button doesn't appear on the world map
+## Combat Meter and camp reminders
 
-The 2.0 prerelease fixes a **Forever-specific late-loading map-frame and placement issue**. Try this sequence:
+The compact meter starts closed. You must explicitly show it. Fight values may remain protected or unavailable; PRINT to PARTY is a manual action gated by safe client data and party context. For a blank Fight session try Last; see `/chalk meter status`.
 
-1. Open WoW's regular world map once. Look near the **upper-left map canvas**, below the native map pin controls.
-2. Open **Options → AddOns → ChalkBox → DropSense**. Ensure **Show Discoveries button on World Map** is checked. This toggle does not control whether loot sampling is recording.
-3. Type **/chalk drops map**. This opens the same **standalone Discoveries browser** even if the map button couldn't attach. The browser can use your current player zone when the map is not loaded.
-4. Type **/chalk drops map status**. Copy both status lines: whether `WorldMapFrame` exists, whether the button attached, whether it is shown, the saved toggle, the anchor type, the selected map ID and tracking status.
-5. If a map skin such as Leatrix Maps or Simple Map is running, try windowed and fullscreen map modes. Record **the names of your other map addons** rather than deleting all preferences.
-6. Include a **real screenshot** of the whole map and the status output with your Forever client build when [reporting an issue](https://github.com/detok/ChalkBox/issues/new/choose).
+A **Camp Tent's rested-XP benefit** is not the same as a verified **Camp Benefits** aura. If the UI cannot establish tent use, `/chalk prep tent done` acknowledges it for one hour **in the session only** and grants no real game effect. Toast position, opacity and lock are adjustable under **Adventure Prep → Toast Appearance**.
 
-**Map button invisible is different from an empty loot journal.** The journal only shows loot **recorded after zone-aware tracking was enabled**. Older records cannot gain invented locations. Type **/chalk drops status** to check recording and sampled area counts. The game cannot expose every kill or official server loot-table rate.
+## Emota, QuietGuard and the Updates page
 
-## 2.0 — MacroForge shows no spells or generated macro won't work
+Automatic Emota behavior is optional, uses randomized idle delays and intentionally avoids combat; try `/chalk emota idle preview` for a deliberate demonstration. Native emote APIs can report success differently from what the game visually animates.
 
-1. Type **/chalk macro**; if the window opens but your abilities are absent, open your native spellbook and click **Rescan** or use **/chalk forge rescan**.
-2. Check **/chalk forge status** for the current class and number of readable active spells.
-3. If you respecced, load a saved recipe and replace any explicitly flagged **unlearned spell**; MacroForge does not make old spell IDs magically castable.
-4. The native Blizzard macro engine won't cast multiple global-cooldown spells on one press. **/castsequence** advances on successful casts and can stall. Trinket slots 13/14 may be passive or cooling down.
-5. Click **Select Text**, press **Ctrl+C**, paste into the normal **/macro** interface. Only use **Install New** outside combat when you explicitly want a new character-specific macro; it won't overwrite an existing name.
-6. Report client build, chosen template, selected spells, generated macro, displayed warning/error and expected result. Do not share private macros containing secrets or personal account details.
+QuietGuard's guild, duel, party, trade and channel filters default OFF on **new installs**, but older explicitly enabled filters persist. Blizzard may also be blocking social actions. Check both before assuming ChalkBox caused the issue.
 
-## QuestSense doesn't show any quests
+The **Updates** page cannot fetch current GitHub releases over HTTPS from WoW. It shows the installed version and a copyable link and can compare versions seen from other ChalkBox group members. An empty peer result does not mean there is no new release.
 
-1. Make sure **QuestSense → Auto-track accepted quests** is enabled. Start with **Smart (recommended)**; **Nearby only** intentionally excludes quests without matching map or zone data.
-2. Close your **world map and quest log**, and exit combat. Editing watches while those windows are open can create taint or fail silently on Forever.
-3. Type `/chalk quests status`. You'll see accepted quests, eligible candidates, native watch count, ChalkBox-owned watch count and whether an API is missing or an update was deferred.
-4. Run `/chalk quests refresh` and look at `/chalk quests status` again. If a quest was just accepted, it should be picked up even when its map objectives aren't exposed.
-5. Check whether another UI addon has **hidden Blizzard's native tracker**. QuestSense manages native quest watches; it does not force a different quest-tracker window on-screen.
-6. If still broken, send the entire status output and your WoW Forever build number. That distinguishes a data-read problem, a blocked watch write, a watch limit, and a tracker-display problem.
+## Report a useful bug
 
-## Adventure Prep toast is in the wrong place
+Use [GitHub's bug report form](https://github.com/detok/ChalkBox/issues/new/choose). Include the installed ChalkBox version, Forever client/build, relevant zone/instance, clear reproduction steps, expected and actual result, `status` output and the exact Lua error stack if one exists. Cropped screenshots help; redact private chat and account details.
 
-Under **Adventure Prep → Toast Appearance**, uncheck Lock, click **Preview / Move (25s)**, drag the visible toast, then recheck Lock. Use the transparency slider (35–100%). **Reset to Top** restores the default. Locked toasts don't intercept mouse clicks; normal reminders last nine seconds.
+For earlier version-specific fixes, see the [historical changelog](../CHANGELOG.md). The current user-facing behavior is documented in the [player handbook](USER_GUIDE.md).
 
-## ChalkBox doesn't appear in the AddOns list
-
-Confirm your game directory contains:
-
-```text
-Interface/
-  AddOns/
-    ChalkBox/
-      ChalkBox.toc
-      ChalkBox_Camelot.toc
-      Core.lua
-      ...additional modules...
-      assets/Icon.tga
-```
-
-Do not leave an extra folder such as `ChalkBox-1.6.1/ChalkBox/` between `AddOns` and the addon. Download the **`ChalkBox-*.zip`** asset from Releases instead of GitHub's **Source code** ZIP. Check whether your Forever build has disabled older addons and record its interface version.
-
-## I don't see a CampSense popup
-
-- Type **`/chalk prep test`**. The preview should show immediately (unless client security/UI restrictions prevent it).
-- Open **`/chalk` → Adventure Prep** and make sure periodic reminders and **Show reminders on screen** are enabled.
-- Type **`/chalk prep`**. ChalkBox should report the camp buff as **active, missing, expiring, gathering**, or **unknown**. If the aura is already active, suppressing a camp reminder is intentional.
-- Routine reminders have a delay; the test command is the fastest way to confirm placement. Combat can suppress normal alerts.
-- If the client blocks aura reads, ChalkBox will report **unknown**, not falsely say you're missing a buff.
-
-## LootSense doesn't mention a material I can craft with
-
-1. Open that character's actual **crafting profession window** and wait for its recipes to populate. Forever can populate recipes after the panel first appears.
-2. Run **`/chalk loot scan`**, move the pointer off the material, and hover it again; an already-open tooltip won't necessarily refresh by itself.
-3. Run **`/chalk loot status`**. It shows whether LootSense advice is **ON**, the detected profession, how many learned recipes it saw in the latest scan, the scanning API used, and the bundled database status. If advice is OFF, type **`/chalk loot on`**.
-4. Remember: **known** recipe claims require a successful scan. The bundled offline recipe catalog cannot claim you learned something; only your profession scan can.
-5. If one known recipe is missing or the quantity is incorrect, report the exact **item link, recipe name, profession and skill level**. A screenshot of the game tooltip and profession window is very helpful.
-
-A missing annotation doesn't mean an item is safe to sell. Keep important items manually with `/chalk keep [item]`.
-
-## Class icons don't appear, or all players show the same icon
-
-Under **Options → AddOns → ChalkBox → Combat Meter**, choose **Class** (the default). The source class must be supplied by Blizzard's native `C_DamageMeter.classFilename` data. If no class is supplied, ChalkBox deliberately shows a neutral question mark.
-
-**Spec** uses Blizzard's `specIconID` when available; otherwise it falls back to the correct class. For traditional class emblems try `/chalk meter icons class`. If the icons aren't wanted, `/chalk meter icons off` returns the name column to its original width.
-
-If an emblem looks wrong, report the **ChalkBox version, Forever client build, visible player class, and a screenshot**. Do not assume icons can identify every pet or unclassified damage source.
-
-## Combat Meter is empty or not displaying
-
-1. Type **`/chalk meter show`** or use **Options → AddOns → ChalkBox → Combat Meter → Show compact DPS meter window**.
-2. Type **`/chalk meter status`**. It checks whether your client exposes Blizzard's native `C_DamageMeter`. This feature does **not** use the restricted combat log.
-3. Attack a target and let the built-in damage recording register a fight. Try the **DPS >** title button, or `/chalk meter dps`.
-4. Click **Fight >** to switch between current fight, last fight and overall data. If your current fight is empty, Last may contain the previous pull.
-5. If the game has its own meter visible, that is expected. ChalkBox does not disable it; use Blizzard's UI settings to hide the duplicate.
-6. If entries fail during combat but appear afterward, report your Forever client build and any Lua error. Combat values are protected and ChalkBox never calculates their contents in Lua.
-
-To return to its default position: **`/chalk meter position reset`**. A hidden window doesn't update and adds no permanent meter polling.
-
-## My Camp Tent worked but ChalkBox still says no Camp Benefits
-
-This is normal: the **Camp Tent** tops up **Rested XP**, while **Camp Benefits** represents separate stat buffs. Run **`/chalk prep`** to see two different results: **Camp Benefits** (stat buffs) and **Camp Tent** (Boosted Rest lockout or rested-XP threshold). Boosted Rest is a **harmful debuff**, spell **1229451**, lasting about an hour. If it is active, ChalkBox should not prompt you to use a tent again.
-
-If your client hides the debuff or rested-XP API, ChalkBox reports tent state **unknown**. Click **Tent Used** in Adventure Prep or type `/chalk prep tent done` to acknowledge tent use for one hour in this session; `/chalk prep tent clear` reverses it.
-
-## Combat Meter will not print my fight
-
-- **PRINT** sends **one short top-three ranking to normal PARTY chat** when clicked. It never sends automatically or broadcasts to RAID/SAY.
-- You must be in a normal **party**, not solo or a raid, and click **after combat**. Forever may still mark results as protected until the game releases them.
-- If **Fight** is empty, try **Last** in the window. The Print command also tries Last when current session has no data.
-- `/chalk meter status` verifies the native meter is available.
-- If the client still considers values secret or blocks party chat (e.g., in a restricted instance), ChalkBox refuses to send and shows a local diagnostic instead. Try `/chalk meter print` after combat and note the exact response.
-
-## TrailBar overlays other UI
-
-Run **`/chalk bar status`**. Try `/chalk bar reserve on`, change its top/bottom position, or `/chalk bar reserve off` if your custom UI needs the full viewport. Some addon or manually placed UI frames don't follow the screen reservation.
-
-## Guild invite or duel blocked unexpectedly
-
-Go to **Options → AddOns → ChalkBox → QuietGuard**. All five filters default OFF for newly configured installs. Previously saved ON filters remain enabled after upgrade; turn off a filter explicitly if you wish to receive that invitation. Blizzard's own built-in social-block settings can also block requests independently.
-
-## Emota isn't doing anything
-
-Enable **automatic character reactions** in Options → Emota. It is **opt-in**, uses long randomized gaps, and avoids interruptions while moving or fighting. Try **`/chalk emota idle preview`** to force a manual preview. Avoid running the old standalone EmotaSpeak at the same time.
-
-## Reporting a helpful bug
-
-Use the [bug report form](https://github.com/detok/ChalkBox/issues/new/choose). Include:
-- ChalkBox version (e.g. `2.0.0`)
-- Game name, game client build and interface version
-- Which module, exact command or item link
-- Expected behavior vs actual behavior
-- Any Lua error and reproduction steps
-
-Never post personal account credentials, session tokens or private chat messages in a public issue.
+[Documentation home](README.md) · [Commands](COMMANDS.md) · [Maintainer runbook](MAINTAINER_RUNBOOK.md)
