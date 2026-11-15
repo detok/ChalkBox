@@ -260,6 +260,25 @@ assert(ChalkBox_NavStatus().manualID==444)
 assert(ChalkBox_NavCommand("off") and not nav:IsShown()
     and not ChalkBox_NavStatus().enabled,
     "navigation hides cleanly without changing QuestSense tracker")
+-- Older Forever builds may expose EasyMenu rather than the modern
+-- MenuUtil. Verify the exact same three actions and native placement.
+MenuUtil=nil
+local legacyItems,legacyAnchor
+_G.EasyMenu=function(items,menu,anchor,x,y,kind)
+    assert(menu and menu.name=="ChalkBoxNavigationDropdown")
+    legacyItems=items;legacyAnchor=anchor
+    assert(x==0 and y==0 and kind=="MENU")
+end
+assert(ChalkBox_NavCommand("on"))
+nav.scripts.OnMouseUp(nav,"RightButton")
+assert(legacyAnchor=="cursor" and #legacyItems==3 and
+    legacyItems[1].text=="Auto (follow tracked)" and
+    legacyItems[2].text=="Next quest" and
+    legacyItems[3].text=="Hide arrow",
+    "older clients get the same three-item right-click popup")
+legacyItems[3].func()
+assert(not nav:IsShown() and not ChalkBox_NavStatus().enabled,
+    "legacy menu Hide has the same effect without altering quest tracking")
 local named=0
 for _,obj in ipairs(created) do
     if obj.name=="ChalkBoxQuestNavigator" then named=named+1 end
