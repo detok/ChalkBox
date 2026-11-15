@@ -1,3 +1,9 @@
+## 2.2.18 — Item tooltip polish (Beta)
+
+- Give DropSense observed counts and source-specific sample rates clearer hierarchy without changing calculations.
+- Use the shared tooltip palette for LootSense explanations and quest progress.
+- Preserve all existing saved data and decision logic.
+
 # Changelog
 
 ## 2.2.17 — QuestSense arrow size/default and MacroForge native UI polish
