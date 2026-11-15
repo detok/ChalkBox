@@ -749,6 +749,31 @@ local function Row(parent,index)
                 GameTooltip:AddLine("Select a creature for drop rate.",
                     0.75,0.75,0.8)
             end
+            -- A loot location is where the player opened that outdoor
+            -- loot window, not a claim about the exact creature death spot.
+            local spots=item.locations
+            if mode=="outdoor" and type(spots)=="table" and #spots>0 then
+                local info=type(ChalkBox_DropAreaInfo)=="function"
+                    and ChalkBox_DropAreaInfo(selectedArea) or nil
+                local zone=info and info.name or "this zone"
+                GameTooltip:AddLine("Looted near "..zone..":",
+                    0.86,0.66,0.38)
+                for i=#spots,math.max(1,#spots-2),-1 do
+                    local spot=spots[i]
+                    if type(spot)=="table" and type(spot.x)=="number"
+                        and type(spot.y)=="number" then
+                        GameTooltip:AddLine(
+                            ("%.1f, %.1f  (%d loot%s)"):format(
+                                spot.x/10,spot.y/10,spot.count or 1,
+                                (spot.count or 1)==1 and "" or "s"),
+                            0.70,0.90,0.80)
+                    end
+                end
+                if #spots>3 then
+                    GameTooltip:AddLine(("%d more recorded locations"):format(
+                        #spots-3),0.65,0.70,0.74)
+                end
+            end
             GameTooltip:Show()
         end
     end)
