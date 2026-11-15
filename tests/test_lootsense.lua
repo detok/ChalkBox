@@ -91,13 +91,16 @@ function tip:GetItem() return self.name,self.link end
 function tip:GetOwner() return self.owner end
 function tip:GetName() return "LootSenseTestTooltip" end
 function tip:NumLines() return #self.lines end
-function tip:AddLine(message)
+function tip:AddLine(message,r,g,b)
     self.lines[#self.lines+1]=message
+    self.colors=self.colors or {}
+    self.colors[message]={r,g,b}
     _G["LootSenseTestTooltipTextLeft"..#self.lines]={GetText=function() return message end}
 end
 function tip:Show() end
 local function Hover(id)
     tip.lines={}
+    tip.colors={}
     tip.name=catalog[id].name
     tip.link="|Hitem:"..id..":0|h["..tip.name.."]|h"
     tip.owner={}
@@ -171,6 +174,10 @@ assert(questLoot:find("KEEP",1,true)
     and questLoot:find("Needed for: Fangs for the Hunter",1,true)
     and questLoot:find("2 / 6 collected",1,true),
     "LootSense uses Core's actual accepted quest and objective progress")
+local questCountColor=tip.colors["2 / 6 collected"]
+assert(questCountColor and questCountColor[3]>questCountColor[1]
+    and questCountColor[3]>questCountColor[2],
+    "quest collection progress uses blue count emphasis")
 local beforeQuest=#tip.lines
 onTooltip(tip)
 assert(#tip.lines==beforeQuest,
