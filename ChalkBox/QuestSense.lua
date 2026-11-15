@@ -138,7 +138,66 @@ local function Relevant(quests,zoneID,zoneNames)
     -- supplied enough evidence to safely change existing watches.
     return marked,nearby,hasMapData or headerMatch
 end
-local function CanEdit()
+-- Only the explicit Smart mode changes behavior in actual party dungeons.
+-- Do not treat every quest tagged "Dungeon" as belonging to this instance.
+local function CurrentDungeon()
+    if type(GetInstanceInfo)~="function" then return end
+    local ok,name,kind,_,_,_,_,_,instanceID=pcall(GetInstanceInfo)
+    if not ok or kind~="party" or not Public(name)
+        or type(name)~="string" or name=="" then return end
+    if type(IsInInstance)=="function" then
+        local worked,inside,instanceType=pcall(IsInInstance)
+        if worked and (not inside or instanceType~="party") then return end
+    end
+    return {name=name,instanceID=ValidID(instanceID) and instanceID or nil,
+        mapID=Call(C_Map and C_Map.GetBestMapForUnit,"player")}
+end
+local function DungeonName(value)
+    if type(value)~="string" then return nil end
+    value=value:lower():gsub("^%s+",""):gsub("%s+$","")
+        :gsub("%s+"," ")
+    -- The Deadmines and Deadmines are the same label, but a generic
+    -- "Dungeon" quest tag alone does NOT identify the current instance.
+    value=value:gsub("^the ","")
+    return value
+end
+local function DungeonMatches(quests,dungeon)
+    local found,seenMaps={},{}
+    local mapID=dungeon.mapID
+    -- Instance floor maps are often micro maps parented to the dungeon.
+    -- Never climb to the outdoor zone, where its POIs can be unrelated.
+    for _=1,10 do
+        if not ValidID(mapID) or seenMaps[mapID] then break end
+        seenMaps[mapID]=true
+        local info=Call(C_Map and C_Map.GetMapInfo,mapID)
+        if type(info)~="table" or
+            (info.mapType~=4 and info.mapType~=5) then break end
+        local data=Call(C_QuestLog and C_QuestLog.GetQuestsOnMap,mapID)
+        if type(data)=="table" then
+            for _,q in ipairs(data) do
+                if type(q)=="table" and ValidID(q.questID) then
+                    found[q.questID]=true
+                end
+            end
+        end
+        mapID=info.parentMapID
+    end
+    local title=DungeonName(dungeon.name)
+    for _,quest in ipairs(quests) do
+        if (DungeonName(quest.header)==title or
+            DungeonName(quest.title)==title) and title then
+            found[quest.id]=true
+        end
+    end
+    -- Retain only accepted-quest IDs. World Map POIs can include quests
+    -- the player does not yet have.
+    local accepted={}
+    for _,quest in ipairs(quests) do
+        if found[quest.id] then accepted[quest.id]=true end
+    end
+    return accepted
+end
+local function CanEdit(dungeonSmart)
     if type(InCombatLockdown)=="function" and InCombatLockdown() then
         return false,"in combat"
     end
@@ -148,7 +207,8 @@ local function CanEdit()
         and QuestLogFrame:IsShown() then return false,"quest log open" end
     if type(IsInInstance)=="function" then
         local inside,kind=IsInInstance()
-        if inside and (kind=="party" or kind=="raid" or kind=="scenario") then
+        if inside and (kind=="party" or kind=="raid" or kind=="scenario")
+            and not (kind=="party" and dungeonSmart) then
             return false,"instance: preserving current quest watches"
         end
     end
@@ -163,7 +223,9 @@ local function Reconcile()
     end
     if not settings.enabled and not settings.cleanup
         and next(settings.suspendedManual)==nil then return end
-    local allowed,why=CanEdit()
+    local mode=settings.mode or "smart"
+    local dungeon=settings.enabled and mode=="smart" and CurrentDungeon() or nil
+    local allowed,why=CanEdit(dungeon~=nil)
     if not allowed then pending=true;lastReason=why;return end
     local quests,err=ReadLog()
     if not quests then pending=true;lastReason=err;return end
@@ -171,6 +233,8 @@ local function Reconcile()
     if not watched then pending=true;lastReason="watch list unavailable";return end
     local zoneID,name,names=CurrentZone()
     local zoneKey=tostring(zoneID or "-")..":"..tostring(name or "-")
+        ..":"..(dungeon and ("dungeon:"..dungeon.name..":"..
+            tostring(dungeon.instanceID or "-")) or "outdoor")
     local zoneChanged=zoneKey~=lastZone
     if zoneChanged then
         settings.muted={}
@@ -189,7 +253,23 @@ local function Reconcile()
     local accepted={}
     for _,quest in ipairs(quests) do accepted[quest.id]=true end
     local scores,nearby,zoneReady=Relevant(quests,zoneID,names)
-    local mode=settings.mode or "smart"
+    local dungeonQuests=dungeon and DungeonMatches(quests,dungeon) or nil
+    local dungeonCount=Count(dungeonQuests)
+    -- A Forever instance without quest POIs or named headers supplies no
+    -- dependable association. Preserve the tracker instead of hiding every
+    -- manual quest on an unverified guess.
+    if dungeon and dungeonCount==0 then
+        pending=false
+        lastReason="no verified quests for "..dungeon.name..
+            "; preserving current watches"
+        lastStats={accepted=#quests,candidates=0,watched=before,
+            auto=Count(settings.managed),added=0,removed=0,
+            hidden=Count(settings.suspendedManual),mode=mode,
+            dungeon=dungeon.name,dungeonMatches=0}
+        return
+    end
+    local focusOnly=mode=="zone" or dungeon~=nil
+    local localQuests=dungeonQuests or nearby
     if settings.enabled and mode=="zone" and not zoneReady then
         pending=true
         lastReason="nearby zone data unavailable; keeping current watches"
@@ -224,7 +304,7 @@ local function Reconcile()
     local prioritized={}
     for _,quest in ipairs(quests) do
         local score=mode=="all" and 0 or (scores[quest.id] or 0)
-        if mode~="zone" or nearby[quest.id] then
+        if not focusOnly or localQuests[quest.id] then
             prioritized[#prioritized+1]={id=quest.id,title=quest.title,score=score,
                 logIndex=quest.index}
         end
@@ -239,15 +319,15 @@ local function Reconcile()
     -- them; restore them when relevant again or when Nearby is turned off.
     local toSuspend,restoreManual={},{}
     for id in pairs(settings.suspendedManual) do
-        if mode~="zone" or not settings.enabled or nearby[id] then
+        if not focusOnly or not settings.enabled or localQuests[id] then
             restoreManual[id]=true
         end
     end
     local manualRetained=0
     for id in pairs(watched) do
         if not settings.managed[id] then
-            if settings.enabled and mode=="zone" and accepted[id]
-                and not nearby[id] then
+            if settings.enabled and focusOnly and accepted[id]
+                and not localQuests[id] then
                 toSuspend[id]=true
             else
                 manualRetained=manualRetained+1
@@ -367,7 +447,9 @@ local function Reconcile()
         watched=Count(watched),auto=Count(settings.managed),added=added,
         removed=removed,restored=restored,hidden=Count(settings.suspendedManual),
         zone=name or "unknown",mode=mode,max=MaxWatches(),
-        manual=manualNow,initialWatches=before}
+        manual=manualNow,initialWatches=before,
+        dungeon=dungeon and dungeon.name or nil,
+        dungeonMatches=dungeon and dungeonCount or nil}
 end
 QueueUpdate=function()
     if not settings or queued or busy then return end
@@ -406,7 +488,8 @@ function ChalkBox_QuestStatus()
         added=lastStats.added,removed=lastStats.removed,
         hidden=Count(settings and settings.suspendedManual),
         restored=lastStats.restored or 0,
-        api=API(),pending=pending}
+        api=API(),pending=pending,
+        dungeon=lastStats.dungeon,dungeonMatches=lastStats.dungeonMatches}
 end
 function ChalkBox_QuestCommand(text)
     if not settings then return end
@@ -428,9 +511,13 @@ function ChalkBox_QuestCommand(text)
         local st=ChalkBox_QuestStatus()
         Note("QuestSense "..(st.enabled and "ON" or "OFF")..
             " | "..st.mode.." mode | zone "..st.zone.." (#"..tostring(st.mapID or "-")..")")
-        Note("Accepted "..st.accepted.." | nearby "..st.candidates..
+        Note("Accepted "..st.accepted.." | candidates "..st.candidates..
             " | watched "..st.tracked.." | hidden "..st.hidden..
             " | last change +"..st.added.."/-"..st.removed)
+        if st.dungeon then
+            Note("Dungeon "..st.dungeon.." | confirmed quests "..
+                tostring(st.dungeonMatches or 0))
+        end
         Note("Forever APIs "..(st.api and "ready" or "MISSING")..
             " | "..st.reason..(st.pending and " (retry pending)" or ""))
     elseif cmd=="smart" or cmd=="zone" or cmd=="all" then
@@ -488,8 +575,11 @@ events:SetScript("OnEvent",function(_,event,arg1,arg2)
                 -- Retry deferred edits promptly. Nearby also rechecks every
                 -- 12 seconds so missed map/watch events cannot leave stale
                 -- quests on screen until the player presses Refresh.
+                local watchDungeon=settings and settings.enabled and
+                    settings.mode=="smart" and CurrentDungeon()~=nil
                 if pending or (settings and settings.enabled
-                    and settings.mode=="zone" and ticks%4==0) then
+                    and (settings.mode=="zone" or watchDungeon)
+                    and ticks%4==0) then
                     QueueUpdate()
                 end
             end)

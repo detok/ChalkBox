@@ -6,6 +6,7 @@ local mapShown=false
 local logShown=false
 local pending,tickers,changes={},{},{}
 local watches={[301]=true}
+local activeDungeon=nil
 local logs={
     {isHeader=true,title="Duskwood"},
     {questID=101,title="Night Watch"},
@@ -61,8 +62,9 @@ _G.C_QuestLog={
     end,
     RemoveQuestWatch=function(id)
         if id==301 then
-            assert(ChalkBoxZoneDB.mode=="zone",
-                "manual watch may only be temporarily hidden in Nearby mode")
+            assert(ChalkBoxZoneDB.mode=="zone" or
+                (ChalkBoxZoneDB.mode=="smart" and activeDungeon),
+                "manual watch is hidden only in Nearby or confirmed dungeon Smart mode")
         end
         watches[id]=nil
         changes[#changes+1]="-"..id
@@ -72,7 +74,16 @@ _G.C_QuestLog={
 }
 _G.GetZoneText=function() return currentMap==2 and "Redridge Mountains" or "Darkshire" end
 _G.InCombatLockdown=function() return inCombat end
-_G.IsInInstance=function() return false,"none" end
+_G.IsInInstance=function()
+    return activeDungeon~=nil,activeDungeon and "party" or "none"
+end
+_G.GetInstanceInfo=function()
+    if activeDungeon then
+        return activeDungeon.name,"party",1,"Normal",5,nil,nil,
+            activeDungeon.id
+    end
+    return "Duskwood","none",0,nil,nil,nil,nil,0
+end
 _G.Constants={QuestWatchConsts={MAX_QUEST_WATCHES=10}}
 local messages={}
 _G.DEFAULT_CHAT_FRAME={AddMessage=function(_,msg) messages[#messages+1]=msg end}
@@ -251,4 +262,86 @@ assert(watches[301],"turning off never deletes manual watches")
 ChalkBox_QuestCommand("on")
 Flush()
 assert(watches[101] and watches[301],"re-enabling works on the same session")
-print("PASS: Forever quest auto-nearby, remote manual suspension and restoration, recent quest filtering, periodic sync, safe API fallback, watch ownership, and modes")
+-- Smart should shift to a verified dungeon-only tracker when the player
+-- enters a *specific* instance. Other dungeon quests and all outdoor
+-- quests, including manual watches, must be hidden until exit.
+mapInfo[10]={name="The Deadmines",mapType=4,parentMapID=1}
+mapInfo[12]={name="Deadmines Lower Level",mapType=5,parentMapID=10}
+mapInfo[11]={name="The Stockade",mapType=4,parentMapID=1}
+mapInfo[13]={name="Unmapped Dungeon",mapType=4,parentMapID=1}
+logs[#logs+1]={isHeader=true,title="The Deadmines"}
+logs[#logs+1]={questID=601,title="Kill Edwin VanCleef"}
+logs[#logs+1]={isHeader=true,title="Duskwood"}
+logs[#logs+1]={questID=602,title="Dungeon loot on the map"}
+logs[#logs+1]={isHeader=true,title="Other"}
+logs[#logs+1]={questID=603,title="A quest tagged as dungeon",
+    hasLocalPOI=true,isOnMap=true}
+logs[#logs+1]={isHeader=true,title="The Stockade"}
+logs[#logs+1]={questID=604,title="Stockade quest"}
+C_QuestLog.GetQuestsOnMap=function(id)
+    if id==10 then
+        return {{questID=602},{questID=999}}
+    elseif id==11 then return {{questID=604}} end
+    return {}
+end
+ChalkBox_QuestCommand("smart")
+currentMap=12
+activeDungeon={name="The Deadmines",id=36}
+mapShown=true
+Fire("ZONE_CHANGED_NEW_AREA")
+Flush()
+assert(watches[301] and not watches[601] and
+    ChalkBox_QuestStatus().pending,
+    "opening the map still defers dungeon tracking edits")
+mapShown=false
+closeMap()
+Flush()
+assert(watches[601] and watches[602] and not watches[603]
+    and not watches[604] and not watches[101] and not watches[301],
+    "only quests verified for The Deadmines remain visible")
+assert(ChalkBoxZoneDB.suspendedManual[301]
+    and ChalkBox_QuestStatus().dungeon=="The Deadmines"
+    and ChalkBox_QuestStatus().dungeonMatches==2,
+    "manual watches remain saved and dungeon diagnostics list matched quests")
+assert(not watches[999],"unaccepted dungeon map quest is never tracked")
+-- A player unchecking a dungeon watch should not have their choice undone.
+watches[601]=nil
+Fire("QUEST_WATCH_LIST_CHANGED")
+Flush()
+assert(not watches[601] and ChalkBoxZoneDB.muted[601],
+    "smart dungeon mode respects a manually unchecked dungeon quest")
+for i=1,4 do tickers[1]() end
+Flush()
+assert(not watches[601],
+    "periodic dungeon refresh does not override a manual unwatch")
+-- Switching between two dungeons must change the filter, even when a
+-- player remains in an instance and no outdoor-zone transition occurs.
+currentMap=11
+activeDungeon={name="The Stockade",id=34}
+Fire("ZONE_CHANGED_NEW_AREA")
+Flush()
+assert(watches[604] and not watches[602] and not watches[601],
+    "Stockade quests replace Deadmines quests instead of mixing them")
+assert(ChalkBox_QuestStatus().dungeon=="The Stockade"
+    and ChalkBox_QuestStatus().dungeonMatches==1,
+    "Smart identifies the actual current instance rather than any dungeon")
+-- If the client has neither relevant map pins nor matching quest
+-- headers, preserve watches rather than silently wiping everything.
+currentMap=13
+activeDungeon={name="Unmapped Dungeon",id=999}
+Fire("ZONE_CHANGED_NEW_AREA")
+Flush()
+assert(watches[604] and ChalkBox_QuestStatus().reason:
+    find("no verified quests",1,true),
+    "missing instance quest evidence preserves current watch state")
+-- Normal Smart behavior returns immediately on leaving the instance.
+activeDungeon=nil
+currentMap=3
+Fire("ZONE_CHANGED_NEW_AREA")
+Flush()
+assert(watches[301] and not ChalkBoxZoneDB.suspendedManual[301]
+    and watches[101] and watches[102],
+    "leaving a dungeon restores manual watches and regular Smart tracking")
+assert(not ChalkBox_QuestStatus().dungeon,
+    "dungeon diagnostics clear after returning outdoors")
+print("PASS: Forever Smart dungeon-only tracking, safe instance identity, manual watch restoration, unknown-data fallback, Nearby sync, and watch ownership")

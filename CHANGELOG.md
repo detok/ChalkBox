@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.10 — Smart QuestSense dungeon filtering (test release)
+- **QuestSense Smart:** entering a named party dungeon automatically switches the normal auto-tracker to quests confirmed for *that instance* using current-instance map POIs or an exact dungeon-name quest-log category/title match. Nearby and All accepted behavior remain unchanged.
+- Temporarily hide manual quests not matched to the dungeon while keeping their watch choices in existing `suspendedManual` state. Restore them and ordinary Smart tracking when leaving; switching dungeons switches quest filters. Respect manual unwatch and automatic watch limits.
+- When Forever supplies no confident dungeon mapping, **preserve existing watches** and report a diagnostic reason; never guess from a generic Dungeon quest tag, use unaccepted POIs, clear the tracker, or change watches in combat / while map or quest log is open.
+- Periodically recheck dungeon Smart watches, as Nearby already does, to recover missed zone / quest update events. No extra windows, SavedVariables changes or changes to dungeon scripts, other modules, or the macro system.
+- Lua 5.1 regressions cover two distinct dungeons, instance map-floor ancestry, manual suspend/restore, unknown-instance fallback, deferral, no unaccepted quest watches and the existing outdoor modes.
+
 ## 2.2.9 — Warm wood and framed MacroForge (visual polish)
 - **MacroForge:** add the same Blizzard `UI-DialogBox-Border` frame as Discoveries around the entire movable wizard, with a thin bronze-outline fallback for clients without BackdropTemplate. Keep its native map/wood artwork and two-column layout.
 - Replace the flat blue-gray section fill with warm charcoal, a restrained bronze rim, a one-pixel beveled highlight and a subtle drop shadow. Make the selected spell, native buttons, warning area and macro preview read clearly without changing their controls or placement.

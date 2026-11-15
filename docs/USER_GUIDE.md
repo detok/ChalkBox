@@ -1,6 +1,6 @@
 # ChalkBox User Guide
 
-**Version 2.2.9 · World of Warcraft: Forever**
+**Version 2.2.10 · World of Warcraft: Forever**
 
 ChalkBox puts several small tools in one addon. Everything is managed from **Options → AddOns → ChalkBox**, or **/chalk**. Choose the modules you want; the rest can stay out of sight.
 
@@ -151,6 +151,8 @@ The window supports DPS, damage, healing, taken damage and interruptions when th
 **PRINT** sends a short report to PARTY only when you deliberately click it and the data is safe to report. **RESET** asks before clearing shared Blizzard combat sessions. ChalkBox can also provide a separate manual print action from the native Blizzard meter where available.
 
 ## QuestSense
+
+**2.2.10 — Smart tracks the current dungeon:** In Smart mode, entering a party dungeon automatically focuses the native quest tracker on quests confidently tied to *that exact dungeon*, from dungeon map POIs and/or matching quest-log section/title. Existing nonlocal manual watches are held and restored on exit. If the game provides no verified matches, it keeps your current watches instead of guessing. A generic Dungeon tag alone cannot identify the correct dungeon. It respects player unwatch choices, defers changes during combat or while the map/quest log is open, and leaves Nearby/All modes unchanged. Select **Tracking Diagnostics** or type `/chalk quests status` to inspect the current instance match.
 
 **2.0.8 — Nearby only:** Tracks accepted quests with a confirmed current-zone match and keeps refreshing as you move. Out-of-area manual watches are temporarily hidden—not forgotten—and return automatically when you revisit their area or choose Smart/All. The filter does not calculate walking distance or invent quest coordinates. When reliable zone evidence is unavailable, your current watches are preserved instead of being wiped.
 

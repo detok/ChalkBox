@@ -701,7 +701,7 @@ local function MakeQuests()
     Button(panel,"Nearby only",198,-208,145,function() Run("zone") end)
     Button(panel,"All accepted",354,-208,145,function() Run("all") end)
     local modeInfo=Label(panel,"Mode: Smart","GameFontNormal",28,-247,502)
-    Label(panel,"Nearby: hide other-area quests; restore them when relevant.",
+    Label(panel,"Smart: show verified quests for the current dungeon; restore on exit.",
         "GameFontHighlightSmall",28,-265,502)
     Label(panel,"Auto-watch limit","GameFontNormalLarge",28,-302,210)
     for i,n in ipairs({5,10,15,20}) do
