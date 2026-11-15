@@ -1,7 +1,11 @@
 -- MacroForge UI: native spell browsing, safe selection/copy and explicit
 -- creation. Does not require running the WoW client in CI.
 local frames,fonts,printed={}, {},{}
-_G.UIParent={}
+local screenRight=1920
+_G.UIParent={
+    GetLeft=function() return 0 end,
+    GetRight=function() return screenRight end,
+}
 _G.ChalkBoxDB={}
 _G.BackdropTemplateMixin={}
 _G.DEFAULT_CHAT_FRAME={AddMessage=function(_,s) printed[#printed+1]=s end}
@@ -29,8 +33,12 @@ local function Create(kind,name,parent,template)
     function f:LockHighlight() self.highlightLocked=true end
     function f:UnlockHighlight() self.highlightLocked=false end
     function f:SetPoint(...) self.point={...} end
+    function f:ClearAllPoints() self.point=nil end
+    function f:GetPoint() return unpack(self.point or {}) end
+    function f:SetScale(v) self.scale=v end
+    function f:GetScale() return self.scale or 1 end
     function f:SetFrameStrata() end
-    function f:SetMovable() end
+    function f:SetMovable(v) self.movable=v end
     function f:SetClampedToScreen() end
     function f:EnableMouse() end
     function f:RegisterForDrag() end
@@ -296,4 +304,35 @@ assert(fallback.hasMapArt,
 ChalkBox_OpenMacroForge()
 assert(fallback.back.color[4]<=0.37,
     "refreshed MacroForge warm wood remains visible after late atlas load")
-print("PASS: warm wood MacroForge with matching dialog border and shadowed bronze insets, map fallback, preview, warnings, compartment and saved macros")
+local native={
+    IsShown=function() return true end,
+    GetLeft=function() return 120 end,
+    GetRight=function() return 620 end,
+}
+assert(ChalkBox_MacroForgeDockTo(native) and
+    ChalkBox_MacroForgeDockStatus().docked and
+    fallback.dockedTo==native and fallback.point[1]=="TOPLEFT" and
+    fallback.point[2]==native and fallback.point[3]=="TOPRIGHT"
+    and math.abs(fallback.scale-0.82)<0.001
+    and fallback.movable==false,
+    "same full Forge workbench docks beside native macros on a wide display")
+fallback.scripts.OnDragStart(fallback)
+assert(not fallback.moving,
+    "docked workbench cannot drag or detach by accident")
+assert(ChalkBox_MacroForgeHideDocked(native) and
+    not fallback:IsShown() and not ChalkBox_MacroForgeDockStatus().docked
+    and fallback.movable and fallback.scale==1,
+    "closing native macro editor hides only docked Forge and restores it")
+assert(ChalkBox_OpenMacroForge() and fallback:IsShown()
+    and fallback.point[1]=="CENTER",
+    "original standalone /chalk macro still reopens at its previous anchor")
+screenRight=1200
+local middle={
+    IsShown=function() return true end,
+    GetLeft=function() return 330 end,
+    GetRight=function() return 900 end,
+}
+assert(not ChalkBox_MacroForgeDockTo(middle)
+    and fallback.point[1]=="CENTER" and fallback:IsShown(),
+    "a narrow display never pushes Blizzard MacroFrame offscreen or loses Forge")
+print("PASS: full standalone MacroForge, native map art and scroll preview, safe dock on spacious screens, undock, combat/drag and narrow-screen fallback")
