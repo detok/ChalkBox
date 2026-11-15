@@ -1,6 +1,6 @@
 # ChalkBox User Guide
 
-**Version 2.1.1 · World of Warcraft: Forever**
+**Version 2.2.6 · World of Warcraft: Forever**
 
 ChalkBox puts several small tools in one addon. Everything is managed from **Options → AddOns → ChalkBox**, or **/chalk**. Choose the modules you want; the rest can stay out of sight.
 
@@ -22,6 +22,12 @@ The native sidebar contains related pages under their parent module:
 | **Emota** | Race Behavior, Emote Catalog |
 
 Select the module first, then its child page. The same top heading and return-to-ChalkBox navigation appear throughout. Older settings keys and SavedVariables are retained.
+
+## The Bar and QuietGuard (2.2.6)
+
+Fresh Bar layouts follow this ordering: **Left:** Level, XP/h. **Center:** Session time, Time to level, Rested XP. **Right:** free bag slots, gear condition, repair cost, junk resale value, gold/net change, World latency. Pet status remains available in **The Bar → Modules**, off initially. Existing account stat choices, character-specific drag positions and alignment are preserved; **Reset Layout** intentionally adopts the new arrangement. Older Bars without a saved bag valuation mode stay on Total; brand-new Bars begin on Junk.
+
+All five QuietGuard protections (guild, duel, party, trade, channel) now default to OFF. They are opt-in through the QuietGuard page. Saved selections from earlier versions remain unchanged. Blizzard-native social preferences may still block invitations independently.
 
 ## First bank visit (2.0.11)
 
