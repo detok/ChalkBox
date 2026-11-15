@@ -1,4 +1,4 @@
-# ChalkBox feature claims and evidence (2.2.12)
+# ChalkBox feature claims and evidence (2.2.13)
 
 Use this file when reviewing release announcements and the CurseForge listing. It reflects shipped code and automated tests; **live-client validation is still a separate step**.
 
@@ -10,7 +10,7 @@ Use this file when reviewing release announcements and the CurseForge listing. I
 | AuctionSense | Manual browse market asking prices, optional server-throttled full listings, scan age and market context | Realized sales, automatic trades, unprovided listing averages |
 | AuctionInsights | Read-only bag appraisal and observed seller-mail Sales & Stats in the native AH | Complete lifetime sales/profit data |
 | DisenchantSense | Read-only modeled outcomes and value estimates when supported | Guaranteed drops, exact unknown Forever odds, automated DE |
-| QuestSense Navigation | Optional movable outdoor quest compass from real accepted quest waypoints; Auto, Next, manual selection, yard distance and conservative missing-coordinate message | No route database, instant dungeon GPS or modification of Blizzard map pins or quest watches |
+| QuestSense Navigation | Bare movable arrow with native/legacy Auto/Next/Hide on right-click and quest/yard distance on hover; real accepted quest waypoints and conservative unavailable state | No route database, instant dungeon GPS or modification of Blizzard map pins or quest watches |
 | QuestSense | Native tracker management: Smart, Nearby, All; verified dungeon-specific Smart filtering with safe fallback | Best XP route, unverified custom dungeon matches, travel distances |
 | MacroForge | Learned-spell wizard, templates, saved recipes, scroll preview, manual copy and explicit new install | Automated rotations, secure action bypasses, silent overwrite |
 | The Bar + Repair Learning | Compact configurable edge HUD, saved layouts, safe chrome shift, observed quote estimates | Protected UI relocation or exact repair quote when away from merchant |
