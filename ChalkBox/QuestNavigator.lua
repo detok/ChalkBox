@@ -217,7 +217,10 @@ local function GameSelection(db)
             lastSelected=selected
         end
     end
-    return selectedFocus or s or selected
+    if selectedFocus then return selectedFocus,"Selected" end
+    if s then return s,"Tracked" end
+    if selected then return selected,"Selected" end
+    return nil,"Auto"
 end
 local function Refresh()
     local db=DB()
@@ -244,7 +247,7 @@ local function Refresh()
         return
     end
     options=accepted
-    local gameID=GameSelection(db)
+    local gameID,gameSource=GameSelection(db)
     local manual,focused
     for _,q in ipairs(options) do
         if db.questID and q.id==db.questID then manual=q end
@@ -272,7 +275,7 @@ local function Refresh()
     target=manual or focused or
         (gameID and {id=gameID,name="Tracked quest #"..gameID}) or
         previous or nearest or first
-    chosen=manual and "Manual" or (gameID and "Selected" or "Auto")
+    chosen=manual and "Manual" or (gameID and gameSource or "Auto")
     reason=player and "Ready" or (why or "No coordinates")
     if not target then reason="No accepted quest waypoints"
     elseif not target.point then reason="Selected quest waypoint unavailable" end
