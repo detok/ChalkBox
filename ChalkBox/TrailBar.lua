@@ -583,7 +583,10 @@ local function CreateBar()
     if bar.SetFrameLevel then bar:SetFrameLevel(1) end
     if bar.EnableMouse then bar:EnableMouse(true) end
     bar:SetScript("OnMouseUp",function(self,button)
-        if button=="RightButton" and not editMode then
+        -- Empty Bar space remains a context-menu target while editing, so
+        -- "Done editing" can always be reached without another settings page.
+        -- Individual stat blocks still right-click to cycle text alignment.
+        if button=="RightButton" then
             ChalkBox_BarOpenMenu(nil,self)
         end
     end)
