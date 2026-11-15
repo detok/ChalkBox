@@ -3,6 +3,14 @@
 -- or extra installations. Saved per character, last 20 finished sessions.
 local addonName=...
 local MAX_HISTORY=20
+-- Same native World Map art and dialog frame used by Discoveries.
+local MAP_ATLAS="gamepad-mapquestlog-bgtile-2k"
+local PANEL_FILL={0.112,0.086,0.062,0.91}
+local function Color(value)
+    return type(value)=="number" and value==value and value>=0 and
+        value<=1 and (type(issecretvalue)~="function" or
+        not issecretvalue(value))
+end
 local window,view= nil,0 -- 0=current; 1=most recent finished
 local textRows={}
 local current
@@ -199,18 +207,61 @@ local function AreasLine(entry)
     end
     return #parts>0 and table.concat(parts," · ") or "No mapped loot observed"
 end
-local function Background()
-    if not window then return end
+local function ReadPalette()
     local r,g,b,a=0.018,0.018,0.022,0.96
     if type(ChalkBox_ThemeBackground)=="function" then
-        r,g,b,a=ChalkBox_ThemeBackground(0.96)
+        local ok,red,green,blue,alpha=pcall(
+            ChalkBox_ThemeBackground,0.96)
+        if ok and Color(red) and Color(green) and
+            Color(blue) and Color(alpha) then
+            r,g,b,a=red,green,blue,alpha
+        end
     end
-    if window.bg then window.bg:SetColorTexture(r,g,b,a) end
-    if window.stripe then
-        if type(ChalkBox_ThemeAccent)=="function" then
-            local x,y,z=ChalkBox_ThemeAccent()
-            window.stripe:SetColorTexture(x,y,z,1)
-        else window.stripe:SetColorTexture(0.86,0.66,0.38,1) end
+    local ar,ag,ab=0.86,0.66,0.38
+    if type(ChalkBox_ThemeAccent)=="function" then
+        local ok,red,green,blue=pcall(ChalkBox_ThemeAccent)
+        if ok and Color(red) and Color(green) and Color(blue) then
+            ar,ag,ab=red,green,blue
+        end
+    end
+    return r,g,b,math.max(0.92,a),ar,ag,ab
+end
+-- Some Forever builds fail to display SetColorTexture alone on the map
+-- windows. A native white texture with vertex tint is more reliable.
+local function Paint(texture,r,g,b,a)
+    if not texture then return end
+    if type(texture.SetTexture)=="function" and
+        type(texture.SetVertexColor)=="function" then
+        texture:SetTexture("Interface\\Buttons\\WHITE8X8")
+        texture:SetVertexColor(r,g,b,a)
+    elseif type(texture.SetColorTexture)=="function" then
+        texture:SetColorTexture(r,g,b,a)
+    end
+end
+local function Background()
+    if not window then return end
+    local r,g,b,a,ar,ag,ab=ReadPalette()
+    local woodR,woodG,woodB=0.16+r*0.20,0.092+g*0.12,
+        0.048+b*0.06
+    Paint(window.bg,window.hasMapArt and woodR or r,
+        window.hasMapArt and woodG or g,
+        window.hasMapArt and woodB or b,
+        window.hasMapArt and 0.30 or a)
+    if type(window.SetBackdropColor)=="function" then
+        window:SetBackdropColor(window.hasMapArt and woodR or r,
+            window.hasMapArt and woodG or g,
+            window.hasMapArt and woodB or b,
+            window.hasMapArt and 0.12 or a)
+    end
+    if type(window.SetBackdropBorderColor)=="function" then
+        window:SetBackdropBorderColor(ar,ag,ab,1)
+    end
+    Paint(window.stripe,ar,ag,ab,1)
+    if window.panels then
+        for _,p in ipairs(window.panels) do
+            Paint(p.fill,PANEL_FILL[1],PANEL_FILL[2],PANEL_FILL[3],
+                PANEL_FILL[4])
+        end
     end
 end
 function ChalkBox_JournalThemeRefresh() Background() end
@@ -247,8 +298,33 @@ end
 function ChalkBox_OpenSessionJournal(which)
     if not window then
         if not UIParent or type(CreateFrame)~="function" then return false end
-        local f=CreateFrame("Frame","ChalkBoxSessionJournal",UIParent)
+        local template=type(BackdropTemplateMixin)=="table" and
+            "BackdropTemplate" or nil
+        local f=CreateFrame("Frame","ChalkBoxSessionJournal",UIParent,template)
         f:SetSize(590,460)
+        -- The session window is independent and movable, but should have
+        -- the same polished native dialog frame as Discoveries.
+        if type(f.SetBackdrop)=="function" then
+            f:SetBackdrop({
+                bgFile="Interface\\Buttons\\WHITE8X8",
+                edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border",
+                tile=true,tileSize=32,edgeSize=24,
+                insets={left=8,right=8,top=8,bottom=8},
+            })
+        else
+            f.outerBorderFallback=true
+            -- Four restrained bronze edges for older Forever builds.
+            local function OuterLine(x,y,w,h)
+                local t=f:CreateTexture(nil,"OVERLAY")
+                t:SetPoint("TOPLEFT",f,"TOPLEFT",x,y)
+                t:SetSize(w,h)
+                Paint(t,0.63,0.44,0.22,0.95)
+            end
+            OuterLine(1,-1,588,2)
+            OuterLine(1,-457,588,2)
+            OuterLine(1,-2,2,456)
+            OuterLine(587,-2,2,456)
+        end
         f:SetPoint("CENTER",UIParent,"CENTER",0,0)
         if f.SetFrameStrata then f:SetFrameStrata("DIALOG") end
         if f.SetMovable then f:SetMovable(true) end
@@ -261,22 +337,98 @@ function ChalkBox_OpenSessionJournal(which)
         f:SetScript("OnDragStop",function(self)
             if self.StopMovingOrSizing then self:StopMovingOrSizing() end
         end)
-        local bg=f:CreateTexture(nil,"BACKGROUND")
-        bg:SetAllPoints(f);f.bg=bg
+        -- Decorative native map-derived wood. No modifications to
+        -- WorldMapFrame, protected game controls, or Blizzard Settings.
+        local art=f:CreateTexture(nil,"BACKGROUND",nil,0)
+        art:SetPoint("TOPLEFT",f,"TOPLEFT",4,-4)
+        art:SetPoint("BOTTOMRIGHT",f,"BOTTOMRIGHT",-4,4)
+        f.mapArt=art
+        local function LoadArt()
+            if type(art.SetAtlas)~="function" then return false end
+            local exists=C_Texture and C_Texture.GetAtlasExists
+            if type(exists)=="function" then
+                local ok,yes=pcall(exists,MAP_ATLAS)
+                if ok and yes==false then return false end
+            end
+            local ok,result=pcall(art.SetAtlas,art,MAP_ATLAS,false)
+            if not ok or result==false then return false end
+            if type(art.GetAtlas)=="function" then
+                local got,name=pcall(art.GetAtlas,art)
+                if got and name~=nil and name~=MAP_ATLAS then
+                    return false
+                end
+            end
+            if type(art.SetHorizTile)=="function" then
+                art:SetHorizTile(true)
+            end
+            if type(art.SetVertTile)=="function" then
+                art:SetVertTile(true)
+            end
+            if type(art.SetVertexColor)=="function" then
+                art:SetVertexColor(1,1,1,1)
+            end
+            if type(art.Show)=="function" then art:Show() end
+            return true
+        end
+        f.hasMapArt=LoadArt()
+        if not f.hasMapArt and type(art.Hide)=="function" then
+            art:Hide()
+        end
+        f.RefreshMapArt=function()
+            if not f.hasMapArt then
+                f.hasMapArt=LoadArt()
+                if not f.hasMapArt and
+                    type(art.Hide)=="function" then art:Hide() end
+            end
+        end
+        local bg=f:CreateTexture(nil,"BACKGROUND",nil,1)
+        bg:SetPoint("TOPLEFT",f,"TOPLEFT",4,-4)
+        bg:SetPoint("BOTTOMRIGHT",f,"BOTTOMRIGHT",-4,4)
+        f.bg=bg
         local stripe=f:CreateTexture(nil,"ARTWORK")
-        stripe:SetPoint("TOPLEFT",f,"TOPLEFT",0,0)
-        stripe:SetPoint("TOPRIGHT",f,"TOPRIGHT",0,0)
-        stripe:SetHeight(3);f.stripe=stripe
+        stripe:SetPoint("TOPLEFT",f,"TOPLEFT",13,-13)
+        stripe:SetSize(563,2)
+        f.stripe=stripe
+        -- Two clearly separated reading sections, not a flat stats list.
+        f.panels={}
+        local function Inset(x,y,width,height)
+            local shadow=f:CreateTexture(nil,"BORDER",nil,-3)
+            shadow:SetPoint("TOPLEFT",f,"TOPLEFT",x+2,y-2)
+            shadow:SetSize(width,height)
+            Paint(shadow,0.008,0.006,0.005,0.70)
+            local rim=f:CreateTexture(nil,"BORDER",nil,-2)
+            rim:SetPoint("TOPLEFT",f,"TOPLEFT",x,y)
+            rim:SetSize(width,height)
+            Paint(rim,0.37,0.27,0.14,0.94)
+            local fill=f:CreateTexture(nil,"BORDER",nil,-1)
+            fill:SetPoint("TOPLEFT",f,"TOPLEFT",x+1,y-1)
+            fill:SetSize(width-2,height-2)
+            local bevel=f:CreateTexture(nil,"BORDER",nil,0)
+            bevel:SetPoint("TOPLEFT",f,"TOPLEFT",x+2,y-2)
+            bevel:SetSize(width-4,1)
+            Paint(bevel,0.69,0.49,0.23,0.33)
+            f.panels[#f.panels+1]={fill=fill,rim=rim,
+                shadow=shadow,bevel=bevel}
+        end
+        Inset(14,-79,562,151)
+        Inset(14,-235,562,175)
         local function Font(size,x,y,width)
             local t=f:CreateFontString(nil,"OVERLAY",size)
             t:SetPoint("TOPLEFT",f,"TOPLEFT",x,y)
             t:SetWidth(width);t:SetJustifyH("LEFT")
             return t
         end
-        Font("GameFontNormalHuge",22,-17,500):SetText("CHALKBOX  /  ADVENTURE JOURNAL")
-        f.head=Font("GameFontNormal",22,-61,500)
+        Font("GameFontNormalHuge",22,-20,535):SetText(
+            "CHALKBOX  /  ADVENTURE JOURNAL")
+        f.head=Font("GameFontHighlight",22,-56,530)
+        Font("GameFontNormal",27,-87,520):SetText("SESSION SUMMARY")
+        Font("GameFontNormal",27,-242,520):SetText("FIELD NOTES")
+        -- Fixed rows fit inside their own inset borders; the historical
+        -- session data and navigation behavior are intentionally unchanged.
         for i=1,12 do
-            textRows[i]=Font("GameFontHighlight",26,-91-(i-1)*26,540)
+            local y=i<=6 and (-112-(i-1)*21) or
+                (-266-(i-7)*21)
+            textRows[i]=Font("GameFontHighlight",27,y,533)
         end
         local function Button(label,x,fn)
             local button=CreateFrame("Button",nil,f,"UIPanelButtonTemplate")
@@ -299,6 +451,7 @@ function ChalkBox_OpenSessionJournal(which)
     if which=="last" then
         view=ChalkBox_JournalStatus().history>0 and 1 or 0
     elseif which=="current" then view=0 end
+    if window.RefreshMapArt then window:RefreshMapArt() end
     Background()
     Render()
     window:Show()
