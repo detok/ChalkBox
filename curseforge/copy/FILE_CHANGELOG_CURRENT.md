@@ -1,13 +1,12 @@
-# ChalkBox 2.2.14 — Quest Navigation Improvements
+# ChalkBox 2.2.15 — Auction, Quests, Discoveries and HD Navigation
 
-- **Corrected quest arrow heading** using the client's world-coordinate orientation and a proper north-up navigation arrow.
-- **Follow your active quest:** the arrow prioritizes the quest you select in the quest log or Blizzard's actively tracked quest. Switching quests updates navigation. If a selected quest has no known waypoint, it won't quietly switch to another.
-- **Find your corpse:** after death, the arrow tries to direct you to your own body using the game's real corpse map marker, then returns to your quest after resurrection.
-- **Stabler navigation:** Auto avoids unnecessary switching between equally close quests, respects current-map waypoints and steadies the arrow when you reach a destination.
-- Same **minimal floating arrow** with right-click Auto / Next / Hide and quest/distance tooltip. All saved positions and preferences stay intact.
+- **AuctionSense Full Scan** handles valid listing prices even before auction-item names finish caching. Clearer feedback differentiates uncached item names from server throttling and the roughly 15-minute account-wide cooldown. Browse Scan remains available.
+- **QuestSense + Blizzard tracking:** The quest followed by the navigation arrow now stays visible in Blizzard's native objective tracker. Manual watches remain untouched, including across Nearby filters.
+- **Discoveries map ping:** Hover an item with a recorded outdoor loot location to see a small **pulsing gold dot** on the matching World Map, disappearing immediately when you stop hovering. It marks the player's observed loot-window location, not an NPC's verified spawn.
+- **Arrow improvements:** A small **yard-distance label** sits underneath the minimal arrow. Choose **Sharp HD** (new crisp 256px artwork) or **Classic Blizzard** appearance in QuestSense → Navigation settings; your selected quest and saved position persist.
 
-Quest locations and corpse positions depend on the Forever client exposing valid data. Missing directions are explicitly indicated rather than guessed.
+ChalkBox remains one optional addon that extends existing WoW Forever screens, without automating combat, trading or quest completion.
 
-Playable addon: **ChalkBox-2.2.14.zip** — https://github.com/detok/ChalkBox/releases/tag/v2.2.14
+Full history: https://github.com/detok/ChalkBox/blob/main/CHANGELOG.md
 
-Full changes: https://github.com/detok/ChalkBox/blob/main/CHANGELOG.md
+Playable addon: ChalkBox-2.2.15.zip — https://github.com/detok/ChalkBox/releases/tag/v2.2.15
