@@ -144,7 +144,8 @@ local function Accepted()
     for i=1,math.min(n,600) do
         local q=Call(C_QuestLog and C_QuestLog.GetInfo,i)
         if type(q)=="table" and q.isHeader~=true and
-            q.isHidden~=true and ID(q.questID) then
+            q.isHidden~=true and q.isInternalOnly~=true
+            and ID(q.questID) then
             local point=QuestPoint(q.questID,mapID)
             local name=Public(q.title) and type(q.title)=="string"
                 and q.title or ("Quest #"..q.questID)
@@ -269,6 +270,16 @@ local function Build()
         back:SetAllPoints(f)
         back:SetColorTexture(0.09,0.07,0.055,0.94)
         f.back=back
+        -- Older Forever builds have no BackdropTemplate; keep a thin
+        -- complete frame rather than leaving a bare floating rectangle.
+        local function Border(x,y,w,h)
+            local line=f:CreateTexture(nil,"BORDER")
+            line:SetPoint("TOPLEFT",f,"TOPLEFT",x,y)
+            line:SetSize(w,h)
+            line:SetColorTexture(0.71,0.52,0.30,0.95)
+        end
+        Border(1,-1,272,2);Border(1,-113,272,2)
+        Border(1,-2,2,112);Border(271,-2,2,112)
     end
     f:SetMovable(true)
     f:EnableMouse(true)
