@@ -1,18 +1,12 @@
-# ChalkBox 2.2.10 — Smart Dungeon QuestSense
+# ChalkBox 2.2.11 — Adventure Journal Frame Repair
 
 ## Current file changelog (WoW Forever test release)
 
-- **Smart QuestSense now focuses the native quest tracker on the actual party dungeon you enter** when Forever provides trustworthy instance-specific quest-map or quest-log header/title evidence.
-- Nonmatching manual quest watches are temporarily hidden and restored on leaving; Smart tracks only quests for the **current** dungeon rather than mixing different dungeon quests.
-- **No reliable dungeon match?** ChalkBox leaves the existing tracker unchanged instead of guessing or hiding everything. It preserves manual unwatch choices and defers native watch edits in combat and while the World Map or quest log is open.
-- Nearby-only and All-accepted modes, watch limits and previous settings remain supported.
+- **Adventure Journal / Session Journal** now has the same native Blizzard outer dialog frame and warm map-derived wood treatment as Discoveries and MacroForge. Session Summary and Field Notes have separate bronze inset sections with consistent spacing.
+- **Fixed invisible/unfinished background** when the global ChalkBox opacity setting is low or 0. Journal art is retried on reopening, a safe opaque fallback is provided for clients without the atlas, and theme changes refresh the Journal live.
+- **All previous per-character session summaries are preserved**, including the current and last 20 sessions, XP, gold, quest counts, observed loot, camping and repair quotes. No SavedVariables migration or gameplay counters changed.
+- A [Full Adventure Chronicle](https://github.com/detok/ChalkBox/blob/main/docs/ADVENTURE_CHRONICLE_DESIGN.md) is designed as a future stage with verified milestones and bounded recording. **Event Timeline and History views are not active in this release.**
 
-### Other features included in this release family
+Full changes: https://github.com/detok/ChalkBox/blob/main/CHANGELOG.md
 
-ChalkBox also includes loot-source and outdoor-location observations in Discoveries; item KEEP/quest/profession tooltips; native AuctionSense asking-price scans and read-only AuctionInsights / disenchant value estimates; MacroForge's framed learned-spell wizard and explicit macro creation; the compact Bar with safe Edit Mode exit; optional combat meter, Session Journal, camping reminders, emotes and default-OFF QuietGuard filters.
-
-**Limits:** No server-official drop odds, completed-sale-price claims, unattended trading, automatic macro rotations or invented quest markers. Gameplay interactions remain user-controlled and constrained by the Forever client API.
-
-Full history: https://github.com/detok/ChalkBox/blob/main/CHANGELOG.md
-
-Download the *playable addon* asset from https://github.com/detok/ChalkBox/releases/tag/v2.2.10 — **ChalkBox-2.2.10.zip**. The separate CurseForge media ZIP is *not* an addon installation.
+Download the playable **ChalkBox-2.2.11.zip** from https://github.com/detok/ChalkBox/releases/tag/v2.2.11. The separate CurseForge media ZIP contains publisher assets and is not an addon installation.
