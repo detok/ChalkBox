@@ -157,18 +157,19 @@ local function Accepted()
 end
 local function Refresh()
     local db=DB()
-    local accepted=Accepted()
-    if not accepted then
-        reason="Quest log loading"
-        if frame then frame:Show() end
-        return
-    end
-    options=accepted
     if not db or not db.enabled then
         target=nil;reason="Navigation off"
         if frame then frame:Hide() end
         return
     end
+    local accepted=Accepted()
+    if not accepted then
+        target=nil;options={}
+        reason="Quest log loading"
+        if frame then frame:Show() end
+        return
+    end
+    options=accepted
     local manual
     if db.questID then
         for _,q in ipairs(options) do
@@ -223,11 +224,12 @@ local function UpdateDisplay()
     if not data then
         frame.arrow:Hide()
         frame.distance:SetText(why or reason)
+    elseif type(frame.arrow.SetRotation)~="function" then
+        frame.arrow:Hide()
+        frame.distance:SetText("Directional display unavailable")
     else
         frame.arrow:Show()
-        if type(frame.arrow.SetRotation)=="function" then
-            frame.arrow:SetRotation(data.angle)
-        end
+        frame.arrow:SetRotation(data.angle)
         frame.distance:SetText(math.floor(data.distance+0.5).." yd  ·  straight line")
         if type(frame.arrow.SetVertexColor)=="function" then
             if data.distance<30 then
