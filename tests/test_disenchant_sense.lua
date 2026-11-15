@@ -200,7 +200,7 @@ assert(seen["Unconfirmed for this bracket"]
     and not seen["100%  1-1x Small Glimmering Shard"],
     "unconfirmed blue yields must not display made-up percentages/prices")
 ChalkBox_DisenchantCommand("item:9010")
-assert(not printed[#printed-1]:find("100%%",1,true),
+assert(not printed[#printed-1]:find("100%",1,true),
     "chat must not present blue 5-15 reference as observed certainty")
 tip.lines={}
 assert(ChalkBox_DisenchantMarketHint(tip,9001))
