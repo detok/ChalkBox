@@ -1,6 +1,6 @@
 # Release and publishing runbook
 
-**Current playable version: 2.2.16 · GitHub prerelease**
+**Current playable version: 2.2.17 · GitHub prerelease**
 
 There are two different downloadable ZIPs. The playable addon ZIP and the CurseForge publishing/media ZIP are not interchangeable.
 
