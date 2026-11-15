@@ -50,8 +50,9 @@ local function Metadata(item)
     if type(levelFn)=="function" then
         local valid,level=pcall(levelFn,item)
         if valid and Public(level) and type(level)=="number"
-            and level>=5 and level<=99 then ilvl=level end
+            and level>=1 then ilvl=level end
     end
+    if ilvl<5 or ilvl>99 then return nil end
     -- Reject empty equipment slots, including non-equippable special items.
     if type(slot)~="string" or slot=="" or slot=="INVTYPE_BAG"
         or slot=="INVTYPE_BODY" or slot=="INVTYPE_TABARD" then
@@ -97,7 +98,11 @@ local function ValidAsk(itemID)
 end
 -- Public read-only result. nil means "not safely modeled", not zero value.
 function ChalkBox_DisenchantEvaluate(item)
-    if not enabled then return nil end
+    -- The exception files are mandatory. Without them we could recommend
+    -- disenchanting flagged or special-output gear. Fail closed instead.
+    if not enabled or not ref or type(ref.Find)~="function"
+        or type(blocked)~="table" or type(special)~="table"
+        then return nil end
     local info=Metadata(item)
     if not info then return nil end
     local results,unconfirmed=Outcomes(info)
@@ -192,15 +197,18 @@ local function AddLines(tip,model,shift,protected)
             role)
     end
     if shift then
-        for _,entry in ipairs(model.outcomes) do
-            local title=(model.unconfirmed and "? " or
-                (("%d%% "):format(math.floor(entry.chance*100+0.5))))..
-                (" %d-%dx %s"):format(entry.min,entry.max,
-                    entry.name or ("#"..entry.id))
-            Metric(tip,title,entry.ask and Money(entry.ask).."/unit" or "No price",
-                entry.ask and "count" or "muted")
-        end
         local cr,cg,cb=Color("muted")
+        if model.unconfirmed then
+            tip:AddLine("Unknown reward: no reliable 5-15 blue yield",cr,cg,cb)
+        else
+            for _,entry in ipairs(model.outcomes) do
+                local title=("%d%%  %d-%dx %s"):format(
+                    math.floor(entry.chance*100+0.5),
+                    entry.min,entry.max,entry.name or ("#"..entry.id))
+                Metric(tip,title,entry.ask and Money(entry.ask).."/unit" or "No price",
+                    entry.ask and "count" or "muted")
+            end
+        end
         tip:AddLine("Expected averages · asking prices, not sales",cr,cg,cb)
         tip:AddLine("Forever bracket · Classic odds · no automatic DE",cr,cg,cb)
     end
@@ -255,7 +263,7 @@ function ChalkBox_DisenchantCommand(command)
         end
     end
     if not model then
-        Say("Shift-click a green/blue weapon or armor link: /chalk de [item].")
+        Say("Shift-click eligible green/blue/epic gear: /chalk de [item].")
         return
     end
     Say((model.name or "Item").." (ilvl "..model.itemLevel..")  |  "..
@@ -263,10 +271,14 @@ function ChalkBox_DisenchantCommand(command)
           (model.complete and "DE est "..Money(model.estimated) or
             ("DE missing prices "..model.priced.."/"..model.total)))..
         "  |  AH ask "..Money(model.itemAsk))
-    for _,entry in ipairs(model.outcomes) do
-        Say(("%d%%: %d-%dx %s (%s/unit)"):format(
-            math.floor(entry.chance*100+0.5),entry.min,entry.max,
-            entry.name or ("Item #"..entry.id),Money(entry.ask)))
+    if model.unconfirmed then
+        Say("The reward for Forever 5-15 blues is not confirmed; no model prices shown.")
+    else
+        for _,entry in ipairs(model.outcomes) do
+            Say(("%d%%: %d-%dx %s (%s/unit)"):format(
+                math.floor(entry.chance*100+0.5),entry.min,entry.max,
+                entry.name or ("Item #"..entry.id),Money(entry.ask)))
+        end
     end
     Say("Forever client bracket · Classic reference odds · asks, not sales.")
 end
