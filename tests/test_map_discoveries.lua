@@ -55,6 +55,13 @@ local function Frame(kind,name,parent)
         function t:SetColorTexture(...) self.color={...} end
         function t:SetVertexColor(...) self.color={...} end
         function t:SetTexture(value) self.texture=value end
+        function t:SetAtlas(value,resize)
+            self.atlas=value;self.resize=resize
+            return true
+        end
+        function t:SetHorizTile(value) self.horizTile=value end
+        function t:SetVertTile(value) self.vertTile=value end
+        function t:Hide() self.hidden=true end
         return t
     end
     function f:CreateFontString(_,layer,style)
@@ -310,22 +317,33 @@ assert(journal.OnUpdate,"full journal must finish initialization")
 assert(journal.strata=="FULLSCREEN_DIALOG" and journal.level>=200
     and journal.toplevel==true,
     "journal frame and all children must sit above the native map")
-assert(journal.backdrop and journal.backdrop.bgFile and
-    journal.backdrop.bgFile:find("DialogBox",1,true),
-    "panel has a real Blizzard-native backdrop")
+assert(journal.backdrop and journal.backdrop.bgFile==
+    "Interface\\Buttons\\WHITE8X8",
+    "native frame still has an opaque safe undercoat beneath map art")
+assert(journal.hasMapArt and journal.mapArt and
+    journal.mapArt.atlas=="gamepad-mapquestlog-bgtile-2k"
+    and journal.mapArt.horizTile and journal.mapArt.vertTile,
+    "Discoveries reuses the exact native Forever World Map tiled background")
 assert(journal.back and journal.back.texture==
     "Interface\\Buttons\\WHITE8X8",
-    "panel paints a real texture, not only a color-only region")
-assert(journal.back and journal.back.color and journal.back.color[4]>=0.92,
-    "transparent global theme must not hide the Discoveries panel")
+    "a dark text-contrast glaze is painted over map art")
+assert(journal.back.color and journal.back.color[4]>=0.58
+    and journal.back.color[4]<=0.66,
+    "map texture remains visible without sacrificing readable text contrast")
 assert(journal.edge and journal.edge.color and journal.edge.color[4]>=0.8,
     "journal has a visible accent border")
 assert(journal.back.color[1]==0.12 and journal.stripe.color[2]==0.8,
-    "global theme colors still apply")
+    "global accent/theme color is preserved by the new map-like background")
 _G.ChalkBox_ThemeBackground=function() error("theme unavailable") end
 ChalkBox_MapDiscoveriesThemeRefresh()
+assert(journal.back.color[4]>=0.58,
+    "theme failure must not remove the map-style reading surface")
+journal.hasMapArt=false
+ChalkBox_MapDiscoveriesThemeRefresh()
 assert(journal.back.color[4]>=0.92,
-    "a theme failure must not erase the existing journal background")
+    "without a native atlas the panel safely falls back to its old opaque body")
+journal.hasMapArt=true
+ChalkBox_MapDiscoveriesThemeRefresh()
 local filterCount=0
 for _,f in ipairs(frames) do
     if f.kind=="Button" and f.parent==journal and f.text and
