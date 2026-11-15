@@ -1,23 +1,25 @@
-# ChalkBox 2.2.1 — Protected item-use safety
+# ChalkBox 2.2.2 — Disenchant economics
 
-### Investigation
-A player reported that the Cozy Sleeping Bag sometimes triggers a "ChalkBox blocked an action" error and only works again after `/reload`.
+## Is it worth more as enchanting materials?
+For supported green and blue weapons or armor, ChalkBox now compares a modeled disenchant result with the item's market asking price and vendor value. It works inside the existing **LootSense item tooltip** and **Auction House → Market** hover, not a separate window.
 
-Source audit found an unsafe Market-tab path introduced in 2.1.9:
-- ChalkBox directly called `AuctionHouseFrame:SetDisplayMode` with an addon-owned table.
-- Blizzard's Forever Auction House code stores that value in the frame's `displayMode`.
-- Forever's bag item-use handler calls `AuctionHouseFrame:IsListingAuctions()` while the AH is open; that method reads the same display mode before normal protected item use.
-- An independent Forever auction addon reported a **Cozy Sleeping Bag** blocked-action error with this exact suspected mechanism.
+- **Expected DE value:** weigh possible Classic dust/essence/shard outcomes by their probabilities and average yield, using your own same-realm/faction AuctionSense lowest asking prices.
+- **Gear comparison:** displays which *gross asking-price estimate* is higher (DE vs original item if tradable, otherwise vendor). Uses a 10% buffer to call close results `Close estimate`.
+- **Hold Shift:** see material probabilities, quantity ranges, and per-unit asking prices. Or use `/chalk de [item link]` for a short chat breakdown.
+- **Missing or stale data:** if any possible reagent is not priced, is older than 24h or is mixed, ChalkBox shows `2/3 material prices` instead of calculating a fake total.
+- **Control:** Options → AddOns → ChalkBox → AuctionSense → **Show disenchant estimates on gear tooltips**. Also `/chalk de on|off`.
 
-### Change
-- Never call `SetDisplayMode` from ChalkBox or inject a custom table into Blizzard's AH trading state.
-- Retain Market's integrated artwork and panel by temporarily hiding only safe, unprotected native content frames, then restoring them when leaving Market. No edits to Blizzard's display-mode list, protected native tab registry, or trading state.
-- Verify the native Buy, Sell and Auctions pages restore correctly and Market continues scanning/displaying prices.
+## Trust limits
+The probabilities are a **Classic-based model**, not verified drop probabilities for every WoW Forever item. Some crafted and custom items cannot be disenchanted or yield different materials. Only item levels 5–65, uncommon and rare equipment are currently modeled. Epics, known crafted wands, and unsupported metadata are intentionally excluded.
 
-### What we did not change
-The **vertical bag offset behavior**, saved bags, Item Insight, Emota, the full-width Bar, native DPS meter, Discoveries, auction scan engine and all SavedVariables are unchanged.
+Asking prices are **not actual sales or profit**. Deposits, fees, market liquidity, sale rates, bind status, enchanting requirements, and other costs are not accounted for. DE consumes the item permanently; always verify before using it.
 
-### Test and validation
-Automated Lua 5.1 regression tests explicitly forbid any addon call to Blizzard's display-mode setter and simulate right-clicking a soulbound usable item while the AH is open. The ZIP is validated in GitHub Actions.
+Your buddy's auction history is not automatically shared. Each player scans their own realm/faction auction market to populate the material prices.
 
-The exact blocked-function stack from the player's live client has not been captured. If an item is still blocked in WoW Forever after `/reload` and installing this version, enable `/console taintLog 1`, reproduce it and provide `Logs/taint.log` (and whether the Auction House was open or visited earlier). Avoid reproducing a suspected blocked action in combat.
+## Safe implementation
+ChalkBox never casts Disenchant, touches item buttons, automates trading, or modifies protected combat UI for this feature. KEEP/quest protections suppress DE recommendations. Existing AuctionSense market scans, full-width Bar, bag slider, Discoveries, native DPS reporting, Emota safeguards, SavedVariables and the prior item-use safety hotfix remain in place.
+
+The baseline table is described at https://warcraft.wiki.gg/wiki/Disenchanting_tables and https://www.wow-professions.com/forever/disenchanting-guide.
+
+## Install
+Install `ChalkBox-2.2.2.zip` over the previous ChalkBox folder, preserve SavedVariables, and /reload. Automated Lua 5.1 regression/packaging checks run in GitHub Actions; WoW Forever in-client tooltip verification is still required.
