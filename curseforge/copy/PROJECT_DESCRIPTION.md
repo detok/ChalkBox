@@ -16,9 +16,11 @@ DropSense records items found in readable loot windows. Open the World Map's **D
 
 Outdoor loot can store up to six recent distinct **player positions at loot-window opening** per item/area and per verified creature source, with the recent coordinates shown on hover. They are not guaranteed spawn or death locations; old/dungeon records get no fabricated points.
 
-### QuestSense Smart / Nearby / All
+### QuestSense Smart / Nearby / All + Navigation
 
 QuestSense organizes Blizzard's own accepted-quest tracker without replacing it. **Smart** prioritizes relevant quests outdoors and, in a party dungeon when the client exposes reliable matching evidence, focuses on quests for the **specific current dungeon**. Previously selected manual watches return when you leave. If the instance's quest evidence is missing, it keeps the existing tracker rather than guessing. **Nearby only** filters conservatively by current zone; **All accepted** uses log order within watch limits.
+
+**NEW: QuestSense Navigation** is an optional, compact outdoor compass following *real accepted quest waypoints* from Forever's API. Auto prioritizes your current Blizzard super-tracked quest or the nearest known local quest; manually cycle with **Next / Previous**, drag and lock the arrow, or hide it any time. Direction and straight-line distance appear only when world coordinates and facing are supported. No guessed quest routes, automatic gameplay, or changes to Blizzard's map pins or quest watches. Navigation starts OFF for new characters.
 
 ### AuctionSense, AuctionInsights and DisenchantSense
 

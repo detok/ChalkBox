@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.12 — QuestSense Navigation compass (test release)
+- **QuestSense Navigation:** add a compact, optional, movable native-bordered arrow that follows verified accepted quest waypoints, displays the current quest and straight-line yard distance, and safely hides its direction when the player position/facing or destination cannot be resolved.
+- **Auto / Next / Hide** directly on the compass, with a new **QuestSense → Navigation** settings page for activation, previous quest, position lock, reset and status. `/chalk nav` commands support the same actions and `follow QUEST_ID`.
+- Auto prefers the super-tracked quest when it has an actual waypoint, then the closest known outdoor waypoint on the same world region. Explicit manual choice takes priority, and old selections survive brief waypoint/quest-log unavailability.
+- **No quest/watch side effects:** never set or clear Blizzard map pins, replace user super-tracking, edit watch lists, automate movement or guess locations. Navigation starts OFF, is per character, and leaves all original QuestSense configuration untouched.
+- Add regression coverage for real waypoint APIs, coordinate/facing geometry, eastern-kingdoms continent zero, cross-region and instance guards, saved position/lock, manual priority, failed/missing API data and cosmetic fallbacks.
+
 ## 2.2.11 — Adventure Journal native frame and Chronicle design (Gate A)
 - Replace the unfinished translucent Session/Adventure Journal window with the warm World Map-derived wood body, native Blizzard outer border and two bronze-framed reading sections already familiar from Discoveries. On older clients, use a slim bronze outer-frame fallback.
 - Correct the invisible-background regression: a global theme opacity of zero no longer makes the Journal disappear. Atlas lookup is guarded, missing native art gets an opaque fallback, and reopening retries the atlas.

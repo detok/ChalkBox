@@ -33,7 +33,7 @@
 
 **Important:** DropSense observation counts are loot windows, not every enemy kill. Outdoor positions are where *you opened the loot window*, not exact spawn locations. Generic reference chances are user-supplied, not verified server odds.
 
-## Quests, MacroForge and auctions
+## Quests, navigation, MacroForge and auctions
 
 | Command | Purpose |
 | --- | --- |
@@ -52,6 +52,8 @@
 | `/chalk auction full` | Request full listings; server cooldown and API limitations apply |
 | `/chalk auction status` | Current scan state and market snapshot |
 | `/chalk auction tooltip on` / `off` | Show or hide AH asking-price annotations |
+
+**Quest compass (OFF by default):** `/chalk nav on|off|auto|next|prev|follow QUEST_ID|lock|unlock|reset|status`. The small outdoor arrow follows only accepted quests with verified waypoints. Auto honors Blizzard's super-tracked quest first, then the nearest known target. It never sets/clears your map pin, edits your quest watches, or guesses an instance direction. See [Navigation](QUEST_NAVIGATION.md).
 
 **Safety:** Smart matching is conservative in dungeons; unverified quest matches do not clear your tracker. MacroForge never performs an unattended rotation. An AuctionSense scan observes asking prices rather than selling, bidding or purchasing.
 

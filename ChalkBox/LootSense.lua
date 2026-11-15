@@ -400,6 +400,12 @@ SlashCmdList.CHALKBOX = function(input)
         else
             Note("Combat Meter unavailable on this client.")
         end
+    elseif command == "nav" or command == "navigate" then
+        if type(ChalkBox_NavCommand)=="function" then
+            ChalkBox_NavCommand(argument)
+        else
+            Note("Quest navigation unavailable on this client.")
+        end
     elseif command == "quests" then
         if type(ChalkBox_QuestCommand) == "function" then
             ChalkBox_QuestCommand(argument)
@@ -440,12 +446,13 @@ SlashCmdList.CHALKBOX = function(input)
             Note("Personal protections (" .. #names .. "): " .. table.concat(names, ", "))
         end
     else
-        Note("Open settings: /chalk | /chalk settings. Commands: keep [item] | forget [item] | list | loot on/off|status|scan | bags | meter | quests | bar | emota | prep | guard | help")
+        Note("Open settings: /chalk | /chalk settings. Commands: keep [item] | forget [item] | list | loot on/off|status|scan | bags | meter | quests | nav | bar | emota | prep | guard | help")
         Note("LootSense shows quest protections and your character's possible/known profession uses. No automatic selling.")
         Note("Explore: /chalk drops map | map status | map on|off | /chalk drops status | chance 5 20")
         Note("Build: /chalk macro opens MacroForge | /chalk forge rescan refreshes your spellbook.")
         Note("Auctions: at an auctioneer, open the AuctionSense tab. /chalk auction scan = browse prices; /chalk auction full = full listing request (15m cooldown).")
         Note("Disenchant: hover green/blue gear for modeled outcomes or /chalk de [item link]. /chalk de on|off toggles tooltip estimates.")
+        Note("Quest navigation: /chalk nav on|off|auto|next|prev|follow ID|lock|unlock|reset|status")
         Note("Updates: /chalk update shows your installed version and GitHub Releases link.")
     end
 end
