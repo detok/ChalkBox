@@ -1,6 +1,6 @@
 # ChalkBox maintainer runbook
 
-**Working operational checklist · current baseline 2.2.16**
+**Working operational checklist · current baseline 2.2.17**
 
 This is how to investigate a report, make a change without breaking established behavior, verify it, and prepare it for release. It complements [Architecture](ARCHITECTURE.md), [Development](DEVELOPMENT.md) and [Publishing](RELEASE_PROCESS.md).
 
@@ -23,7 +23,7 @@ This is how to investigate a report, make a change without breaking established 
 | MacroForge | Seven framed groups, a native or fallback outer frame, multiline scrollable preview, bounded warnings, preserved copy and save/install safeguards | Open UI at two scales, scroll long text, save/load, install new outside combat only |
 | Quest navigation | Defaults OFF, read-only accepted quest waypoints, no quest-watch/super-track/pin writes; position and manual choice per character | Enable, Auto/Next/manual, verify native quest-watch selected-target pinning, map-canvas hover pulse and Sharp HD/Classic 256px texture toggle; test real WoW north/south world-X and west/east world-Y cardinals, selected/super-tracked quest precedence, stable Auto fallback, ghost corpse/parent map/resurrection, right-click native/legacy menu, hover tooltip, missing instance GPS and saved position, unload and relog |
 | QuestSense header menu | Additive native header HookScript; modern/legacy context menu, no quest-row overrides, Off / Smart / Nearby / Nav On-Off | Test tracker header right-click and normal left/quest-row clicks; no popup in combat or duplicate hooks |
-| MacroForge native integration | Optional button above exposed Blizzard `MacroFrame`, full workbench docks only with screen room, standalone remains | Open and close `/macro`, toggle Forge tab, ensure native macro list/editor unchanged and no macro writes |
+| MacroForge native integration | Optional button in the bottom Delete/New/Exit row of exposed Blizzard `MacroFrame`, full workbench docks only with screen room, standalone remains | Open and close `/macro`, click the Forge footer button, launch from AddOns settings and ensure it closes Settings and docks, ensure native macro list/editor unchanged and no macro writes |
 | QuestSense | Manual watches are preserved; Smart dungeon-only mode requires verified match; no-data fallback does not clear watches | Test outside, then in a known dungeon, then after exiting; `/chalk quests status` |
 | The Bar | Saved per-character layout persists, right-click **Done editing** available, widths do not break protected game UI | Move stats, exit via context menu, relog, resize client |
 | QuietGuard | Fresh filters OFF; saved ON choices preserved; Blizzard-native filtering may differ | Check defaults and opt-ins on a test profile; no automatic blocking when off |
