@@ -192,6 +192,17 @@ assert(seen["75%  1-2x Soul Dust"] and
     seen["5%  1-1x Large Glimmering Shard"],
     "Shift reveals fully labeled probabilities and ranges")
 tip.lines={}
+assert(ChalkBox_DisenchantTooltip(tip,9010))
+seen={}
+for _,l in ipairs(tip.lines) do seen[l]=true end
+assert(seen["Unconfirmed for this bracket"]
+    and seen["Unknown reward: no reliable 5-15 blue yield"]
+    and not seen["100%  1-1x Small Glimmering Shard"],
+    "unconfirmed blue yields must not display made-up percentages/prices")
+ChalkBox_DisenchantCommand("item:9010")
+assert(not printed[#printed-1]:find("100%%",1,true),
+    "chat must not present blue 5-15 reference as observed certainty")
+tip.lines={}
 assert(ChalkBox_DisenchantMarketHint(tip,9001))
 seen={}
 for _,l in ipairs(tip.lines) do seen[l]=true end
@@ -201,6 +212,14 @@ assert(seen["DE model ~1s 88c in materials"] and
 ChalkBox_DisenchantCommand("item:9002")
 assert(printed[#printed]:find("Classic reference odds",1,true),
     "chat command separates client bracket from reference-server probabilities")
+-- Missing any mandatory static exception file must produce NO valuation.
+assert(loadfile("DisenchantSense.lua"))("ChalkBox",
+    {materials=ns.materials})
+assert(ChalkBox_DisenchantEvaluate(9001)==nil,
+    "if excluded-item tables fail to load, the model fails closed")
+assert(loadfile("DisenchantSense.lua"))("ChalkBox",ns)
+assert(ChalkBox_DisenchantEvaluate(9001),
+    "fully loaded source restores read-only item model")
 -- Verify every client-sourced bracket (both edges, class and rarity),
 -- without inventing rewards for non-disenchantable unsupported ranges.
 local ranges={
