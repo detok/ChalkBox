@@ -259,12 +259,16 @@ local function FindMetric(prefix)
     end
 end
 assert(FindText("Bags 12 free"),"free slots appear in the actual TrailBar widgets")
-assert(ChalkBoxDB.barStats.bagvalue==false,"vendor value defaults to optional")
-assert(ChalkBox_BarBagValueModeGet()=="total",
-    "total vendor value is the default mode")
-ChalkBox_BarCommand("stat bagvalue on")
-assert(ChalkBoxDB.barStats.bagvalue==true)
-assert(FindText("Value 18g"),"total shows vendor value for all bag items")
+assert(ChalkBoxDB.barStats.bagvalue and ChalkBoxDB.barStats.latency
+    and not ChalkBoxDB.barStats.pet,
+    "reference Bar shows Junk and World ping, with pet status opt-in")
+assert(ChalkBox_BarBagValueModeGet()=="junk",
+    "a fresh Bar starts on grey-only Junk value")
+assert(FindText("Junk 1g"),"fresh Bar displays vendor junk value")
+ChalkBox_BarBagValueModeSet("total")
+assert(FindText("Value 18g"),"users can still select total resale value")
+ChalkBox_BarCommand("stat pet on")
+assert(ChalkBoxDB.barStats.pet,"Hunter pet can be enabled manually")
 
 assert(FindText("Gear 87%"),"durability appears in the actual TrailBar widgets")
 assert(FindText("Rest 42%"),"rested XP appears as a level percent")
@@ -401,8 +405,8 @@ assert(FindMetric("Bags ").visible and FindMetric("Gear ").visible
     and FindMetric("Rest ").visible,
     "new priority widgets appear on a normal screen")
 assert(ChalkBoxDB.barStats.bags and ChalkBoxDB.barStats.gear
-    and ChalkBoxDB.barStats.rested and not ChalkBoxDB.barStats.latency,
-    "balanced defaults feature bags/gear/rest while opt-in latency saves space")
+    and ChalkBoxDB.barStats.rested and ChalkBoxDB.barStats.latency,
+    "reference defaults feature bags, gear, rested XP and World latency")
 ChalkBox_BarCommand("stat latency on")
 assert(ChalkBoxDB.barStats.latency==true,"optional latency switch persists")
 ChalkBox_BarCommand("stat gear off")
@@ -450,7 +454,8 @@ assert(FindMetric("World ").visible and FindMetric("Pet ").visible,
 bar.width=1024
 bar.scripts.OnSizeChanged(bar)
 ChalkBox_BarCommand("stats balanced")
-assert(not ChalkBoxDB.barStats.latency,"balanced preset restores intentional defaults")
+assert(ChalkBoxDB.barStats.latency and not ChalkBoxDB.barStats.pet,
+    "balanced preset restores the new reference stats")
 assert(FindMetric("Gear ").visible,"preset restores previously hidden durability widget")
 local state=ChalkBox_BarStatus()
 assert(type(state.enabled)=="table" and type(state.visible)=="table",
@@ -476,9 +481,10 @@ assert(ChalkBox_BarLayoutGet().align.bags=="center",
 ChalkBox_BarCommand("edit off")
 assert(not ChalkBox_BarEditStatus(),"edit mode unlocks and relocks explicitly")
 ChalkBox_BarCommand("layout reset")
-assert(ChalkBox_BarLayoutGet().left[3]=="bags" and
-    not ChalkBox_BarLayoutGet().align.bags,
-    "reset layout restores the original group, order and text justification")
+assert(ChalkBox_BarLayoutGet().right[1]=="bags"
+    and ChalkBox_BarLayoutGet().center[1]=="time"
+    and not ChalkBox_BarLayoutGet().align.bags,
+    "reset layout restores the screenshot order and text justification")
 assert(ChalkBox_BarAppearanceSet(0))
 assert(ChalkBox_BarAppearanceGet()==0 and bar.background.rgba[4]==0,
     "zero opacity removes only the charcoal panel background")
