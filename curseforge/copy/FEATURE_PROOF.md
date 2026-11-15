@@ -1,4 +1,4 @@
-# ChalkBox feature claims and evidence (2.2.13)
+# ChalkBox feature claims and evidence (2.2.14)
 
 Use this file when reviewing release announcements and the CurseForge listing. It reflects shipped code and automated tests; **live-client validation is still a separate step**.
 
