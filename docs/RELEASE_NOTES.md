@@ -1,33 +1,39 @@
-# ChalkBox 2.2.15 — AuctionSense, Quest Tracking, Discoveries & HD Arrow
+# ChalkBox 2.2.16 — QuestSense Tracker Menu and MacroForge beside /macro
 
-## Full Scan now accepts valid listings before their names are cached
+## QuestSense, straight from Blizzard's tracker
 
-**Scan Market (browse)** requests the server's regular paginated browsing summaries, usually lighter and without a full-listing cooldown. **Full listings (replicate)** asks the server for a complete set of individual auction records, letting ChalkBox calculate actual observed listing counts, stack quantities, lowest buyout per item and a quantity-weighted *asking-price* average. The game's successful full-request throttle is approximately **15 minutes account-wide**.
+**Right-click the header of Blizzard's built-in quest tracker** to open a small, optional ChalkBox context menu when that native header accepts mouse hooks.
 
-Previously, ChalkBox rejected individual full-scan listings when `hasAllInfo` was false—even if the item ID, stack count and buyout were already valid. That could discard usable prices, then abort a valid snapshot. Version 2.2.15 keeps **verified numeric listing data** in that situation, labels uncached item names as `Item #ID`, and reports how many rows lacked complete names.
+- **QuestSense Settings:** opens ChalkBox → QuestSense under Blizzard's AddOns options.
+- **Off:** disables QuestSense's automatic watch management (without wiping your own manual watch selections).
+- **Smart:** enables Smart tracking, including supported dungeon quest focus.
+- **Nearby:** enables the current-zone-only quest mode.
+- **Navigation On/Off:** toggles the existing small quest arrow without changing Blizzard's super-tracked selection.
 
-The reader still rejects invalid IDs, quantities and buyouts, never mistakes bid-only prices for buyouts, never synthesizes actual sale prices, and preserves the last complete market on a failed or interrupted scan. Full Scan can still be legitimately refused or time out when the **server throttles** the replicate request (including if another addon made the last successful request); ChalkBox now explains this separately and leaves the working Browse Scan available.
+The menu is attached with a non-destructive **HookScript**, only on Blizzard's real tracker header (or its existing parent tracker where a header isn't exposed). Quest-row actions, left-clicks and Blizzard's own menus are not replaced. Existing modern `MenuUtil` and legacy `EasyMenu` are used when available. If a client has neither, it safely opens the regular QuestSense settings instead. Some Forever UI versions or third-party replacement trackers may not expose a safe hook; use `/chalk quests` or the existing AddOns settings in that case.
 
-## Your selected quest stays in Blizzard's tracker
+## Three arrow appearances, one navigation system
 
-When **QuestSense Navigation** is enabled and following an accepted quest, QuestSense adds that quest to **Blizzard's existing quest-watch list** if it is not already watched. This is a manual-style watch, not an extra ChalkBox objective tracker: it is not counted as one of ChalkBox's auto-managed quests, will not delete other manual watches to free space, and remains visible across Nearby filtering while explicitly followed. It defers protected watch changes while combat or map/quest-log UI are open, and will report a full watch-list limit rather than dropping another user's selection.
+Under **Options → AddOns → ChalkBox → QuestSense → Navigation**, choose:
 
-Quest selection and super-tracking are **not** changed by ChalkBox. Navigation remains off by default. Hiding the arrow does not remove your watched quest.
+- **Original WoW:** `Interface\\Minimap\\MinimapArrow`, the first ChalkBox arrow appearance.
+- **Blizzard Navigation:** the newer `Navigation-Tracked-Arrow` atlas, with the original minimap glyph as a compatibility fallback.
+- **ChalkBox HD:** the bundled original 256px transparent TGA version.
 
-## Discoveries — transient loot-location pulse
+The previous `classic` and `hd` character preferences are preserved. `/chalk nav original`, `/chalk nav classic`, or `/chalk nav hd` switch the same graphic from chat. Arrow rotation, proximity color changes, yards below the arrow, corpse/quest priorities, positioning and right-click Auto / Next / Hide behavior are unchanged.
 
-While the World Map is displaying a zone with your recorded outdoor loot observations, **hover a Discoveries item** to pulse a small gold dot at the **latest observed player position when the loot window opened**. The dot exists only while hovering: it disappears on mouse-out, page/filter changes, or map changes. It is anchored to Blizzard's visible map canvas and does not create permanent pins or change the map location.
+## MacroForge in Blizzard's own macro editor
 
-No marker appears for dungeon loot, old records without coordinates, or a different area than the visible map. This is a personal observation—not a guaranteed creature spawn/death coordinate.
+When the native `/macro` window (`MacroFrame`) is available, ChalkBox adds a modest **MacroForge** tab just above its frame. Click to open the existing fully featured MacroForge workbench as an **adjacent sidecar** when screen width permits. Click again to close it. Closing Blizzard's macro editor also closes only a docked Forge workbench.
 
-## A cleaner arrow with optional HD rendering
+**No native macro list, editor, selection, character/account tab, icon, or Save button is modified.** This integration simply opens the existing ChalkBox workbench. Macro installation remains a separate explicit action, outside combat, and never overwrites an existing macro. The standalone `/chalk macro` command still works.
 
-The floating arrow remains minimal. A **small distance in yards now sits underneath it**, while hover still shows full quest and GPS status. In **QuestSense → Navigation**, choose between **Sharp HD Arrow** (new 256-pixel original north-up TGA derived from editable vector art) and **Classic Arrow** (the original Blizzard navigation atlas, with fallback). The arrow's direction, Auto / Next / Hide right-click menu, drag lock, saved position and corpus/quest targeting stay the same. No new dependency or secondary addon is required.
+If the macro editor is not exposed on that client, or the screen is too narrow for both full windows, nothing is forced to move or shrink: the normal standalone Forge still works. The addon does not replace the native macro UI or require any other addon.
 
-## Compatibility and verification
+## Testing and limitations
 
-- Lua 5.1 regression tests cover partial full-listing metadata, price preservation, native selected-quest watches, deferred safe updates, a disappearing map-canvas pulse, arrow style switching and distance display.
-- Package tests verify the 256-pixel alpha TGA and both exact, reproducible release ZIPs.
-- **Live Forever checks remain necessary** for the server's replicate throttle behavior, the map canvas geometry while zooming, and the new arrow graphic on different UI scales. This is a Beta build.
+- Lua 5.1 regression tests cover header-only native hooks, modern/legacy/no-menu clients, Off/Smart/Nearby and navigation commands, three arrow styles, MacroFrame load-on-demand attachment and dock/undock/close behavior.
+- Retain all SavedVariables and existing quest watches, native macros and MacroForge saved builds.
+- **Actual Forever-client confirmation is still required** for exact tracker header accessibility and available on-screen docking space. Keep this a Beta build until that is confirmed.
 
-Install `ChalkBox-2.2.15.zip` over your addon files, keep SavedVariables, then `/reload`.
+Install `ChalkBox-2.2.16.zip` over your previous addon folder, preserve SavedVariables, and type `/reload`.
