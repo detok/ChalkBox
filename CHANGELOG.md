@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.11 — Adventure Journal native frame and Chronicle design (Gate A)
+- Replace the unfinished translucent Session/Adventure Journal window with the warm World Map-derived wood body, native Blizzard outer border and two bronze-framed reading sections already familiar from Discoveries. On older clients, use a slim bronze outer-frame fallback.
+- Correct the invisible-background regression: a global theme opacity of zero no longer makes the Journal disappear. Atlas lookup is guarded, missing native art gets an opaque fallback, and reopening retries the atlas.
+- Register `ChalkBox_JournalThemeRefresh` for live Global Appearance updates. Keep current/saved session navigation and all 12 existing observations.
+- **No session migration or new gameplay recording.** Existing version-1 per-character session history is untouched. Add a separate Full Adventure Chronicle design for validated, bounded milestones, deduplication, privacy, older-session compatibility and future Today / Timeline / History views.
+- Add Lua 5.1 tests for native/fallback borders, atlas retry, zero-alpha readability, warm inset depth and unchanged saved data. The full recorder remains a subsequent stage.
+
 ## 2.2.10 — Smart QuestSense dungeon filtering (test release)
 - **QuestSense Smart:** entering a named party dungeon automatically switches the normal auto-tracker to quests confirmed for *that instance* using current-instance map POIs or an exact dungeon-name quest-log category/title match. Nearby and All accepted behavior remain unchanged.
 - Temporarily hide manual quests not matched to the dungeon while keeping their watch choices in existing `suspendedManual` state. Restore them and ordinary Smart tracking when leaving; switching dungeons switches quest filters. Respect manual unwatch and automatic watch limits.

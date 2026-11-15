@@ -1,6 +1,6 @@
 # ChalkBox maintainer runbook
 
-**Working operational checklist · current baseline 2.2.10**
+**Working operational checklist · current baseline 2.2.11**
 
 This is how to investigate a report, make a change without breaking established behavior, verify it, and prepare it for release. It complements [Architecture](ARCHITECTURE.md), [Development](DEVELOPMENT.md) and [Publishing](RELEASE_PROCESS.md).
 
@@ -28,6 +28,7 @@ This is how to investigate a report, make a change without breaking established 
 | Auction / DE | No scan without a user request, no trade action, old good scan survives failure, price asks ≠ actual sales | Open AH tab and close/reopen, test cooldown/failure; inspect tooltip disclaimers |
 | Bank / bags | Avoid protected item-button changes or shifting bags during first-bank initialization | Open bank first time after login; close and test separate bag offset |
 | Combat meter | Starts closed, protected values handled safely, manual print gated | Start/stop combat, inspect session, test manual print after combat |
+| Adventure Journal | The independent window always has a readable native/fallback outer frame, warm wood background and two inset sections, even at zero global opacity; v1 session data preserved | Open current and older sessions with opacity zero, retry native atlas, change theme live; see [Chronicle design](ADVENTURE_CHRONICLE_DESIGN.md) |
 | Session, camp, Emota | Session history bounded; tent use ≠ Camp Benefits; automatic emotes optional and avoid combat | Relog, camp/tent acknowledgment, idle preview and combat |
 
 ## Versioning and release decision

@@ -1,6 +1,6 @@
 # ChalkBox — CurseForge project fields
 
-**Publication reference for playable ChalkBox 2.2.10 (GitHub prerelease).** Always verify the current official publisher form and the actual compatible WoW Forever game flavor before uploading.
+**Publication reference for playable ChalkBox 2.2.11 (GitHub prerelease).** Always verify the current official publisher form and the actual compatible WoW Forever game flavor before uploading.
 
 | Field | Value or guidance |
 | --- | --- |
@@ -15,8 +15,8 @@
 | Issues | https://github.com/detok/ChalkBox/issues |
 | Full description | `copy/PROJECT_DESCRIPTION.md` |
 | File changelog | **`copy/FILE_CHANGELOG_CURRENT.md`** (version must match both TOCs) |
-| Current playable file | **`ChalkBox-2.2.10.zip`** from GitHub Releases |
-| Separate media kit | **`ChalkBox-CurseForge-Media-2.2.10.zip`** — never install or upload as addon |
+| Current playable file | **`ChalkBox-2.2.11.zip`** from GitHub Releases |
+| Separate media kit | **`ChalkBox-CurseForge-Media-2.2.11.zip`** — never install or upload as addon |
 | Project avatar | `Artwork/PNG/Upload-Ready/Project-Icon-512.png` from the media kit |
 | Release type | Prerelease/test until the current Forever client is fully verified |
 

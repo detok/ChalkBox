@@ -32,7 +32,7 @@ Build macros from the spells actually learned on your character. Templates inclu
 
 **The Bar** is a slim customizable screen-edge summary for level/XP, XP rate, time to level, rested XP, bags, durability, repair estimates, junk value, gold and latency. Edit its layout by right-clicking; **Done editing** is available from the empty-Bar context menu. Layout choices are preserved on upgrade. Repair Learning differentiates real vendor repair quotes from `~` estimates.
 
-The optional **Combat Meter** starts closed and can show supported native combat data; manual post-fight party reporting is gated by client rules. **Session Journal** keeps the current and up to 20 previous per-character observed session summaries.
+The optional **Combat Meter** starts closed and can show supported native combat data; manual post-fight party reporting is gated by client rules. **Session Journal** keeps the current and up to 20 previous per-character observed session summaries. In 2.2.11, the Adventure Journal gains a full warm wood frame and legible inset sections, while individual-event Chronicle recording remains a future feature.
 
 ### Adventure Prep, Emota, QuietGuard, appearance and updates
 

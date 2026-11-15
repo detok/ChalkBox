@@ -1,9 +1,10 @@
 -- Unified ChalkBox presentation should recolor only its own registered frames.
 _G.ChalkBoxDB={}
-local counts={bar=0,toast=0,meter=0}
+local counts={bar=0,toast=0,meter=0,journal=0}
 _G.ChalkBox_BarThemeRefresh=function() counts.bar=counts.bar+1 end
 _G.ChalkBox_ToastThemeRefresh=function() counts.toast=counts.toast+1 end
 _G.ChalkBox_MeterThemeRefresh=function() counts.meter=counts.meter+1 end
+_G.ChalkBox_JournalThemeRefresh=function() counts.journal=counts.journal+1 end
 assert(loadfile("Theme.lua"))("ChalkBox")
 local t=ChalkBox_ThemeGet()
 assert(t.preset=="charcoal" and t.opacity==100 and t.accent=="gold")
@@ -15,8 +16,9 @@ assert(ChalkBox_ThemeSet("accent","teal"))
 r,g,b,a=ChalkBox_ThemeBackground(0.7)
 assert(r>0.03 and b>g and a>0.27 and a<0.29,
     "global opacity is a separate background-only multiplier")
-assert(counts.bar==3 and counts.toast==3 and counts.meter==3,
-    "changing a global theme live-refreshes all three current modules")
+assert(counts.bar==3 and counts.toast==3 and counts.meter==3
+    and counts.journal==3,
+    "changing a global theme also live-refreshes the Adventure Journal")
 local ar,ag,ab=ChalkBox_ThemeAccent()
 assert(ag>ar and ag>ab/2,"selected accent is teal")
 assert(ChalkBox_ThemeSet("r",95))

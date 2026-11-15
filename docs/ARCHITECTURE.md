@@ -1,6 +1,6 @@
 # ChalkBox architecture and safety boundaries
 
-**Maintainer reference · addon version 2.2.10**
+**Maintainer reference · addon version 2.2.11**
 
 ChalkBox is **one Lua 5.1 addon** for WoW Forever. No separate addon, backend process, runtime HTTP client or outside service is required. The code runs inside the game client under native Blizzard event and UI constraints. All tests simulate supported events/APIs, but in-client testing remains necessary.
 
@@ -25,6 +25,7 @@ ChalkBox is **one Lua 5.1 addon** for WoW Forever. No separate addon, backend pr
 | HUD / screen | `TrailBar.lua`, `TrailBarStats.lua`, `TrailBarLayout.lua`, `ScreenLayout.lua`, `BagLayout.lua` | Stats, per-character layout, safe native top chrome shift, bounded separate bag offset |
 | Combat | `CombatMeter.lua`, `NativeMeterPrint.lua` | Optional native-data window and gated manual reports |
 | Camp / character behavior | `CampSense.lua`, `CampAura.lua`, `ReminderToast.lua`, `Emota.lua`, `PersonalityContext.lua`, `QuietGuard.lua` | Readable buff/prep hints, native emotes and opt-in social filtering |
+| Adventure Journal / future Chronicle | `SessionJournal.lua`, `docs/ADVENTURE_CHRONICLE_DESIGN.md` | Existing v1 bounded session summaries with a framed native window; future event ledger is design-only, no new historical event recording |
 | Sessions and maintenance | `SessionJournal.lua`, `RepairLearning.lua`, `Theme.lua`, `UpdateCheck.lua`, `ChalkBox_Settings.lua` | Bounded history, quote-learning, theme, update information and native settings |
 
 ## Persistence and ownership

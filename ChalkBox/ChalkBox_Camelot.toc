@@ -1,8 +1,8 @@
 ## Interface: 16001
 ## Title: ChalkBox
-## Notes: All-in-one Forever companion: loot discoveries, item insights, The Bar, quests, combat tools, camping, MacroForge and session history.
+## Notes: All-in-one Forever companion: loot discoveries, item insights, The Bar, quests, combat tools, camping, MacroForge and a framed Adventure Journal.
 ## Author: Detok Whitemaine
-## Version: 2.2.10
+## Version: 2.2.11
 ## SavedVariables: ChalkBoxDB
 ## SavedVariablesPerCharacter: ChalkBoxZoneDB, ChalkBoxProfessionDB
 ## IconTexture: Interface\AddOns\ChalkBox\assets\Icon

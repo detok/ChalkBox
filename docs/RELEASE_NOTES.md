@@ -1,20 +1,21 @@
-# ChalkBox 2.2.10 — Smart Dungeon Quest Tracking
+# ChalkBox 2.2.11 — Adventure Journal Frame Repair (Gate A)
 
-## Smart switches to your current dungeon
-Inside a recognized party dungeon, QuestSense Smart now prefers **only accepted quests confirmed for the specific instance**, using available dungeon map quest markers or a directly matching quest-log dungeon category/title. For example, Deadmines-specific objectives are not mixed with Stockades quests. Regular outdoor Smart behavior returns after leaving.
+## The Journal finally looks like ChalkBox
+The **Adventure Journal / Session Journal** window now uses the same native Blizzard `UI-DialogBox-Border` outer frame and warm map-derived wood art as Discoveries. It has two legible inset sections—**Session Summary** and **Field Notes**—with bronze rims, subtle depth and the original Current / Older / Newer / Close controls.
 
-Already tracked quests outside that dungeon, including manually selected watches, are **temporarily suspended**, not forgotten. Their previous choices come back automatically when you exit. Unchecking a dungeon quest yourself is still respected; auto-watch limits and existing quest tracking buttons are unchanged.
+The window no longer disappears when global theme opacity is set to 0. Its backdrop has a readable opaque fallback when the native atlas is not available on the client. It retries the actual atlas when opened again, and **Global Appearance** now sends live accent/theme refresh notifications to the Journal.
 
-## Safe API limitations
-A generic quest marked "Dungeon" is **not** proof it belongs to the dungeon you are in. Forever sometimes provides incomplete map/POI data. If ChalkBox cannot confirm any matching quest, it preserves the current tracker instead of removing everything. Quest names and map quest data must be recognized; some custom or unusual dungeon quests may not be detected until the client provides matching information.
+## No data lost or invented
+Existing per-character `ChalkBoxZoneDB.sessionJournal.version=1` is **unchanged**, including the current and up to 20 earlier session summaries, experience, net gold, quest totals, loot windows, regions, camp prompts, merchant repair quotes, and navigation. No data migration or new recording events are introduced in this release.
 
-This behavior is active only in **Smart** and in **party dungeons**. Nearby and All accepted are unchanged. The addon still defers quest tracker edits during combat, or while the World Map or quest log is open. It never modifies Blizzard's map or quests themselves.
+## The Full Adventure Chronicle is designed, not yet collecting milestones
+[Adventure Chronicle design](ADVENTURE_CHRONICLE_DESIGN.md) specifies the next development gates: a bounded validated event ledger (levels, completed quests, deaths, verified dungeon entry/exit, later select DropSense integrations), deduplication, evidence provenance, controls, privacy and graceful failure; then real **Today / Timeline / History** views.
 
-Use **Options → AddOns → ChalkBox → QuestSense → Smart (recommended)** and select **Tracking Diagnostics**, or type `/chalk quests status`, to see the matched dungeon count and a reason if no reliable data is available.
+**This version implements the visual fix only.** New event recording, chronological views and searchable history are not live yet, and old sessions will never be backfilled with made-up events.
 
-## Tests and installation
-- Added Lua 5.1 regression tests for Deadmines vs Stockades, dungeon floor map matching, deliberate unwatch, manual restoration on exit, no-data fallback and previously supported QuestSense behavior.
-- No SavedVariables version changes, migrations, quest completion actions or unrelated ChalkBox module edits.
-- Verify the native tracker in a live Forever dungeon, especially if a quest uses custom or missing POI data.
+## Safety and verification
+- Source change: Journal window presentation and global theme-refresh registration only. No old session data, event-counting or protection logic changed.
+- Lua 5.1 regression tests cover old session counters, unreadable native atlas, theme opacity zero, native outer border/fallback, section frames, atlas retry, active appearance changes and preservation of the existing journal schema.
+- Final visual appearance and game-specific art fallback still require real WoW Forever client confirmation.
 
-Install `ChalkBox-2.2.10.zip` over the previous addon directory, preserve SavedVariables and enter `/reload`.
+Install `ChalkBox-2.2.11.zip` over your existing ChalkBox folder, keep SavedVariables and enter `/reload`.
