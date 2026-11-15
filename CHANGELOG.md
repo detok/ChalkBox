@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.16 — Native quest-tracker context menu, 3 arrow styles and MacroForge macro-editor integration
+- **QuestSense quick menu:** Right-click Blizzard's quest tracker header for **QuestSense Settings**, **Off**, **Smart**, **Nearby**, and **Navigation On/Off**. Additive header-only hook using modern/legacy game menus; never replaces quest-row interactions, the tracker, or Blizzard map pins.
+- **Three arrow appearances** in QuestSense → Navigation: **Original WoW** (first minimap arrow), **Blizzard Navigation** (newer native atlas), and **ChalkBox HD** (256px art). Existing HD/Classic preferences are preserved, and all navigation logic remains unchanged.
+- **MacroForge sidecar:** A small MacroForge tab above Blizzard's `/macro` editor opens the full existing Forge workbench alongside the native window on wide screens. When there isn't enough space, Forge opens standalone without moving Blizzard's editor. Closing the native editor closes only a docked Forge; the old `/chalk macro` shortcut remains.
+- All actions are opt-in. No native macro content edits, insecure combat work, quest tracker replacements, forced UI repositioning or SavedVariables migrations. Extend Lua 5.1 regressions, docs and packaging.
+
 ## 2.2.15 — Full Scan resilience, native selected quest watch, Discoveries map pulse & HD arrow
 - AuctionSense Full Scan now keeps real item ID/quantity/buyout information from replica listings with uncached names instead of discarding an otherwise valid scan. Uncached names display as `Item #ID`; server refusal and 15-minute account-wide cooldown diagnostics are clearer. Normal browse scanning and stored price history remain intact.
 - QuestSense Navigation ensures its currently selected accepted quest stays **visible in Blizzard's native quest-watch tracker**, even in Nearby mode, without removing unrelated manual watches or changing super-tracking. Changes defer while unsafe and report a full watch list.
