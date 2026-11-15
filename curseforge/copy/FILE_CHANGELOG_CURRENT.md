@@ -1,16 +1,11 @@
-# ChalkBox 2.2.16 — QuestSense & MacroForge Integration
+# ChalkBox 2.2.17 — Smaller classic arrow & MacroForge polish
 
-### QuestSense right where you need it
-- **Right-click the header of Blizzard's quest tracker** for a small ChalkBox menu: **QuestSense Settings**, **Off**, **Smart**, **Nearby**, and **Navigation On/Off**.
-- The menu supplements Blizzard's tracker without replacing native quest interactions. Some custom trackers/Forever builds may not expose a hookable header; the normal settings and slash commands still work.
-- QuestSense → Navigation now offers **three arrow looks**: **Original WoW**, **Blizzard Navigation**, and **ChalkBox HD**. Existing saved choices stay intact.
+- The **Original WoW navigation arrow** is now the default for newly configured characters. Previously saved styles remain unchanged.
+- QuestSense → Navigation adds an **Arrow Size** slider from **32–72px**. The smaller default is **48px**; the small yard-distance label stays beneath it.
+- The **MacroForge button** moves into Blizzard's native macro editor's bottom row, beside **Delete** and before **New / Exit**, on compatible clients.
+- Opening MacroForge from ChalkBox settings now **closes the Settings overlay, opens /macro, and docks the Forge workbench alongside it when possible**. If the native macro editor or sufficient screen space is unavailable, the original standalone Forge remains available.
+- No replacement of Blizzard's macro controls, no automatic macro changes and no loss of saved builds or quest settings.
 
-### MacroForge beside /macro
-- Blizzard's built-in macro editor gains a small **MacroForge** tab that opens ChalkBox's full macro-building workbench next to it on displays with enough space.
-- Native macro editing and selection stay untouched. On narrower screens MacroForge remains an independent window. Existing `/chalk macro` continues to work.
+Actual Forever-client positioning still needs visual verification; this is a Beta update.
 
-No replacement quest tracker, macro editor, unsafe combat actions, or SavedVariables migration. This is a Beta release until client-specific visual placement is verified.
-
-Playable ZIP: **ChalkBox-2.2.16.zip** — https://github.com/detok/ChalkBox/releases/tag/v2.2.16
-
-Full changes: https://github.com/detok/ChalkBox/blob/main/CHANGELOG.md
+Playable ZIP: **ChalkBox-2.2.17.zip** — https://github.com/detok/ChalkBox/releases/tag/v2.2.17
