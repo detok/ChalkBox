@@ -184,7 +184,8 @@ local function Refresh()
     local nearest,nearestDistance
     for _,q in ipairs(options) do
         if q.point then
-            if ID(super) and q.id==super then preferred=q end
+            if ID(super) and q.id==super and
+                (not player or Distance(q.point,player)) then preferred=q end
             local dist=player and Distance(q.point,player)
             if dist and (not nearestDistance or dist<nearestDistance) then
                 nearest,nearestDistance=q,dist
@@ -219,7 +220,9 @@ local function Face()
 end
 local function UpdateDisplay()
     if not frame or not frame:IsShown() then return end
-    frame.title:SetText(target and target.name or "No quest waypoint")
+    local title=target and target.name or "No quest waypoint"
+    if #title>34 then title=title:sub(1,31).."..." end
+    frame.title:SetText(title)
     frame.mode:SetText(chosen or "Smart")
     local data,why=Face()
     if not data then
