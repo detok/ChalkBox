@@ -111,8 +111,9 @@ end
 tip.lines={}
 assert(ChalkBox_AuctionTooltip(tip,"item:2589"))
 assert(colors["Low / unit"] and
-    colors["Low / unit"][2]>colors["Low / unit"][1],
-    "lowest asking price is green and visually distinct")
+    colors["Low / unit"][1]>colors["Low / unit"][3]
+    and colors["Low / unit"][2]>colors["Low / unit"][3],
+    "lowest asking price is gold, not a guaranteed good deal")
 assert(colors["Avg / unit"] and
     colors["Avg / unit"][1]>colors["Avg / unit"][3],
     "average asking price uses a warm amber color")
