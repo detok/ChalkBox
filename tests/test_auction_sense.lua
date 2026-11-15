@@ -154,25 +154,26 @@ assert(ChalkBox_AuctionPrice(2589).low==9000,
 Fire("AUCTION_HOUSE_SHOW")
 clock=clock+901
 assert(ChalkBox_AuctionFullScan())
-auctions={Listing("Unknown",2589,1,9000,nil,false)}
+auctions={Listing("Uncached",2589,2,6000,nil,false)}
+-- Real Forever replicate returns the price, stack count and ID even
+-- before the item *name* is cached. It must not drop valid price data.
+auctions[1].name=nil
 Fire("REPLICATE_ITEM_LIST_UPDATE")
-Tick(1)
-assert(ChalkBox_AuctionStatus().busy)
-Tick(1)
-Tick(1,3)
-Tick(1)
-Tick(1,3)
 Tick(2)
-assert(ChalkBox_AuctionPrice(2589).low==9000,
-    "incomplete item metadata cannot replace a complete saved snapshot")
-assert(not ChalkBox_AuctionStatus().busy,
-    "scanner eventually reports incomplete data without hanging")
+assert(not ChalkBox_AuctionStatus().busy and
+    ChalkBox_AuctionPrice(2589).low==3000 and
+    ChalkBox_AuctionPrice(2589).quantity==2,
+    "full scan keeps authentic prices from uncached but usable listings")
+assert(ChalkBox_AuctionRows("",30)[1].name=="Item #2589",
+    "missing item name is explicitly marked with its item ID")
+assert(ChalkBox_AuctionStatus().state:find("uncached names",1,true),
+    "user can distinguish valid uncached-name rows from a failed scan")
 clock=clock+901
 assert(ChalkBox_AuctionFullScan())
 Tick(1,26)
 assert(not ChalkBox_AuctionStatus().busy,
     "throttled or ignored server requests time out rather than hanging forever")
-assert(ChalkBox_AuctionPrice(2589).low==9000)
+assert(ChalkBox_AuctionPrice(2589).low==3000)
 ChalkBox_AuctionSetTooltips(false)
 assert(not ChalkBox_AuctionStatus().tooltip)
 ChalkBox_AuctionCommand("tooltip on")
