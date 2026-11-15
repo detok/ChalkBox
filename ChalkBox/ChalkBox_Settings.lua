@@ -411,10 +411,19 @@ local function MakeAuction()
                 ChalkBox_AuctionSetTooltips(on)
             end
         end)
-    Label(panel,"Scan Market uses browse results; Full listings has a 15m cooldown.",
-        "GameFontHighlightSmall",28,-375,500)
-    Label(panel,"Prices are asking prices. No buying or selling automation.",
-        "GameFontHighlightSmall",28,-397,500)
+    Toggle(panel,"Show disenchant estimates on gear tooltips",nil,
+        -342,function()
+            return type(ChalkBox_DisenchantTooltipsEnabled)=="function" and
+                ChalkBox_DisenchantTooltipsEnabled()
+        end,function(on)
+            if type(ChalkBox_DisenchantSetTooltips)=="function" then
+                ChalkBox_DisenchantSetTooltips(on)
+            end
+        end)
+    Label(panel,"Scan Market: browse asks  ·  Full listings: 15m cooldown.",
+        "GameFontHighlightSmall",28,-385,500)
+    Label(panel,"DE uses Classic odds; prices are asks, not sales.",
+        "GameFontHighlightSmall",28,-407,500)
     panel:AddRefresh(function()
         local st=ChalkBox_AuctionStatus and ChalkBox_AuctionStatus() or {}
         market:SetText(st.realm and
