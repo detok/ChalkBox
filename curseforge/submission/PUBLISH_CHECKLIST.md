@@ -1,58 +1,46 @@
-# ChalkBox — publication checklist (2.1.1)
+# ChalkBox publisher checklist — 2.2.10
+
+This is a **manual checklist**, not proof that Forever client behavior or a CurseForge project has been approved. The current source of truth for build/publishing mechanics is [Release process](../../docs/RELEASE_PROCESS.md).
 
 ## Build and verify
 
-- [ ] GitHub Actions passes Lua syntax, module tests, addon packaging and the media-kit artwork checks.
-- [ ] Both TOCs declare version 2.1.1 and the addon ZIP contains one ChalkBox folder.
-- [ ] Open WoW Forever after upgrading: the settings hierarchy expands as intended.
-- [ ] Confirm the optional compact meter is hidden at login; show it manually.
-- [ ] Verify opening the bank on a fresh character doesn't cause an addon-block warning; regular bag highlighting and offsets still work afterward.
-- [ ] Confirm Discoveries map button, dragging, source filters and search.
-- [ ] Verify the Area / Dungeon field opens a **direct, scrollable zone list** without nested menus, including when native menu APIs are unavailable.
-- [ ] Verify the dropdown is **above** search, item rows, the world map and the journal border, receives row clicks, and closes with the journal.
-- [ ] Confirm the in-game AddOns list shows the newer ChalkBox project mark from the packed TGA.
-- [ ] Test lists of at least 10 zones, map sync on/off, saved manual selection, and a creature-specific drop ratio such as 1/2=50%.
-- [ ] Check MacroForge spellbook scan, generated text, explicit macro creation and saved recipes.
-- [ ] Confirm the concise Bar hover tooltips, stat/background menus, color coding, movement, alignment and saved settings.
-- [ ] Confirm The Bar, QuestSense, CampSense, LootSense and Session Journal still work.
-- [ ] Verify Nearby-only auto-refresh, preserving/restoring manually selected remote quests, and no edits when the world map is open.
+- [ ] Both `ChalkBox.toc` and `ChalkBox_Camelot.toc` declare **2.2.10**, with unchanged intended interface IDs and identical Lua load order.
+- [ ] PR CI passes Lua 5.1 syntax, the complete module test suite, addon ZIP, media ZIP and current-changelog checks.
+- [ ] The main-branch workflow has published the exact release/tag and both assets are present.
+- [ ] Playable `ChalkBox-2.2.10.zip` has **one `ChalkBox/` root**. No source tests or screenshots are inside it.
+- [ ] The separate `ChalkBox-CurseForge-Media-2.2.10.zip` contains listing copy, 6 SVGs, 9 PNGs and 10 real gameplay JPGs.
+- [ ] No missing required bundled library notices. Do not assume a top-level NOTICE exists; use the verified licenses shipped in `ChalkBox/` and `ChalkBox/Libs/`.
 
-## CurseForge author setup
+## Current in-game smoke checks
 
-- [ ] Confirm the World of Warcraft **game flavor/version** offered by CurseForge is suitable for your tested Forever client. Don't mislabel Retail or Classic Era.
-- [ ] Set the project name **ChalkBox** and creator credit **Detok Whitemaine**.
-- [ ] Use the current [project fields](../copy/PROJECT_FIELDS.md), [description](../copy/PROJECT_DESCRIPTION.md) and [short summary](../copy/SHORT_COPY.md).
-- [ ] Upload **Project-Icon-512.png** from the separate media kit as the avatar (512px square).
-- [ ] Choose categories offered by the portal that match the addon.
-- [ ] Use **ChalkBox-2.1.1.zip** as the **game file**. Never upload the media kit ZIP as the playable addon.
-- [ ] Paste [FILE_CHANGELOG_2.1.1.md](../copy/FILE_CHANGELOG_2.1.1.md) for the file changelog.
-- [x] Select and crop authentic in-game screenshots; the [real screenshot gallery](../screenshots/README.md) is bundled separately from editorial art.
-- [ ] Upload the 10 JPG files from `Screenshots/` to the CurseForge project gallery.
-- [ ] Verify the license, third-party acknowledgments, supported versions and project links.
-- [ ] Submit to moderation; share the listing URL only once it exists and is approved.
+- [ ] Native ChalkBox AddOns pages open without an unwanted black rectangle; all nested pages are reachable.
+- [ ] Discoveries docks to the World Map, its dropdown/search/source list is clickable, map sync works, and the warm wood art and border are visible or fall back safely.
+- [ ] DropSense captures actual loot windows; hover old/dungeon rows without invented coordinates and new outdoor rows with correct observed-player coordinates.
+- [ ] LootSense shows valid KEEP/quest objective hints and distinguishes learned recipes from possible reference uses; no automatic inventory mutations.
+- [ ] QuestSense **Smart** runs outdoors and focuses on verified dungeon-specific accepted quests inside a party instance; manual watches restore on exit. With no trustworthy matches the tracker is preserved.
+- [ ] AuctionSense appears in the native AH, manual browse scan works or returns a clear error, and no missing listing average is fabricated. Old good scans survive failures.
+- [ ] MacroForge scans learned active spells, displays a legible multi-line preview and warnings, supports copy and safe Install New, has the native/fallback outer frame and warm inset sections.
+- [ ] The Bar shows the configured stats, right-click **Done editing** works, saved layouts persist, and safe top chrome shift/bag offsets avoid protected UI.
+- [ ] Combat Meter starts hidden, reports supported data and only sends a manual PARTY report where allowed. Session Journal, camp toast, Emota opt-in and QuietGuard default-OFF settings still work.
+- [ ] Test at the actual Forever client build and at least one smaller UI scale/window size.
 
-## GitHub presentation
+## Publishing form
 
-- [x] README points to the current release and both ZIPs and shows the real gameplay gallery.
-- [ ] Repository About description and topics reflect the current feature set.
-- [ ] Upload a branded social-preview PNG in GitHub Settings separately if desired.
-- [ ] Leave unshipped features and concept screenshots out of release claims.
+- [ ] Verify a **truly compatible game version/flavor** exists in the CurseForge portal. Do not mislabel unsupported Retail or Classic compatibility.
+- [ ] Project byline: **Detok Whitemaine**; source/issues/license accurate, no Blizzard affiliation claim.
+- [ ] Use [Project fields](../copy/PROJECT_FIELDS.md), [Description](../copy/PROJECT_DESCRIPTION.md), [FAQ](../copy/FAQ.md) and [Current file changelog](../copy/FILE_CHANGELOG_CURRENT.md).
+- [ ] Upload the **addon ZIP**, not the media ZIP or GitHub-generated Source code ZIP.
+- [ ] Upload square project avatar from `Artwork/PNG/Upload-Ready/Project-Icon-512.png`.
+- [ ] Review every screenshot: the ten archived genuine-client JPGs represent earlier builds and may not reflect this release's newest window styling.
+- [ ] Do not label `Artwork/PNG/Editorial-Only/` graphics as gameplay screenshots.
+- [ ] Set release type honestly based on current-client QA; submit and **wait for actual moderation confirmation** before sharing a project link.
 
-Official submission guidance: https://support.curseforge.com/support/solutions/articles/9000199552-project-submission-guide-and-tips
+## GitHub and post-release
 
-## AuctionSense 2.1.1 verification
+- [ ] The README's install/release links, [docs index](../../docs/README.md), commands and examples are accurate.
+- [ ] New release notes and current CurseForge changelog agree with the TOC version.
+- [ ] Historical `FILE_CHANGELOG_X.Y.Z.md` files remain archival; current kit includes `FILE_CHANGELOG_CURRENT.md`.
+- [ ] Confirm the actual link to the approved CurseForge project before publishing it anywhere.
+- [ ] Do not silently delete previous player SavedVariables; verify upgrade from an earlier installed version.
 
-- [ ] At an auctioneer, click **Scan Market** and verify the account-wide cooldown and scan progress.
-- [ ] Confirm stack-normalized asking prices, quantity and listing counts against a few known AH lots.
-- [ ] Confirm mixed gear variants, stale prices, per-faction separation and saved price history after a relog.
-- [ ] Close the AH mid-scan; prior prices must survive and there must be no protected action warning.
-- [ ] Confirm item tooltip toggle, clean searchable window and no unrequested scan, bid, purchase or posting.
-
-## AuctionSense native-tab acceptance (2.1.1)
-
-- [ ] With the AH open, verify AuctionSense appears alongside Blizzard's native tabs and the panel is clickable.
-- [ ] Switch to Buy, Sell, Auctions and back; no panel remains over Blizzard's transaction interface.
-- [ ] Click Scan Market and verify browse-results events, incrementally loaded item counts and an eventual saved snapshot.
-- [ ] Verify incomplete browse data never creates an invented average ask or listing count.
-- [ ] Test advanced Full listings request (15-minute server limit), no-response diagnostics and recovery without /reload.
-- [ ] Verify no protected-action blocking, including when closing the AH and reopening bags.
+[Publisher launch kit](../launch-kit/START_HERE.md) · [Maintainer runbook](../../docs/MAINTAINER_RUNBOOK.md) · [QA/policy](QA_AND_POLICY.md)
