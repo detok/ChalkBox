@@ -1,6 +1,6 @@
 # QuestSense Navigation
 
-**Available in ChalkBox 2.2.15 · WoW Forever · optional and OFF by default**
+**Available in ChalkBox 2.2.16 · WoW Forever · optional and OFF by default**
 
 QuestSense now includes a small movable **quest compass**, without installing TomTom or a separate questing addon. This is an original, deliberately simple **outdoor straight-line navigation** tool, not a full travel-path planner.
 
@@ -9,9 +9,13 @@ QuestSense now includes a small movable **quest compass**, without installing To
 - **Options → AddOns → ChalkBox → QuestSense → Navigation** → check **Show navigation arrow**.
 - Or type `/chalk nav on`.
 
-The navigator is **only a small floating arrow**, without a surrounding window, opaque panel, or buttons. **A small yard-distance label appears just below it.** **Left-drag** it to a comfortable position, **right-click** for Auto / Next / Hide, and **hover** for the selected quest and straight-line yard distance. The arrow dims to gray if the client cannot safely calculate a direction. **When dead or ghosted, your corpse has priority** if the game exposes its map marker; resurrection returns you to your quest. Choose **Sharp HD Arrow** (256px antialiased original TGA) or **Classic Arrow** (Blizzard atlas) in the same settings. Use **Lock arrow position** in settings to prevent accidental movement. Position and manual quest choice persist **per character**. It starts hidden for new characters.
+The navigator is **only a small floating arrow**, without a surrounding window, opaque panel, or buttons. **A small yard-distance label appears just below it.** **Left-drag** it to a comfortable position, **right-click** for Auto / Next / Hide, and **hover** for the selected quest and straight-line yard distance. The arrow dims to gray if the client cannot safely calculate a direction. **When dead or ghosted, your corpse has priority** if the game exposes its map marker; resurrection returns you to your quest. Choose one of **Original WoW** (the first minimap arrow), **Blizzard Navigation** (native tracked-arrow atlas), or **ChalkBox HD** (256px antialiased TGA) in these settings. Use **Lock arrow position** in settings to prevent accidental movement. Position and manual quest choice persist **per character**. It starts hidden for new characters.
 
 The arrow shows direction when available; its hover tooltip displays the selected quest name and *straight-line yards* when the game gives enough location data. The display belongs to ChalkBox only; your Blizzard World Map and personal waypoint are left alone. **QuestSense does add the followed accepted quest to Blizzard's existing native watch list when necessary** (and safe), without changing the selected quest, super-tracking, or removing other manual watches.
+
+## Blizzard quest-tracker right-click menu
+
+On compatible Forever builds, **right-click the existing Blizzard quest-tracker header** to open a small ChalkBox menu: **QuestSense Settings**, **Off**, **Smart**, **Nearby**, and **Navigation On/Off**. This uses an additive header hook and does not modify Blizzard's quest-row menus, selection, super-tracking or watched-quest interface. Existing slash commands and the Settings pages work on clients where the header is not hookable.
 
 ## Quick controls
 
@@ -29,6 +33,7 @@ The arrow shows direction when available; its hover tooltip displays the selecte
 
 | Slash command | Action |
 | --- | --- |
+| `/chalk nav original` / `classic` / `hd` | Select Original WoW, Blizzard Navigation or ChalkBox HD arrow art |
 | `/chalk nav on` | Enable compass |
 | `/chalk nav off` | Hide compass |
 | `/chalk nav auto` | Return to Auto (super-tracked or nearest known waypoint) |
