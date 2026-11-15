@@ -1,28 +1,21 @@
-# ChalkBox 2.2.4 — Your Items & Your Sales, inside Market
+# ChalkBox 2.2.5 — Know which quest needs that item
 
-## Three views, one familiar Auction House tab
-At any auctioneer choose Blizzard Auction House → **Market**, then select:
-- **Prices:** The existing scan and pricing browser, unchanged.
-- **My Items:** See items across your carried bags, combined by item ID. Review actual fresh lowest asks, item counts, vendor total and modeled disenchant expected value. Hovers show the details; protect/quest/bound items are never recommended for auctioning.
-- **Sales & Stats:** Actual **seller-mail invoice** receipts captured when you visit a mailbox. Displays captured sale count, gross sale price, house fees and proceeds (including returned deposit). Readable compact row list, hover details, and search.
+## LootSense: Quest name and progress
+When a bag or loot item matches an *accepted* quest's item-collection objective, ChalkBox can show:
 
-The Buy, Sell and Auctions tabs remain Blizzard's own. Market has no transaction buttons. Any suggested pricing is advisory and must be verified in the real Sell tab.
+- **KEEP** — Needed for: Keeper of the Flame
+- **1 / 5 collected**
 
-## How the receipt history works
-ChalkBox observes **completed** native seller invoices from `GetInboxInvoiceInfo` during mailbox events; it skips pending sale notifications and buyer invoices. You do **not** have to click a ChalkBox scan to register those invoices.
+If more than one accepted quest uses that item, the tooltip lists all matching quest names and counts. Completed objectives remain shown as complete until the quest is turned in or removed, preserving the existing do-not-sell safety. User KEEP protection still takes priority, but a known active quest can additionally be displayed.
 
-Blizzard's supported mail APIs do not expose a stable unique mailbox ID suitable for perfect lifetime deduplication. ChalkBox uses a bounded per-character invoice signature and expiry-time approximation, avoiding repeat counts for an unchanged mailbox. Very similar invoices can sometimes be merged or counted separately. Items sold before installing the update or mail that disappears before being observed cannot be recovered. This is an **observed receipts ledger**, not full account transaction history. Mail gold is not automatically collected. The totals are *gross sale / after-cut invoice proceeds*, **not net trading profit**, as purchasing costs, unsold fees and all unsaved sales are excluded.
+This reads the quest title and objective progress from **Core.lua's existing quest cache**, created from the native Forever `C_QuestLog.GetQuestObjectives`. No new queries on hover or third-party database. The game's item-collection objective names must match the item's visible name; unusual objectives and quest-class items without an accepted matching objective safely show general quest protection **without guessing a quest title**.
 
-## Market pricing limits
-Asking prices are not completed sales. Old (>24h), mixed-variant or missing prices are never used as a numeric appraisal. Bind/tradeability needs to be verified in-game; character KEEP and quest items remain protected. Disenchant expected value uses Forever-client brackets and Classic-reference yield probabilities and may not exactly match Forever servers.
+Vendor BUY FOR QUEST and DO NOT SELL instructions, quest watch settings and all other tooltips remain unchanged.
 
-## Safety and compatibility
-No additional auction requests, posting, buying, mail retrieval, protected frame edits, item buttons or event-driven spellcasts. No external services, other addons, or new windows. AuctionSense's 2.2.1 taint hotfix, the original Market scanner, DisenchantSense and all ChalkBox modules remain. Sales stored in new `ChalkBoxDB.auctionInsights` data without rewriting the existing AuctionSense snapshot.
+## Discoveries: Native map-like backdrop
+The World Map-owned Discoveries side panel uses Forever's own `gamepad-mapquestlog-bgtile-2k` tiled map background, darkened enough to keep small text readable. The original solid-color background is retained as a safe fallback when that native atlas is unavailable, including during theme changes. Nothing moves or recolors the underlying World Map itself. Discoveries area/source/sort dropdowns, saved selections, popup layering and map dock logic stay intact.
 
-## In-game checks
-1. Install `ChalkBox-2.2.4.zip` over your existing addon, keep SavedVariables, `/reload`.
-2. Visit an auctioneer: Market → Prices → Scan Market, then My Items. Check quantity, fresh low ask, vendor and DE in the hover.
-3. Visit a mailbox containing an actual **seller** invoice. Open the mailbox, then return to Auction House → Market → Sales & Stats and verify the receipt.
-4. Reopen the mailbox and verify the same invoice isn't counted again. Switch back to Buy, use your bags, and confirm no blocked item use.
+## Safety and tests
+Two focused changes only: quest evidence in existing LootSense, and purely cosmetic panel artwork. No item-use methods, protected combat UI, AH displayMode calls, auction/DE engine changes, external API, SavedVariables migration, new windows, or automatic quest tracking.
 
-Automated Lua 5.1, full addon suite and ZIP checks run in GitHub Actions. In-client Forever confirmation is still required.
+Install `ChalkBox-2.2.5.zip` over the previous ChalkBox folder, preserve SavedVariables and type `/reload`. The full automated Lua 5.1/packaging suite must pass before publication. WoW Forever's in-client appearance and the localized quest objective names still require live verification.
