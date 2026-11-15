@@ -8,7 +8,7 @@
 
 Quality-of-life tools for **World of Warcraft: Forever** — loot discoveries, quests, professions, auction prices, macros, a compact HUD, combat information and a little personality.
 
-[**Latest release**](https://github.com/detok/ChalkBox/releases/latest) · [**Install & first run**](docs/GETTING_STARTED.md) · [**Player handbook**](docs/USER_GUIDE.md) · [**Documentation home**](docs/README.md) · [**Report a problem**](https://github.com/detok/ChalkBox/issues/new/choose)
+[**Releases (including prereleases)**](https://github.com/detok/ChalkBox/releases) · [**Install & first run**](docs/GETTING_STARTED.md) · [**Player handbook**](docs/USER_GUIDE.md) · [**Documentation home**](docs/README.md) · [**Report a problem**](https://github.com/detok/ChalkBox/issues/new/choose)
 
 </div>
 
