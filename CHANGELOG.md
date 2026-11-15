@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.8 — Discoveries loot locations and native background fixes (test release)
+- **Discoveries:** remember up to six recent, spatially distinct outdoor player positions where each item was observed in a loot window, rounded to 0.1% map coordinates. Nearby repeats merge and count observations. When a loot source can be identified unambiguously, store its own independent item locations; mixed-source windows remain zone-only. Show the three newest spots and zone name in the item's Discoveries hover tooltip.
+- **Honest location semantics:** these are the player's position at loot-window opening, not a guaranteed corpse death point. Dungeons, unavailable/invalid map coordinates and historical pre-feature data remain without coordinates. No invented locations, automatic map markers, extra map manipulation or official drop-rate claims. Keep existing v2 SavedVariables and old loot counts intact.
+- **Native AddOns settings:** remove the nearly opaque ChalkBox rectangle created in 2.2.6; Blizzard owns the original transparent settings canvas.
+- **Discoveries + MacroForge:** restore visibly textured native World Map parchment by reducing oversized dark glazes, verify atlas existence when the native query is available and retry a late-loaded atlas on reopening. Retain solid themed fallbacks when art is missing.
+- Lua 5.1 tests cover location precision, dedup, source isolation, bounded retention, dungeons, missing APIs, visible map texture, retry behavior and the native settings surface.
+
 ## 2.2.7 — MacroForge UI and Bar edit flow (test release)
 - **MacroForge:** match Discoveries' native parchment/map atlas with a readable dark glaze and solid fallback; add consistent inset frames around the existing workbench sections and retain the original two-column arrangement.
 - Replace the single-line-looking Macro Preview with a clipped multiline scroll area that keeps long macro text inside its frame; preserve select/copy and intentional installation. Give warnings under Saved Builds a bounded wrapped area and separate Macro Name below.
