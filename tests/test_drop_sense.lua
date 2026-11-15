@@ -236,6 +236,18 @@ handlers.event(nil,"LOOT_OPENED")
 assert(ChalkBox_DropRead(999,"z:1436").areaWindows==1 and
     not ChalkBox_DropRead(999,"z:1436").locations,
     "missing coordinate API never invents or blocks ordinary discovery")
+-- Some client builds return the invalid zero/zero map sentinel.
+handlers.event(nil,"LOOT_CLOSED")
+C_Map.GetPlayerMapPosition=function()
+    return {GetXY=function() return 0,0 end}
+end
+now=2360
+guid="Creature-0-1-22-333-12345-000EEE"
+links={"|Hitem:998:0|h[Unknown Map Origin]|h"}
+handlers.event(nil,"LOOT_OPENED")
+assert(ChalkBox_DropRead(998,"z:1436").areaWindows==1 and
+    not ChalkBox_DropRead(998,"z:1436").locations,
+    "zero-zero client placeholder cannot become a claimed loot location")
 ChalkBox_DropSetOption("enabled",false)
 -- Previous 1.10.0 saved watches are retained as older unsited observations;
 -- never backfill invented zone/source data.
