@@ -210,7 +210,7 @@ for _,font in ipairs(fonts) do
 end
 assert(warning and warning.h==59 and warning.wordWrap and warning.vAlign=="TOP",
     "warnings have a reserved bounded, multiline-aware area")
-assert(warning.anchor[4]-warning.h >
+assert(warning.anchor[5]-warning.h >
     window.sections.name.y,
     "warning text ends above the macro name inset")
 assert(installs==0,"copying and scrolling never installs a native macro")
