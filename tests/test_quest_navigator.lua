@@ -95,6 +95,10 @@ _G.C_Map={
 }
 _G.DEFAULT_CHAT_FRAME={AddMessage=function() end}
 _G.InCombatLockdown=function() return false end
+local nativeFocus={}
+_G.ChalkBox_QuestNavFocus=function(id)
+    nativeFocus[#nativeFocus+1]=id or 0
+end
 local menuEntries,menusOpened={},0
 _G.MenuUtil={
     CreateContextMenu=function(owner,build)
@@ -177,10 +181,24 @@ assert(not st.enabled and not frames.ChalkBoxQuestNavigator,
 assert(ChalkBox_NavCommand("on"))
 local nav=frames.ChalkBoxQuestNavigator
 assert(nav and nav:IsShown() and nav.movable and nav.clamped
-    and nav.w==64 and nav.h==64,
-    "navigation is a movable, uncluttered 64px arrow hit area")
-assert(nav.arrow.atlas=="Navigation-Tracked-Arrow",
-    "native north-up arrow atlas avoids the minimap glyph orientation")
+    and nav.w==76 and nav.h==90,
+    "navigator stays a small arrow with space underneath for yards")
+assert(nav.arrow.texture==
+    "Interface\\AddOns\\ChalkBox\\assets\\QuestArrowHD",
+    "new default HD option uses the bundled 256px custom TGA")
+assert(nav.distanceLabel and nav.distanceLabel.text:find("yd",1,true),
+    "yard count appears underneath the arrow, not only on tooltip")
+assert(nativeFocus[#nativeFocus]==222,
+    "selected quest is passed to QuestSense for native watch-list inclusion")
+assert(ChalkBox_NavCommand("classic") and
+    nav.arrow.atlas=="Navigation-Tracked-Arrow" and
+    ChalkBox_NavStatus().arrowStyle=="classic",
+    "classic arrow switches back to original Blizzard atlas")
+assert(ChalkBox_NavCommand("hd") and
+    nav.arrow.texture==
+        "Interface\\AddOns\\ChalkBox\\assets\\QuestArrowHD" and
+    ChalkBox_NavStatus().arrowStyle=="hd",
+    "HD mode can be restored without resetting the chosen quest")
 assert(nav.backdrop==nil and nav.back==nil and not nav.title
     and not nav.distance and not nav.mode and not nav.children[1],
     "floating compass has no box, labels, border or visible action buttons")
@@ -314,7 +332,7 @@ assert(ChalkBox_NavStatus().targetType=="quest" and
 
 assert(ChalkBox_NavCommand("follow 111"))
 assert(ChalkBox_NavStatus().mode=="Manual" and
-    ChalkBox_NavStatus().questID==111 and
+    ChalkBox_NavStatus().questID==111 and nativeFocus[#nativeFocus]==111 and
     math.abs(nav.arrow.angle)<0.01,
     "manual chosen quest wins over Blizzard super-tracking")
 assert(not ChalkBox_NavCommand("follow 999"),
@@ -335,7 +353,7 @@ assert(ChalkBox_NavCommand("unlock"))
 nav.scripts.OnDragStart(nav)
 assert(nav.started,"unlocked arrow can be dragged")
 nav.scripts.OnDragStop(nav)
-assert(ChalkBoxZoneDB.questNavigator.offsetY==-268,
+assert(ChalkBoxZoneDB.questNavigator.offsetY==-255,
     "release position persists a bounded user offset")
 assert(ChalkBox_NavCommand("reset") and
     ChalkBoxZoneDB.questNavigator.offsetX==nil,
@@ -387,7 +405,7 @@ logLoading=false
 ChalkBox_NavCommand("status")
 assert(ChalkBox_NavStatus().manualID==444)
 assert(ChalkBox_NavCommand("off") and not nav:IsShown()
-    and not ChalkBox_NavStatus().enabled,
+    and not ChalkBox_NavStatus().enabled and nativeFocus[#nativeFocus]==0,
     "navigation hides cleanly without changing QuestSense tracker")
 -- Older Forever builds may expose EasyMenu rather than the modern
 -- MenuUtil. Verify the exact same three actions and native placement.
