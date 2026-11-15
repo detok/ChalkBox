@@ -7,9 +7,9 @@ local MAX_HISTORY=20
 local MAP_ATLAS="gamepad-mapquestlog-bgtile-2k"
 local PANEL_FILL={0.112,0.086,0.062,0.91}
 local function Color(value)
-    return type(value)=="number" and value==value and value>=0 and
-        value<=1 and (type(issecretvalue)~="function" or
-        not issecretvalue(value))
+    return (type(issecretvalue)~="function" or
+        not issecretvalue(value)) and type(value)=="number" and
+        value==value and value>=0 and value<=1
 end
 local window,view= nil,0 -- 0=current; 1=most recent finished
 local textRows={}
