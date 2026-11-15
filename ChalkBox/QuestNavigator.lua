@@ -103,7 +103,9 @@ local function World(mapID,x,y)
     if type(C_Map)~="table" then return nil end
     local ok,continent,pos=pcall(C_Map.GetWorldPosFromMapPos,
         mapID,{x=x,y=y})
-    if not ok or not ID(continent) then return nil end
+    -- C_Map uses world instance 0 for Eastern Kingdoms; this is valid.
+    if not ok or not Number(continent) or continent<0 or
+        continent%1~=0 then return nil end
     local xx,yy=XY(pos)
     if xx then return continent,xx,yy end
 end
@@ -136,7 +138,7 @@ local function Distance(point,player)
 end
 local function Accepted()
     local n=Call(C_QuestLog and C_QuestLog.GetNumQuestLogEntries)
-    if not Number(n) or n<0 or n>1000 then return {} end
+    if not Number(n) or n<0 or n>1000 then return nil end
     local result={}
     local mapID=Map()
     for i=1,math.min(n,600) do
@@ -144,20 +146,24 @@ local function Accepted()
         if type(q)=="table" and q.isHeader~=true and
             q.isHidden~=true and ID(q.questID) then
             local point=QuestPoint(q.questID,mapID)
-            if point then
-                local name=Public(q.title) and type(q.title)=="string"
-                    and q.title or ("Quest #"..q.questID)
-                name=name:sub(1,90)
-                result[#result+1]={id=q.questID,name=name,
-                    point=point,index=i}
-            end
+            local name=Public(q.title) and type(q.title)=="string"
+                and q.title or ("Quest #"..q.questID)
+            name=name:sub(1,90)
+            result[#result+1]={id=q.questID,name=name,
+                point=point,index=i}
         end
     end
     return result
 end
 local function Refresh()
     local db=DB()
-    options=Accepted()
+    local accepted=Accepted()
+    if not accepted then
+        reason="Quest log loading"
+        if frame then frame:Show() end
+        return
+    end
+    options=accepted
     if not db or not db.enabled then
         target=nil;reason="Navigation off"
         if frame then frame:Hide() end
@@ -175,20 +181,28 @@ local function Refresh()
     local preferred
     local nearest,nearestDistance
     for _,q in ipairs(options) do
-        if ID(super) and q.id==super then preferred=q end
-        local dist=player and Distance(q.point,player)
-        if dist and (not nearestDistance or dist<nearestDistance) then
-            nearest,nearestDistance=q,dist
+        if q.point then
+            if ID(super) and q.id==super then preferred=q end
+            local dist=player and Distance(q.point,player)
+            if dist and (not nearestDistance or dist<nearestDistance) then
+                nearest,nearestDistance=q,dist
+            end
         end
     end
-    target=manual or preferred or nearest or options[1]
+    local first
+    for _,q in ipairs(options) do
+        if q.point then first=q;break end
+    end
+    target=manual or preferred or nearest or first
     chosen=manual and "Manual" or (preferred and "Tracked" or "Smart")
     reason=player and "Ready" or (why or "No coordinates")
-    if not target then reason="No accepted quest waypoints" end
+    if not target then reason="No accepted quest waypoints"
+    elseif not target.point then reason="Waiting for quest waypoint" end
     if frame then frame:Show() end
 end
 local function Face()
-    if not target then return nil,"No accepted quest waypoint" end
+    if not target then return nil,reason end
+    if not target.point then return nil,"No waypoint for selected quest" end
     local player,why=PlayerPosition()
     if not player then return nil,why end
     local dist,dx,dy=Distance(target.point,player)
@@ -338,13 +352,21 @@ function ChalkBox_NavStatus()
         questID=target and target.id or nil,
         title=target and target.name or nil,
         mode=chosen or "Smart",reason=reason,
-        candidates=#options}
+        candidates=(function()
+            local count=0
+            for _,q in ipairs(options) do
+                if q.point then count=count+1 end
+            end
+            return count
+        end)()}
 end
 function ChalkBox_NavChoices()
     local candidates=Accepted()
     local result={}
-    for _,v in ipairs(candidates) do
-        result[#result+1]={id=v.id,name=v.name}
+    for _,v in ipairs(candidates or {}) do
+        if v.point then
+            result[#result+1]={id=v.id,name=v.name}
+        end
     end
     return result
 end
@@ -359,7 +381,7 @@ function ChalkBox_NavCommand(input)
     elseif action=="auto" then
         db.enabled=true;db.questID=nil
     elseif action=="next" or action=="previous" or action=="prev" then
-        local items=Accepted()
+        local items=ChalkBox_NavChoices()
         if #items==0 then
             Message("No accepted quests with known waypoints.")
             return false
@@ -390,7 +412,7 @@ function ChalkBox_NavCommand(input)
         if id then
             id=tonumber(id)
             local found=false
-            for _,q in ipairs(Accepted()) do
+            for _,q in ipairs(ChalkBox_NavChoices()) do
                 if q.id==id then found=true;break end
             end
             if not found then
