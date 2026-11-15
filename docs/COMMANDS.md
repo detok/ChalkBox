@@ -53,9 +53,9 @@
 | `/chalk auction status` | Current scan state and market snapshot |
 | `/chalk auction tooltip on` / `off` | Show or hide AH asking-price annotations |
 
-**Quest compass (OFF by default):** `/chalk nav on|off|auto|next|prev|follow QUEST_ID|original|classic|hd|lock|unlock|reset|status`. The small outdoor arrow follows only accepted quests with verified waypoints. Auto honors Blizzard's super-tracked quest first, then the nearest known target. It never sets/clears your map pin or deletes other manual quest watches. It can add the selected accepted quest to Blizzard's native watch list, and never guesses an instance direction. See [Navigation](QUEST_NAVIGATION.md).
+**Quest compass (OFF by default):** `/chalk nav on|off|auto|next|prev|follow QUEST_ID|original|classic|hd|size 32-72|lock|unlock|reset|status`. The small outdoor arrow follows only accepted quests with verified waypoints. Auto honors Blizzard's super-tracked quest first, then the nearest known target. It never sets/clears your map pin or deletes other manual quest watches. It can add the selected accepted quest to Blizzard's native watch list, and never guesses an instance direction. See [Navigation](QUEST_NAVIGATION.md).
 
-**Native quick actions:** On compatible Forever builds, right-click Blizzard's objective-tracker header to access QuestSense Settings, Off, Smart, Nearby and the Navigation toggle. The native `/macro` window may show a MacroForge tab above it; `/chalk macro` always remains available.
+**Native quick actions:** On compatible Forever builds, right-click Blizzard's objective-tracker header to access QuestSense Settings, Off, Smart, Nearby and the Navigation toggle. The native `/macro` window may show a MacroForge button beside Delete in the native bottom row; `/chalk macro` always remains available.
 
 **Safety:** Smart matching is conservative in dungeons; unverified quest matches do not clear your tracker. MacroForge never performs an unattended rotation. An AuctionSense scan observes asking prices rather than selling, bidding or purchasing.
 
