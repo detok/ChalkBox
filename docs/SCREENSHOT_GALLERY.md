@@ -2,7 +2,7 @@
 
 Real **WoW Forever** gameplay captures, supplied by the addon author. These were cropped to keep the addon UI readable and leave out player nameplates and chat. No controls or values were invented or redrawn.
 
-The shots show the 2.0.5 interface. The Discoveries image comes from the live-client capture after its journal rendering was repaired.
+**Archive notice:** These images document the **2.0.5** UI, not a current 2.2.10 acceptance screenshot. Discoveries and MacroForge have since received a warm wood/frame redesign, QuestSense added instance-aware Smart mode, and other settings have evolved. The shots remain authentic gameplay evidence of the older interface, but should be replaced or clearly labeled before making current-release visual claims.
 
 ## Map Discoveries
 
