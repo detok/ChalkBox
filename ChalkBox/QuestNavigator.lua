@@ -418,6 +418,7 @@ function ChalkBox_NavCommand(input)
         if frame then Pos(frame) end
     elseif action=="status" then
         Refresh()
+        UpdateDisplay()
         local s=ChalkBox_NavStatus()
         Message((s.enabled and "ON" or "OFF").." | "..
             s.mode.." | "..(s.title or "No target")..
