@@ -526,6 +526,10 @@ assert(ControlIn("QuestSense Navigation","Auto: Tracked / Nearest")
     and ControlIn("QuestSense Navigation","Next Quest")
     and ControlIn("QuestSense Navigation","Hide"),
     "navigator settings expose compact Auto / Next / Hide controls")
+assert(ControlIn("QuestSense Navigation","Original WoW")
+    and ControlIn("QuestSense Navigation","Blizzard Navigation")
+    and ControlIn("QuestSense Navigation","ChalkBox HD"),
+    "three mutually exclusive arrow styles live under QuestSense Navigation")
 local barChecks=FindCheckByParentTitle("The Bar")
 assert(#barChecks==4,
     "full-width Bar has its own top-chrome shift setting")
