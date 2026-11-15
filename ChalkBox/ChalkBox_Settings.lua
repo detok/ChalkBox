@@ -502,23 +502,39 @@ local function MakeForge()
         end
     end)
     local scan=Label(panel,"","GameFontHighlight",28,-254,500)
+    Toggle(panel,"Show MacroForge in AddOn Compartment",
+        "Adds a shortcut below the minimap calendar. Hiding may require /reload.",
+        -280,function()
+            local st=ChalkBox_MacroForgeCompartmentStatus and
+                ChalkBox_MacroForgeCompartmentStatus() or {}
+            return st.enabled==true
+        end,function(on)
+            if type(ChalkBox_MacroForgeCompartmentSet)=="function" then
+                ChalkBox_MacroForgeCompartmentSet(on)
+            end
+        end)
+    local shortcut=Label(panel,"","GameFontHighlightSmall",28,-337,495)
     panel:AddRefresh(function()
-        local s=type(ChalkBox_ForgeStatus)=="function"
+        local st=type(ChalkBox_ForgeStatus)=="function"
             and ChalkBox_ForgeStatus() or nil
-        scan:SetText(s and (s.class.."  ·  "..s.spells..
-            " learned active spells  ·  "..s.saved.." saved builds") or
+        scan:SetText(st and (st.class.."  ·  "..st.spells..
+            " learned active spells  ·  "..st.saved.." saved builds") or
             "Spellbook information unavailable.")
+        local c=ChalkBox_MacroForgeCompartmentStatus and
+            ChalkBox_MacroForgeCompartmentStatus() or {}
+        shortcut:SetText(c.reloadRequired and
+            "Shortcut will disappear after /reload." or
+            (c.enabled and not c.available and
+                "Shortcut unavailable on this client; preference saved." or ""))
     end)
     Label(panel,"NO AUTOMATIC COMBAT OR HIDDEN MACRO CHANGES",
-        "GameFontNormal",27,-307,499)
-    Label(panel,"MacroForge cannot bypass GCDs, skip cooldowns,",
-        "GameFontHighlightSmall",27,-335,495)
-    Label(panel,"or execute a rotation from one click. All macro text is",
-        "GameFontHighlightSmall",27,-355,495)
-    Label(panel,"generated visibly and checked before copying.",
-        "GameFontHighlightSmall",27,-375,495)
-    Label(panel,"Copy with Ctrl+C, or explicitly create a NEW macro outside combat.",
-        "GameFontHighlightSmall",27,-415,505)
+        "GameFontNormal",27,-366,499)
+    Label(panel,"MacroForge respects the GCD and never runs a rotation.",
+        "GameFontHighlightSmall",27,-390,495)
+    Label(panel,"Every generated macro is visible before copying or installation.",
+        "GameFontHighlightSmall",27,-410,495)
+    Label(panel,"A new named macro is installed only at your request, outside combat.",
+        "GameFontHighlightSmall",27,-430,505)
     return panel
 end
 
@@ -1417,5 +1433,8 @@ local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
 eventFrame:SetScript("OnEvent", function(self)
     Register()
+    if type(ChalkBox_MacroForgeCompartmentRefresh)=="function" then
+        ChalkBox_MacroForgeCompartmentRefresh()
+    end
     self:UnregisterEvent("PLAYER_LOGIN")
 end)
