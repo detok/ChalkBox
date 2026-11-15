@@ -1,6 +1,6 @@
 # QuestSense Navigation
 
-**Available in ChalkBox 2.2.12 · WoW Forever · optional and OFF by default**
+**Available in ChalkBox 2.2.13 · WoW Forever · optional and OFF by default**
 
 QuestSense now includes a small movable **quest compass**, without installing TomTom or a separate questing addon. This is an original, deliberately simple **outdoor straight-line navigation** tool, not a full travel-path planner.
 
@@ -9,17 +9,17 @@ QuestSense now includes a small movable **quest compass**, without installing To
 - **Options → AddOns → ChalkBox → QuestSense → Navigation** → check **Show navigation arrow**.
 - Or type `/chalk nav on`.
 
-The arrow appears in a compact framed window near the upper screen. Drag it to a comfortable position and use **Lock arrow position** in settings to prevent accidental movement. The position and manual quest choice persist **per character**. The window starts hidden for new characters.
+The navigator is **only a small floating arrow**, without a surrounding window, text panel, or buttons. **Left-drag** it to a comfortable position, **right-click** for Auto / Next / Hide, and **hover** for the selected quest and straight-line yard distance. The arrow dims to gray if the client cannot safely calculate a direction. Use **Lock arrow position** in settings to prevent accidental movement. Position and manual quest choice persist **per character**. It starts hidden for new characters.
 
-The arrow displays the selected quest name, compass direction and *straight-line yards* when the game gives enough location data. The display belongs to ChalkBox only; your Blizzard World Map, personal waypoint and native quest tracker are left alone.
+The arrow shows direction when available; its hover tooltip displays the selected quest name and *straight-line yards* when the game gives enough location data. The display belongs to ChalkBox only; your Blizzard World Map, personal waypoint and native quest tracker are left alone.
 
 ## Quick controls
 
 | Control | What it does |
 | --- | --- |
-| **Auto** (on arrow or in settings) | Prefer a valid Blizzard super-tracked quest, otherwise select the nearest accepted quest with a verified outdoor waypoint in the player's region |
-| **Next** (on arrow) | Manually cycle to the next accepted quest with a real waypoint |
-| **Hide** (on arrow) | Turn off the small navigator without disabling QuestSense or discarding your quest watches |
+| **Auto** (arrow's right-click menu or settings) | Prefer a valid Blizzard super-tracked quest, otherwise select the nearest accepted quest with a verified outdoor waypoint in the player's region |
+| **Next** (arrow's right-click menu) | Manually cycle to the next accepted quest with a real waypoint |
+| **Hide** (arrow's right-click menu) | Turn off the small navigator without disabling QuestSense or discarding your quest watches |
 | **Previous Quest** (settings) | Cycle backwards through valid quest destinations |
 | **Lock arrow position** (settings) | Disable/enable dragging |
 | **Reset Position** (settings) | Restore the default top-center position |

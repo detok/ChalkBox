@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.13 — QuestSense arrow-only UI
+- Simplify the optional quest compass to **only the floating 64px MinimapArrow**. Remove its permanent opaque box, outer border, title/distance panel and visible action buttons. Preserve existing target, position, locking, waypoint reads, navigation logic and saved settings.
+- **Right-click the arrow** for the three native menu actions: **Auto (follow tracked)**, **Next quest**, **Hide arrow**. Support both native MenuUtil and legacy EasyMenu clients, with QuestSense settings as a compatibility fallback.
+- **Hover** for quest name, straight-line distance or clear GPS-unavailable message. An unavailable direction now leaves a muted gray arrow rather than displaying a potentially wrong heading; valid directions stay fully visible.
+- Preserve left-drag positioning and saved location; the existing settings page still offers enable/disable, previous quest, lock and reset. No quest-watch, map-waypoint, super-tracking or gameplay API changes.
+
 ## 2.2.12 — QuestSense Navigation compass (test release)
 - **QuestSense Navigation:** add a compact, optional, movable native-bordered arrow that follows verified accepted quest waypoints, displays the current quest and straight-line yard distance, and safely hides its direction when the player position/facing or destination cannot be resolved.
 - **Auto / Next / Hide** directly on the compass, with a new **QuestSense → Navigation** settings page for activation, previous quest, position lock, reset and status. `/chalk nav` commands support the same actions and `follow QUEST_ID`.

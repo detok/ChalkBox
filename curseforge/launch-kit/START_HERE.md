@@ -1,8 +1,8 @@
-# ChalkBox 2.2.12 — publisher's launch kit
+# ChalkBox 2.2.13 — publisher's launch kit
 
-**This is the separate `ChalkBox-CurseForge-Media-2.2.12.zip`. It is NOT a playable addon.**
+**This is the separate `ChalkBox-CurseForge-Media-2.2.13.zip`. It is NOT a playable addon.**
 
-The playable archive is **`ChalkBox-2.2.12.zip`**, available from [GitHub Releases](https://github.com/detok/ChalkBox/releases/tag/v2.2.12). Inside it is one game-installable `ChalkBox/` directory.
+The playable archive is **`ChalkBox-2.2.13.zip`**, available from [GitHub Releases](https://github.com/detok/ChalkBox/releases/tag/v2.2.13). Inside it is one game-installable `ChalkBox/` directory.
 
 ## Where each media-kit file goes
 

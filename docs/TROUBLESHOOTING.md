@@ -1,6 +1,6 @@
 # Troubleshooting ChalkBox
 
-**Current baseline: 2.2.12 · World of Warcraft: Forever**
+**Current baseline: 2.2.13 · World of Warcraft: Forever**
 
 This page covers issues you can diagnose safely without deleting SavedVariables, reinstalling unrelated addons or modifying Blizzard's protected interface.
 
@@ -11,20 +11,20 @@ This page covers issues you can diagnose safely without deleting SavedVariables,
 | Problem | First thing to check |
 | --- | --- |
 | Addon missing from the AddOns list | Wrong game directory, double-nested extracted folder or incomplete download — use the **addon** ZIP, not Source code or media ZIP |
-| ChalkBox settings look strange | Confirm version 2.2.12; native Settings pages should **not** have a solid black sheet over Blizzard's background |
+| ChalkBox settings look strange | Confirm version 2.2.13; native Settings pages should **not** have a solid black sheet over Blizzard's background |
 | Discoveries button or journal missing | Open the native World Map; run `/chalk drops map` and `/chalk drops map status` |
 | Discoveries shows no items | Run `/chalk drops status`; only **observed, readable** loot windows are saved; choose a zone/dungeon with prior observations |
 | No coordinates for an item | Only later outdoor loot-window observations with usable map coordinates get location samples; dungeon and older rows have no invented positions |
 | Map-derived wood texture missing | Native atlas may be unavailable on this client; reopen the window after `/reload`, note exact client build and attach a screenshot |
 | QuestSense tracks unexpected quests | Verify Smart / Nearby / All mode, `/chalk quests status`, whether the map/quest log/combat is preventing updates |
-| Quest compass missing or not pointing | It starts OFF. Enable under QuestSense → Navigation or `/chalk nav on`. Inspect `/chalk nav status`; missing waypoints, dungeons and different regions with unavailable world coordinates deliberately suppress the direction |
+| Quest compass missing or not pointing | It starts OFF. Enable under QuestSense → Navigation or `/chalk nav on`; right-click the bare arrow for Auto / Next / Hide, or hover for its quest and yard distance. Inspect `/chalk nav status`; missing waypoints, dungeons and different regions with unavailable world coordinates deliberately suppress the direction |
 | Dungeon quests aren't filtered | Enter a **party** instance with accepted quests; Smart needs trustworthy instance/quest map or matching dungeon-header information |
 | MacroForge has no spells | Open the character's actual active spellbook, click **Rescan Spellbook** or use `/chalk forge rescan` |
 | Macro text is weird or too long | Review the generated preview and warnings; `/castsequence` and multiple `/cast` lines cannot bypass cooldown/GCD requirements |
 | AuctionSense scan does nothing | Visit an auctioneer and open the **AuctionSense** tab; request a scan manually, check server cooldown and `/chalk auction status` |
 | DE estimate is absent | Not all gear/brackets or AH materials have reliable outcome or price data; try `/chalk de [item]` |
 | Bar hides or overlaps something | Check Bar status, top chrome shift, screen width and existing saved per-character layout |
-| Adventure Journal is transparent or borderless | Open `/chalk session`; version 2.2.12 has a native border and opaque fallback even with global opacity 0. If art is missing, note the client build and retry after reopen; v1 session data should remain intact |
+| Adventure Journal is transparent or borderless | Open `/chalk session`; version 2.2.13 has a native border and opaque fallback even with global opacity 0. If art is missing, note the client build and retry after reopen; v1 session data should remain intact |
 | Compact Combat Meter empty | It **starts hidden**; use `/chalk meter show`. Native data can be unavailable or protected |
 | QuietGuard blocks an invite unexpectedly | Check saved ON filters and **Blizzard's own built-in social settings** |
 | Emota appears inactive | Automatic emotes require opt-in; idle pacing is intentionally slow and no automated emotes run in combat |

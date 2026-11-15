@@ -66,6 +66,27 @@ _G.C_Map={
 }
 _G.DEFAULT_CHAT_FRAME={AddMessage=function() end}
 _G.InCombatLockdown=function() return false end
+local menuEntries,menusOpened={},0
+_G.MenuUtil={
+    CreateContextMenu=function(owner,build)
+        assert(owner==frames.ChalkBoxQuestNavigator,
+            "right-click opens menu on the arrow hit area")
+        menuEntries={};menusOpened=menusOpened+1
+        local root={}
+        function root:CreateButton(label,fn)
+            menuEntries[#menuEntries+1]={label=label,action=fn}
+        end
+        build(owner,root)
+    end
+}
+_G.GameTooltip={
+    SetOwner=function(self,owner,anchor)
+        self.owner=owner;self.anchor=anchor;self.lines={}
+    end,
+    AddLine=function(self,value) self.lines[#self.lines+1]=value end,
+    Show=function(self) self.shown=true end,
+    Hide=function(self) self.shown=false end,
+}
 _G.CreateFrame=function(kind,name,parent,template)
     local f={kind=kind,name=name,parent=parent,template=template,
         children={},scripts={},shown=false}
@@ -124,18 +145,44 @@ assert(not st.enabled and not frames.ChalkBoxQuestNavigator,
     "navigation starts off and never creates an unwanted window")
 assert(ChalkBox_NavCommand("on"))
 local nav=frames.ChalkBoxQuestNavigator
-assert(nav and nav:IsShown() and nav.movable and nav.clamped,
-    "navigation has a movable, clamped single frame when enabled")
-assert(nav.backdrop and nav.backdrop.edgeFile==
-    "Interface\\DialogFrame\\UI-DialogBox-Border",
-    "native ChalkBox border surrounds the compact arrow")
+assert(nav and nav:IsShown() and nav.movable and nav.clamped
+    and nav.w==64 and nav.h==64,
+    "navigation is a movable, uncluttered 64px arrow hit area")
+assert(nav.backdrop==nil and nav.back==nil and not nav.title
+    and not nav.distance and not nav.mode and not nav.children[1],
+    "floating compass has no box, labels, border or visible action buttons")
+nav.scripts.OnEnter(nav)
+assert(GameTooltip.shown and GameTooltip.owner==nav
+    and GameTooltip.lines[1]=="The Far Farm"
+    and GameTooltip.lines[3]:find("Right%-click"),
+    "quest name, distance state and menu hint live only in mouseover tooltip")
+nav.scripts.OnLeave(nav)
+assert(GameTooltip.shown==false,"arrow tooltip closes cleanly")
+nav.scripts.OnMouseUp(nav,"RightButton")
+assert(menusOpened==1 and #menuEntries==3 and
+    menuEntries[1].label=="Auto (follow tracked)" and
+    menuEntries[2].label=="Next quest" and
+    menuEntries[3].label=="Hide arrow",
+    "right-click contains only Auto, Next and Hide")
+menuEntries[2].action()
+assert(ChalkBox_NavStatus().questID==333
+    and ChalkBox_NavStatus().mode=="Manual",
+    "right-click Next picks another validated quest")
+menuEntries[1].action()
+assert(ChalkBox_NavStatus().questID==222
+    and ChalkBox_NavStatus().mode=="Tracked",
+    "right-click Auto restores native super-tracked priority")
+menuEntries[3].action()
+assert(not nav:IsShown() and not ChalkBox_NavStatus().enabled,
+    "right-click Hide disables the compass without changing quest watches")
+assert(ChalkBox_NavCommand("on"),"reopening arrow reuses the same frame")
 st=ChalkBox_NavStatus()
 assert(st.questID==222 and st.mode=="Tracked" and st.candidates==4,
     "Blizzard supertracked quest takes priority when it has a waypoint")
 assert(nav.arrow.shown and math.abs(nav.arrow.angle+math.pi/2)<0.01,
     "world coordinate X, continent 0 and north-facing rotation work")
-assert(nav.distance.text:find("yd",1,true),
-    "distance is displayed in yards when world positions are known")
+assert(nav.readout:find("yd",1,true),
+    "tooltip retains useful straight-line yards without a text box")
 assert(ChalkBox_NavCommand("follow 111"))
 assert(ChalkBox_NavStatus().mode=="Manual" and
     ChalkBox_NavStatus().questID==111 and
@@ -159,7 +206,7 @@ assert(ChalkBox_NavCommand("unlock"))
 nav.scripts.OnDragStart(nav)
 assert(nav.started,"unlocked arrow can be dragged")
 nav.scripts.OnDragStop(nav)
-assert(ChalkBoxZoneDB.questNavigator.offsetY==-242,
+assert(ChalkBoxZoneDB.questNavigator.offsetY==-268,
     "release position persists a bounded user offset")
 assert(ChalkBox_NavCommand("reset") and
     ChalkBoxZoneDB.questNavigator.offsetX==nil,
@@ -171,8 +218,8 @@ assert(st.questID==111 and st.mode=="Smart",
     "Auto picks the closest known world waypoint when none is supertracked")
 inInstance=true
 ChalkBox_NavCommand("status")
-assert(nav.arrow.shown==false and
-    nav.distance.text=="No GPS inside instances",
+assert(nav.arrow.shown and nav.arrow.color[4]==0.40 and
+    nav.readout=="No GPS inside instances",
     "instanced maps never produce a fake direction or distance")
 inInstance=false
 destinations[111]=nil
@@ -181,8 +228,8 @@ destinations[222]=nil
 ChalkBox_NavCommand("status")
 st=ChalkBox_NavStatus()
 assert(st.manualID==222 and st.title=="The Far Farm" and
-    not nav.arrow.shown and
-    nav.distance.text=="No waypoint for selected quest",
+    nav.arrow.shown and nav.arrow.color[4]==0.40 and
+    nav.readout=="No waypoint for selected quest",
     "temporarily missing quest coordinates do not erase a saved selection")
 destinations[222]={1,0.8,0.5}
 ChalkBox_NavCommand("status")
@@ -197,14 +244,15 @@ assert(ChalkBox_NavStatus().manualID==nil,
     "deleted quest does not remain locked as a permanent manual target")
 -- A different-continent waypoint must not point in the wrong direction.
 ChalkBox_NavCommand("follow 444")
-assert(not nav.arrow.shown and
-    nav.distance.text=="Quest is in another region",
+assert(nav.arrow.shown and nav.arrow.color[4]==0.40 and
+    nav.readout=="Quest is in another region",
     "world instance IDs protect against cross-continent false headings")
 -- The client returning an incomplete quest list never erases the selection.
 logLoading=true
 ChalkBox_NavCommand("status")
-assert(ChalkBox_NavStatus().manualID==444 and not nav.arrow.shown
-    and nav.distance.text=="Quest log loading",
+assert(ChalkBox_NavStatus().manualID==444 and
+    nav.arrow.shown and nav.arrow.color[4]==0.40
+    and nav.readout=="Quest log loading",
     "incomplete quest log never erases manual selection or shows stale arrows")
 logLoading=false
 ChalkBox_NavCommand("status")
@@ -212,6 +260,25 @@ assert(ChalkBox_NavStatus().manualID==444)
 assert(ChalkBox_NavCommand("off") and not nav:IsShown()
     and not ChalkBox_NavStatus().enabled,
     "navigation hides cleanly without changing QuestSense tracker")
+-- Older Forever builds may expose EasyMenu rather than the modern
+-- MenuUtil. Verify the exact same three actions and native placement.
+MenuUtil=nil
+local legacyItems,legacyAnchor
+_G.EasyMenu=function(items,menu,anchor,x,y,kind)
+    assert(menu and menu.name=="ChalkBoxNavigationDropdown")
+    legacyItems=items;legacyAnchor=anchor
+    assert(x==0 and y==0 and kind=="MENU")
+end
+assert(ChalkBox_NavCommand("on"))
+nav.scripts.OnMouseUp(nav,"RightButton")
+assert(legacyAnchor=="cursor" and #legacyItems==3 and
+    legacyItems[1].text=="Auto (follow tracked)" and
+    legacyItems[2].text=="Next quest" and
+    legacyItems[3].text=="Hide arrow",
+    "older clients get the same three-item right-click popup")
+legacyItems[3].func()
+assert(not nav:IsShown() and not ChalkBox_NavStatus().enabled,
+    "legacy menu Hide has the same effect without altering quest tracking")
 local named=0
 for _,obj in ipairs(created) do
     if obj.name=="ChalkBoxQuestNavigator" then named=named+1 end
