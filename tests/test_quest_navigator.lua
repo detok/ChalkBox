@@ -343,8 +343,8 @@ assert(ChalkBox_NavCommand("reset") and
 super=nil
 assert(ChalkBox_NavCommand("auto"))
 st=ChalkBox_NavStatus()
-assert(st.questID==111 and st.mode=="Smart",
-    "Auto picks the closest known world waypoint when none is supertracked")
+assert(st.questID==111 and st.mode=="Auto",
+    "Auto retains the previously chosen valid quest rather than jumping when no quest is supertracked")
 inInstance=true
 ChalkBox_NavCommand("status")
 assert(nav.arrow.shown and nav.arrow.color[4]==0.40 and
