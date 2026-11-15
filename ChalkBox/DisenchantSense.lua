@@ -67,6 +67,12 @@ local function Metadata(item)
     -- Shields and off-hands use weapon-like Classic disenchant odds.
     if classID~=2 and classID~=4 then return nil end
     if classID==2 and subclassID==19 then return nil end
+    -- Reject empty equipment slots, including non-equippable special items.
+    -- Some items with classID=4 cannot be disenchanted in Forever.
+    if type(slot)~="string" or slot=="" or slot=="INVTYPE_BAG"
+        or slot=="INVTYPE_BODY" or slot=="INVTYPE_TABARD" then
+        return nil
+    end
     local weapon=classID==2 or slot=="INVTYPE_SHIELD"
         or slot=="INVTYPE_HOLDABLE"
     return {itemID=ID(item),name=name,quality=quality,
@@ -261,13 +267,20 @@ function ChalkBox_DisenchantMarketHint(tooltip,item)
     end
     return true
 end
+function ChalkBox_DisenchantSetTooltips(on)
+    if type(ChalkBoxDB)~="table" then ChalkBoxDB={} end
+    ChalkBoxDB.disenchantInfo=on==true
+    enabled=ChalkBoxDB.disenchantInfo
+    return enabled
+end
+function ChalkBox_DisenchantTooltipsEnabled()
+    return enabled
+end
 function ChalkBox_DisenchantCommand(command)
     local input=(command or ""):match("^%s*(.-)%s*$")
     local word=input:lower()
     if word=="on" or word=="off" then
-        if type(ChalkBoxDB)~="table" then ChalkBoxDB={} end
-        ChalkBoxDB.disenchantInfo=(word=="on")
-        enabled=ChalkBoxDB.disenchantInfo
+        ChalkBox_DisenchantSetTooltips(word=="on")
         if DEFAULT_CHAT_FRAME then DEFAULT_CHAT_FRAME:AddMessage(
             "ChalkBox DE tooltips "..(enabled and "ON" or "OFF")) end
         return
