@@ -17,6 +17,7 @@ FILES = (
     "LICENSE",
     "Libs/LibProfessionDB-1.0/LICENSE",
     "Libs/ForeverDisenchantData/LICENSE",
+    "Libs/ForeverDisenchantData/README.md",
     "Libs/LibStub/LibStub.lua",
     "Libs/LibProfessionDB-1.0/LibProfessionDB-1.0.lua",
     "Libs/LibProfessionDB-1.0/Data/Alchemy.lua",
