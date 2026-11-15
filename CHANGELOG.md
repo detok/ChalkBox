@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.15 — Full Scan resilience, native selected quest watch, Discoveries map pulse & HD arrow
+- AuctionSense Full Scan now keeps real item ID/quantity/buyout information from replica listings with uncached names instead of discarding an otherwise valid scan. Uncached names display as `Item #ID`; server refusal and 15-minute account-wide cooldown diagnostics are clearer. Normal browse scanning and stored price history remain intact.
+- QuestSense Navigation ensures its currently selected accepted quest stays **visible in Blizzard's native quest-watch tracker**, even in Nearby mode, without removing unrelated manual watches or changing super-tracking. Changes defer while unsafe and report a full watch list.
+- Discoveries item-hover now **briefly pulses a gold dot on the visible map** at the latest personal outdoor loot-window location. It disappears on leave/map/filter change and never creates permanent pins or guesses corpse positions.
+- The bare floating compass now includes a tiny **yard-distance label underneath** and a **Sharp HD / Classic** toggle in QuestSense Navigation settings. The new HD design is a 256-pixel transparent TGA generated reproducibly from original SVG artwork; the old Blizzard arrow remains available.
+- Add targeted Lua 5.1 regressions, packaging checks and current player/publisher documentation.
+
 ## 2.2.14 — Correct QuestSense bearings, follow selected quests and find your corpse
 - Correct the compass bearing using WoW's actual world-coordinate axes: **+X north, +Y west**. Prefer the client-native north-up navigation atlas; stabilize bearings near the destination and across angle wrap.
 - **Follow the selected quest:** honor current Blizzard super-tracking and user selection in the quest log; choosing another quest releases stale manual overrides. When a selected quest has no reliable coordinates, show unavailable instead of silently following an unrelated quest. When nothing is selected, keep the fallback quest stable rather than repeatedly switching to the nearest.
