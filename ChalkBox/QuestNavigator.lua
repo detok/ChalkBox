@@ -1,9 +1,11 @@
 -- ChalkBox QuestSense Navigation: an optional, self-contained quest arrow.
--- Reads only accepted quest waypoints. Never edits watches, super-tracking,
--- Blizzard map pins or secure combat state. No copied TomTom code/data.
+-- Reads accepted quest waypoints; delegates a single native tracker watch to
+-- QuestSense so the selected quest stays visible. Never changes quest choice,
+-- Blizzard super-tracking, map pins or secure combat state.
 local addonName=...
 local frame,chosen,reason,options,refreshTimer=nil,nil,"Navigation off",{},0
 local target
+local lastNativeWatch
 -- Manual Next/Follow remains possible, but selecting a new Blizzard quest
 -- should release a stale manual override. Only state changes trigger it.
 local lastTracked,lastSelected,observedSelection,selectedFocus=nil,nil,false,nil
@@ -42,6 +44,7 @@ local function DB()
     end
     if saved.enabled~=true then saved.enabled=false end
     if saved.locked~=true then saved.locked=false end
+    if saved.arrowStyle~="classic" then saved.arrowStyle="hd" end
     if not ID(saved.questID) then saved.questID=nil end
     if not Number(saved.offsetX) or not Number(saved.offsetY)
         or math.abs(saved.offsetX)>1500 or math.abs(saved.offsetY)>1000 then
@@ -222,10 +225,18 @@ local function GameSelection(db)
     if selected then return selected,"Selected" end
     return nil,"Auto"
 end
+local function SyncNativeWatch(id)
+    if id==lastNativeWatch then return end
+    lastNativeWatch=id
+    if type(ChalkBox_QuestNavFocus)=="function" then
+        ChalkBox_QuestNavFocus(id)
+    end
+end
 local function Refresh()
     local db=DB()
     if not db or not db.enabled then
         target=nil;reason="Navigation off"
+        SyncNativeWatch(nil)
         if frame then frame:Hide() end
         return
     end
@@ -279,6 +290,7 @@ local function Refresh()
     reason=player and "Ready" or (why or "No coordinates")
     if not target then reason="No accepted quest waypoints"
     elseif not target.point then reason="Selected quest waypoint unavailable" end
+    SyncNativeWatch(target and ID(target.id) and target.id or nil)
     if frame then frame:Show() end
 end
 local function Face()
@@ -314,6 +326,10 @@ local function UpdateDisplay()
     -- Keep the invisible frame usable for right-click even when Forever
     -- cannot expose GPS. Never leave a stale, misleading direction visible.
     frame.arrow:Show()
+    if frame.distanceLabel then
+        frame.distanceLabel:SetText(data and
+            (tostring(math.floor(data.distance+0.5)).." yd") or "—")
+    end
     if not data or type(frame.arrow.SetRotation)~="function" then
         if type(frame.arrow.SetRotation)=="function" then
             frame.arrow:SetRotation(0)
@@ -401,7 +417,8 @@ local function Build()
     local f=CreateFrame("Frame","ChalkBoxQuestNavigator",UIParent)
     -- Arrow-sized hit area only. No dialog frame, backdrop, bronze edges,
     -- text panel, quest title, or permanently visible buttons.
-    f:SetSize(64,64)
+    -- Still no panel: just a 64px arrow and a discreet distance below.
+    f:SetSize(76,90)
     if type(f.SetFrameStrata)=="function" then f:SetFrameStrata("DIALOG") end
     if type(f.SetClampedToScreen)=="function" then
         f:SetClampedToScreen(true)
@@ -436,25 +453,46 @@ local function Build()
     end)
     Pos(f)
     local a=f:CreateTexture(nil,"ARTWORK")
-    -- Blizzard's navigation arrow atlas has a defined north-up
-    -- orientation. Prefer it to the minimap glyph, whose native
-    -- visual orientation is not guaranteed across clients.
-    local atlasOK=false
-    if type(a.SetAtlas)=="function" then
-        local ok,result=pcall(a.SetAtlas,a,
-            "Navigation-Tracked-Arrow",false)
-        atlasOK=ok and result~=false
-        if atlasOK and type(a.GetAtlas)=="function" then
-            local read,name=pcall(a.GetAtlas,a)
-            if not read or name~="Navigation-Tracked-Arrow" then
-                atlasOK=false
+    local function ArrowStyle()
+        local db=DB()
+        if db and db.arrowStyle=="hd" then
+            -- 256px antialiased, original north-up silhouette rendered
+            -- from our SVG into a bundled native WoW 32-bit TGA.
+            a:SetTexture("Interface\\AddOns\\ChalkBox\\assets\\QuestArrowHD")
+            return
+        end
+        local atlasOK=false
+        if type(a.SetAtlas)=="function" then
+            local ok,result=pcall(a.SetAtlas,a,
+                "Navigation-Tracked-Arrow",false)
+            atlasOK=ok and result~=false
+            if atlasOK and type(a.GetAtlas)=="function" then
+                local good,name=pcall(a.GetAtlas,a)
+                atlasOK=good and name=="Navigation-Tracked-Arrow"
             end
         end
+        if not atlasOK then
+            a:SetTexture("Interface\\Minimap\\MinimapArrow")
+        end
     end
-    if not atlasOK then
-        a:SetTexture("Interface\\Minimap\\MinimapArrow")
+    ArrowStyle()
+    a:SetSize(64,64)
+    a:SetPoint("TOP",f,"TOP",0,-2)
+    f.ApplyArrowStyle=ArrowStyle
+    local distance=f:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+    distance:SetPoint("TOP",f,"TOP",0,-69)
+    distance:SetWidth(76)
+    if type(distance.SetJustifyH)=="function" then
+        distance:SetJustifyH("CENTER")
     end
-    a:SetAllPoints(f)
+    if type(distance.SetTextColor)=="function" then
+        distance:SetTextColor(1,0.84,0.48,1)
+    end
+    if type(distance.SetShadowOffset)=="function" then
+        distance:SetShadowOffset(1,-1)
+    end
+    distance:SetText("—")
+    f.distanceLabel=distance
     f.arrow=a
     f:SetScript("OnMouseUp",function(self,button)
         if button=="RightButton" then ChalkBox_NavOpenMenu(self) end
@@ -493,6 +531,7 @@ function ChalkBox_NavStatus()
     local db=DB()
     return {enabled=db and db.enabled or false,
         locked=db and db.locked or false,
+        arrowStyle=db and db.arrowStyle or "classic",
         manualID=db and db.questID or nil,
         questID=target and target.id or nil,
         targetType=target and target.kind or "quest",
@@ -541,6 +580,9 @@ function ChalkBox_NavCommand(input)
         else index=(index-2+#items)%#items+1 end
         db.questID=items[index].id
         db.enabled=true
+    elseif action=="hd" or action=="classic" then
+        db.arrowStyle=action
+        if frame and frame.ApplyArrowStyle then frame.ApplyArrowStyle() end
     elseif action=="lock" or action=="unlock" then
         db.locked=action=="lock"
     elseif action=="reset" then
@@ -569,7 +611,7 @@ function ChalkBox_NavCommand(input)
             db.questID=id
             db.enabled=true
         else
-            Message("Use /chalk nav on|off|auto|next|prev|follow ID|lock|unlock|reset|status")
+            Message("Use /chalk nav on|off|auto|next|prev|follow ID|hd|classic|lock|unlock|reset|status")
             return false
         end
     end
