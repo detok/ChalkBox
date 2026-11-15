@@ -14,7 +14,7 @@ Quality-of-life tools for **World of Warcraft: Forever** — loot discoveries, q
 
 ChalkBox installs as **one `ChalkBox` folder**. Its bundled recipe data needs no separate download. Features are managed through Blizzard's native **Options → AddOns → ChalkBox** pages, or by typing `/chalk`.
 
-> **Current release: 2.2.16 (GitHub prerelease).** ChalkBox targets WoW Forever. The code has automated Lua 5.1 tests, but client-specific UI behavior still needs real in-game verification. Retail and ordinary Classic compatibility are **not claimed**.
+> **Current release: 2.2.17 (GitHub prerelease).** ChalkBox targets WoW Forever. The code has automated Lua 5.1 tests, but client-specific UI behavior still needs real in-game verification. Retail and ordinary Classic compatibility are **not claimed**.
 
 ## See it in-game
 
@@ -40,7 +40,7 @@ ChalkBox installs as **one `ChalkBox` folder**. Its bundled recipe data needs no
 
 ## Install or upgrade
 
-1. Open [GitHub Releases](https://github.com/detok/ChalkBox/releases) and select **ChalkBox-2.2.16.zip** (or the newest release appropriate for your client). **Do not** use GitHub's automatically generated Source code ZIP or the separate CurseForge media ZIP.
+1. Open [GitHub Releases](https://github.com/detok/ChalkBox/releases) and select **ChalkBox-2.2.17.zip** (or the newest release appropriate for your client). **Do not** use GitHub's automatically generated Source code ZIP or the separate CurseForge media ZIP.
 2. Extract the single **ChalkBox** directory to your game's `Interface/AddOns/` folder. Confirm the path ends in `Interface/AddOns/ChalkBox/ChalkBox.toc` — not `ChalkBox/ChalkBox/ChalkBox.toc`.
 3. Start Forever, check the AddOns list, then type `/chalk`.
 4. On an upgrade, replace only the addon folder. **Preserve WoW's SavedVariables** to keep your preferences, historical loot, market scans and layouts.
@@ -64,9 +64,11 @@ For the full installation, first-use and recovery walkthrough, see [Getting star
 
 [Complete verified command reference](docs/COMMANDS.md)
 
-## What's new in 2.2.16?
+## What's new in 2.2.17?
 
-**QuestSense now has a right-click menu on Blizzard's existing quest-tracker header:** QuestSense Settings, Off, Smart, Nearby and Navigation On/Off. Three arrow appearances—Original WoW, Blizzard Navigation and ChalkBox HD—are available under QuestSense → Navigation. **MacroForge** adds a small tab to the native `/macro` editor to open the existing full workbench beside it on wide screens; the standalone editor remains available.
+**QuestSense** now defaults to the original old-school arrow on fresh characters, with a **32–72px size slider** (48px default) in QuestSense → Navigation. **MacroForge** opens as one coherent native macro-editor workflow from AddOns Settings, and its small button now sits in the native /macro bottom row beside Delete/New/Exit when the client exposes that layout. Existing saved styles and standalone MacroForge remain available.
+
+**Previously in 2.2.16:** **QuestSense now has a right-click menu on Blizzard's existing quest-tracker header:** QuestSense Settings, Off, Smart, Nearby and Navigation On/Off. Three arrow appearances—Original WoW, Blizzard Navigation and ChalkBox HD—are available under QuestSense → Navigation. **MacroForge** adds a small tab to the native `/macro` editor to open the existing full workbench beside it on wide screens; the standalone editor remains available.
 
 **Previously in 2.2.15:** **AuctionSense Full Scan** accepts usable listing prices even when item names are still caching, with clearer 15-minute cooldown messages. **QuestSense Navigation** now keeps its selected quest in Blizzard's native objective tracker, and Discoveries briefly pulses a dot at a recorded outdoor loot-window location on item hover. The minimal arrow adds **yards underneath** and a **Sharp HD / Classic** style switch under QuestSense → Navigation.
 
