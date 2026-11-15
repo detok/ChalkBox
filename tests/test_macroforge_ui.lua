@@ -55,7 +55,10 @@ local function Create(kind,name,parent)
         function t:SetHeight() end
         function t:SetColorTexture(...) self.color={...} end
         function t:SetTexture(value) self.texture=value end
-        function t:SetAtlas(value) self.atlas=value;return true end
+        function t:SetAtlas(value)
+            if _G.testNoMapAtlas then return false end
+            self.atlas=value;return true
+        end
         function t:SetHorizTile(on) self.horizontal=on end
         function t:SetVertTile(on) self.vertical=on end
         function t:Show() self.shown=true end
@@ -247,4 +250,18 @@ assert(ChalkBox_MacroForgeCompartmentStatus().reloadRequired
     and not ChalkBox_MacroForgeCompartmentStatus().enabled,
     "unchecking persists OFF without mutating Blizzard compartment internals")
 assert(#registrations==1,"native registration remains until reload")
+-- A client without the native atlas must still get an opaque readable
+-- editor; never leave a see-through dark map placeholder.
+_G.testNoMapAtlas=true
+assert(loadfile("MacroForgeUI.lua"))("ChalkBox")
+assert(ChalkBox_OpenMacroForge())
+local fallback=frames[#frames]
+for i=#frames,1,-1 do
+    if frames[i].name=="ChalkBoxMacroForge" then
+        fallback=frames[i];break
+    end
+end
+assert(not fallback.hasMapArt and fallback.back.color[4]>=0.94,
+    "missing Forever map atlas falls back to an opaque panel")
+_G.testNoMapAtlas=nil
 print("PASS: lazy framed map-backed MacroForge, scrollable multiline preview, warning bounds, compartment opt-in, selection/copy, install, save/load and delete")
