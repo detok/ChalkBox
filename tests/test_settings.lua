@@ -61,6 +61,19 @@ _G.ChalkBox_ForgeStatus=function()
     return {class="HUNTER",spells=1,saved=2}
 end
 _G.ChalkBox_MacroForgeRefresh=function() end
+local macroShortcut=false
+local shortcutRefreshes=0
+_G.ChalkBox_MacroForgeCompartmentStatus=function()
+    return {enabled=macroShortcut,available=true,
+        reloadRequired=false}
+end
+_G.ChalkBox_MacroForgeCompartmentSet=function(on)
+    macroShortcut=on==true
+    return true
+end
+_G.ChalkBox_MacroForgeCompartmentRefresh=function()
+    shortcutRefreshes=shortcutRefreshes+1
+end
 local defaults={rate=true,eta=true,time=true,gold=true,bags=true,
     gear=true,rested=true,latency=true,pet=false,bagvalue=true,repair=true}
 _G.ChalkBoxDB.barStats={}
@@ -329,6 +342,8 @@ local loader=frames[#frames]
 assert(loader.event=="PLAYER_LOGIN","must register settings when the client is ready")
 loader.script.OnEvent(loader,"PLAYER_LOGIN")
 assert(#registered==20,"native pages include AuctionSense and all original categories")
+assert(shortcutRefreshes==1,
+    "compartment registration is attempted on login only when requested")
 assert(categories.home.name=="ChalkBox")
 assert(categories["The Bar"].parent==categories.home
     and categories["The Bar Appearance"].parent==categories["The Bar"]
@@ -405,6 +420,23 @@ auctionChecks[2]:Click(true)
 assert(deTooltipEnabled and ChalkBoxDB.disenchantInfo,
     "DE toggle restores read-only valuation without an AH scan")
 assert(categories["MacroForge"],"MacroForge is a native but unobtrusive settings category")
+local forgeChecks=FindCheckByParentTitle("MacroForge")
+assert(#forgeChecks==1,"one optional MacroForge compartment checkbox")
+categories["MacroForge"].panel:Show()
+assert(not forgeChecks[1].checked,"fresh shortcut starts disabled")
+forgeChecks[1]:Click(true)
+assert(macroShortcut,"compartment opt-in is saved through its own setting")
+forgeChecks[1]:Click(false)
+assert(not macroShortcut,"compartment opt-out can be saved independently")
+local forgeNote
+for _,font in ipairs(fonts) do
+    if font.parent==categories["MacroForge"].panel and
+        font.value=="NO AUTOMATIC COMBAT OR HIDDEN MACRO CHANGES" then
+        forgeNote=font
+    end
+end
+assert(forgeNote and forgeNote.anchor[5]<=-355,
+    "extra MacroForge shortcut setting does not overlap safety notes")
 ChalkBox_OpenSettings("forge")
 assert(opened[#opened]==categories["MacroForge"].ID)
 ControlIn("MacroForge","Open MacroForge"):Click()

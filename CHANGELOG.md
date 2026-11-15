@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.7 — MacroForge UI and Bar edit flow (test release)
+- **MacroForge:** match Discoveries' native parchment/map atlas with a readable dark glaze and solid fallback; add consistent inset frames around the existing workbench sections and retain the original two-column arrangement.
+- Replace the single-line-looking Macro Preview with a clipped multiline scroll area that keeps long macro text inside its frame; preserve select/copy and intentional installation. Give warnings under Saved Builds a bounded wrapped area and separate Macro Name below.
+- Highlight the currently selected spell assignment and preserve original button/spellbook functions.
+- **The Bar:** restore an empty-space context menu during Edit Mode, so Done editing is reachable without settings. Individual stats still right-click to cycle text alignment.
+- **AddOn Compartment:** optional, default-OFF MacroForge launcher beside ChalkBox, guarded by the native API. Disable after registration takes effect on /reload; no undocumented unregister or taint-prone internal mutations.
+- Update tests and release notes. No macros, protected actions, saved recipes, scanner logic, or existing UI settings are reset.
+
 ## 2.2.6 — Bar reference defaults, opt-in social filters, cleaner settings (test release)
 - **The Bar:** new characters start with Left: Level/XP, XP/hr; Center: Session time, Time to level, Rested XP; Right: Bags, Gear, Repair, Junk value, Gold, World latency. Pet status remains available but starts hidden. Fresh Bar profiles show Junk value (not total resale), while previously saved stats, ordering, alignment, value modes and appearances remain untouched. Reset Layout adopts the new reference arrangement.
 - **QuietGuard:** all five filters (guild, duel, party, trade, channel) start OFF when no preference exists. Explicitly saved ON/OFF preferences are retained, and native Blizzard social preferences are never forcibly cleared when ChalkBox's filter is off.

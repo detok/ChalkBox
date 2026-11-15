@@ -2,12 +2,26 @@
 -- creation. Does not require running the WoW client in CI.
 local frames,fonts,printed={}, {},{}
 _G.UIParent={}
+_G.ChalkBoxDB={}
 _G.DEFAULT_CHAT_FRAME={AddMessage=function(_,s) printed[#printed+1]=s end}
 _G.ChatFontNormal={}
 local function Create(kind,name,parent)
     local f={kind=kind,name=name,parent=parent,shown=false,
         text="",checked=false,scripts={}}
     function f:SetSize(w,h) self.w=w;self.h=h end
+    function f:SetHeight(h) self.h=h end
+    function f:GetStringHeight()
+        return math.max(12,math.ceil(#(self.text or "")/35)*12)
+    end
+    function f:SetScrollChild(child) self.child=child end
+    function f:SetVerticalScroll(pos) self.scroll=pos end
+    function f:GetVerticalScroll() return self.scroll or 0 end
+    function f:GetVerticalScrollRange()
+        return math.max(0,((self.child and self.child.h) or 0)-(self.h or 0))
+    end
+    function f:EnableMouseWheel(value) self.mouseWheel=value end
+    function f:LockHighlight() self.highlightLocked=true end
+    function f:UnlockHighlight() self.highlightLocked=false end
     function f:SetPoint(...) self.point={...} end
     function f:SetFrameStrata() end
     function f:SetMovable() end
@@ -41,15 +55,24 @@ local function Create(kind,name,parent)
         function t:SetHeight() end
         function t:SetColorTexture(...) self.color={...} end
         function t:SetTexture(value) self.texture=value end
-        function t:Show() end
-        function t:Hide() end
+        function t:SetAtlas(value)
+            if _G.testNoMapAtlas then return false end
+            self.atlas=value;return true
+        end
+        function t:SetHorizTile(on) self.horizontal=on end
+        function t:SetVertTile(on) self.vertical=on end
+        function t:Show() self.shown=true end
+        function t:Hide() self.shown=false end
         return t
     end
     function f:CreateFontString()
         local t={text=""}
-        function t:SetPoint() end
-        function t:SetWidth() end
+        function t:SetPoint(...) self.anchor={...} end
+        function t:SetWidth(w) self.w=w end
+        function t:SetHeight(h) self.h=h end
         function t:SetJustifyH() end
+        function t:SetJustifyV(v) self.vAlign=v end
+        function t:SetWordWrap(on) self.wordWrap=on end
         function t:SetText(s) self.text=s end
         fonts[#fonts+1]=t
         return t
@@ -136,7 +159,20 @@ for _,f in ipairs(frames) do
 end
 assert(window and window:IsShown() and window.w==786 and
     window.h==678,"builder is a standalone movable, themed window")
-assert(window.back.color[4]==0.88)
+assert(window.back.color[4]==0.88 and window.mapArt.atlas==
+    "gamepad-mapquestlog-bgtile-2k" and window.mapArt.horizontal
+    and window.mapArt.vertical,
+    "native map art is tiled under a dark readable theme glaze")
+for _,key in ipairs({"purpose","slots","spellbook","options","saved",
+    "preview","name"}) do
+    assert(window.sections[key] and window.sections[key].width>0,
+        "each MacroForge group has its own decorative inset: "..key)
+end
+assert(window.sections.saved.y-window.sections.saved.height>=
+    window.sections.name.y,"saved warning area ends above macro naming section")
+assert(window.previewEditor and window.previewViewport
+    and window.previewViewport.child==window.previewEditor,
+    "macro preview uses a real clipped multiline scroll viewport")
 assert(installs==0,"opening the builder never alters existing macros")
 local function Click(label)
     for _,f in ipairs(frames) do
@@ -164,6 +200,23 @@ assert(preview and preview.focused and preview.highlighted and
     preview.highlighted[1]==0 and
     preview.highlighted[2]==#preview.text,
     "select highlights generated macro for manual Ctrl+C")
+local bounds=window.previewViewport
+preview:SetText(("#showtooltip\n/cast Hunter's Mark\n"):rep(15))
+assert(preview.h>bounds.h and preview:GetText():find("Hunter's Mark"),
+    "long multi-line preview expands within the scroll child, not its border")
+bounds.scripts.OnMouseWheel(bounds,-1)
+assert((bounds.scroll or 0)>0,"scrollwheel reaches long macro text")
+Click("Engage Target")
+local warning
+for _,font in ipairs(fonts) do
+    if font.text=="One spell per press." then warning=font end
+end
+assert(warning and warning.h==59 and warning.wordWrap and warning.vAlign=="TOP",
+    "warnings have a reserved bounded, multiline-aware area")
+assert(warning.anchor[5]-warning.h >
+    window.sections.name.y,
+    "warning text ends above the macro name inset")
+assert(installs==0,"copying and scrolling never installs a native macro")
 assert(installs==0,"selecting text does not install a native macro")
 Click("Install New")
 assert(installs==1,"one explicit click installs a macro")
@@ -176,4 +229,39 @@ Click("Delete")
 assert(#saves==0,"second explicit click deletes saved recipe only")
 Click("X")
 assert(not window:IsShown(),"builder can close without touching game macros")
-print("PASS: lazy native MacroForge wizard, template selection, preview Ctrl+C, explicit install, save/load and confirmed delete")
+assert(not ChalkBox_MacroForgeCompartmentStatus().enabled and
+    not ChalkBox_MacroForgeCompartmentRefresh(),
+    "the optional compartment entry is absent on fresh load")
+local registrations={}
+_G.AddonCompartmentFrame={RegisterAddon=function(_,entry)
+    registrations[#registrations+1]=entry
+    return true
+end}
+assert(ChalkBox_MacroForgeCompartmentSet(true))
+assert(#registrations==1 and registrations[1].text=="MacroForge"
+    and registrations[1].notCheckable==true,
+    "opt-in adds only one native MacroForge compartment entry")
+assert(ChalkBox_MacroForgeCompartmentRefresh() and #registrations==1,
+    "login refresh never duplicates the compartment entry")
+registrations[1].func()
+assert(window:IsShown(),"compartment shortcut opens the existing wizard")
+assert(ChalkBox_MacroForgeCompartmentSet(false))
+assert(ChalkBox_MacroForgeCompartmentStatus().reloadRequired
+    and not ChalkBox_MacroForgeCompartmentStatus().enabled,
+    "unchecking persists OFF without mutating Blizzard compartment internals")
+assert(#registrations==1,"native registration remains until reload")
+-- A client without the native atlas must still get an opaque readable
+-- editor; never leave a see-through dark map placeholder.
+_G.testNoMapAtlas=true
+assert(loadfile("MacroForgeUI.lua"))("ChalkBox")
+assert(ChalkBox_OpenMacroForge())
+local fallback=frames[#frames]
+for i=#frames,1,-1 do
+    if frames[i].name=="ChalkBoxMacroForge" then
+        fallback=frames[i];break
+    end
+end
+assert(not fallback.hasMapArt and fallback.back.color[4]>=0.94,
+    "missing Forever map atlas falls back to an opaque panel")
+_G.testNoMapAtlas=nil
+print("PASS: lazy framed map-backed MacroForge, scrollable multiline preview, warning bounds, compartment opt-in, selection/copy, install, save/load and delete")

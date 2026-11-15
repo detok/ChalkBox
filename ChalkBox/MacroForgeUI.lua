@@ -5,6 +5,9 @@ local presetButtons,slotButtons,spellRows,checks={},{},{},{}
 local spellPage,libraryIndex,activeSlot=1,1,"main"
 local search,macroText,warningText,statusText,libraryText,nameEdit,selectionText
 local themeTextures={}
+local sectionFrames={}
+local MAP_ATLAS="gamepad-mapquestlog-bgtile-2k"
+local compartmentRegistered=false
 local slots={
     {"main","Main spell"},{"shift","Shift"},{"alt","Alt"},
     {"ctrl","Ctrl"},{"sequenceSecond","Sequence #2"},
@@ -26,7 +29,10 @@ local function Theme()
     if type(ChalkBox_ThemeBackground)=="function" then
         r,g,b,a=ChalkBox_ThemeBackground(0.97)
     end
-    if window.back then window.back:SetColorTexture(r,g,b,a) end
+    -- Readable even with a transparent global theme.
+    local alpha=window.hasMapArt and math.max(0.84,math.min(a,0.92))
+        or math.max(0.94,a)
+    if window.back then window.back:SetColorTexture(r,g,b,alpha) end
     if window.accent then
         local ar,ag,ab=0.86,0.66,0.38
         if type(ChalkBox_ThemeAccent)=="function" then
@@ -37,7 +43,7 @@ local function Theme()
     for _,t in ipairs(themeTextures) do
         if t and t.SetColorTexture then
             t:SetColorTexture(math.min(1,r*3+0.055),
-                math.min(1,g*3+0.06),math.min(1,b*3+0.08),0.93)
+                math.min(1,g*3+0.06),math.min(1,b*3+0.08),0.91)
         end
     end
 end
@@ -80,6 +86,123 @@ local function Edit(parent,width,height,x,y)
     end
     return f
 end
+
+-- Decorative inset borders surround existing Blizzard widgets; they never
+-- own input and do not require the client to support BackdropTemplate.
+local function Inset(parent,label,x,y,width,height)
+    local fill=parent:CreateTexture(nil,"BORDER")
+    fill:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y)
+    fill:SetSize(width,height)
+    themeTextures[#themeTextures+1]=fill
+    local function Edge(px,py,w,h)
+        local edge=parent:CreateTexture(nil,"BORDER")
+        edge:SetPoint("TOPLEFT",parent,"TOPLEFT",px,py)
+        edge:SetSize(w,h)
+        edge:SetColorTexture(0.47,0.38,0.22,0.65)
+    end
+    Edge(x,y,width,1);Edge(x,y-height+1,width,1)
+    Edge(x,y,1,height);Edge(x+width-1,y,1,height)
+    sectionFrames[label]={x=x,y=y,width=width,height=height}
+end
+
+-- Multiline edit text lives in a clipped viewport; a single-line native
+-- InputBox border cannot contain a variable-length macro preview.
+local function Preview(parent,x,y,width,height)
+    local backing=parent:CreateTexture(nil,"ARTWORK")
+    backing:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y)
+    backing:SetSize(width,height)
+    backing:SetColorTexture(0.012,0.014,0.018,0.93)
+    local function Edge(px,py,w,h)
+        local t=parent:CreateTexture(nil,"ARTWORK")
+        t:SetPoint("TOPLEFT",parent,"TOPLEFT",px,py)
+        t:SetSize(w,h)
+        t:SetColorTexture(0.40,0.33,0.21,0.78)
+    end
+    Edge(x,y,width,1);Edge(x,y-height+1,width,1)
+    Edge(x,y,1,height);Edge(x+width-1,y,1,height)
+    local viewport=CreateFrame("ScrollFrame",nil,parent)
+    viewport:SetSize(width-14,height-10)
+    viewport:SetPoint("TOPLEFT",parent,"TOPLEFT",x+7,y-5)
+    local editor=CreateFrame("EditBox",nil,viewport)
+    editor:SetSize(width-23,height-12)
+    if editor.SetAutoFocus then editor:SetAutoFocus(false) end
+    if editor.SetMultiLine then editor:SetMultiLine(true) end
+    if editor.SetFontObject and ChatFontNormal then
+        editor:SetFontObject(ChatFontNormal)
+    end
+    editor:SetPoint("TOPLEFT",viewport,"TOPLEFT",0,0)
+    if viewport.SetScrollChild then viewport:SetScrollChild(editor) end
+    if editor.SetScript then
+        editor:SetScript("OnEscapePressed",function(self)
+            if self.ClearFocus then self:ClearFocus() end
+        end)
+        editor:SetScript("OnTextChanged",function(self)
+            local h=self.GetStringHeight and self:GetStringHeight() or 0
+            if type(h)~="number" then h=0 end
+            if self.SetHeight then self:SetHeight(math.max(height-12,h+16)) end
+            if viewport.SetVerticalScroll then viewport:SetVerticalScroll(0) end
+        end)
+    end
+    if viewport.EnableMouseWheel then viewport:EnableMouseWheel(true) end
+    if viewport.SetScript then
+        viewport:SetScript("OnMouseWheel",function(self,delta)
+            if not self.SetVerticalScroll then return end
+            local range=self.GetVerticalScrollRange and
+                self:GetVerticalScrollRange() or 0
+            if type(range)~="number" or range<=0 then return end
+            local position=self.GetVerticalScroll and
+                self:GetVerticalScroll() or 0
+            self:SetVerticalScroll(math.max(0,math.min(range,position-delta*24)))
+        end)
+    end
+    return editor,viewport
+end
+
+-- Blizzard exposes RegisterAddon but not a reliable public unregister API.
+-- Keep the existing ChalkBox compartment entry and add one opt-in launcher.
+-- Turning off an already registered launcher requires /reload.
+local function CompartmentEnabled()
+    return type(ChalkBoxDB)=="table" and ChalkBoxDB.macroCompartment==true
+end
+function ChalkBox_MacroForgeCompartmentStatus()
+    return {
+        enabled=CompartmentEnabled(),
+        available=AddonCompartmentFrame~=nil and
+            type(AddonCompartmentFrame.RegisterAddon)=="function",
+        registered=compartmentRegistered,
+        reloadRequired=compartmentRegistered and not CompartmentEnabled(),
+    }
+end
+function ChalkBox_MacroForgeCompartmentRefresh()
+    if compartmentRegistered then return true end
+    if not CompartmentEnabled() then return false end
+    local compartment=AddonCompartmentFrame
+    if not compartment or type(compartment.RegisterAddon)~="function" then
+        return false
+    end
+    if type(InCombatLockdown)=="function" and InCombatLockdown() then
+        return false
+    end
+    local ok,registered=pcall(compartment.RegisterAddon,compartment,{
+        text="MacroForge",
+        icon="Interface\\AddOns\\ChalkBox\\assets\\Icon",
+        notCheckable=true,
+        func=function()
+            if type(ChalkBox_OpenMacroForge)=="function" then
+                ChalkBox_OpenMacroForge()
+            end
+        end,
+    })
+    compartmentRegistered=ok and registered~=false
+    return compartmentRegistered
+end
+function ChalkBox_MacroForgeCompartmentSet(on)
+    if type(ChalkBoxDB)~="table" then return false end
+    ChalkBoxDB.macroCompartment=on==true
+    if on then return ChalkBox_MacroForgeCompartmentRefresh() end
+    return true
+end
+
 local function SpellLabel(id)
     if not id then return "(none)" end
     for _,spell in ipairs(ChalkBox_ForgeScan()) do
@@ -136,7 +259,13 @@ local function Refresh()
     for i,slot in ipairs(slots) do
         local label=slot[2].."  ·  "..SpellLabel(draft[slot[1]])
         if #label>29 then label=label:sub(1,26).."..." end
-        slotButtons[i]:SetText((activeSlot==slot[1] and "› " or "")..label)
+        local selected=activeSlot==slot[1]
+        slotButtons[i]:SetText((selected and "› " or "")..label)
+        if selected and slotButtons[i].LockHighlight then
+            slotButtons[i]:LockHighlight()
+        elseif not selected and slotButtons[i].UnlockHighlight then
+            slotButtons[i]:UnlockHighlight()
+        end
     end
     for i,opt in ipairs(switches) do
         checks[i]:SetChecked(draft[opt[1]]==true)
@@ -272,9 +401,31 @@ local function Create()
     f:SetScript("OnDragStop",function(self)
         if self.StopMovingOrSizing then self:StopMovingOrSizing() end
     end)
-    local back=f:CreateTexture(nil,"BACKGROUND")
+    -- Native map parchment under an opaque-enough reading surface.
+    local art=f:CreateTexture(nil,"BACKGROUND",nil,0)
+    art:SetAllPoints(f)
+    local hasArt=false
+    if art.SetAtlas then
+        local ok,result=pcall(art.SetAtlas,art,MAP_ATLAS,false)
+        hasArt=ok and result~=false
+    end
+    if hasArt then
+        if art.SetHorizTile then art:SetHorizTile(true) end
+        if art.SetVertTile then art:SetVertTile(true) end
+    elseif art.Hide then art:Hide() end
+    f.mapArt=art
+    f.hasMapArt=hasArt
+    local back=f:CreateTexture(nil,"BACKGROUND",nil,1)
     back:SetAllPoints(f)
     f.back=back
+    Inset(f,"purpose",14,-86,758,59)
+    Inset(f,"slots",14,-150,408,213)
+    Inset(f,"spellbook",430,-150,342,258)
+    Inset(f,"options",14,-367,408,104)
+    Inset(f,"saved",430,-410,342,152)
+    Inset(f,"preview",14,-474,408,181)
+    Inset(f,"name",430,-568,342,87)
+    f.sections=sectionFrames
     local accent=f:CreateTexture(nil,"ARTWORK")
     accent:SetPoint("TOPLEFT",f,"TOPLEFT",0,0)
     accent:SetPoint("TOPRIGHT",f,"TOPRIGHT",0,0)
@@ -347,21 +498,22 @@ local function Create()
             end)
     end
     Font(f,"MACRO PREVIEW","GameFontNormal",23,-480,210)
-    local preview=Edit(f,370,97,24,-500)
+    local preview,viewport=Preview(f,24,-500,371,103)
     macroText=preview
-    if preview.SetMultiLine then preview:SetMultiLine(true) end
-    if preview.SetFontObject and ChatFontNormal then
-        preview:SetFontObject(ChatFontNormal)
-    end
+    f.previewViewport=viewport
+    f.previewEditor=preview
     Font(f,"Select Text highlights this preview so you can copy with Ctrl+C.",
-        "GameFontHighlightSmall",24,-605,392)
-    warningText=Font(f,"","GameFontHighlightSmall",436,-485,330)
+        "GameFontHighlightSmall",24,-609,392)
+    warningText=Font(f,"","GameFontHighlightSmall",438,-497,319)
+    if warningText.SetHeight then warningText:SetHeight(59) end
+    if warningText.SetJustifyV then warningText:SetJustifyV("TOP") end
+    if warningText.SetWordWrap then warningText:SetWordWrap(true) end
     statusText=Font(f,"","GameFontHighlightSmall",24,-75,712)
-    Font(f,"MACRO NAME","GameFontNormal",439,-560,170)
-    nameEdit=Edit(f,214,22,438,-578)
-    Button(f,"Select Text",121,25,-618,function() SelectAll() end)
-    Button(f,"Install New",121,153,-618,function() Install() end)
-    Button(f,"Native Macros",109,280,-618,function() Native() end)
+    Font(f,"MACRO NAME","GameFontNormal",439,-576,170)
+    nameEdit=Edit(f,214,22,438,-600)
+    Button(f,"Select Text",121,25,-625,function() SelectAll() end)
+    Button(f,"Install New",121,153,-625,function() Install() end)
+    Button(f,"Native Macros",109,280,-625,function() Native() end)
     -- Saved recipes have no impact on Blizzard's own macro list.
     Font(f,"SAVED BUILDS","GameFontNormal",438,-417,196)
     libraryText=Font(f,"No saved builds","GameFontHighlightSmall",438,-440,318)

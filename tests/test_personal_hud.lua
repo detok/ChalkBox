@@ -482,8 +482,12 @@ assert(placed and not bagWidget.moving,
 bagWidget.scripts.OnMouseUp(bagWidget,"RightButton")
 assert(ChalkBox_BarLayoutGet().align.bags=="center",
     "right-click in Edit Mode cycles in-module text alignment")
-ChalkBox_BarCommand("edit off")
-assert(not ChalkBox_BarEditStatus(),"edit mode unlocks and relocks explicitly")
+bar.scripts.OnMouseUp(bar,"RightButton")
+local done=FindMenu(lastNativeMenu,"Done editing")
+assert(done and done.func,
+    "empty-Bar right-click offers Done editing without opening settings")
+done.func()
+assert(not ChalkBox_BarEditStatus(),"Done editing exits and saves dragged layout")
 ChalkBox_BarCommand("layout reset")
 assert(ChalkBox_BarLayoutGet().right[1]=="bags"
     and ChalkBox_BarLayoutGet().center[1]=="time"

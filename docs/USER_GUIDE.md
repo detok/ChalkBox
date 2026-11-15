@@ -1,6 +1,6 @@
 # ChalkBox User Guide
 
-**Version 2.2.6 · World of Warcraft: Forever**
+**Version 2.2.7 · World of Warcraft: Forever**
 
 ChalkBox puts several small tools in one addon. Everything is managed from **Options → AddOns → ChalkBox**, or **/chalk**. Choose the modules you want; the rest can stay out of sight.
 
@@ -22,6 +22,14 @@ The native sidebar contains related pages under their parent module:
 | **Emota** | Race Behavior, Emote Catalog |
 
 Select the module first, then its child page. The same top heading and return-to-ChalkBox navigation appear throughout. Older settings keys and SavedVariables are retained.
+
+## MacroForge workbench (2.2.7)
+
+MacroForge keeps its original spellbook wizard with clearly framed sections and a native map-style background when available. Macro Preview is a multiline, scrolling text editor: choose **Select Text** then **Ctrl+C** to copy. **Install New** explicitly creates a new named macro; it does not overwrite existing macros or run a rotation. Warnings beneath Saved Builds are separated from the macro-name area.
+
+To add a direct minimap AddOns dropdown shortcut, visit **Options → AddOns → ChalkBox → MacroForge** and enable **Show MacroForge in AddOn Compartment**. The switch is off by default. It requires native `AddonCompartmentFrame:RegisterAddon` support; once registered, turn it off and `/reload` to hide it. The ordinary ChalkBox entry remains.
+
+While arranging **The Bar**, right-click an empty part of the Bar and choose **Done editing**. Right-clicking a stat while editing still cycles its text alignment.
 
 ## The Bar and QuietGuard (2.2.6)
 
