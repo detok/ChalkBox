@@ -1,16 +1,20 @@
-# ChalkBox 2.2.9 — Wood and frame refinement
+# ChalkBox 2.2.10 — Smart Dungeon Quest Tracking
 
-## MacroForge
-The existing two-column workbench keeps its native World Map-style wood background, but no longer looks like a collection of flat gray blocks. Each module panel has a dark warm-charcoal fill, a thin bronze rim, a subtle highlighted top edge and a soft shadow. The entire movable MacroForge window now receives the same native Blizzard dialog-border asset as Discoveries, with a minimal bronze-line fallback if the client lacks BackdropTemplate support. The translucent window body is slightly warmer so the map-derived wood reads clearly.
+## Smart switches to your current dungeon
+Inside a recognized party dungeon, QuestSense Smart now prefers **only accepted quests confirmed for the specific instance**, using available dungeon map quest markers or a directly matching quest-log dungeon category/title. For example, Deadmines-specific objectives are not mixed with Stockades quests. Regular outdoor Smart behavior returns after leaving.
 
-No widget placement, saved recipes, macro execution, spellbook scanning, explicit install behavior, copy/select workflow, scrolling preview or warning sizing has changed.
+Already tracked quests outside that dungeon, including manually selected watches, are **temporarily suspended**, not forgotten. Their previous choices come back automatically when you exit. Unchecking a dungeon quest yourself is still respected; auto-watch limits and existing quest tracking buttons are unchanged.
 
-## Discoveries
-The existing wood texture is retained, with a modest warmer tint and lighter wood glaze to complement the World Map. The item's cool gray-blue rows stay unchanged because they aid scanning. The native window border, dropdowns, map attachment, coordinates, source statistics and SavedVariables remain exactly as before.
+## Safe API limitations
+A generic quest marked "Dungeon" is **not** proof it belongs to the dungeon you are in. Forever sometimes provides incomplete map/POI data. If ChalkBox cannot confirm any matching quest, it preserves the current tracker instead of removing everything. Quest names and map quest data must be recognized; some custom or unusual dungeon quests may not be detected until the client provides matching information.
 
-## Safety and testing
-- Visual-only edits in `MacroForgeUI.lua` and `MapDiscoveries.lua`; no new saved fields or data migration.
-- Lua 5.1 regression checks for framed native and fallback MacroForge windows, panel rim/shadow/fill, warm map art, Discoveries rows and all previously covered behavior.
-- Real-client confirmation still needed for the wood colors, border draw order and visual contrast.
+This behavior is active only in **Smart** and in **party dungeons**. Nearby and All accepted are unchanged. The addon still defers quest tracker edits during combat, or while the World Map or quest log is open. It never modifies Blizzard's map or quests themselves.
 
-Install `ChalkBox-2.2.9.zip` over the existing ChalkBox addon folder, preserve SavedVariables and run `/reload`.
+Use **Options → AddOns → ChalkBox → QuestSense → Smart (recommended)** and select **Tracking Diagnostics**, or type `/chalk quests status`, to see the matched dungeon count and a reason if no reliable data is available.
+
+## Tests and installation
+- Added Lua 5.1 regression tests for Deadmines vs Stockades, dungeon floor map matching, deliberate unwatch, manual restoration on exit, no-data fallback and previously supported QuestSense behavior.
+- No SavedVariables version changes, migrations, quest completion actions or unrelated ChalkBox module edits.
+- Verify the native tracker in a live Forever dungeon, especially if a quest uses custom or missing POI data.
+
+Install `ChalkBox-2.2.10.zip` over the previous addon directory, preserve SavedVariables and enter `/reload`.
