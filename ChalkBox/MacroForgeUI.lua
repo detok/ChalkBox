@@ -1,6 +1,7 @@
 -- ChalkBox MacroForge UI: native, editable-in-config macro wizard.
 -- No action runs in combat, no rotation automation, no hidden macro edits.
 local window,draft,rendered
+local dockedTo,detachedPoint,detachedScale
 local presetButtons,slotButtons,spellRows,checks={},{},{},{}
 local spellPage,libraryIndex,activeSlot=1,1,"main"
 local search,macroText,warningText,statusText,libraryText,nameEdit,selectionText
@@ -452,6 +453,7 @@ local function Create()
     if f.EnableMouse then f:EnableMouse(true) end
     if f.RegisterForDrag then f:RegisterForDrag("LeftButton") end
     f:SetScript("OnDragStart",function(self)
+        if dockedTo then return end
         if self.StartMoving and (type(InCombatLockdown)~="function"
             or not InCombatLockdown()) then self:StartMoving() end
     end)
@@ -607,6 +609,84 @@ local function Create()
     window=f
     Theme()
     f:Hide()
+end
+function ChalkBox_MacroForgeUndock()
+    if not window or not dockedTo then return false end
+    dockedTo=nil
+    window.dockedTo=nil
+    if type(window.SetScale)=="function" then
+        window:SetScale(detachedScale or 1)
+    end
+    if type(window.SetMovable)=="function" then
+        window:SetMovable(true)
+    end
+    if type(window.ClearAllPoints)=="function" then
+        window:ClearAllPoints()
+        if detachedPoint then
+            window:SetPoint(unpack(detachedPoint))
+        else
+            window:SetPoint("CENTER",UIParent,"CENTER",0,0)
+        end
+    end
+    detachedPoint=nil;detachedScale=nil
+    return true
+end
+local function Edge(frame,method)
+    if not frame or type(frame[method])~="function" then return nil end
+    local ok,v=pcall(frame[method],frame)
+    if ok and type(v)=="number" and v==v and
+        (type(issecretvalue)~="function" or not issecretvalue(v)) then
+        return v
+    end
+end
+function ChalkBox_MacroForgeDockTo(native)
+    if not window or not native or not UIParent then return false end
+    if type(native.IsShown)=="function" and not native:IsShown() then
+        return false
+    end
+    -- Only dock when there is actual screen space, preserving both the
+    -- entire Blizzard macro editor and the complete existing workbench.
+    local screenLeft,screenRight=Edge(UIParent,"GetLeft"),
+        Edge(UIParent,"GetRight")
+    local left,right=Edge(native,"GetLeft"),Edge(native,"GetRight")
+    if not screenLeft or not screenRight or not left or not right or
+        left>=right or screenLeft>=screenRight then return false end
+    local scale=type(window.SetScale)=="function" and 0.82 or 1
+    local need=786*scale+12
+    local side
+    if screenRight-right>=need then side="right"
+    elseif left-screenLeft>=need then side="left"
+    else return false end
+    if dockedTo then ChalkBox_MacroForgeUndock() end
+    if type(window.GetPoint)=="function" then
+        local ok,a,b,c,d,e=pcall(window.GetPoint,window,1)
+        if ok and a then detachedPoint={a,b,c,d,e} end
+    end
+    detachedScale=Edge(window,"GetScale") or 1
+    dockedTo=native
+    window.dockedTo=native
+    if type(window.ClearAllPoints)=="function" then
+        window:ClearAllPoints()
+    end
+    if type(window.SetScale)=="function" then window:SetScale(scale) end
+    if type(window.SetMovable)=="function" then window:SetMovable(false) end
+    if side=="right" then
+        window:SetPoint("TOPLEFT",native,"TOPRIGHT",12,0)
+    else
+        window:SetPoint("TOPRIGHT",native,"TOPLEFT",-12,0)
+    end
+    return true
+end
+function ChalkBox_MacroForgeHideDocked(native)
+    if not dockedTo or (native and native~=dockedTo) then return false end
+    if window and type(window.Hide)=="function" then window:Hide() end
+    ChalkBox_MacroForgeUndock()
+    return true
+end
+function ChalkBox_MacroForgeDockStatus()
+    return {docked=dockedTo~=nil,
+        shown=window and type(window.IsShown)=="function"
+            and window:IsShown() or false}
 end
 function ChalkBox_OpenMacroForge()
     Create()
