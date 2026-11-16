@@ -87,21 +87,56 @@ local function HidePins()
     for _,pin in ipairs(pins) do pin:Hide() end
     lastCount=0
 end
+-- Use Blizzard's actual flight-master map artwork. The returned atlas
+-- can vary by map and faction; never rely on it for learned-state checks.
+local function TaxiAtlas(node,located)
+    local from=located or node
+    local own=from and from.atlasName
+    if Public(own) and type(own)=="string" and
+        own:match("^TaxiNode_[%w_]+$") then
+        if not (C_Texture and type(C_Texture.GetAtlasInfo)=="function") or
+            Call(C_Texture.GetAtlasInfo,own) then
+            return own
+        end
+    end
+    local faction=from and from.faction
+    if not Integer(faction) then faction=node and node.faction end
+    local atlas=faction==2 and "TaxiNode_Alliance" or
+        (faction==1 and "TaxiNode_Horde" or "TaxiNode_Neutral")
+    -- Gracefully fall back to the neutral winged-boot on client forks
+    -- where a faction-specific atlas is not present.
+    if C_Texture and type(C_Texture.GetAtlasInfo)=="function" and
+        not Call(C_Texture.GetAtlasInfo,atlas) then
+        return "TaxiNode_Neutral"
+    end
+    return atlas
+end
+local function SetPinArt(pin,atlas)
+    local icon=pin.icon
+    if not icon then return end
+    if type(icon.SetAtlas)=="function" then
+        local ok,result=pcall(icon.SetAtlas,icon,atlas,false)
+        if ok and result~=false then return end
+        if atlas~="TaxiNode_Neutral" then
+            ok,result=pcall(icon.SetAtlas,icon,"TaxiNode_Neutral",false)
+            if ok and result~=false then return end
+        end
+    end
+    -- Older texture-only clients: use Blizzard's minimap flight-master
+    -- tracking art instead of painting another square over the map.
+    if type(icon.SetTexture)=="function" then
+        icon:SetTexture("Interface\\Minimap\\Tracking\\FlightMaster")
+    end
+end
 local function MakePin(canvas,index)
     local pin=pins[index]
     if not pin then
         pin=CreateFrame("Frame",nil,canvas)
-        pin:SetSize(15,15)
+        pin:SetSize(20,20)
         if type(pin.EnableMouse)=="function" then pin:EnableMouse(true) end
-        local ring=pin:CreateTexture(nil,"ARTWORK")
-        ring:SetAllPoints(pin)
-        ring:SetTexture("Interface\\Buttons\\WHITE8X8")
-        ring:SetVertexColor(0.10,0.11,0.12,0.90)
-        local center=pin:CreateTexture(nil,"OVERLAY")
-        center:SetSize(9,9)
-        center:SetPoint("CENTER",pin,"CENTER",0,0)
-        center:SetTexture("Interface\\Buttons\\WHITE8X8")
-        center:SetVertexColor(0.97,0.76,0.34,1)
+        local icon=pin:CreateTexture(nil,"ARTWORK")
+        icon:SetAllPoints(pin)
+        pin.icon=icon
         pin:SetScript("OnEnter",function(self)
             if GameTooltip and type(GameTooltip.SetOwner)=="function" and
                 type(GameTooltip.AddLine)=="function" then
@@ -177,6 +212,10 @@ local function IndexedPositions(mapID,known)
                             local px,py=ProjectOnZone(x,y,mapID,current)
                             if px then
                                 list[id]={x=px,y=py,
+                                    atlasName=Public(candidate.atlasName) and
+                                        candidate.atlasName or nil,
+                                    faction=Public(candidate.faction) and
+                                        candidate.faction or nil,
                                     from=(current==mapID and "direct" or
                                         "projected")}
                             end
@@ -239,6 +278,7 @@ local function Refresh()
                 local pin=MakePin(canvas,lastCount+1)
                 pin.flightName=type(node.name)=="string" and node.name or
                     "Flight master"
+                SetPinArt(pin,TaxiAtlas(node,indexed[id]))
                 pin:ClearAllPoints()
                 pin:SetPoint("CENTER",canvas,"TOPLEFT",x*w,-y*h)
                 pin:Show()
