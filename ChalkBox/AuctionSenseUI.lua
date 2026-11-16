@@ -937,8 +937,16 @@ function ChalkBox_AuctionAttach()
                 end
                 newTab:SetScript("OnClick",function()
                     if CombatLocked() then return end
+                    -- Enter through Market's proven native-content path.
+                    -- On Forever, going directly from Buy/Auctions to a new
+                    -- addon tab can leave Blizzard's page above our pane.
+                    -- The temporary Market show establishes the very same
+                    -- managed native visibility state, then swaps to Browser.
                     HideNativeContent()
-                    if frame then frame:Hide() end
+                    if frame then
+                        frame:Show()
+                        frame:Hide()
+                    end
                     if not ChalkBox_AuctionBrowserShow() then
                         HidePane()
                         return
