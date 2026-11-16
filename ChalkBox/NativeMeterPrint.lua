@@ -171,6 +171,10 @@ local function SendReport(frame,channel,auto)
     if channel~="PARTY" and channel~="SAY" then
         return Reject("Choose PARTY or SAY.")
     end
+    -- Automatic SAY outside an instance cannot satisfy Forever's
+    -- hardware-event requirement. Do not run a doomed send from OnUpdate.
+    if auto and channel=="SAY" and type(IsInInstance)=="function"
+        and not IsInInstance() then return false end
     if channel=="PARTY" and (type(IsInGroup)~="function"
         or not IsInGroup() or
         (type(IsInRaid)=="function" and IsInRaid())) then
