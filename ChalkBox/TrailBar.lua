@@ -277,6 +277,18 @@ function ChalkBox_BarBagValueModeToggle()
     return ChalkBox_BarBagValueModeSet(
         ChalkBox_BarBagValueModeGet()=="junk" and "total" or "junk")
 end
+-- A player-initiated shortcut to Blizzard's existing bag toggle. Never
+-- reposition, replace or manipulate protected inventory item buttons here.
+-- In edit mode, left-click is reserved for arranging Bar widgets.
+function ChalkBox_BarToggleBags()
+    if editMode or type(ToggleAllBags)~="function" then return false end
+    if type(InCombatLockdown)=="function" then
+        local ok,locked=pcall(InCombatLockdown)
+        if not ok or not Public(locked) or locked then return false end
+    end
+    local ok,result=pcall(ToggleAllBags)
+    return ok and result~=false
+end
 local function Coins(copper)
     if type(copper)~="number" then return "--" end
     copper=math.floor(math.max(0,copper))
@@ -648,6 +660,7 @@ local function CreateBar()
             if (a.unknown or 0)>0 then
                 lines[#lines+1]="Unknown: "..a.unknown
             end
+            lines[#lines+1]="Left-click: open / close all bags"
             return lines
         end},
         {"gear","Durability",function()
@@ -776,8 +789,12 @@ local function CreateBar()
                     if GameTooltip then GameTooltip:Hide() end
                     ChalkBox_BarOpenMenu(key,self)
                 end
-            elseif button=="LeftButton" and not editMode and key=="bagvalue" then
-                ChalkBox_BarBagValueModeToggle()
+            elseif button=="LeftButton" and not editMode then
+                if key=="bags" then
+                    ChalkBox_BarToggleBags()
+                elseif key=="bagvalue" then
+                    ChalkBox_BarBagValueModeToggle()
+                end
             end
         end)
         Hint(widget,name,details,key)
