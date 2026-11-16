@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.23 — Forever combat report reliability (Beta)
+
+- Respect chat lockdown and addon messaging restrictions; show a native copyable manual report whenever Forever rejects addon-sent combat chat.
+- Avoid auto-SAY outside instances and do not treat a successful API request as confirmation of delivery.
+- No changes to combat data, scanners, macro tools, layout or saved player settings. 2.2.22 remains stable.
+
 ## 2.2.22 — Full auction snapshot completeness (Beta)
 
 - Monitor growing Forever replicated auction counts through the entire scan and confirm a final stable count before committing.
