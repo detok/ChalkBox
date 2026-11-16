@@ -45,7 +45,8 @@ local function Items()
             Meter(Next(mode,modes))
         end),
         Add("Display","Fight: "..(sessionLabel[session] or session),function()
-            Meter(Next(session,sessions))
+            local choice=Next(session,sessions)
+            Meter(choice=="expired" and "last" or choice)
         end),
         Add("Display","Maximum rows: "..(st.rows or 5).." (5 / 8 / 12)",function()
             Meter("rows "..Next(st.rows or 5,{5,8,12}))
