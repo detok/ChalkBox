@@ -211,7 +211,7 @@ _G.ChalkBox_AuctionRows=function()
         average=nil,listings=nil,quantity=24}}
 end
 -- Compact Market graph must use saved observations and never send AH queries.
-local chartReads=0
+local chartReads,chartName,chartMixed=0,"Linen Cloth",false
 local history={{t=1700000000,low=1500},{t=1700086400,low=1800},
     {t=1700259200,low=1350}}
 _G.ChalkBox_AuctionChartHistory=function(itemID)
@@ -219,7 +219,7 @@ _G.ChalkBox_AuctionChartHistory=function(itemID)
     if itemID~=2589 then return nil end
     local copy={}
     for i,p in ipairs(history) do copy[i]={t=p.t,low=p.low} end
-    return {itemID=itemID,name="Linen Cloth",realm="Whitemane",
+    return {itemID=itemID,name=chartName,mixed=chartMixed,realm="Whitemane",
         faction="Alliance",source="browse",points=copy}
 end
 _G.ChalkBox_AuctionScan=function() browseScans=browseScans+1;return true end
@@ -405,9 +405,19 @@ assert(type(hoverRow.scripts.OnMouseDown)=="function",
 hoverRow.scripts.OnMouseDown(hoverRow,"RightButton")
 assert(chartReads==0,"right-click does not select a history graph")
 hoverRow.scripts.OnMouseDown(hoverRow,"LeftButton")
-assert(chartReads==1 and Text("Linen Cloth  /  LOW ASK")
-    and Text("3 scans: 15s 0c to 13s 50c"),
-    "click displays the selected item's actual saved low asks")
+assert(chartReads==1 and Text("Linen Cloth")
+    and Text("LOW 13s 50c  |  3 scans") and
+    rows[1].selectedBack and rows[1].selectedBack.shown,
+    "click displays the latest real low ask, scan count and a subtle row highlight")
+local preview=FindFrame("ChalkBoxAuctionPricePreview")
+assert(preview and preview.w==232 and preview.h==80 and
+    preview.point[1]=="TOPRIGHT" and preview.point[5]==-5,
+    "polished preview preserves screenshot-verified geometry without overlapping controls")
+preview.scripts.OnEnter(preview)
+assert(tip.shown and tip.lines[1].text=="Linen Cloth" and
+    tip.lines[2].text:find("Latest low ask: 13s 50c",1,true),
+    "hovering the chart explains the real low-ask samples and full item title")
+preview.scripts.OnLeave(preview)
 local dots,bars=0,0
 local sampleDot
 for _,widget in ipairs(allFrames) do
@@ -432,14 +442,28 @@ assert(not tip.shown and browseScans==0 and fullScans==0 and
 history[3].low=1400
 status.scannedAt=stamp+3
 pane.scripts.OnUpdate(pane,1.2)
-assert(chartReads==2 and Text("3 scans: 15s 0c to 14s 0c"),
-    "completed scan update redraws selected history without a new query")
+assert(chartReads==2 and Text("LOW 14s 0c  |  3 scans"),
+    "completed scan update redraws latest low ask without a new query")
+chartName="Amber Hoop of the Knight"
+chartMixed=true
+status.scannedAt=stamp+4
+pane.scripts.OnUpdate(pane,1.2)
+assert(Text("Amber Hoop of the Knight") and
+    Text("LOW 14s 0c  |  3 scans  |  MIXED"),
+    "compact chart displays full screenshot item name and visibly flags mixed variants")
+preview.scripts.OnEnter(preview)
+assert(tip.shown and tip.lines[1].text=="Amber Hoop of the Knight"
+    and tip.lines[3].text:find("not be comparable",1,true),
+    "mixed-variant tooltip prevents treating unlike gear as comparable prices")
+preview.scripts.OnLeave(preview)
+chartName="Linen Cloth";chartMixed=false
 -- My Items and Sales are subviews INSIDE Market; never touch secure
 -- native auction displayMode or Blizzard's native tab registry.
 local modeBefore=nativeModeWrites
 Button("My Items"):Click()
-assert(Text("Click an item to view its trend"),
-    "changing subviews resets stale chart selection")
+assert(Text("Click an item to view its trend") and
+    rows[1].selectedBack and not rows[1].selectedBack.shown,
+    "changing subviews resets stale chart selection and its row background")
 rows[1].scripts.OnMouseDown(rows[1],"LeftButton")
 assert(Text("No saved scan for this item"),
     "item without recorded market history has an honest empty state")
