@@ -23,6 +23,7 @@
 | --- | --- |
 | `/chalk drops map` | Open Discoveries, attached to the World Map |
 | `/chalk drops map status` | Diagnose the Discoveries map button and attachment |
+| `/chalk drops map check` | Compare viewed map and saved loot zone, count recorded coordinate samples, audit stored loot-window math |
 | `/chalk drops map reset` | Restore the draggable Discoveries map button |
 | `/chalk drops map on` / `off` | Show or hide the map button |
 | `/chalk drops on` / `off` | Start or stop sampling readable loot windows |
