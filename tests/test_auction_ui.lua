@@ -240,10 +240,17 @@ end
 _G.ChalkBox_MarketSalesStatus=function()
     return {count=1,gross=10000,proceeds=9600,fees=600}
 end
+assert(loadfile("AuctionBrowser.lua"))("ChalkBox")
 assert(loadfile("AuctionSenseUI.lua"))("ChalkBox")
 assert(ChalkBox_AuctionAttach())
 local tab=FindFrame("ChalkBoxAuctionSenseTab")
 local pane=FindFrame("ChalkBoxAuctionSensePane")
+local browserTab=FindFrame("ChalkBoxAuctionBrowserTab")
+local browserPane=FindFrame("ChalkBoxAuctionBrowserPane")
+assert(browserTab and browserPane and not browserPane.shown and
+    browserTab.text=="Browser" and browserTab.point[2]==tab and
+    #AuctionHouseFrame.Tabs==3,
+    "separate Browser tab is positioned after Market without editing native tabs")
 assert(tab and pane and pane.parent==AuctionHouseFrame,
     "AuctionSense is built directly inside Blizzard's auction house")
 assert(tab.selected==false and buy.selected==true,
@@ -582,4 +589,54 @@ ChalkBox_AuctionHide()
 assert(not pane.shown and AuctionHouseFrame.AuctionsFrame.shown,
     "closing Market restores Blizzard native subframes without changing mode")
 assert(nativeRegistryEdits==0,"no protected PanelTemplates mutations")
-print("PASS: Market never writes AH displayMode; Cozy Sleeping Bag item-use path safe, native tabs restore, real AH artwork, market scans and responsive table")
+-- The new Browser is a proper native-looking sibling tab, NOT a floating
+-- item-tooltip companion. Rows choose market history silently on hover.
+local nativeBeforeBrowser=nativeModeWrites
+browserTab:Click()
+assert(browserPane.shown and not pane.shown and browserTab.selected
+    and not tab.selected and not auctions.selected
+    and not AuctionHouseFrame.AuctionsFrame.shown,
+    "Browser displays its own framed list and chart without native overlays")
+assert(nativeModeWrites==nativeBeforeBrowser and nativeRegistryEdits==0
+    and #AuctionHouseFrame.Tabs==3,
+    "new Browser never mutates protected displayMode or tab registry")
+local browserRows={}
+for _,v in ipairs(allFrames) do
+    if v.parent==browserPane and v.kind=="Frame" and v.w==360
+        and v.h==22 then browserRows[#browserRows+1]=v end
+end
+assert(#browserRows==8 and browserRows[1].shown and
+    browserRows[1].data.itemID==2589,
+    "Browser offers paginated read-only saved results on the left")
+local beforeHistory=chartReads
+tip.shown=false
+browserRows[1].scripts.OnEnter(browserRows[1])
+assert(not tip.shown and not GameTooltip.shown
+    and chartReads==beforeHistory,
+    "hovering Browser results never invokes item/equipment comparison tooltips")
+browserRows[1].scripts.OnMouseDown(browserRows[1],"LeftButton")
+assert(ChalkBox_AuctionBrowserStatus().pinned
+    and ChalkBox_AuctionBrowserStatus().selectedID==2589,
+    "left-clicking a Browser result pins its existing chart")
+assert(ChalkBox_AuctionBrowserSelect("|Hitem:2589:0|h[Linen Cloth]|h"),
+    "deliberate selection accepts an item link without opening Blizzard tooltips")
+buy:Click()
+assert(not browserPane.shown and not browserTab.selected and
+    buy.selected and AuctionHouseFrame.BrowseResultsFrame.shown,
+    "native Buy immediately restores Blizzard controls from Browser")
+UseSoulboundBagItem()
+browserTab:Click()
+assert(browserPane.shown and browserTab.selected)
+tab:Click()
+assert(pane.shown and not browserPane.shown and tab.selected
+    and not browserTab.selected,
+    "switching Browser to Market swaps addon panes without native mode writes")
+assert(nativeModeWrites==nativeBeforeBrowser+1,
+    "only the user's native Buy click changed Blizzard displayMode")
+ChalkBox_AuctionHide()
+assert(not browserPane.shown and not pane.shown
+    and AuctionHouseFrame.BrowseResultsFrame.shown,
+    "closing either custom pane restores Blizzard subframes")
+assert(nativeRegistryEdits==0,
+    "both addon tabs preserve protected UI ownership")
+print("PASS: Market and Browser never write protected AH displayMode; Browser hover graphs use saved data without item comparison tooltips; native tabs restore")
