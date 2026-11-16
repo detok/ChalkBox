@@ -318,10 +318,11 @@ local function Commit(scan)
         -- refreshes browse minima. Its age remains independently visible.
         for itemID,item in pairs(items) do
             local prev=old.items[itemID]
+            -- Full replicate links and browse ItemKeys use different
+            -- signature formats; their raw strings are not comparable.
+            -- Reject known mixed-variant aggregates without false matches.
             local compatible=type(prev)=="table" and
-                not item.mixed and not prev.mixed and
-                (not item.variant or not prev.variant or
-                    item.variant==prev.variant)
+                not item.mixed and not prev.mixed
             if compatible then
                 local avg,lots,_,at=Detail(prev,old)
                 if avg and lots and at then
