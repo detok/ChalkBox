@@ -14,7 +14,7 @@ Quality-of-life tools for **World of Warcraft: Forever** — loot discoveries, q
 
 ChalkBox installs as **one `ChalkBox` folder**. Its bundled recipe data needs no separate download. Features are managed through Blizzard's native **Options → AddOns → ChalkBox** pages, or by typing `/chalk`.
 
-> **Development candidate: 2.2.19 (AuctionSense full-scan fix, not yet published). Check GitHub Releases for the latest downloadable version.** ChalkBox targets WoW Forever. The code has automated Lua 5.1 tests, but client-specific UI behavior still needs real in-game verification. Retail and ordinary Classic compatibility are **not claimed**.
+> **Development candidate: 2.2.20 (large Forever auction snapshot fix, not yet published). Check GitHub Releases for the latest downloadable version.** ChalkBox targets WoW Forever. The code has automated Lua 5.1 tests, but client-specific UI behavior still needs real in-game verification. Retail and ordinary Classic compatibility are **not claimed**.
 
 ## See it in-game
 
@@ -64,7 +64,11 @@ For the full installation, first-use and recovery walkthrough, see [Getting star
 
 [Complete verified command reference](docs/COMMANDS.md)
 
-## What's new in 2.2.19 (draft, not released)?
+## What's new in 2.2.20 (draft, not released)?
+
+Fix Full listings rejecting busy Forever auction houses with more than 150,000 auctions. The scanner continues safely through large listing counts in batches, without wiping previously scanned prices.
+
+## Previously in 2.2.19
 
 AuctionSense no longer abandons a slow Forever full-snapshot request after 25 seconds. A successful full snapshot supplies real average asks and listing counts; subsequent Browse Scan updates the low price without erasing that separately dated listing evidence.
 
