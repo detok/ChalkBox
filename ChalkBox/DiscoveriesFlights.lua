@@ -10,6 +10,8 @@ local capturePending=0
 local lastCanvas=nil
 local tick=0
 local lastCount=0
+local positionSources={observed=0,direct=0,projected=0,unplaced=0}
+local lastCapture={status="not seen",taxiMapID=nil,reachable=0}
 
 local function Public(value)
     return type(issecretvalue)~="function" or not issecretvalue(value)
@@ -123,44 +125,70 @@ local function MakePin(canvas,index)
     end
     return pin
 end
-local function GetProjected(node,mapID)
-    local x=node.x and node.x/10000 or nil
-    local y=node.y and node.y/10000 or nil
-    if not ValidXY(x,y) or not Integer(node.taxiMapID) then return end
-    if node.taxiMapID==mapID then return x,y end
+-- Convert points from an explicitly reported parent map into its zone.
+-- All coordinates are returned by Forever, never taken from a flight master
+-- database. Inverting a rectangle is safe only if the node is inside it.
+local function ProjectOnZone(x,y,zoneID,sourceMapID)
+    if not ValidXY(x,y) or not Integer(sourceMapID) then return end
+    if zoneID==sourceMapID then return x,y end
     local minX,maxX,minY,maxY=Call(
-        C_Map and C_Map.GetMapRectOnMap,mapID,node.taxiMapID)
+        C_Map and C_Map.GetMapRectOnMap,zoneID,sourceMapID)
     if not Number(minX) or not Number(maxX) or
         not Number(minY) or not Number(maxY) or
         maxX<=minX or maxY<=minY or maxX>1 or maxY>1 then return end
-    -- Only draw a node when a real client-supplied rectangle connects the
-    -- stored taxi-map coordinate to the exact visible zone map.
     if x<minX or x>maxX or y<minY or y>maxY then return end
     local zoneX=(x-minX)/(maxX-minX)
     local zoneY=(y-minY)/(maxY-minY)
     if ValidXY(zoneX,zoneY) then return zoneX,zoneY end
 end
-local function CurrentCandidates(mapID)
+local function GetProjected(node,mapID)
+    local x=node.x and node.x/10000 or nil
+    local y=node.y and node.y/10000 or nil
+    if not ValidXY(x,y) or not Integer(node.taxiMapID) then return end
+    return ProjectOnZone(x,y,mapID,node.taxiMapID)
+end
+-- MapTaxiNodeInfo includes BOTH learned and unknown nodes. It is strictly a
+-- coordinate directory here: only IDs already proved learned by a taxi visit
+-- in the current character's SavedVariables may ever be displayed.
+-- Forever sometimes supplies per-zone coordinates even when
+-- ShouldMapShowTaxiNodes() is false for the standard map filter. Do not
+-- discard those coordinates merely because the zone's mapType == 3.
+local function IndexedPositions(mapID,known)
     local list={}
     local taxi=C_TaxiMap
     if type(taxi)~="table" or
-        type(taxi.GetTaxiNodesForMap)~="function" or
-        type(taxi.ShouldMapShowTaxiNodes)~="function" then
-        return list
-    end
-    local mapInfo=Call(C_Map and C_Map.GetMapInfo,mapID)
-    if type(mapInfo)~="table" or
-        not Number(mapInfo.mapType) or mapInfo.mapType>2 then
-        return list
-    end
-    if Call(taxi.ShouldMapShowTaxiNodes,mapID)~=true then return list end
-    local all=Call(taxi.GetTaxiNodesForMap,mapID)
-    if type(all)~="table" then return list end
-    for _,node in ipairs(all) do
-        if type(node)=="table" and Integer(node.nodeID) then
-            local x,y=Point(node.position)
-            if x then list[tostring(node.nodeID)]={x=x,y=y} end
+        type(taxi.GetTaxiNodesForMap)~="function" then return list end
+    local visited={}
+    local current=mapID
+    for depth=1,8 do
+        if not Integer(current) or current<=0 or visited[current] then
+            break
         end
+        visited[current]=true
+        local ok,all=pcall(taxi.GetTaxiNodesForMap,current)
+        if ok and Public(all) and type(all)=="table" then
+            for _,candidate in ipairs(all) do
+                if type(candidate)=="table" and Integer(candidate.nodeID) and
+                    known[tostring(candidate.nodeID)] then
+                    local id=tostring(candidate.nodeID)
+                    if not list[id] then
+                        local x,y=Point(candidate.position)
+                        if x then
+                            local px,py=ProjectOnZone(x,y,mapID,current)
+                            if px then
+                                list[id]={x=px,y=py,
+                                    from=(current==mapID and "direct" or
+                                        "projected")}
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        local info=Call(C_Map and C_Map.GetMapInfo,current)
+        if type(info)~="table" or not Integer(info.parentMapID) or
+            info.parentMapID<=0 or info.parentMapID==current then break end
+        current=info.parentMapID
     end
     return list
 end
@@ -183,7 +211,8 @@ local function Refresh()
     if key==drawnKey and lastCanvas==canvas then return end
     HidePins()
     drawnKey,lastCanvas=key,canvas
-    local indexed=CurrentCandidates(mapID)
+    local indexed=IndexedPositions(mapID,db.nodes)
+    positionSources={observed=0,direct=0,projected=0,unplaced=0}
     local ids={}
     for id in pairs(db.nodes) do ids[#ids+1]=id end
     table.sort(ids) -- deterministic ordering without altering learned data
@@ -191,14 +220,20 @@ local function Refresh()
         local node=db.nodes[id]
         if type(node)=="table" then
             local x,y
+            local from
             if node.zoneMapID==mapID then
                 x,y=node.zoneX and node.zoneX/10000,
                     node.zoneY and node.zoneY/10000
-                if not ValidXY(x,y) then x,y=nil,nil end
+                if not ValidXY(x,y) then x,y=nil,nil
+                else from="observed" end
             end
-            if not x then x,y=GetProjected(node,mapID) end
             if not x and indexed[id] then
                 x,y=indexed[id].x,indexed[id].y
+                from=indexed[id].from
+            end
+            if not x then
+                x,y=GetProjected(node,mapID)
+                if x then from="projected" end
             end
             if ValidXY(x,y) then
                 local pin=MakePin(canvas,lastCount+1)
@@ -207,8 +242,12 @@ local function Refresh()
                 pin:ClearAllPoints()
                 pin:SetPoint("CENTER",canvas,"TOPLEFT",x*w,-y*h)
                 pin:Show()
+                positionSources[from or "projected"]=
+                    positionSources[from or "projected"]+1
                 lastCount=lastCount+1
                 if lastCount>=MAX_MARKERS then break end
+            else
+                positionSources.unplaced=positionSources.unplaced+1
             end
         end
     end
@@ -219,9 +258,18 @@ local function Capture()
     local taxiMap=Call(getID)
     local taxi=C_TaxiMap
     if not Integer(taxiMap) or taxiMap<=0 or type(taxi)~="table" or
-        type(taxi.GetAllTaxiNodes)~="function" then return false end
+        type(taxi.GetAllTaxiNodes)~="function" then
+        lastCapture.status="taxi map unavailable"
+        return false
+    end
+    lastCapture.taxiMapID=taxiMap
     local all=Call(taxi.GetAllTaxiNodes,taxiMap)
-    if type(all)~="table" then return false end
+    if type(all)~="table" then
+        lastCapture.status="taxi nodes unavailable"
+        return false
+    end
+    lastCapture.status="read"
+    lastCapture.reachable=0
     local db=DB()
     if not db then return false end
     local count=Count(db.nodes)
@@ -232,6 +280,7 @@ local function Capture()
             -- 0 CURRENT and 1 REACHABLE are authoritative. All other
             -- states remain unlearned; isUndiscovered is NOT consulted.
             (node.state==0 or node.state==1) then
+            lastCapture.reachable=lastCapture.reachable+1
             local id=tostring(node.nodeID)
             local old=db.nodes[id]
             if old or count<MAX_NODES then
@@ -308,7 +357,13 @@ function ChalkBox_DiscoveriesKnownFlightsStatus()
     return {enabled=db and db.enabled~=false or false,
         verified=db and Count(db.nodes) or 0,
         mapPins=lastCount,menuHook=menuInstalled,
-        mapID=ViewedMap(),captureRetry=capturePending>0}
+        mapID=ViewedMap(),captureRetry=capturePending>0,
+        captureStatus=lastCapture.status,taxiMapID=lastCapture.taxiMapID,
+        taxiKnown=lastCapture.reachable,
+        observedPositions=positionSources.observed,
+        directPositions=positionSources.direct,
+        projectedPositions=positionSources.projected,
+        unplacedNodes=positionSources.unplaced}
 end
 local function InstallMenu()
     if menuInstalled then return end
