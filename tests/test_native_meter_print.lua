@@ -169,6 +169,27 @@ Button("Print top 10 to PARTY")()
 assert(#sends==8)
 Button("Print top 10 to PARTY")()
 assert(#sends==8,"manual 3-second throttle prevents accidental double click")
+local copies={}
+_G.ChalkBox_MeterShowCopy=function(message,reason)
+    copies[#copies+1]={text=message,reason=reason}
+    return true
+end
+now=145
+C_ChatInfo.InChatMessagingLockdown=function() return true end
+C_ChatInfo.SendChatMessage=function() error("chat should not run in lockdown") end
+Button("Print top 10 to PARTY")()
+assert(#copies==1 and #sends==8
+    and copies[1].text:find("CB DPS",1,true),
+    "chat lockdown opens manual copy instead of attempting a protected send")
+C_ChatInfo.InChatMessagingLockdown=nil
+now=150
+Button("Print top 10 to PARTY")()
+assert(#copies==2 and #sends==8
+    and copies[2].reason:find("rejected",1,true),
+    "server rejection preserves complete report text without changing channel")
+C_ChatInfo.SendChatMessage=function(message,channel)
+    sends[#sends+1]={text=message,channel=channel}
+end
 
 -- A short fight is not broadcast; auto must be explicitly turned on.
 now=200
