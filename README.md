@@ -14,7 +14,7 @@ Quality-of-life tools for **World of Warcraft: Forever** — loot discoveries, q
 
 ChalkBox installs as **one `ChalkBox` folder**. Its bundled recipe data needs no separate download. Features are managed through Blizzard's native **Options → AddOns → ChalkBox** pages, or by typing `/chalk`.
 
-> **Development candidate: 2.2.22 (Forever full-scan and native tab polish, not yet published). Check GitHub Releases for the latest downloadable version.** ChalkBox targets WoW Forever. The code has automated Lua 5.1 tests, but client-specific UI behavior still needs real in-game verification. Retail and ordinary Classic compatibility are **not claimed**.
+> **Stable release: ChalkBox 2.2.22 for WoW Forever.** The first stable release follows a completed in-game full AuctionSense scan with usable shared item and bag pricing. Check [Releases](https://github.com/detok/ChalkBox/releases/tag/v2.2.22) for the actual installer. ChalkBox targets WoW Forever. The code has automated Lua 5.1 tests, but client-specific UI behavior still needs real in-game verification. Retail and ordinary Classic compatibility are **not claimed**.
 
 ## See it in-game
 
@@ -40,7 +40,7 @@ ChalkBox installs as **one `ChalkBox` folder**. Its bundled recipe data needs no
 
 ## Install or upgrade
 
-1. Open [GitHub Releases](https://github.com/detok/ChalkBox/releases) and select **ChalkBox-2.2.17.zip** (or the newest release appropriate for your client). **Do not** use GitHub's automatically generated Source code ZIP or the separate CurseForge media ZIP.
+1. Open [GitHub Releases](https://github.com/detok/ChalkBox/releases) and select **ChalkBox-2.2.22.zip** (or a newer tested release appropriate for your client). **Do not** use GitHub's automatically generated Source code ZIP or the separate CurseForge media ZIP.
 2. Extract the single **ChalkBox** directory to your game's `Interface/AddOns/` folder. Confirm the path ends in `Interface/AddOns/ChalkBox/ChalkBox.toc` — not `ChalkBox/ChalkBox/ChalkBox.toc`.
 3. Start Forever, check the AddOns list, then type `/chalk`.
 4. On an upgrade, replace only the addon folder. **Preserve WoW's SavedVariables** to keep your preferences, historical loot, market scans and layouts.
@@ -64,9 +64,9 @@ For the full installation, first-use and recovery walkthrough, see [Getting star
 
 [Complete verified command reference](docs/COMMANDS.md)
 
-## What's new in 2.2.22 (draft, not released)?
+## ChalkBox 2.2.22 — first stable release
 
-Full auction scans now track additional Forever listings that arrive during processing and verify final snapshot completeness before saving. Existing UI and normal browse scans stay unchanged.
+After a completed in-game Forever full market scan, AuctionSense now brings actual asking-price, quantity and listing evidence into the Market table and connected bag and item tools. Full scans account for delayed and late-arriving listings, protect old market data, and preserve the existing interface. Stable doesn't mean feature-complete; players can report bugs or suggest changes through the [guided issue forms](https://github.com/detok/ChalkBox/issues/new/choose).
 
 ## Previously in 2.2.21
 
