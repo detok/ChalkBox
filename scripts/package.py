@@ -73,6 +73,7 @@ FILES = (
     "MeterReportCopy.lua",
     "CombatMeter.lua",
     "NativeMeterPrint.lua",
+    "CombatMeterMenu.lua",
     "ChalkBox_Settings.lua",
     "QuestTrackerMenu.lua",
     "MacroForgeDock.lua",
