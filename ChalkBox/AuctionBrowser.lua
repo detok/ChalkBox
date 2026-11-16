@@ -5,6 +5,12 @@
 local pane,labels,rows=nil,{},{}
 local selectedID,pinned=nil,false
 local search,filter,sort,page="","all","name",1
+local source="saved" -- live browse summaries only when explicitly selected
+local nativeGeneration=0
+local nativeSeenAt=nil
+local nativeItems={}
+local nativeSnapshotGeneration=-1
+local nativeAvailable=false
 local results,cacheKey={},nil
 local redrawClock=0
 local drawnLines,dots,bars={}, {}, {}
@@ -238,20 +244,105 @@ local function Status()
     local ok,value=pcall(fn)
     return ok and type(value)=="table" and value or {}
 end
+-- Read the currently LOADED native browse summaries without requesting
+-- additional results or changing Blizzard's native Buy/Sell mode.
+-- These are item-key-level lowest asking prices, NOT individual auctions.
+local function CurrentNativeRows()
+    if nativeSnapshotGeneration==nativeGeneration then
+        return nativeItems,nativeAvailable
+    end
+    nativeSnapshotGeneration=nativeGeneration
+    nativeItems={}
+    nativeAvailable=false
+    local ah=type(C_AuctionHouse)=="table" and C_AuctionHouse or nil
+    local fn=ah and ah.GetBrowseResults
+    if type(fn)~="function" then return nativeItems,false end
+    local ok,list=pcall(fn)
+    if not ok or type(list)~="table" then return nativeItems,false end
+    nativeAvailable=true
+    local found={}
+    for i=1,math.min(#list,12000) do
+        local info=list[i]
+        if type(info)=="table" and Public(info.itemKey) and
+            type(info.itemKey)=="table" then
+            local key=info.itemKey
+            local id=key.itemID
+            local price=info.minPrice
+            local qty=info.totalQuantity
+            if Positive(id) and id>0 and id%1==0 and
+                Positive(price) and price>0 and
+                Positive(qty) and qty%1==0 then
+                local variant=tostring(Public(key.itemSuffix) and
+                    key.itemSuffix or 0)..":"..
+                    tostring(Public(key.itemLevel) and
+                    key.itemLevel or 0)..":"..
+                    tostring(Public(key.battlePetSpeciesID) and
+                    key.battlePetSpeciesID or 0)
+                local variantSpecific=
+                    (Positive(key.itemSuffix) and key.itemSuffix~=0) or
+                    (Positive(key.itemLevel) and key.itemLevel~=0) or
+                    (Positive(key.battlePetSpeciesID) and
+                        key.battlePetSpeciesID~=0)
+                local entry=found[id]
+                if not entry then
+                    local name
+                    if type(ah.GetItemKeyInfo)=="function" then
+                        local named,details=pcall(ah.GetItemKeyInfo,key)
+                        if named and type(details)=="table" then
+                            local candidate=details.itemName or details.name
+                            if Public(candidate) and type(candidate)=="string" then
+                                name=candidate
+                            end
+                        end
+                    end
+                    if not name and Public(info.name) and
+                        type(info.name)=="string" then name=info.name end
+                    if not name and type(ChalkBox_AuctionPrice)=="function" then
+                        local saved,record=pcall(ChalkBox_AuctionPrice,id)
+                        if saved and type(record)=="table" and
+                            type(record.name)=="string" then
+                            name=record.name
+                        end
+                    end
+                    entry={itemID=id,name=name or ("Item #"..id),
+                        low=price,quantity=0,current=true,
+                        variant=variant,variantSpecific=variantSpecific}
+                    found[id]=entry
+                    nativeItems[#nativeItems+1]=entry
+                end
+                if entry.variant~=variant then entry.mixed=true end
+                if variantSpecific then entry.variantSpecific=true end
+                entry.low=math.min(entry.low,price)
+                entry.quantity=entry.quantity+qty
+            end
+        end
+    end
+    return nativeItems,true
+end
 local function GetRows(status)
     local key=tostring(status.marketKey or "").."|"..
-        tostring(status.scannedAt or "").."|"..search.."|"..filter.."|"..sort
+        tostring(status.scannedAt or "").."|"..search.."|"..filter.."|"..sort..
+        "|" ..source.."|"..nativeGeneration
     if cacheKey==key then return results end
     cacheKey=key
-    local getter=ChalkBox_AuctionRows
-    local ok,all=false,nil
-    if type(getter)=="function" then ok,all=pcall(getter,search,12000) end
-    if not ok or type(all)~="table" then all={} end
+    local all={}
+    if source=="live" then
+        all=CurrentNativeRows()
+    else
+        local getter=ChalkBox_AuctionRows
+        local ok,data=false,nil
+        if type(getter)=="function" then ok,data=pcall(getter,search,12000) end
+        if ok and type(data)=="table" then all=data end
+    end
     local clean={}
     for _,row in ipairs(all) do
         if type(row)=="table" and Positive(row.itemID) and
             row.itemID>0 and row.itemID%1==0 and
-            (filter~="mixed" or row.mixed==true) then
+            (filter~="mixed" or row.mixed==true) and
+            (source~="live" or search=="" or
+                (type(row.name)=="string" and
+                    row.name:lower():find(search:lower(),1,true)) or
+                tostring(row.itemID):find(search,1,true)) then
             clean[#clean+1]=row
         end
     end
@@ -273,9 +364,16 @@ local function Refresh()
     if not pane or not pane:IsShown() then return end
     local status=Status()
     local all=GetRows(status)
-    labels.market:SetText((status.realm or "Unknown realm").." / "..
-        (status.faction or "?").."  ·  "..#all..
-        " saved items  ·  scanned "..Age(status.age))
+    if source=="live" then
+        labels.market:SetText((status.realm or "Unknown realm").." / "..
+            (status.faction or "?").."  ·  "..#all..
+            " current loaded browse results (not entire AH)")
+    else
+        labels.market:SetText((status.realm or "Unknown realm").." / "..
+            (status.faction or "?").."  ·  "..#all..
+            " saved items  ·  scanned "..Age(status.age))
+    end
+    labels.source:SetText(source=="live" and "AH Results" or "Saved")
     labels.filter:SetText(filter=="mixed" and "Mixed gear" or "All items")
     labels.sort:SetText(sort=="name" and "Name" or
         (sort=="lowest" and "Low ↑" or "Low ↓"))
@@ -292,10 +390,26 @@ local function Refresh()
             row.data=entry
             row.name:SetText(entry.name or "Item #"..tostring(entry.itemID))
             row.low:SetText(Coin(entry.low))
-            row.units:SetText(entry.mixed and "MIXED" or
-                (Positive(entry.quantity) and
-                tostring(entry.quantity).." units" or "—"))
-            Tint(row.units,entry.mixed and colors.warn or colors.muted)
+            local compare=nil
+            if source=="live" and not entry.mixed and
+                not entry.variantSpecific and
+                type(ChalkBox_AuctionPrice)=="function" then
+                local ok,reference=pcall(ChalkBox_AuctionPrice,entry.itemID)
+                if ok and type(reference)=="table" and
+                    Positive(reference.low) and reference.low>0 and
+                    not reference.mixed and not reference.stale then
+                    compare=(entry.low/reference.low-1)*100
+                end
+            end
+            if source=="live" and compare then
+                row.units:SetText(("%+.0f%% vs scan"):format(compare))
+                Tint(row.units,compare<0 and colors.good or colors.warn)
+            else
+                row.units:SetText(entry.mixed and "MIXED" or
+                    (Positive(entry.quantity) and
+                    tostring(entry.quantity).." units" or "—"))
+                Tint(row.units,entry.mixed and colors.warn or colors.muted)
+            end
             if row.selected then
                 if entry.itemID==selectedID then row.selected:Show()
                 else row.selected:Hide() end
@@ -309,6 +423,24 @@ local function Refresh()
         end
     end
     labels.page:SetText(("Page %d / %d"):format(page,pages))
+    if #all==0 then
+        selectedID=nil
+        pinned=false
+        labels.drawnKey=nil
+        if source=="live" then
+            labels.item:SetText("No AH browse results loaded")
+            labels.context:SetText("Search items in Blizzard Buy, then return here")
+            labels.price:SetText("—")
+            labels.trend:SetText("NOT A LIVE MARKET FEED")
+            labels.range:SetText("The browser cannot invent current auctions")
+            labels.detail:SetText("Switch to Saved for ChalkBox's recorded market")
+            ClearPlot()
+            return
+        elseif (status.items or 0)>0 then
+            labels.item:SetText("No matching saved items")
+            labels.context:SetText("Clear search or switch to All items")
+        end
+    end
     local hadSelection=selectedID~=nil
     if not selectedID and firstVisible then Select(firstVisible,false) end
     if cacheKey~=labels.drawnKey then
@@ -367,6 +499,10 @@ function ChalkBox_AuctionBrowserMount(ah)
     labels.sort=Button(f,"Name",128,-85,103,function()
         sort=sort=="name" and "lowest" or
             (sort=="lowest" and "highest" or "name")
+        ControlsChanged()
+    end)
+    labels.source=Button(f,"Saved",239,-85,120,function()
+        source=source=="saved" and "live" or "saved"
         ControlsChanged()
     end)
     Font(f,"GameFontNormal",17,-114,237):SetText("ITEM")
@@ -533,5 +669,27 @@ function ChalkBox_AuctionBrowserSelect(item)
 end
 function ChalkBox_AuctionBrowserStatus()
     return {shown=ChalkBox_AuctionBrowserIsShown(),selectedID=selectedID,
-        pinned=pinned,filter=filter,sort=sort,page=page,rows=#results}
+        pinned=pinned,filter=filter,sort=sort,source=source,
+        page=page,rows=#results}
 end
+
+-- Observe native browse-result events only. Never send a browse query.
+local listener=CreateFrame("Frame")
+for _,name in ipairs({"AUCTION_HOUSE_BROWSE_RESULTS_UPDATED",
+    "AUCTION_HOUSE_BROWSE_RESULTS_ADDED"}) do
+    if type(listener.RegisterEvent)=="function" then
+        listener:RegisterEvent(name)
+    end
+end
+listener:SetScript("OnEvent",function()
+    nativeGeneration=nativeGeneration+1
+    nativeSnapshotGeneration=-1
+    local timeFn=type(GetServerTime)=="function" and GetServerTime
+        or time
+    if type(timeFn)=="function" then
+        local ok,stamp=pcall(timeFn)
+        if ok and Positive(stamp) then nativeSeenAt=stamp end
+    end
+    cacheKey=nil
+    if source=="live" then Refresh() end
+end)
