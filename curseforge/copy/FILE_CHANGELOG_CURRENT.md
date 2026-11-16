@@ -1,10 +1,11 @@
-# ChalkBox 2.2.23 — Forever combat report compatibility (Beta)
+# ChalkBox 2.2.24 — Release-candidate polish (Beta)
 
-- Check WoW Forever chat lockdown and outgoing addon-message restrictions before requesting a group report.
-- When manual reporting is rejected, show an authentic local copyable summary (Ctrl+C; paste in WoW chat yourself). No channel changes or automated resend.
-- Successful chat API requests do not guarantee delivery.
-- Avoid automatic SAY outside instances when Forever requires a hardware event.
-- Compact PRINT and Blizzard's native meter reporting share the same manual copy window.
-- Meter visuals, native combat totals, auction market, saved settings and player macros remain unchanged.
+- Compact DPS meter: one menu button and right-click menu, auto-fit populated rows (five fresh default), optional raid row caps and shared native meter reporting.
+- Manual reports share the existing Top 3/5/10, PARTY/SAY, copy fallback and opt-in after-combat controls. Protected chat remains protected.
+- Combat Meter opacity now fades the background instead of combat numbers, names and icons, matching The Bar.
+- AuctionSense Market tab highlight/first native tab switch corrected without changing the Blizzard auction mode.
+- Left-click The Bar's Bags counter to toggle Blizzard's native bags outside combat or Bar edit mode.
+- Experimental **AuctionSense → Charts** settings subpage plots actually saved low-price asking observations; no additional scans or historical SavedVariables schema changes.
+- Expanded regression tests for reports, menus, saved prices, chart rendering/fallback, bag toggles and UI state.
 
-**Beta:** Requires in-game verification. ChalkBox 2.2.22 is still the stable release.
+**GitHub prerelease only; client acceptance pending. 2.2.22 remains the stable release.** No CurseForge stable upload until tested.
