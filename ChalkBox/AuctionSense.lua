@@ -295,6 +295,32 @@ function ChalkBox_AuctionRows(search,limit)
     while #results>limit do results[#results]=nil end
     return results
 end
+-- Experimental charts consume EXISTING saved low-price scan observations.
+-- Return a validated copy, never a live reference to SavedVariables.
+-- No new AH requests or extra per-item history are created by graphing.
+function ChalkBox_AuctionChartHistory(item)
+    local id=ItemID(item)
+    local key,realm,faction=MarketID()
+    local market=key and State().markets[key]
+    local entry=id and market and type(market.items)=="table"
+        and market.items[tostring(id)] or nil
+    if type(entry)~="table" then return nil end
+    local history=type(entry.history)=="table" and entry.history or {}
+    local points={}
+    for i=math.max(1,#history-MAX_HISTORY+1),#history do
+        local row=history[i]
+        if type(row)=="table" and Integer(row.t) and row.t>0
+            and Integer(row.low) and row.low>0 then
+            points[#points+1]={t=row.t,low=row.low}
+        end
+    end
+    table.sort(points,function(a,b) return a.t<b.t end)
+    return {itemID=id,name=type(entry.name)=="string" and entry.name
+            or ("Item #"..tostring(id)),
+        marketKey=key,realm=realm,faction=faction,
+        source=market.source,scannedAt=market.scannedAt,
+        mixed=entry.mixed==true,points=points}
+end
 local function Finish(message)
     job=nil
     frame:SetScript("OnUpdate",nil)
