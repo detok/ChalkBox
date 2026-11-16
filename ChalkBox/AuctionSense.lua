@@ -10,6 +10,8 @@ local MAX_ITEMS=12000
 local MAX_MARKETS=6
 local BATCH=140
 local COOLDOWN=15*60
+local FULL_RESPONSE_WAIT=10*60 -- Forever can exceed five minutes to first reply
+local FULL_SETTLE_SECONDS=2 -- allow replicated listing count to stop growing
 local MAX_HISTORY=7
 local DETAIL_MAX_AGE=7*24*3600 -- retain actual full-listing evidence for up to 7 days
 local frame=CreateFrame("Frame")
@@ -117,6 +119,12 @@ function ChalkBox_AuctionStatus()
     return {available=BrowseAH()~=nil,fullAvailable=FullAH()~=nil,
         open=AtAuctioneer(),busy=job~=nil,mode=job and job.mode or lastMode,
         state=state,progress=progress,error=lastError,
+        phase=job and job.phase or nil,
+        waitSeconds=job and job.waited or nil,
+        received=job and job.eventSeen or false,
+        totalListings=job and job.total or nil,
+        reportedListings=job and job.reportedCount or nil,
+        processedListings=job and job.index or nil,
         scannedItems=job and job.itemCount or nil,
         realm=realm,faction=faction,marketKey=key,
         auctions=market and market.auctions or 0,
@@ -608,33 +616,49 @@ end
 -- Forever may signal replication before the item count is populated.
 -- Only read results after the actual request's modern update event; an old
 -- cached count by itself is NOT evidence that this request succeeded.
-local function AcceptFullResults()
-    if not job or job.mode~="full" or job.phase~="waiting"
-        or not job.eventSeen or not AtAuctioneer() then return false end
+local function BeginFullReading(scan,count)
+    scan.phase="reading"
+    scan.total=count
+    scan.index=0
+    scan.rows={}
+    scan.itemCount=0
+    scan.bidOnly=0
+    scan.missing={}
+    scan.nextMissing={}
+    scan.retryIndex=1
+    scan.passes=1
+    state="Processing "..count.." auction listings..."
+    frame:SetScript("OnUpdate",Step)
+    UIRefresh()
+end
+local function AcceptFullResults(elapsed)
+    local scan=job
+    if not scan or scan.mode~="full" or
+        (scan.phase~="waiting" and scan.phase~="settling") or
+        not scan.eventSeen or not AtAuctioneer() then return false end
     local ah=AH()
     local count=Call(ah and ah.GetNumReplicateItems)
     if not Integer(count) or count<1 then return false end
     if count>MAX_LISTINGS then
-        Abort(("Full snapshot reported %d auctions, beyond the %d safety bound. Previous prices kept."):format(
+        Abort(("Full snapshot reported %d auctions beyond the %d safety bound. Previous prices kept."):format(
             count,MAX_LISTINGS))
         return true
     end
-    local now=Now()
-    State().nextAllowed=math.max(State().nextAllowed,now+COOLDOWN)
-    job.phase="reading"
-    job.total=count
-    job.index=0
-    job.rows={}
-    job.itemCount=0
-    job.bidOnly=0
-    job.missing={}
-    job.nextMissing={}
-    job.retryIndex=1
-    job.passes=1
-    state="Reading "..count.." auction listings..."
-    frame:SetScript("OnUpdate",Step)
-    UIRefresh()
-    return true
+    if scan.reportedCount~=count then
+        scan.reportedCount=count
+        scan.settledFor=0
+        scan.phase="settling"
+        state=("Receiving full snapshot: %d listings reported..."):format(count)
+        UIRefresh()
+        return false
+    end
+    scan.settledFor=(scan.settledFor or 0)+
+        (type(elapsed)=="number" and elapsed or 0)
+    if scan.settledFor>=FULL_SETTLE_SECONDS then
+        BeginFullReading(scan,count)
+        return true
+    end
+    return false
 end
 local function StartScan(mode)
     if job then return false,"Scan already in progress" end
@@ -690,7 +714,7 @@ local function StartScan(mode)
     -- A full replicate can be very expensive and server-throttled.
     -- Wait state must exist before the client can fire a synchronous event.
     job={mode="full",phase="waiting",key=key,waited=0,
-        eventSeen=false,partial=0}
+        eventSeen=false,partial=0,reportedCount=nil,settledFor=0}
     progress=0
     lastMode=mode
     lastError=nil
@@ -699,23 +723,27 @@ local function StartScan(mode)
         if not job then return end
         if job.phase=="reading" then
             Step(nil,elapsed)
-        elseif job.phase=="waiting" then
-            job.waited=job.waited+
-                (type(elapsed)=="number" and elapsed or 0)
-            -- An early replication event can precede the server filling the
-            -- result count. Retry reading, never issue a second request.
-            if AcceptFullResults() then return end
-            -- Forever can deliver the replicate event well after 45 seconds.
-            -- Do not abandon a request that may have consumed the account's
-            -- 15-minute allowance. Wait for results, an explicit server drop,
-            -- or the player closing the Auction House.
-            if job and job.waited>=90 then
-                local waiting=math.floor(job.waited)
-                state=("Still awaiting full auction data (%ds)..."):format(waiting)
-                if waiting~=job.lastShownSecond then
-                    job.lastShownSecond=waiting
-                    UIRefresh()
+        elseif job.phase=="waiting" or job.phase=="settling" then
+            local dt=type(elapsed)=="number" and elapsed or 0
+            job.waited=job.waited+dt
+            -- The initial event can precede readable data, and large
+            -- snapshots arrive in chunks. Only scan after two quiet seconds.
+            if AcceptFullResults(dt) then return end
+            if not job then return end
+            if job.waited>=FULL_RESPONSE_WAIT and
+                (job.phase=="waiting" or not job.reportedCount) then
+                Abort("No complete full-scan response after 10 minutes. "..
+                    "Previous prices kept; the 15-minute request cooldown "..
+                    "still applies.")
+                return
+            end
+            local waiting=math.floor(job.waited)
+            if waiting~=job.lastShownSecond then
+                job.lastShownSecond=waiting
+                if job.phase=="waiting" then
+                    state=("Waiting for full scan response: %ds / 600s"):format(waiting)
                 end
+                UIRefresh()
             end
         end
     end)
@@ -727,6 +755,10 @@ local function StartScan(mode)
             "use Browse Scan until it is available.")
         return false,state
     end
+    -- Full requests can consume the 15-minute throttle even if the addon
+    -- later rejects a malformed/oversized result or the player closes AH.
+    -- Record the attempt on acceptance, not after processing succeeds.
+    State().nextAllowed=math.max(State().nextAllowed,Now()+COOLDOWN)
     UIRefresh()
     return true
 end
@@ -800,11 +832,13 @@ local function OnEvent(_,event,name)
         Abort("Full auction request was dropped by the server. "..
             "Previous market prices kept.")
     elseif event=="REPLICATE_ITEM_LIST_UPDATE" and job
-        and job.mode=="full" and job.phase=="waiting" and
+        and job.mode=="full" and
+        (job.phase=="waiting" or job.phase=="settling") and
         AtAuctioneer() then
         job.eventSeen=true
-        if not AcceptFullResults() then
-            state="Full snapshot signaled; waiting for listing data..."
+        if not AcceptFullResults(0) and job and
+            job.phase=="waiting" then
+            state="Server answered; waiting for listing count..."
             UIRefresh()
         end
     end
