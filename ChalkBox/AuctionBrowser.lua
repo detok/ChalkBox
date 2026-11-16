@@ -167,66 +167,94 @@ local function DrawDetails()
         Tint(labels.trend,colors.muted)
         return
     end
+    local current=nil
+    if source=="live" then
+        for _,row in ipairs(results) do
+            if row.itemID==selectedID then current=row;break end
+        end
+    end
     local getter=ChalkBox_AuctionChartHistory
     local ok,data=false,nil
     if type(getter)=="function" then ok,data=pcall(getter,selectedID) end
     local points=ok and CleanPoints(data) or {}
-    if not ok or type(data)~="table" then
-        labels.item:SetText("Item #"..tostring(selectedID))
-        labels.context:SetText("No saved observations on this realm / faction")
-        labels.price:SetText("—")
-        labels.trend:SetText("NO DATA")
-        labels.range:SetText("Scan the market to collect asking prices")
-        labels.detail:SetText("No live auction request was made")
-        Tint(labels.trend,colors.muted)
-        return
-    end
-    local name=type(data.name)=="string" and data.name or
+    local name=current and current.name or
+        (ok and type(data)=="table" and data.name) or
         ("Item #"..tostring(selectedID))
+    if type(name)~="string" then name="Item #"..tostring(selectedID) end
     if #name>39 then name=name:sub(1,36).."..." end
     labels.item:SetText(name)
-    local realm=type(data.realm)=="string" and data.realm or "?"
-    local faction=type(data.faction)=="string" and data.faction or "?"
-    labels.context:SetText(realm.." / "..faction.."  ·  "..#points..
-        (#points==1 and " observation" or " observations"))
+    local price
+    if type(ChalkBox_AuctionPrice)=="function" then
+        local got,value=pcall(ChalkBox_AuctionPrice,selectedID)
+        if got and type(value)=="table" then price=value end
+    end
+    local realm=ok and type(data)=="table" and data.realm or nil
+    local faction=ok and type(data)=="table" and data.faction or nil
+    if not realm or not faction then
+        local status=type(ChalkBox_AuctionStatus)=="function" and
+            ChalkBox_AuctionStatus() or {}
+        realm=realm or status.realm or "?"
+        faction=faction or status.faction or "?"
+    end
+    labels.context:SetText(realm.." / "..faction.."  ·  "..
+        (current and "CURRENT BROWSE / " or "")..#points..
+        (#points==1 and " saved scan" or " saved scans"))
+    if current then labels.price:SetText(Coin(current.low))
+    elseif #points>0 then labels.price:SetText(Coin(points[#points].low))
+    else labels.price:SetText("—") end
     if #points==0 then
-        labels.price:SetText("—")
-        labels.trend:SetText("NO SAMPLES")
-        labels.range:SetText("No usable saved asking prices")
-        labels.detail:SetText("Collect observations through Market scans")
+        labels.trend:SetText(current and "NO BASELINE" or "NO HISTORY")
+        labels.range:SetText(current and
+            "Current low ask has no historical comparison" or
+            "No saved asking prices for this item")
+        labels.detail:SetText(current and
+            "Observed native browse result (not a completed sale)" or
+            "Run a Market scan to begin recording prices")
         Tint(labels.trend,colors.muted)
         return
     end
     local first,latest=points[1].low,points[#points].low
     local low,high=first,first
     for _,p in ipairs(points) do
-        low=math.min(low,p.low)
-        high=math.max(high,p.low)
+        low=math.min(low,p.low);high=math.max(high,p.low)
     end
-    labels.price:SetText(Coin(latest))
-    labels.range:SetText("RECORDED LOW "..Coin(low).."   HIGH "..Coin(high))
-    local price
-    if type(ChalkBox_AuctionPrice)=="function" then
-        local good,value=pcall(ChalkBox_AuctionPrice,selectedID)
-        if good and type(value)=="table" then price=value end
-    end
-    local mixed=data.mixed==true or (price and price.mixed==true)
+    labels.range:SetText("SAVED LOW "..Coin(low).."   HIGH "..Coin(high))
+    local mixed=(type(data)=="table" and data.mixed==true) or
+        (price and price.mixed==true) or
+        (current and (current.mixed or current.variantSpecific))
+    local age=price and price.age or nil
     if mixed then
-        labels.trend:SetText("MIXED VARIANTS")
+        labels.trend:SetText("VARIANTS")
         Tint(labels.trend,colors.warn)
+    elseif current and price and Positive(price.low) and price.low>0 and
+        not price.stale then
+        local change=(current.low/price.low-1)*100
+        labels.trend:SetText(("%+.1f%% VS SCAN"):format(change))
+        Tint(labels.trend,change<0 and colors.good or
+            (change>0 and colors.warn or colors.muted))
+    elseif current then
+        labels.trend:SetText("OLD BASELINE")
+        Tint(labels.trend,colors.muted)
     elseif #points<2 then
         labels.trend:SetText("1 SAMPLE")
         Tint(labels.trend,colors.muted)
     else
-        local pct=(latest/first-1)*100
-        labels.trend:SetText(("%+.1f%% ASK"):format(pct))
-        Tint(labels.trend,pct<0 and colors.good or
-            (pct>0 and colors.warn or colors.muted))
+        local change=(latest/first-1)*100
+        labels.trend:SetText(("%+.1f%% ASK"):format(change))
+        Tint(labels.trend,change<0 and colors.good or
+            (change>0 and colors.warn or colors.muted))
     end
-    local age=price and price.age or nil
-    labels.detail:SetText((mixed and "Equipment variants not comparable  ·  " or
-        "Recorded asks, not sales  ·  ")..
-        (price and price.stale and "STALE  " or "")..Age(age))
+    if current then
+        labels.detail:SetText(
+            (mixed and "No gear variant comparison  ·  " or
+            (price and price.stale and "Saved price stale  ·  " or
+            "Current browse vs saved  ·  "))..
+            "scan "..Age(age))
+    else
+        labels.detail:SetText((mixed and "Mixed equipment variants  ·  " or
+            "Recorded asks, not sales  ·  ")..
+            (price and price.stale and "STALE  " or "")..Age(age))
+    end
     Draw(points)
 end
 local function Select(id,fromHover)
