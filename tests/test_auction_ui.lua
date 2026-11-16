@@ -720,4 +720,65 @@ assert(browserReads==readsBefore and fullScans==1 and browseScans==1,
 assert(nativeModeWrites==nativeBeforeBrowser+1 and nativeRegistryEdits==0,
     "filtering and graphing never modify native auction state")
 ChalkBox_AuctionHide()
-print("PASS: Market/Browser state isolation, tooltip-free item chart, pin, sort, filter, responsive pagination and empty-results safety")
+-- Regression: opening Browser DIRECTLY from native Buy must pass through
+-- the same proven Market overlay path, not just highlight the Browser tab.
+local marketPrimed=0
+local originalMarketShow=pane.Show
+pane.Show=function(self)
+    marketPrimed=marketPrimed+1
+    originalMarketShow(self)
+end
+buy:Click()
+local modeBeforeDirect=nativeModeWrites
+browserTab:Click()
+assert(browserPane.shown and not pane.shown and browserTab.selected
+    and not AuctionHouseFrame.BrowseResultsFrame.shown and
+    marketPrimed>=1 and nativeModeWrites==modeBeforeDirect,
+    "Browser directly from Buy hides the actual native page on first click")
+pane.Show=originalMarketShow
+
+-- Real client APIs expose loaded browse summaries WITHOUT sending a query.
+-- Browser compares those unit asks with our OWN historical saved baseline.
+local nativeReads,queries,bids=0,0,0
+_G.C_AuctionHouse={
+    GetBrowseResults=function()
+        nativeReads=nativeReads+1
+        return {
+            {itemKey={itemID=2589,itemSuffix=0,itemLevel=0},
+                minPrice=1000,totalQuantity=8},
+            {itemKey={itemID=6003,itemSuffix=55,itemLevel=32},
+                minPrice=2300,totalQuantity=1}
+        }
+    end,
+    GetItemKeyInfo=function(key)
+        return {itemName=key.itemID==2589 and "Linen Cloth" or
+            "Variant Gear"}
+    end,
+    SendBrowseQuery=function() queries=queries+1 end,
+    PlaceBid=function() bids=bids+1 end,
+}
+_G.ChalkBox_AuctionPrice=function(id)
+    if id==2589 then return {itemID=2589,name="Linen Cloth",
+        low=1500,age=120,stale=false,mixed=false} end
+end
+BrowserClick("Saved")
+assert(BrowserButton("AH Results") and BrowserVisible()==2 and
+    browserRows[1].data.itemID==2589 and
+    browserRows[1].data.low==1000,
+    "Current AH mode displays actually loaded native browse summary prices")
+browserRows[1].scripts.OnEnter(browserRows[1])
+assert(Text("10s 0c") and Text("-33.3% VS SCAN") and
+    not tip.shown and queries==0 and bids==0,
+    "current ask compared to saved 15s baseline without item tooltip or queries")
+browserRows[2].scripts.OnEnter(browserRows[2])
+assert(browserRows[2].data.variantSpecific and Text("VARIANTS"),
+    "variant-specific equipment is not compared to aggregated old itemID prices")
+assert(nativeReads>=1 and queries==0 and bids==0
+    and nativeRegistryEdits==0 and nativeModeWrites==modeBeforeDirect,
+    "native loaded results are observed only; AH trading is unmodified")
+BrowserClick("AH Results")
+assert(BrowserButton("Saved") and BrowserVisible()==5
+    and browserRows[1].data.itemID==6013,
+    "returning to saved mode recovers stored market history immediately")
+ChalkBox_AuctionHide()
+print("PASS: Browser first-click native visibility, actual loaded AH summaries compared with saved scans, variant safety, and no buying/query side effects")
