@@ -19,6 +19,7 @@ local searchText,page="",1
 local view="market"  -- Market / My Items / Sales: same native AH pane.
 local seconds=0
 local cachedRows,cachedMarket,cachedTime,cachedSearch={},"",0,nil
+local selectedItemID,pricePreview,pricePreviewKey=nil,nil,nil
 local COLOR={
     low={0.39,0.94,0.62},average={0.98,0.79,0.39},
     counts={0.51,0.76,0.98},ready={0.40,0.85,0.75},
@@ -103,6 +104,190 @@ local function Age(secondsOld)
     if secondsOld<86400 then return math.floor(secondsOld/3600).."h ago" end
     return math.floor(secondsOld/86400).."d ago"
 end
+-- A small, strictly read-only preview of the SAME seven saved observations
+-- shown in the experimental charts page. No scanning or trading hooks.
+local function PreviewPaint(texture,r,g,b,a)
+    if type(texture.SetTexture)=="function" and
+        type(texture.SetVertexColor)=="function" then
+        texture:SetTexture("Interface\\Buttons\\WHITE8X8")
+        texture:SetVertexColor(r,g,b,a)
+    elseif type(texture.SetColorTexture)=="function" then
+        texture:SetColorTexture(r,g,b,a)
+    end
+end
+local function PreviewDate(stamp)
+    if type(date)=="function" then
+        local ok,value=pcall(date,"%b %d %H:%M",stamp)
+        if ok and type(value)=="string" then return value end
+    end
+    return "Recorded scan "..tostring(stamp)
+end
+local function BuildPricePreview(parent)
+    local panel=CreateFrame("Frame",nil,parent)
+    panel:SetSize(232,80)
+    panel:SetPoint("TOPRIGHT",parent,"TOPRIGHT",-15,-5)
+    local bg=panel:CreateTexture(nil,"BACKGROUND")
+    bg:SetAllPoints(panel)
+    PreviewPaint(bg,0.035,0.047,0.054,0.76)
+    local title=Font(panel,"GameFontHighlightSmall",9,-5,214)
+    local footer=Font(panel,"GameFontHighlightSmall",9,-64,214)
+    Tint(title,COLOR.average)
+    Tint(footer,COLOR.muted)
+    local baseline=panel:CreateTexture(nil,"ARTWORK")
+    baseline:SetSize(210,1)
+    baseline:SetPoint("BOTTOMLEFT",panel,"BOTTOMLEFT",11,21)
+    PreviewPaint(baseline,0.6,0.64,0.68,0.35)
+    local segments,strips,dots={},{},{}
+    local canLine=type(panel.CreateLine)=="function"
+    if canLine then
+        for i=1,6 do
+            local ok,line=pcall(panel.CreateLine,panel,nil,"ARTWORK")
+            if not ok or not line or
+                type(line.SetStartPoint)~="function" or
+                type(line.SetEndPoint)~="function" or
+                type(line.SetThickness)~="function" or
+                type(line.SetColorTexture)~="function" then
+                canLine=false;break
+            end
+            local configured=pcall(function()
+                line:SetThickness(2)
+                line:SetColorTexture(0.42,0.90,0.72,1)
+                line:Hide()
+            end)
+            if not configured then canLine=false;break end
+            segments[#segments+1]=line
+        end
+    end
+    for i=1,7 do
+        local bar=panel:CreateTexture(nil,"ARTWORK")
+        PreviewPaint(bar,0.42,0.90,0.72,0.78)
+        bar:Hide()
+        strips[i]=bar
+        local dot=CreateFrame("Button",nil,panel)
+        dot:SetSize(8,8)
+        local fill=dot:CreateTexture(nil,"ARTWORK")
+        fill:SetAllPoints(dot)
+        PreviewPaint(fill,1,0.83,0.47,1)
+        if type(dot.EnableMouse)=="function" then dot:EnableMouse(true) end
+        dot:SetScript("OnEnter",function(self)
+            local sample=self.priceSample
+            if not sample then return end
+            local tip=StartTooltip(self,PreviewDate(sample.t))
+            if not tip then return end
+            tip:AddLine("Lowest ask per unit: "..Coin(sample.low),
+                COLOR.low[1],COLOR.low[2],COLOR.low[3])
+            tip:AddLine("Recorded listing price, not a completed sale",
+                COLOR.muted[1],COLOR.muted[2],COLOR.muted[3])
+            EndTooltip(tip)
+        end)
+        dot:SetScript("OnLeave",HideTooltip)
+        dot:Hide()
+        dots[i]=dot
+    end
+    local function Clear()
+        for _,line in ipairs(segments) do line:Hide() end
+        for _,bar in ipairs(strips) do bar:Hide() end
+        for _,dot in ipairs(dots) do
+            dot.priceSample=nil
+            dot:Hide()
+        end
+    end
+    return function(itemID)
+        Clear()
+        if not itemID then
+            title:SetText("PRICE HISTORY  /  LOW ASK")
+            footer:SetText("Click an item to view its trend")
+            return
+        end
+        local fn=ChalkBox_AuctionChartHistory
+        local ok,data=false,nil
+        if type(fn)=="function" then ok,data=pcall(fn,itemID) end
+        if not ok or type(data)~="table" then
+            title:SetText("PRICE HISTORY  /  LOW ASK")
+            footer:SetText("No saved scan for this item")
+            return
+        end
+        local name=type(data.name)=="string" and data.name or
+            ("Item #"..tostring(itemID))
+        if #name>23 then name=name:sub(1,21)..".." end
+        title:SetText(name.."  /  LOW ASK")
+        local points={}
+        if type(data.points)=="table" then
+            for _,p in ipairs(data.points) do
+                if type(p)=="table" and type(p.t)=="number" and
+                    type(p.low)=="number" and p.low>0 and
+                    p.low==p.low and p.t>0 and p.t==p.t then
+                    points[#points+1]=p
+                    if #points==7 then break end
+                end
+            end
+        end
+        if #points==0 then
+            footer:SetText("No recorded asking prices")
+            return
+        end
+        if data.mixed then
+            footer:SetText("VARIANTS MIXED  /  Check exact gear")
+        elseif #points==1 then
+            footer:SetText("1 scan: "..Coin(points[1].low).."  /  No trend yet")
+        else
+            footer:SetText(#points.." scans: "..Coin(points[1].low)..
+                " to "..Coin(points[#points].low))
+        end
+        local low,high=points[1].low,points[1].low
+        for _,p in ipairs(points) do
+            low=math.min(low,p.low)
+            high=math.max(high,p.low)
+        end
+        local range=high-low
+        local padding=range>0 and range*0.12 or math.max(1,high*0.08)
+        local floor=math.max(0,low-padding)
+        local scale=math.max(1,high+padding-floor)
+        local first,last=points[1].t,points[#points].t
+        local plotted={}
+        for i,p in ipairs(points) do
+            local xFraction
+            if #points==1 then xFraction=0.5
+            elseif first==last then xFraction=(i-1)/(#points-1)
+            else xFraction=(p.t-first)/(last-first) end
+            local x=16+xFraction*198
+            local y=23+(p.low-floor)/scale*29
+            plotted[i]={x=x,y=y}
+            local dot=dots[i]
+            dot:ClearAllPoints()
+            dot:SetPoint("CENTER",panel,"BOTTOMLEFT",x,y)
+            dot.priceSample=p
+            dot:Show()
+        end
+        local drewLines=canLine and #points>1
+        if drewLines then
+            for i=1,#points-1 do
+                local line=segments[i]
+                local a,b=plotted[i],plotted[i+1]
+                local okLine=pcall(function()
+                    line:SetStartPoint("BOTTOMLEFT",panel,a.x,a.y)
+                    line:SetEndPoint("BOTTOMLEFT",panel,b.x,b.y)
+                    line:Show()
+                end)
+                if not okLine then drewLines=false;break end
+            end
+            if not drewLines then
+                for _,line in ipairs(segments) do line:Hide() end
+            end
+        end
+        if not drewLines then
+            -- Older Forever clients without Line still get real sample columns.
+            for i,p in ipairs(plotted) do
+                local bar=strips[i]
+                bar:SetSize(5,math.max(2,p.y-21))
+                bar:ClearAllPoints()
+                bar:SetPoint("BOTTOM",panel,"BOTTOMLEFT",p.x,21)
+                bar:Show()
+            end
+        end
+    end
+end
+
 local function Refresh()
     if not frame or not frame.IsShown or not frame:IsShown() then return end
     local status=ChalkBox_AuctionStatus and ChalkBox_AuctionStatus() or {}
@@ -238,6 +423,8 @@ local function Refresh()
                     (tostring(item.quantity or 0).." units"))
                 Tint(row.note,item.mixed and COLOR.warning or COLOR.muted)
             end
+            Tint(row.name,selectedItemID==item.itemID and COLOR.ready or
+                COLOR.neutral)
             row.frame.marketView=view
             row.frame.marketData=item
             row.frame:Show()
@@ -245,6 +432,15 @@ local function Refresh()
             row.frame.marketData=nil
             row.frame.marketView=nil
             row.frame:Hide()
+        end
+    end
+    if pricePreview then
+        local key=tostring(selectedItemID or "").."|"..
+            tostring(status.marketKey or "").."|"..
+            tostring(status.scannedAt or 0)
+        if key~=pricePreviewKey then
+            pricePreviewKey=key
+            pricePreview(selectedItemID)
         end
     end
     labels.page:SetText(("Page %d / %d"):format(page,maxPages))
@@ -305,6 +501,7 @@ local function Ensure()
     labels.cooldown=Font(f,"GameFontHighlight",296,-67,275)
     local function Mode(buttonView)
         view=buttonView
+        selectedItemID=nil;pricePreviewKey=nil
         searchText=""
         page=1
         cachedSearch=nil
@@ -317,6 +514,7 @@ local function Ensure()
     labels.mode_bags=Button(f,"My Items",104,-85,92,function() Mode("bags") end)
     labels.mode_sales=Button(f,"Sales & Stats",201,-85,114,function() Mode("sales") end)
     labels.details=Font(f,"GameFontHighlightSmall",327,-90,395)
+    pricePreview=BuildPricePreview(f)
     labels.scan=Button(f,"Scan Market",21,-106,125,function()
         if type(ChalkBox_AuctionScan)=="function" then
             local ok,reason=ChalkBox_AuctionScan()
@@ -343,6 +541,7 @@ local function Ensure()
     if input.SetMaxLetters then input:SetMaxLetters(70) end
     input:SetScript("OnTextChanged",function(self)
         searchText=type(self.GetText)=="function" and self:GetText() or ""
+        selectedItemID=nil;pricePreviewKey=nil
         page=1;Refresh()
     end)
     input:SetScript("OnEscapePressed",function(self)
@@ -375,6 +574,16 @@ local function Ensure()
         Tint(listings,COLOR.counts)
         Tint(note,COLOR.muted)
         if type(row.EnableMouse)=="function" then row:EnableMouse(true) end
+        row:SetScript("OnMouseDown",function(self,button)
+            if button and button~="LeftButton" then return end
+            local item=self.marketData
+            if not item or type(item.itemID)~="number" or
+                item.itemID<=0 then return end
+            selectedItemID=item.itemID
+            pricePreviewKey=nil
+            HideTooltip()
+            Refresh()
+        end)
         row:SetScript("OnEnter",function(self)
             local item=self.marketData
             if not item then return end
@@ -445,6 +654,8 @@ local function Ensure()
                 tip:AddLine("OLD SCAN  |  Refresh prices",
                     COLOR.error[1],COLOR.error[2],COLOR.error[3])
             end
+            tip:AddLine("Left-click row for saved price history",
+                COLOR.ready[1],COLOR.ready[2],COLOR.ready[3])
             tip:AddLine("Asking prices, not sales",
                 COLOR.muted[1],COLOR.muted[2],COLOR.muted[3])
             if type(ChalkBox_DisenchantMarketHint)=="function" then
