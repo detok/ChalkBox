@@ -851,6 +851,13 @@ function ChalkBox_AuctionCommand(cmd)
     elseif cmd=="tooltip on" or cmd=="tooltip off" then
         ChalkBox_AuctionSetTooltips(cmd=="tooltip on")
         Note("Market tooltips "..(cmd=="tooltip on" and "ON" or "OFF"))
+    elseif cmd=="lens" or cmd:match("^lens%s+") then
+        local arg=cmd:match("^lens%s+(.+)$") or ""
+        local ok=type(ChalkBox_PriceLensCommand)=="function"
+            and ChalkBox_PriceLensCommand(arg) or false
+        if not ok then
+            Note("Price Lens: open an auctioneer, then /chalk auction lens.")
+        end
     elseif type(ChalkBox_AuctionOpen)=="function" then
         ChalkBox_AuctionOpen()
     else
