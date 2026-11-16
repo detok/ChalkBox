@@ -90,9 +90,11 @@ The Bar's fresh layout differs from players' older saved layouts; upgrades do **
 | `/chalk meter show` / `hide` | Open/close the compact Combat Meter (starts closed) |
 | `/chalk meter current` / `last` / `overall` | Select combat session |
 | `/chalk meter dps` / `damage` / `healing` | Select supported display mode |
-| `/chalk meter print` | **Explicit** supported post-fight summary to PARTY chat |
+| `/chalk meter print` | **Explicit** post-fight report to PARTY using the same native Top 3/5/10 size and copy fallback as the gear menu |
 | `/chalk meter reset` | Request reset confirmation |
-| `/chalk meter status` | Available native API and meter layout state |
+| `/chalk meter status` | Available native API and meter layout state (rows = maximum; empty rows auto-collapse) |
+| `/chalk meter rows 5` / `8` / `12` | Limit visible rows, up to five by default; raise cap for raids |
+| `/chalk meter opacity 0-100` | Adjust **background only**; keeps names, icons and values readable |
 | `/chalk meter lock` / `unlock` | Lock/drag and resize the compact window |
 | `/chalk meter native status` | Native Blizzard meter extension diagnostics |
 | `/chalk session` / `session last` | Open current or preceding Session Journal |
@@ -106,6 +108,8 @@ The Bar's fresh layout differs from players' older saved layouts; upgrades do **
 | `/chalk guard` | Print QuietGuard filter status |
 | `/chalk guard duel on` / `off` | Configure a single filter; other keys: guild, party, trade, channel |
 | `/chalk update` | Installed version and GitHub release link |
+
+The compact meter's **Menu** button or header right-click exposes PARTY/SAY reporting, shared native report size, auto-report options, settings, lock and confirmed reset. The experimental AuctionSense chart is under **Options → AddOns → ChalkBox → AuctionSense → Charts (Experimental)**; it has no scan shortcut or slash command. Left-click the Bar's **Bags NN free** to toggle Blizzard bags outside combat/edit mode.
 
 **The Combat Meter does not broadcast a report without an explicit user action unless you separately enable supported native post-combat behavior.** QuietGuard protections default OFF on fresh installs. Emota automatic reactions are optional and avoid combat.
 
