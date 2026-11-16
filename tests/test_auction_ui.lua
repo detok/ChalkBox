@@ -639,4 +639,85 @@ assert(not browserPane.shown and not pane.shown
     "closing either custom pane restores Blizzard subframes")
 assert(nativeRegistryEdits==0,
     "both addon tabs preserve protected UI ownership")
-print("PASS: Market and Browser never write protected AH displayMode; Browser hover graphs use saved data without item comparison tooltips; native tabs restore")
+-- Browser pagination and safe filters must use saved data, not native AH
+-- result rows or extra browsing APIs, even on a short 316px AH pane.
+local testItems={}
+for i=1,13 do
+    testItems[i]={name=("Test Item %02d"):format(i),itemID=6000+i,
+        low=1000+i*50,quantity=i,mixed=i==2 or i==5}
+end
+local browserReads=0
+_G.ChalkBox_AuctionRows=function(query)
+    browserReads=browserReads+1
+    local found={}
+    for _,item in ipairs(testItems) do
+        if query=="" or item.name:lower():find(query:lower(),1,true) then
+            found[#found+1]=item
+        end
+    end
+    return found
+end
+browserPane.h=316
+status.scannedAt=stamp+201
+browserTab:Click()
+local function BrowserVisible()
+    local n=0
+    for _,row in ipairs(browserRows) do
+        if row.shown then n=n+1 end
+    end
+    return n
+end
+assert(BrowserVisible()==5 and Text("Page 1 / 3"),
+    "compact AH Browser dynamically paginates instead of covering footer")
+local function BrowserButton(label)
+    for _,widget in ipairs(allFrames) do
+        if widget.parent==browserPane and widget.kind=="Button" and
+            widget.text==label then return widget end
+    end
+    error("missing Browser control "..label)
+end
+local function BrowserClick(label)
+    local b=BrowserButton(label)
+    b:Click()
+end
+BrowserClick("Next")
+assert(Text("Page 2 / 3") and BrowserVisible()==5 and
+    browserRows[1].data.itemID==6006,
+    "next page shows actual subsequent saved items")
+BrowserClick("All items")
+assert(Text("Mixed gear") and BrowserVisible()==2 and
+    browserRows[1].data.itemID==6002 and
+    browserRows[2].data.itemID==6005 and
+    Text("Page 1 / 1"),
+    "mixed variant filter acts only on recorded variant evidence")
+BrowserClick("Mixed gear")
+BrowserClick("Name")
+assert(Text("Low ↑") and browserRows[1].data.itemID==6001,
+    "saved low-price ascending sort is stable and data driven")
+BrowserClick("Low ↑")
+assert(Text("Low ↓") and browserRows[1].data.itemID==6013,
+    "descending market sort never requests live Blizzard auctions")
+local edit
+for _,widget in ipairs(allFrames) do
+    if widget.parent==browserPane and widget.kind=="EditBox" then
+        edit=widget;break
+    end
+end
+assert(edit and edit.scripts.OnTextChanged)
+edit:SetText("nothing-matches")
+edit.scripts.OnTextChanged(edit)
+assert(BrowserVisible()==0 and Text("Choose an item") and
+    Text("Past low asking prices will appear here"),
+    "empty search clears the old chart and visible rows without inventing data")
+edit:SetText("")
+edit.scripts.OnTextChanged(edit)
+assert(BrowserVisible()==5 and Text("Page 1 / 3"),
+    "clearing search restores saved market browsing")
+local readsBefore=browserReads
+browserPane.scripts.OnUpdate(browserPane,1.1)
+assert(browserReads==readsBefore and fullScans==1 and browseScans==1,
+    "passive refresh reuses cached sorted market data without scanning")
+assert(nativeModeWrites==nativeBeforeBrowser+1 and nativeRegistryEdits==0,
+    "filtering and graphing never modify native auction state")
+ChalkBox_AuctionHide()
+print("PASS: Market/Browser state isolation, tooltip-free item chart, pin, sort, filter, responsive pagination and empty-results safety")
