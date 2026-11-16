@@ -2,7 +2,7 @@
 
 This is the **versioned documentation home** for ChalkBox. GitHub has a Wiki feature, but keeping the primary instructions here means user guides, tests and the actual Lua implementation can be reviewed in the same pull request. Release documentation lives with the code it describes.
 
-**Development candidate: 2.2.22 (unpublished Forever auction fix) · Downloads: check GitHub Releases · Target: World of Warcraft: Forever.** This is not a claim of verified Retail / Classic Era support. Screenshots may represent older versions; check the release notes for behavioral changes.
+**Stable release: 2.2.22 · World of Warcraft: Forever · [Download the official playable ZIP](https://github.com/detok/ChalkBox/releases/download/v2.2.22/ChalkBox-2.2.22.zip). Retail and ordinary Classic are unverified.
 
 ## Player guides
 
