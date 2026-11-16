@@ -11,6 +11,9 @@ local nativeSeenAt=nil
 local nativeItems={}
 local nativeSnapshotGeneration=-1
 local nativeAvailable=false
+local nativeRequestPending=false
+local nativeRequestElapsed=0
+local nativeMessage=nil
 local results,cacheKey={},nil
 local redrawClock=0
 local drawnLines,dots,bars={}, {}, {}
@@ -356,7 +359,7 @@ local function GetRows(status)
     cacheKey=key
     local all={}
     if source=="live" then
-        all=CurrentNativeRows()
+        if not nativeRequestPending then all=CurrentNativeRows() end
     else
         local getter=ChalkBox_AuctionRows
         local ok,data=false,nil
@@ -395,8 +398,9 @@ local function Refresh()
     local all=GetRows(status)
     if source=="live" then
         labels.market:SetText((status.realm or "Unknown realm").." / "..
-            (status.faction or "?").."  ·  "..#all..
-            " current loaded browse results (not entire AH)")
+            (status.faction or "?").."  ·  "..
+            (nativeRequestPending and "Searching AH..." or
+                (#all.." loaded AH browse results (not entire AH)")))
     else
         labels.market:SetText((status.realm or "Unknown realm").." / "..
             (status.faction or "?").."  ·  "..#all..
@@ -455,7 +459,9 @@ local function Refresh()
     if labels.empty then
         labels.empty:SetText(#all==0 and
             (source=="live" and
-                "Nothing loaded: search in Blizzard Buy, then return." or
+                (nativeMessage or (nativeRequestPending and
+                    "Searching AH... waiting for auction results." or
+                    "Click Search AH, or search in Blizzard Buy.")) or
                 "No matching saved prices. Clear the search/filter.") or "")
     end
     if #all==0 then
@@ -463,7 +469,9 @@ local function Refresh()
         pinned=false
         labels.drawnKey=nil
         if source=="live" then
-            labels.item:SetText("No AH browse results loaded")
+            labels.item:SetText(nativeRequestPending and
+                "Searching the Auction House" or
+                "No AH browse results loaded")
             labels.context:SetText("Search items in Blizzard Buy, then return here")
             labels.price:SetText("—")
             labels.trend:SetText("NOT A LIVE MARKET FEED")
@@ -490,6 +498,50 @@ local function ControlsChanged()
     pinned=false
     Refresh()
 end
+-- Only an explicit click or Enter may request a fresh native AH browse.
+local function SearchAuctionHouse()
+    if not pane or not pane:IsShown() then return false end
+    local status=Status()
+    if status.busy then
+        nativeMessage="Market scan running. Finish it before Search AH."
+        Refresh()
+        return false
+    end
+    if type(InCombatLockdown)=="function" and InCombatLockdown() then
+        nativeMessage="Cannot query auctions during combat."
+        Refresh()
+        return false
+    end
+    local ah=type(C_AuctionHouse)=="table" and C_AuctionHouse or nil
+    if not ah or type(ah.SendBrowseQuery)~="function" then
+        nativeMessage="Auction browse search API unavailable."
+        source="live";ControlsChanged()
+        return false
+    end
+    source="live"
+    filter="all"
+    nativeRequestPending=true
+    nativeRequestElapsed=0
+    nativeMessage=nil
+    nativeGeneration=nativeGeneration+1
+    nativeSnapshotGeneration=-1
+    nativeItems={}
+    ControlsChanged()
+    local query={searchString=search:sub(1,70),sorts={},
+        filters={},itemClassFilters={}}
+    -- Set pending BEFORE the request: Forever can emit a synchronous
+    -- result event from SendBrowseQuery.
+    local ok,accepted=pcall(ah.SendBrowseQuery,query)
+    if not ok or accepted==false then
+        nativeRequestPending=false
+        nativeMessage="Search AH was refused; retry at the auctioneer."
+        cacheKey=nil
+        Refresh()
+        return false
+    end
+    Refresh()
+    return true
+end
 function ChalkBox_AuctionBrowserMount(ah)
     if pane then return pane end
     if not ah or type(CreateFrame)~="function" then return nil end
@@ -515,7 +567,7 @@ function ChalkBox_AuctionBrowserMount(ah)
     labels.market=Font(f,"GameFontHighlightSmall",17,-29,735)
     Tint(labels.market,colors.muted)
     local box=CreateFrame("EditBox",nil,f,"SearchBoxTemplate")
-    box:SetSize(335,24)
+    box:SetSize(219,24)
     box:SetPoint("TOPLEFT",f,"TOPLEFT",16,-53)
     if type(box.SetAutoFocus)=="function" then box:SetAutoFocus(false) end
     if type(box.SetMaxLetters)=="function" then box:SetMaxLetters(70) end
@@ -523,10 +575,15 @@ function ChalkBox_AuctionBrowserMount(ah)
         local value=type(self.GetText)=="function" and self:GetText() or ""
         if value~=search then search=value;ControlsChanged() end
     end)
+    box:SetScript("OnEnterPressed",function(self)
+        SearchAuctionHouse()
+        if type(self.ClearFocus)=="function" then self:ClearFocus() end
+    end)
     box:SetScript("OnEscapePressed",function(self)
         if type(self.ClearFocus)=="function" then self:ClearFocus() end
     end)
     labels.search=box
+    Button(f,"Search AH",243,-53,115,SearchAuctionHouse)
     labels.filter=Button(f,"All items",16,-85,105,function()
         filter=filter=="all" and "mixed" or "all"
         ControlsChanged()
@@ -672,7 +729,17 @@ function ChalkBox_AuctionBrowserMount(ah)
         Refresh()
     end)
     f:SetScript("OnUpdate",function(_,dt)
-        redrawClock=redrawClock+(type(dt)=="number" and dt or 0)
+        dt=type(dt)=="number" and dt or 0
+        redrawClock=redrawClock+dt
+        if nativeRequestPending then
+            nativeRequestElapsed=nativeRequestElapsed+dt
+            if nativeRequestElapsed>=45 then
+                nativeRequestPending=false
+                nativeMessage="No AH response within 45s. Retry Search AH."
+                nativeGeneration=nativeGeneration+1
+                cacheKey=nil
+            end
+        end
         if redrawClock>=1 then redrawClock=0;Refresh() end
     end)
     f:Hide()
@@ -685,6 +752,7 @@ function ChalkBox_AuctionBrowserShow()
     return true
 end
 function ChalkBox_AuctionBrowserHide()
+    nativeRequestPending=false
     if pane then pane:Hide() end
 end
 function ChalkBox_AuctionBrowserIsShown()
@@ -720,6 +788,8 @@ for _,name in ipairs({"AUCTION_HOUSE_BROWSE_RESULTS_UPDATED",
     end
 end
 listener:SetScript("OnEvent",function()
+    nativeRequestPending=false
+    nativeMessage=nil
     nativeGeneration=nativeGeneration+1
     nativeSnapshotGeneration=-1
     local timeFn=type(GetServerTime)=="function" and GetServerTime
