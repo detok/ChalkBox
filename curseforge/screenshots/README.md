@@ -17,6 +17,6 @@ These ten JPG files are cropped from genuine WoW Forever captures, not artist mo
 | 9 | [08-appearance.jpg](08-appearance.jpg) | Toast Appearance |
 | 10 | [09-item-insight.jpg](09-item-insight.jpg) | Item Insight |
 
-**Version warning:** These were captured around **2.0.5**, including the Discoveries journal repair. They are authentic, but not 2.2.10 visual acceptance captures. The wood-framed Discoveries/MacroForge windows and newer dungeon-aware QuestSense UI were added later; review or replace gallery images before presenting them as current. An item tooltip demonstrates LootSense's quest relevance, not a promise of guaranteed item classification.
+**Version warning:** These were captured around **2.0.5**, including the Discoveries journal repair. They are authentic, but not 2.2.22 full-release visual acceptance captures. The wood-framed Discoveries/MacroForge windows and newer dungeon-aware QuestSense UI were added later; review or replace gallery images before presenting them as current. **A new AuctionSense full-market screenshot and a Bags integration screenshot are the two most valuable additions for the stable release.** An item tooltip demonstrates LootSense's quest relevance, not a promise of guaranteed item classification.
 
 When uploading to CurseForge, use these images as actual gameplay screenshots. The artwork under `Artwork/PNG/Editorial-Only/` is illustrative and must not be labeled as in-game UI. Do not upload the screenshots as the addon file.
