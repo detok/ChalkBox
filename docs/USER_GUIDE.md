@@ -1,6 +1,6 @@
 # ChalkBox player handbook
 
-**ChalkBox 2.2.20 (draft large-market AuctionSense fix, unpublished) · World of Warcraft: Forever**
+**ChalkBox 2.2.21 (draft large-market AuctionSense fix, unpublished) · World of Warcraft: Forever**
 
 ChalkBox is a set of optional quality-of-life features inside **one addon**. Use Blizzard's **Options → AddOns → ChalkBox** pages or type `/chalk` (also `/cb`). Features that display observations are not proofs of unseen game data; ChalkBox should be conservative when Forever withholds information.
 
@@ -112,7 +112,7 @@ The optional compact **Combat Meter starts hidden**. Open it from settings or `/
 
 **PRINT** is a deliberate user action to report a supported fight summary to normal **PARTY**, when client safety restrictions allow it. Native Blizzard meter integration may separately provide its own optional manual/automatic reporting preferences. Some Forever combat values are protected, especially during combat; the addon must not invent readable DPS figures. **RESET** requires confirmation.
 
-**Adventure Journal (Session Journal)** now opens in a fully framed, warm wood window with Session Summary and Field Notes sections; it remains readable even if global background opacity is zero. The existing recording still keeps the current session and up to **20 prior** snapshots of supported observed statistics: XP, gold, completed quests, sampled loot, camp reminders and other available events. It does not retroactively invent events from before installation. Use `/chalk session` or `/chalk session last`. A future [Full Adventure Chronicle](ADVENTURE_CHRONICLE_DESIGN.md) will add validated, bounded individual milestones and Today/Timeline/History views; those features do **not** record events in 2.2.20.
+**Adventure Journal (Session Journal)** now opens in a fully framed, warm wood window with Session Summary and Field Notes sections; it remains readable even if global background opacity is zero. The existing recording still keeps the current session and up to **20 prior** snapshots of supported observed statistics: XP, gold, completed quests, sampled loot, camp reminders and other available events. It does not retroactively invent events from before installation. Use `/chalk session` or `/chalk session last`. A future [Full Adventure Chronicle](ADVENTURE_CHRONICLE_DESIGN.md) will add validated, bounded individual milestones and Today/Timeline/History views; those features do **not** record events in 2.2.21.
 
 ## Adventure Prep, Emota and QuietGuard
 
