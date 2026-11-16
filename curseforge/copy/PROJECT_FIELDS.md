@@ -1,6 +1,6 @@
 # ChalkBox — CurseForge project fields
 
-**Publication reference for ChalkBox 2.2.21 (draft, not published). Verify the actual downloadable ZIP before updating the existing legacy 2.2.17 file references below.** Always verify the current official publisher form and the actual compatible WoW Forever game flavor before uploading.
+**Publication reference for ChalkBox 2.2.22 (draft, not published). Verify the actual downloadable ZIP before updating the existing legacy 2.2.17 file references below.** Always verify the current official publisher form and the actual compatible WoW Forever game flavor before uploading.
 
 | Field | Value or guidance |
 | --- | --- |
