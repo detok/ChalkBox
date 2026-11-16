@@ -5,6 +5,7 @@ local function Frame(kind,name,parent,template)
     local f={kind=kind,name=name,parent=parent,template=template,
         shown=true,scripts={}}
     function f:SetSize(w,h) self.w,self.h=w,h end
+    function f:SetWidth(w) self.w=w end
     function f:SetPoint(...) self.point={...} end
     function f:ClearAllPoints() self.point=nil end
     function f:GetParent() return self.parent end
