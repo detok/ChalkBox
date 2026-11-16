@@ -23,6 +23,8 @@
 | --- | --- |
 | `/chalk drops map` | Open Discoveries, attached to the World Map |
 | `/chalk drops map status` | Diagnose the Discoveries map button and attachment |
+| `/chalk drops map flights status` | Count character-confirmed flight paths, visible markers and native Map Filter integration |
+| `/chalk drops map flights on` / `off` | Fallback visibility switch for **Known Flight Paths** in Blizzard’s Map Filter dropdown |
 | `/chalk drops map reset` | Restore the draggable Discoveries map button |
 | `/chalk drops map on` / `off` | Show or hide the map button |
 | `/chalk drops on` / `off` | Start or stop sampling readable loot windows |
@@ -30,6 +32,8 @@
 | `/chalk drops status` | Show recorded item, loot and zone totals |
 | `/chalk drops chance 5 20` | Calculate probability of at least one success in 20 independent attempts at a supplied 5% chance |
 | `/chalk drops reference 123 3.5` | Mark a 3.5% reference for an already recorded item ID 123; it is explicitly unverified |
+
+**Known Flight Paths:** Discoveries extends the native World Map **Map Filter** checkbox with a single **Known Flight Paths (ChalkBox)** option. The addon marks only taxi-map nodes whose state was actually `CURRENT` or `REACHABLE` when that character visited a flight master. It never treats an unknown node as discovered, and never loads a public list of undiscovered nodes. Existing paths become visible after opening a flight master; nodes without verified map coordinates are intentionally omitted. Flight markers never change the native map or start travel.
 
 **Important:** DropSense observation counts are loot windows, not every enemy kill. Outdoor positions are where *you opened the loot window*, not exact spawn locations. Generic reference chances are user-supplied, not verified server odds.
 
