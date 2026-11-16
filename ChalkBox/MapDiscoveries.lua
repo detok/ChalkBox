@@ -168,6 +168,28 @@ local function MapID()
     end
     if type(id)=="number" and id>0 then return id end
 end
+-- Match DropSense's outdoor zone normalization while following the viewed
+-- map. A micro/subzone map may belong to a larger UIMapType.Zone (3).
+-- Do not project saved zone coordinates onto a different map's canvas.
+local function ZoneMapID(id)
+    local origin=id
+    local seen={}
+    for _=1,12 do
+        if type(id)~="number" or id<=0 or id%1~=0 or
+            seen[id] then break end
+        seen[id]=true
+        local info=Call(C_Map and C_Map.GetMapInfo,id)
+        if type(info)~="table" then break end
+        local mapType=Public(info.mapType) and info.mapType or nil
+        if mapType==3 then return id end
+        if type(mapType)=="number" and mapType<3 then break end
+        local parent=Public(info.parentMapID) and info.parentMapID or nil
+        if type(parent)~="number" or parent<=0 or parent%1~=0 then break end
+        id=parent
+    end
+    -- Missing metadata is normal on some Forever builds; never invent a zone.
+    return origin
+end
 -- One transient loot-position pulse on Blizzard's *existing* map canvas.
 -- Never move the map, call AddPin, store an extra map marker, or infer a
 -- corpse/creature spawn from where a loot window happened to open.
@@ -322,7 +344,8 @@ local function Areas(kind)
 end
 local function DefaultArea()
     if mode=="outdoor" then
-        local key=currentMap and ("z:"..currentMap) or nil
+        local zoneID=currentMap and ZoneMapID(currentMap)
+        local key=zoneID and ("z:"..zoneID) or nil
         -- Following the viewed map must NEVER show the first unrelated zone.
         if followMap and key then return key end
         if key and type(ChalkBox_DropAreaInfo)=="function" and
@@ -348,7 +371,7 @@ local function EnsureSelection()
     end
     if not found then
         if not (followMap and mode=="outdoor" and currentMap and
-            selectedArea=="z:"..currentMap) then
+            selectedArea=="z:"..ZoneMapID(currentMap)) then
             selectedArea=DefaultArea();selectedSource=nil;page=1
         end
     end
@@ -842,6 +865,16 @@ local function Row(parent,index)
                 GameTooltip:AddLine("Select a creature for drop rate.",
                     0.75,0.75,0.8)
             end
+            if mode=="outdoor" and
+                (type(item.locations)~="table" or #item.locations==0) then
+                GameTooltip:AddLine("No saved map position for this item.",
+                    0.80,0.68,0.45)
+            elseif mode=="outdoor" and
+                selectedArea~="z:"..tostring(MapID() or "") then
+                GameTooltip:AddLine(
+                    "Open the matching zone map to display the loot marker.",
+                    0.80,0.68,0.45)
+            end
             -- A loot location is where the player opened that outdoor
             -- loot window, not a claim about the exact creature death spot.
             local spots=item.locations
@@ -960,8 +993,22 @@ refresh=function()
     elseif #all==0 then
         controls.empty:SetText("No items match your search or source filter.")
     else controls.empty:SetText("") end
+    local markerNote=""
+    if mode=="outdoor" and #all>0 then
+        local hasSpots=false
+        for _,item in ipairs(all) do
+            if type(item.locations)=="table" and #item.locations>0 then
+                hasSpots=true;break
+            end
+        end
+        if not hasSpots then
+            markerNote="  ·  No saved map positions"
+        elseif selectedArea~="z:"..tostring(MapID() or "") then
+            markerNote="  ·  View zone map for markers"
+        end
+    end
     controls.footer:SetText(
-        "* Personal loot rates only  ·  Unlooted kills not counted."..
+        "* Loot windows, not kills."..markerNote..
         (opts.limitReached and "  ·  Storage limit reached." or ""))
 end
 -- Attach to Blizzard's map without mutating its points/scale/size.
@@ -1395,6 +1442,43 @@ function ChalkBox_MapDiscoveriesEnsure()
     if not mapButton then InstallButton() end
     if mapButton then PositionButton() end
     return mapButton~=nil
+end
+-- Read-only diagnostics for mismatches between the opened map, its parent
+-- zone and the selected loot-area key. This never changes native map state.
+function ChalkBox_DiscoveriesMapCheck()
+    RestoreBrowser()
+    local viewed=MapID()
+    local zone=viewed and ZoneMapID(viewed) or nil
+    local area=selectedArea
+    local info=area and type(ChalkBox_DropAreaInfo)=="function"
+        and ChalkBox_DropAreaInfo(area) or nil
+    local items={}
+    if area and type(ChalkBox_DropAreaItems)=="function" then
+        items=ChalkBox_DropAreaItems(area,selectedSource,searchText) or {}
+    end
+    local located,spots=0,0
+    for _,item in ipairs(items) do
+        if type(item.locations)=="table" then
+            local n=#item.locations
+            if n>0 then located=located+1;spots=spots+n end
+        end
+    end
+    local exact=viewed and area=="z:"..viewed or false
+    local sameZone=zone and area=="z:"..zone or false
+    local reason
+    if mode~="outdoor" then reason="Dungeon observations have no outdoor map points"
+    elseif not area then reason="No selected zone"
+    elseif not info then reason="No recorded loot in this zone"
+    elseif #items==0 then reason="No items match the current filters"
+    elseif spots==0 then reason="Items exist but no valid map positions were saved"
+    elseif exact then reason="Map and recorded positions match"
+    elseif sameZone then
+        reason="Viewing a subzone: open its parent zone map for markers"
+    else reason="Selected loot zone differs from the viewed map" end
+    return {viewedMapID=viewed,zoneMapID=zone,selectedArea=area,
+        exactMapMatch=exact,sameZone=sameZone,followMap=followMap,
+        itemCount=#items,positionedItems=located,spots=spots,
+        mode=mode,reason=reason}
 end
 -- Read-only browser state for diagnostics and regression tests.
 function ChalkBox_DiscoveriesBrowserStatus()
