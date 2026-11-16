@@ -85,6 +85,7 @@ local function SessionLabel(frame)
             local enums=Enum and Enum.DamageMeterSessionType or {}
             if kind==enums.Current then return "Current",true end
             if kind==enums.Overall then return "Overall",false end
+            if kind==enums.Expired then return "Last",false end
         end
     end
     if type(frame.GetSessionID)=="function" then
