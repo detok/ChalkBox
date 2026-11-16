@@ -104,8 +104,8 @@ local function Age(secondsOld)
     if secondsOld<86400 then return math.floor(secondsOld/3600).."h ago" end
     return math.floor(secondsOld/86400).."d ago"
 end
--- A small, strictly read-only preview of the SAME seven saved observations
--- shown in the experimental charts page. No scanning or trading hooks.
+-- Larger Market-side price history, still using the same seven saved
+-- observations as Charts. Never scans, buys, bids, or changes native tabs.
 local function PreviewPaint(texture,r,g,b,a)
     if type(texture.SetTexture)=="function" and
         type(texture.SetVertexColor)=="function" then
@@ -124,19 +124,32 @@ local function PreviewDate(stamp)
 end
 local function BuildPricePreview(parent)
     local panel=CreateFrame("Frame","ChalkBoxAuctionPricePreview",parent)
-    -- Keep the exact 80px footprint: the Market mode/details row starts
-    -- immediately beneath it on Forever's compact native Auction House.
-    panel:SetSize(232,80)
-    panel:SetPoint("TOPRIGHT",parent,"TOPRIGHT",-15,-5)
+    -- A dedicated right-hand sidebar next to the result rows. It grows
+    -- when the native AH is taller, and always stops above the page footer.
+    -- This avoids overlapping the mode buttons, search bar and scan controls.
+    local width=248
+    local function Height()
+        local h=type(parent.GetHeight)=="function" and parent:GetHeight() or 316
+        if type(h)~="number" or h~=h then h=316 end
+        return math.max(96,math.min(292,h-180))
+    end
+    local lastHeight=Height()
+    panel:SetSize(width,lastHeight)
+    panel:SetPoint("TOPRIGHT",parent,"TOPRIGHT",-16,-136)
     local bg=panel:CreateTexture(nil,"BACKGROUND")
     bg:SetAllPoints(panel)
     PreviewPaint(bg,0.055,0.067,0.072,0.82)
     local edge=panel:CreateTexture(nil,"BORDER")
-    edge:SetSize(230,1)
+    edge:SetSize(width-2,1)
     edge:SetPoint("TOPLEFT",panel,"TOPLEFT",1,-1)
     PreviewPaint(edge,0.87,0.67,0.37,0.48)
-    local title=Font(panel,"GameFontHighlightSmall",9,-5,214)
-    local footer=Font(panel,"GameFontHighlightSmall",9,-64,214)
+    local title=Font(panel,"GameFontHighlightSmall",10,-7,width-20)
+    local footer=Font(panel,"GameFontHighlightSmall",10,-8,width-20)
+    if type(footer.ClearAllPoints)=="function" then footer:ClearAllPoints() end
+    footer:SetPoint("BOTTOMLEFT",panel,"BOTTOMLEFT",10,11)
+    local selectHint=Font(panel,"GameFontHighlightSmall",10,-24,width-20)
+    selectHint:SetText("Recorded asking prices / unit")
+    Tint(selectHint,COLOR.muted)
     if type(title.SetMaxLines)=="function" then title:SetMaxLines(1) end
     if type(title.SetWordWrap)=="function" then title:SetWordWrap(false) end
     Tint(title,COLOR.average)
@@ -159,8 +172,8 @@ local function BuildPricePreview(parent)
     end)
     panel:SetScript("OnLeave",HideTooltip)
     local baseline=panel:CreateTexture(nil,"ARTWORK")
-    baseline:SetSize(210,1)
-    baseline:SetPoint("BOTTOMLEFT",panel,"BOTTOMLEFT",11,21)
+    baseline:SetSize(width-22,1)
+    baseline:SetPoint("BOTTOMLEFT",panel,"BOTTOMLEFT",11,33)
     PreviewPaint(baseline,0.6,0.64,0.68,0.35)
     local segments,strips,dots={},{},{}
     local canLine=type(panel.CreateLine)=="function"
@@ -218,11 +231,16 @@ local function BuildPricePreview(parent)
         end
     end
     return function(itemID)
+        local h=Height()
+        if h~=lastHeight then
+            lastHeight=h
+            panel:SetSize(width,h)
+        end
         Clear()
         hoverName,hoverSummary,hoverMixed=nil,nil,false
         if not itemID then
             title:SetText("PRICE HISTORY  /  LOW ASK")
-            footer:SetText("Click an item to view its trend")
+            footer:SetText("Select a row to see its price history")
             Tint(footer,COLOR.muted)
             return
         end
@@ -241,7 +259,7 @@ local function BuildPricePreview(parent)
         hoverName=name
         -- The existing suffix consumed a third of the label and needlessly
         -- abbreviated names like "Amber Hoop of the Knight".
-        local shortName=#name>32 and (name:sub(1,30).."...") or name
+        local shortName=#name>37 and (name:sub(1,35).."...") or name
         title:SetText(shortName)
         local points={}
         if type(data.points)=="table" then
@@ -293,8 +311,8 @@ local function BuildPricePreview(parent)
             if #points==1 then xFraction=0.5
             elseif first==last then xFraction=(i-1)/(#points-1)
             else xFraction=(p.t-first)/(last-first) end
-            local x=16+xFraction*198
-            local y=23+(p.low-floor)/scale*29
+            local x=16+xFraction*(width-32)
+            local y=40+(p.low-floor)/scale*math.max(24,lastHeight-79)
             plotted[i]={x=x,y=y}
             local dot=dots[i]
             dot:ClearAllPoints()
@@ -322,9 +340,9 @@ local function BuildPricePreview(parent)
             -- Older Forever clients without Line still get real sample columns.
             for i,p in ipairs(plotted) do
                 local bar=strips[i]
-                bar:SetSize(5,math.max(2,p.y-21))
+                bar:SetSize(5,math.max(2,p.y-33))
                 bar:ClearAllPoints()
-                bar:SetPoint("BOTTOM",panel,"BOTTOMLEFT",p.x,21)
+                bar:SetPoint("BOTTOM",panel,"BOTTOMLEFT",p.x,33)
                 bar:Show()
             end
         end
@@ -439,6 +457,12 @@ local function Refresh()
     local maxPages=math.max(1,math.ceil(#entries/visibleRows))
     page=math.max(1,math.min(page,maxPages))
     local start=(page-1)*visibleRows
+    -- The graph should be useful on opening Market, not an empty box until
+    -- the user discovers they must click a row. Keep manual row selection.
+    if view=="market" and not selectedItemID and entries[start+1] and
+        type(entries[start+1].itemID)=="number" then
+        selectedItemID=entries[start+1].itemID
+    end
     for i,row in ipairs(labels.rows) do
         local item=(i<=visibleRows) and entries[start+i] or nil
         if item then
@@ -485,7 +509,9 @@ local function Refresh()
     if pricePreview then
         local key=tostring(selectedItemID or "").."|"..
             tostring(status.marketKey or "").."|"..
-            tostring(status.scannedAt or 0)
+            tostring(status.scannedAt or 0).."|"..
+            tostring(type(frame.GetHeight)=="function" and
+                frame:GetHeight() or 316)
         if key~=pricePreviewKey then
             pricePreviewKey=key
             pricePreview(selectedItemID)
@@ -599,29 +625,29 @@ local function Ensure()
     find:ClearAllPoints()
     find:SetPoint("RIGHT",input,"LEFT",-8,0)
     find:SetText("Find")
-    Font(f,"GameFontNormal",21,-138,330):SetText("ITEM")
-    labels.hdrLow=Font(f,"GameFontNormal",392,-138,102)
+    Font(f,"GameFontNormal",21,-138,213):SetText("ITEM")
+    labels.hdrLow=Font(f,"GameFontNormal",252,-138,82)
     Tint(labels.hdrLow,COLOR.low)
-    labels.hdrAverage=Font(f,"GameFontNormal",505,-138,102)
+    labels.hdrAverage=Font(f,"GameFontNormal",340,-138,87)
     Tint(labels.hdrAverage,COLOR.average)
-    labels.hdrListings=Font(f,"GameFontNormal",628,-138,92)
+    labels.hdrListings=Font(f,"GameFontNormal",430,-138,62)
     Tint(labels.hdrListings,COLOR.counts)
     labels.rows={}
     for i=1,MAX_ROWS do
         local y=-157-(i-1)*24
         local row=CreateFrame("Frame",nil,f)
-        row:SetSize(735,22)
+        row:SetSize(459,22)
         row:SetPoint("TOPLEFT",f,"TOPLEFT",17,y)
         local selectedBack=row:CreateTexture(nil,"BACKGROUND")
         selectedBack:SetAllPoints(row)
         PreviewPaint(selectedBack,0.16,0.42,0.38,0.30)
         selectedBack:Hide()
         row.selectedBack=selectedBack
-        local name=Font(row,"GameFontHighlight",4,-1,340)
-        local low=Font(row,"GameFontHighlight",375,-1,102)
-        local average=Font(row,"GameFontHighlight",488,-1,102)
-        local listings=Font(row,"GameFontHighlightSmall",611,-1,92)
-        local note=Font(row,"GameFontHighlightSmall",4,-12,720)
+        local name=Font(row,"GameFontHighlight",4,-1,215)
+        local low=Font(row,"GameFontHighlight",231,-1,82)
+        local average=Font(row,"GameFontHighlight",320,-1,86)
+        local listings=Font(row,"GameFontHighlightSmall",413,-1,61)
+        local note=Font(row,"GameFontHighlightSmall",4,-12,454)
         Tint(low,COLOR.low)
         Tint(average,COLOR.average)
         Tint(listings,COLOR.counts)
@@ -731,15 +757,15 @@ local function Ensure()
     previous:SetPoint("BOTTOMLEFT",f,"BOTTOMLEFT",21,34)
     labels.page=Font(f,"GameFontHighlightSmall",0,0,120)
     if labels.page.ClearAllPoints then labels.page:ClearAllPoints() end
-    labels.page:SetPoint("BOTTOM",f,"BOTTOM",0,41)
+    labels.page:SetPoint("BOTTOMLEFT",f,"BOTTOMLEFT",188,41)
     local nextButton=Button(f,"Next",0,-10,104,function()
         page=page+1
         selectedItemID=nil;pricePreviewKey=nil
         Refresh()
     end)
     if nextButton.ClearAllPoints then nextButton:ClearAllPoints() end
-    nextButton:SetPoint("BOTTOMRIGHT",f,"BOTTOMRIGHT",-21,34)
-    labels.info=Font(f,"GameFontHighlightSmall",21,-10,720)
+    nextButton:SetPoint("BOTTOMLEFT",f,"BOTTOMLEFT",354,34)
+    labels.info=Font(f,"GameFontHighlightSmall",21,-10,715)
     if labels.info.ClearAllPoints then labels.info:ClearAllPoints() end
     labels.info:SetPoint("BOTTOMLEFT",f,"BOTTOMLEFT",21,12)
     frame=f
