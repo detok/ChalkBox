@@ -69,6 +69,7 @@ FILES = (
     "ScreenLayout.lua",
     "TrailBar.lua",
     "BagLayout.lua",
+    "MeterReportCopy.lua",
     "CombatMeter.lua",
     "NativeMeterPrint.lua",
     "ChalkBox_Settings.lua",
