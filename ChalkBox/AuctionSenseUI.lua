@@ -501,7 +501,13 @@ local function Refresh()
             and not status.busy and cooldown==0)
     end
 end
-function ChalkBox_AuctionRefreshUI() Refresh() end
+function ChalkBox_AuctionRefreshUI()
+    Refresh()
+    -- Optional read-only companion. Never alter native AH tabs/modes.
+    if type(ChalkBox_PriceLensRefresh)=="function" then
+        pcall(ChalkBox_PriceLensRefresh)
+    end
+end
 -- The journal is mounted INSIDE Blizzard's AH, not a detached window.
 -- No edits to Blizzard's protected Tabs list or PanelTemplates_SetTab.
 local function Ensure()
@@ -633,6 +639,9 @@ local function Ensure()
             if not item or type(item.itemID)~="number" or
                 item.itemID<=0 then return end
             selectedItemID=item.itemID
+            if type(ChalkBox_PriceLensSelect)=="function" then
+                pcall(ChalkBox_PriceLensSelect,item.itemID)
+            end
             pricePreviewKey=nil
             HideTooltip()
             Refresh()
@@ -911,6 +920,9 @@ function ChalkBox_AuctionAttach()
         end
     end
     HookOtherTabs()
+    if type(ChalkBox_PriceLensAttach)=="function" then
+        pcall(ChalkBox_PriceLensAttach)
+    end
     return true
 end
 function ChalkBox_AuctionHide()
