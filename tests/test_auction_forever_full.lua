@@ -51,7 +51,7 @@ assert(ChalkBox_AuctionStatus().cooldown>0,
 Tick(60)
 Tick(60)
 assert(ChalkBox_AuctionStatus().busy and
-    ChalkBox_AuctionStatus().state:find("awaiting",1,true),
+    ChalkBox_AuctionStatus().state:find("Waiting for full scan response",1,true),
     "Forever's delayed replicate response must NOT time out at 25 or 45s")
 Fire("REPLICATE_ITEM_LIST_UPDATE")
 assert(ChalkBox_AuctionStatus().busy,
