@@ -1,6 +1,6 @@
 # ChalkBox player handbook
 
-**ChalkBox 2.2.22 (draft large-market AuctionSense fix, unpublished) · World of Warcraft: Forever**
+**ChalkBox 2.2.22 (first stable release) · World of Warcraft: Forever**
 
 ChalkBox is a set of optional quality-of-life features inside **one addon**. Use Blizzard's **Options → AddOns → ChalkBox** pages or type `/chalk` (also `/cb`). Features that display observations are not proofs of unseen game data; ChalkBox should be conservative when Forever withholds information.
 
