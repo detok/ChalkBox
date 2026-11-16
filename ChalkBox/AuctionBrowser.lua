@@ -203,7 +203,8 @@ local function DrawDetails()
     elseif #points>0 then labels.price:SetText(Coin(points[#points].low))
     else labels.price:SetText("—") end
     if #points==0 then
-        labels.trend:SetText(current and "NO BASELINE" or "NO HISTORY")
+        labels.trend:SetText(current and (current.mixed or current.variantSpecific)
+            and "VARIANTS" or (current and "NO BASELINE" or "NO HISTORY"))
         labels.range:SetText(current and
             "Current low ask has no historical comparison" or
             "No saved asking prices for this item")
