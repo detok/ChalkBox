@@ -1,33 +1,43 @@
-# ChalkBox — CurseForge project fields
+# ChalkBox — CurseForge project fields (2.2.22 stable)
 
-**Publication reference for ChalkBox 2.2.22 (draft, not published). Verify the actual downloadable ZIP before updating the existing legacy 2.2.17 file references below.** Always verify the current official publisher form and the actual compatible WoW Forever game flavor before uploading.
+Use the matching **playable** version 2.2.22 ZIP for the game file. The media ZIP contains upload art and text only.
 
-| Field | Value or guidance |
+| Field | Recommended value |
 | --- | --- |
-| Name | ChalkBox |
-| Author | Detok Whitemaine |
-| Summary | A WoW Forever addon for loot discoveries, smarter quest tracking and optional navigation, macros, auction insights and a customizable HUD |
-| Alternate summary | Loot, quests, macros, prices and adventure tools in one WoW Forever addon |
-| Game | World of Warcraft — **select only a genuinely compatible supported flavor** |
-| Categories | Relevant portal-supported inventory, quests, map, UI or utility categories |
-| License | MIT for ChalkBox original code; bundled dependency licenses retained |
+| Project name | ChalkBox |
+| Short summary | One WoW Forever addon for loot and quest insights, auction prices, macros, discoveries and a customizable HUD. |
+| Alternate short summary | One addon. Better information. Less UI clutter. |
+| Author / byline | Detok Whitemaine |
+| Game | World of Warcraft — choose only the game flavor compatible with the real Forever client |
+| Categories | Bags & Inventory; Map & Minimap; Quests & Leveling; Tooltip, where those categories are supported |
+| License | MIT (original ChalkBox code); bundled third-party notices retained |
 | Source | https://github.com/detok/ChalkBox |
-| Issues | https://github.com/detok/ChalkBox/issues |
-| Full description | `copy/PROJECT_DESCRIPTION.md` |
-| File changelog | **`copy/FILE_CHANGELOG_CURRENT.md`** (version must match both TOCs) |
-| Current playable file | **`ChalkBox-2.2.17.zip`** from GitHub Releases |
-| Separate media kit | **`ChalkBox-CurseForge-Media-2.2.17.zip`** — never install or upload as addon |
-| Project avatar | `Artwork/PNG/Upload-Ready/Project-Icon-512.png` from the media kit |
-| Release type | Prerelease/test until the current Forever client is fully verified |
+| Issues | https://github.com/detok/ChalkBox/issues/new/choose |
+| Support | https://github.com/detok/ChalkBox/blob/main/docs/TROUBLESHOOTING.md |
+| Website | https://github.com/detok/ChalkBox/releases |
+| Full project page | `copy/PROJECT_DESCRIPTION.md` |
+| File changelog | `copy/FILE_CHANGELOG_CURRENT.md` |
+| Upload file | [ChalkBox-2.2.22.zip](https://github.com/detok/ChalkBox/releases/download/v2.2.22/ChalkBox-2.2.22.zip) |
+| Release type | **Release** (not Beta) once the exact uploaded 2.2.22 build is verified |
+| Project avatar | `Artwork/PNG/Upload-Ready/Project-Icon-512.png` |
+| Social/promotional banner | `Artwork/PNG/Upload-Ready/ChalkBox-Social-Banner-1200x630.png` |
+| Screenshots | Use real `Screenshots/*.jpg` captures; replace older UI views with current gameplay captures when available |
 
-The media ZIP contains six SVG originals, nine PNGs and ten real WoW Forever screenshot JPGs. **Editorial-Only** artwork is illustrative and must never be labeled a gameplay screenshot. The existing gallery captures may show an earlier UI.
+**Separate media kit:** [ChalkBox-CurseForge-Media-2.2.22.zip](https://github.com/detok/ChalkBox/releases/download/v2.2.22/ChalkBox-CurseForge-Media-2.2.22.zip). **Do not install or upload as the game addon.**
 
-**GitHub About description (suggested):** "Quality-of-life tools for WoW Forever: loot discoveries, quests, macros, auction insights and a customizable HUD."
+## GitHub presentation
 
-**GitHub website (suggested):** https://github.com/detok/ChalkBox/releases
+**Suggested About:** `An all-in-one quality-of-life addon for WoW Forever: loot insights, quests, auctions, macros and a compact HUD.`
 
-**Suggested topics:** `world-of-warcraft`, `wow-addon`, `wow-forever`, `lua`, `macro-builder`, `quality-of-life`.
+**Website:** https://github.com/detok/ChalkBox/releases
 
-Do not assert a CurseForge listing URL or approval until it exists and has been verified in the author portal. Don't claim official Blizzard affiliation or untested client compatibility.
+**Topics:** `world-of-warcraft`, `wow-addon`, `wow-forever`, `lua`, `quality-of-life`, `macro-builder`
 
-[Publishing guide](../../docs/RELEASE_PROCESS.md) · [Current changelog](FILE_CHANGELOG_CURRENT.md)
+Add the social-preview graphic through GitHub repository **Settings** when administration tools are available; it cannot be set by editing README alone.
+
+## Important publication notes
+
+- Do not claim Retail or ordinary Classic compatibility without testing.
+- Do not claim auction asks are completed sales or disenchant reference odds are proven Forever drop probabilities.
+- The **Release** designation reflects the real-client acceptance milestone and maintained build; reports remain welcome.
+- CurseForge upload/moderation and game-flavor selection are separate actions. Verify the actual portal before describing the project as approved.
