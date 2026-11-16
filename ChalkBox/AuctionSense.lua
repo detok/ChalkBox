@@ -12,6 +12,7 @@ local BATCH=140
 local COOLDOWN=15*60
 local FULL_RESPONSE_WAIT=10*60 -- Forever can exceed five minutes to first reply
 local FULL_SETTLE_SECONDS=2 -- allow replicated listing count to stop growing
+local MAX_PENDING_ROWS=20000 -- never retain millions of unreadable indices
 local MAX_HISTORY=7
 local DETAIL_MAX_AGE=7*24*3600 -- retain actual full-listing evidence for up to 7 days
 local frame=CreateFrame("Frame")
@@ -125,6 +126,7 @@ function ChalkBox_AuctionStatus()
         totalListings=job and job.total or nil,
         reportedListings=job and job.reportedCount or nil,
         processedListings=job and job.index or nil,
+        pendingListings=job and job.missing and #job.missing or nil,
         scannedItems=job and job.itemCount or nil,
         realm=realm,faction=faction,marketKey=key,
         auctions=market and market.auctions or 0,
@@ -424,6 +426,12 @@ local function ReadRow(scan,index)
     end
     local price=math.ceil(buyout/count)
     if price<row.low then row.low=price end
+    -- Prevent corrupt/overflowing API results from poisoning statistics.
+    if row.quantity+count>=1e15 or
+        row.totalCopper+buyout>=1e15 then
+        scan.tooMany=true
+        return true
+    end
     row.listings=row.listings+1
     row.quantity=row.quantity+count
     row.totalCopper=row.totalCopper+buyout
@@ -557,7 +565,32 @@ local function Step(_,elapsed)
         StepBrowse(nil,elapsed)
         return
     end
-    if not scan or scan.phase~="reading" then return end
+    if not scan or scan.mode~="full" or
+        (scan.phase~="reading" and scan.phase~="finalizing") then return end
+    local dt=type(elapsed)=="number" and elapsed or 0
+    -- Forever can append results after the first replicate event. A stable
+    -- initial count is not a license to ignore later chunks.
+    local current=Call(AH() and AH().GetNumReplicateItems)
+    if Integer(current) and current>MAX_LISTINGS then
+        Abort("Full snapshot grew beyond the safe listing bound. Old prices kept.")
+        return
+    end
+    if Integer(current) and current>scan.total then
+        scan.total=current
+        scan.phase="reading"
+        scan.finalQuiet=0
+        state=("Additional auctions received: %d listings..."):format(current)
+        UIRefresh()
+    elseif Integer(current) and current<scan.total then
+        -- Decreasing counts are inconsistent with the snapshot being read.
+        Abort("Replicated auction count changed unexpectedly. Previous prices kept.")
+        return
+    end
+    if scan.phase=="finalizing" then
+        scan.finalQuiet=(scan.finalQuiet or 0)+dt
+        if scan.finalQuiet>=FULL_SETTLE_SECONDS then Commit(scan) end
+        return
+    end
     if scan.pause and scan.pause>0 then
         scan.pause=scan.pause-(type(elapsed)=="number" and elapsed or 0)
         if scan.pause>0 then return end
@@ -569,6 +602,10 @@ local function Step(_,elapsed)
             scan.index=index+1
             if not ReadRow(scan,index) then
                 scan.missing[#scan.missing+1]=index
+                if #scan.missing>MAX_PENDING_ROWS then
+                    Abort("Too many unreadable auction rows; old prices kept.")
+                    return
+                end
             end
             work=work+1
             if scan.tooMany then
@@ -607,7 +644,11 @@ local function Step(_,elapsed)
     end
     progress=math.min(99,math.floor(scan.index/math.max(1,scan.total)*100))
     if scan.index>=scan.total and #scan.missing==0 then
-        Commit(scan)
+        -- Last data may arrive after an early event. Verify two quiet
+        -- seconds before replacing the last good snapshot.
+        scan.phase="finalizing"
+        scan.finalQuiet=0
+        state=("Confirming complete snapshot: %d auctions..."):format(scan.total)
     elseif scan.index>=scan.total then
         state="Finishing item details..."
     end
@@ -619,6 +660,7 @@ end
 local function BeginFullReading(scan,count)
     scan.phase="reading"
     scan.total=count
+    scan.finalQuiet=0
     scan.index=0
     scan.rows={}
     scan.itemCount=0
