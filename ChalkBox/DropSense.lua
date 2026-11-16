@@ -400,7 +400,9 @@ local function Capture()
     end
 end
 local function Interval(hits,n)
-    if not Number(n) or n<=0 then return end
+    -- Corrupted legacy data must not turn p>1 into a NaN confidence bound.
+    if not Number(n) or n<=0 or not Number(hits) or
+        hits>n then return end
     local p=hits/n
     local z=1.96
     local d=1+z*z/n
@@ -529,6 +531,60 @@ function ChalkBox_DropVisitedAreas(kind)
         return a.name<b.name
     end)
     return result
+end
+-- Read-only field audit: distinguish missing coordinates (legitimate on
+-- some maps/legacy data) from mismatched counts or malformed spot records.
+-- Area observations are loot windows, not kills and not unique map points.
+function ChalkBox_DropAreaAudit(key)
+    local area=State().areas[key]
+    if type(area)~="table" then return nil end
+    local total,located,positions,invalid,problems=0,0,0,0,0
+    local areaWindows=Integer(area.windows) and area.windows or 0
+    for _,item in pairs(area.items or {}) do
+        if type(item)=="table" then
+            total=total+1
+            local windows=item.windows
+            local quantity=item.quantity
+            if not Integer(windows) or windows>areaWindows or
+                not Integer(quantity) or quantity<windows then
+                problems=problems+1
+            end
+            local n=0
+            if type(item.locations)=="table" then
+                for _,point in ipairs(item.locations) do
+                    if type(point)=="table" and Integer(point.x) and
+                        Integer(point.y) and point.x<=1000 and
+                        point.y<=1000 and Integer(point.count) and
+                        point.count>0 then
+                        n=n+1
+                    else invalid=invalid+1 end
+                end
+            end
+            if n>0 then located=located+1;positions=positions+n end
+        else problems=problems+1 end
+    end
+    local sources,badSources=0,0
+    for _,source in pairs(area.sources or {}) do
+        if type(source)=="table" then
+            sources=sources+1
+            local n=source.windows
+            if not Integer(n) or n>areaWindows then
+                badSources=badSources+1
+            end
+            for _,hit in pairs(source.items or {}) do
+                if type(hit)~="table" or not Integer(hit.windows) or
+                    not Integer(n) or hit.windows>n then
+                    badSources=badSources+1
+                end
+            end
+        else badSources=badSources+1 end
+    end
+    return {areaKey=key,kind=area.kind,mapID=area.mapID,
+        windows=areaWindows,items=total,positionedItems=located,
+        positions=positions,missingPositions=total-located,
+        invalidPositions=invalid,countProblems=problems,
+        sources=sources,sourceProblems=badSources,
+        positionCoverage=total>0 and 100*located/total or 0}
 end
 function ChalkBox_DropAreaInfo(key)
     local area=State().areas[key]
@@ -700,6 +756,32 @@ function ChalkBox_DropCommand(input)
             and ChalkBox_MapDiscoveriesResetButton()
         Note(ok and "Discoveries map button restored to its default position."
             or "Open the world map and try again.")
+    elseif cmd=="map" and args=="check" then
+        local fn=ChalkBox_DiscoveriesMapCheck
+        local check=type(fn)=="function" and fn() or nil
+        if not check then
+            Note("Open the World Map and Discoveries, then run map check.")
+        else
+            Note(("Viewed map %s; zone map %s; selected %s; follow %s."):format(
+                tostring(check.viewedMapID or "?"),
+                tostring(check.zoneMapID or "?"),
+                tostring(check.selectedArea or "none"),
+                check.followMap and "ON" or "OFF"))
+            Note(("%d visible items, %d with coordinates, %d saved positions."):format(
+                check.itemCount,check.positionedItems,check.spots))
+            Note(check.reason)
+            local audit=ChalkBox_DropAreaAudit(check.selectedArea)
+            if audit then
+                Note(("Saved area: %d loot windows, %d item kinds, %d valid spots."):format(
+                    audit.windows,audit.items,audit.positions))
+                if audit.invalidPositions>0 or audit.countProblems>0 or
+                    audit.sourceProblems>0 then
+                    Note(("CHECK: %d malformed spots, %d item count issues, %d source count issues."):format(
+                        audit.invalidPositions,audit.countProblems,
+                        audit.sourceProblems))
+                end
+            end
+        end
     elseif cmd=="map" and args=="status" then
         local state=type(ChalkBox_MapDiscoveriesStatus)=="function"
             and ChalkBox_MapDiscoveriesStatus() or nil
@@ -728,7 +810,7 @@ function ChalkBox_DropCommand(input)
         end
         if opt.limitReached then Note("Journal capacity reached for some new entries.") end
     else
-        Note("/chalk drops on|off | map | map on|off | map status | status")
+        Note("/chalk drops on|off | map | map on|off | map status | map check | status")
         Note("/chalk drops chance <percent> <tries>")
     end
 end
