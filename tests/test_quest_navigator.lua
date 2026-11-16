@@ -11,6 +11,8 @@ local selected=nil
 local ghost=false
 local corpseVisible=true
 local localQuestWaypoint=nil
+local userWaypoint=nil
+local pinSetCalls,pinClearCalls=0,0
 local destinations={
     [111]={1,0.5,0.2},
     [222]={1,0.8,0.5},
@@ -75,6 +77,9 @@ _G.C_Map={
         assert(unit=="player")
         return currentMap
     end,
+    GetUserWaypoint=function() return userWaypoint end,
+    SetUserWaypoint=function() pinSetCalls=pinSetCalls+1 end,
+    ClearUserWaypoint=function() pinClearCalls=pinClearCalls+1 end,
     GetMapInfo=function(id)
         return {name="Zone "..id,mapType=3,parentMapID=(id==5 and 1 or 0)}
     end,
@@ -232,12 +237,16 @@ assert(GameTooltip.shown and GameTooltip.owner==nav
 nav.scripts.OnLeave(nav)
 assert(GameTooltip.shown==false,"arrow tooltip closes cleanly")
 nav.scripts.OnMouseUp(nav,"RightButton")
-assert(menusOpened==1 and #menuEntries==3 and
+assert(menusOpened==1 and #menuEntries==4 and
     menuEntries[1].label=="Auto (follow tracked)" and
-    menuEntries[2].label=="Next quest" and
-    menuEntries[3].label=="Hide arrow",
-    "right-click contains only Auto, Next and Hide")
-menuEntries[2].action()
+    menuEntries[2].label=="Follow Map Pin (none placed)" and
+    menuEntries[3].label=="Next quest" and
+    menuEntries[4].label=="Hide arrow",
+    "right-click adds Map Pin but visibly requires an existing waypoint")
+assert(not ChalkBox_NavCommand("pin") and
+    ChalkBox_NavStatus().questID==222,
+    "selecting nonexistent pin leaves quest navigation untouched")
+menuEntries[3].action()
 assert(ChalkBox_NavStatus().questID==333
     and ChalkBox_NavStatus().mode=="Manual",
     "right-click Next picks another validated quest")
@@ -245,7 +254,7 @@ menuEntries[1].action()
 assert(ChalkBox_NavStatus().questID==222
     and ChalkBox_NavStatus().mode=="Tracked",
     "right-click Auto restores native super-tracked priority")
-menuEntries[3].action()
+menuEntries[4].action()
 assert(not nav:IsShown() and not ChalkBox_NavStatus().enabled,
     "right-click Hide disables the compass without changing quest watches")
 assert(ChalkBox_NavCommand("on"),"reopening arrow reuses the same frame")
@@ -440,12 +449,14 @@ _G.EasyMenu=function(items,menu,anchor,x,y,kind)
 end
 assert(ChalkBox_NavCommand("on"))
 nav.scripts.OnMouseUp(nav,"RightButton")
-assert(legacyAnchor=="cursor" and #legacyItems==3 and
+assert(legacyAnchor=="cursor" and #legacyItems==4 and
     legacyItems[1].text=="Auto (follow tracked)" and
-    legacyItems[2].text=="Next quest" and
-    legacyItems[3].text=="Hide arrow",
-    "older clients get the same three-item right-click popup")
-legacyItems[3].func()
+    legacyItems[2].text=="Follow Map Pin (none placed)" and
+    legacyItems[2].disabled and
+    legacyItems[3].text=="Next quest" and
+    legacyItems[4].text=="Hide arrow",
+    "older clients get the same four-item right-click popup")
+legacyItems[4].func()
 assert(not nav:IsShown() and not ChalkBox_NavStatus().enabled,
     "legacy menu Hide has the same effect without altering quest tracking")
 local named=0
@@ -453,4 +464,82 @@ for _,obj in ipairs(created) do
     if obj.name=="ChalkBoxQuestNavigator" then named=named+1 end
 end
 assert(named==1,"one compass only; repeated toggles must reuse its frame")
-print("PASS: isolated optional navigation, trusted quest waypoints, continent-0 compass, supertrack/manual/nearest priority, instance/cross-map guards, drag lock, persistence and quest-log recovery")
+-- The new opt-in mode reads Blizzard's live UiMapPoint, never sets,
+-- clears, supertracks or replaces the player's waypoint.
+local listener
+for _,obj in ipairs(created) do
+    if obj.events and obj.events.USER_WAYPOINT_UPDATED then
+        listener=obj;break
+    end
+end
+assert(listener and listener.scripts.OnEvent,
+    "Forever's USER_WAYPOINT_UPDATED event is registered")
+local beforeFocus=#nativeFocus
+userWaypoint={uiMapID=1,position={x=0.7,y=0.5}}
+assert(ChalkBox_NavCommand("pin"))
+st=ChalkBox_NavStatus()
+assert(st.enabled and st.pinMode and st.targetType=="pin" and
+    st.mode=="Map Pin" and st.title=="Map Pin" and
+    CloseAngle(nav.arrow.angle,-math.pi/2),
+    "map pin points east using the existing shared coordinate math")
+assert(#nativeFocus==beforeFocus and pinSetCalls==0 and pinClearCalls==0,
+    "map pin selection does not change quest watches or native waypoints")
+nav.scripts.OnMouseUp(nav,"RightButton")
+assert(legacyItems[2].text=="Follow Map Pin" and
+    not legacyItems[2].disabled,
+    "map pin right-click action enables when a valid pin exists")
+userWaypoint={uiMapID=1,position={
+    GetXY=function() return 0.2,0.5 end}}
+listener.scripts.OnEvent(listener,"USER_WAYPOINT_UPDATED")
+assert(CloseAngle(nav.arrow.angle,math.pi/2) and
+    ChalkBox_NavStatus().pinMode,
+    "moving a native waypoint updates the very same compass immediately")
+userWaypoint={uiMapID=3,position={x=0.4,y=0.4}}
+listener.scripts.OnEvent(listener,"USER_WAYPOINT_UPDATED")
+assert(nav.arrow.color[4]==0.4 and
+    nav.readout=="Map pin is in another region" and
+    ChalkBox_NavStatus().pinMode,
+    "map pins on another continent never show a fabricated heading")
+userWaypoint={uiMapID=1,position={x=0,y=0}}
+listener.scripts.OnEvent(listener,"USER_WAYPOINT_UPDATED")
+assert(nav.arrow.color[4]==0.4 and
+    nav.readout=="Map pin coordinates unavailable" and
+    ChalkBox_NavStatus().pinMode,
+    "temporarily invalid waypoint position dims arrow without losing mode")
+userWaypoint={uiMapID=1,position={x=0.7,y=0.5}}
+logLoading=true
+listener.scripts.OnEvent(listener,"USER_WAYPOINT_UPDATED")
+assert(ChalkBox_NavStatus().targetType=="pin" and
+    CloseAngle(nav.arrow.angle,-math.pi/2),
+    "pin works even while the quest log is temporarily unavailable")
+logLoading=false
+ghost=true
+listener.scripts.OnEvent(listener,"PLAYER_DEAD")
+assert(ChalkBox_NavStatus().targetType=="corpse" and
+    ChalkBox_NavStatus().pinMode,
+    "corpse navigation overrides the chosen pin without erasing it")
+ghost=false
+listener.scripts.OnEvent(listener,"PLAYER_ALIVE")
+assert(ChalkBox_NavStatus().targetType=="pin" and
+    CloseAngle(nav.arrow.angle,-math.pi/2),
+    "player's map pin resumes after resurrection")
+assert(ChalkBox_NavCommand("off") and
+    ChalkBoxZoneDB.questNavigator.pinMode==true)
+assert(ChalkBox_NavCommand("on") and
+    ChalkBox_NavStatus().targetType=="pin",
+    "hiding and reopening the arrow preserves the chosen pin mode")
+assert(ChalkBox_NavCommand("auto") and
+    not ChalkBox_NavStatus().pinMode and
+    ChalkBox_NavStatus().targetType=="quest",
+    "Auto leaves map-pin mode without deleting Blizzard's pin")
+assert(ChalkBox_NavCommand("pin"))
+userWaypoint=nil
+listener.scripts.OnEvent(listener,"USER_WAYPOINT_UPDATED")
+assert(not ChalkBox_NavStatus().pinMode and
+    ChalkBox_NavStatus().targetType=="quest" and
+    ChalkBoxZoneDB.questNavigator.pinMode==nil,
+    "removing the native waypoint returns to quest Auto immediately")
+assert(pinSetCalls==0 and pinClearCalls==0,
+    "ChalkBox never sets or clears Blizzard's user waypoint")
+print("PASS: optional waypoint mode, event-driven direction, corpse priority, missing-pin recovery, read-only native pin and quest isolation")
+
