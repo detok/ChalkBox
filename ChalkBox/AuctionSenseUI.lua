@@ -3,7 +3,7 @@
 local MAX_ROWS=7
 local visibleRows=4
 -- The actual AH content height varies across Forever UI scales.
-local frame,tab,host,labels=nil,nil,nil,{}
+local frame,tab,browserTab,host,labels=nil,nil,nil,nil,{}
 -- NEVER call AuctionHouseFrame:SetDisplayMode from addon code.
 -- Forever's secure bag-item path reads the frame's displayMode; writing it
 -- from our tab can taint item use (including the Cozy Sleeping Bag) until /reload.
@@ -503,9 +503,8 @@ local function Refresh()
 end
 function ChalkBox_AuctionRefreshUI()
     Refresh()
-    -- Optional read-only companion. Never alter native AH tabs/modes.
-    if type(ChalkBox_PriceLensRefresh)=="function" then
-        pcall(ChalkBox_PriceLensRefresh)
+    if type(ChalkBox_AuctionBrowserRefresh)=="function" then
+        pcall(ChalkBox_AuctionBrowserRefresh)
     end
 end
 -- The journal is mounted INSIDE Blizzard's AH, not a detached window.
@@ -812,9 +811,13 @@ local function RestoreNativeContent()
 end
 local function HidePane()
     if frame then frame:Hide() end
+    if type(ChalkBox_AuctionBrowserHide)=="function" then
+        ChalkBox_AuctionBrowserHide()
+    end
     RestoreNativeContent()
-    if tab and type(PanelTemplates_DeselectTab)=="function" then
-        pcall(PanelTemplates_DeselectTab,tab)
+    if type(PanelTemplates_DeselectTab)=="function" then
+        if tab then pcall(PanelTemplates_DeselectTab,tab) end
+        if browserTab then pcall(PanelTemplates_DeselectTab,browserTab) end
     end
 end
 local hooked={}
@@ -885,6 +888,12 @@ function ChalkBox_AuctionAttach()
             -- Do not call SetDisplayMode: Blizzard's bag-use path consults
             -- that native state. Market has its own cosmetic presentation.
             HideNativeContent()
+            if type(ChalkBox_AuctionBrowserHide)=="function" then
+                ChalkBox_AuctionBrowserHide()
+            end
+            if browserTab and type(PanelTemplates_DeselectTab)=="function" then
+                pcall(PanelTemplates_DeselectTab,browserTab)
+            end
             frame:Show()
             marketSelectionActive=true
             if type(PanelTemplates_DeselectTab)=="function" then
@@ -901,6 +910,55 @@ function ChalkBox_AuctionAttach()
             end
             Refresh()
         end)
+        -- A second independent addon tab: native Buy remains entirely
+        -- authoritative. Neither addon tab enters Blizzard's protected
+        -- tab registry or calls SetDisplayMode.
+        if type(ChalkBox_AuctionBrowserMount)=="function" then
+            local mounted,body=pcall(ChalkBox_AuctionBrowserMount,host)
+            if mounted and body then
+                local good,newTab=pcall(CreateFrame,"Button",
+                    "ChalkBoxAuctionBrowserTab",host,
+                    "AuctionHouseFrameDisplayModeTabTemplate")
+                if not good or not newTab then
+                    newTab=CreateFrame("Button","ChalkBoxAuctionBrowserTab",
+                        host,"UIPanelButtonTemplate")
+                end
+                browserTab=newTab
+                newTab:SetText("Browser")
+                if newTab.SetWidth then newTab:SetWidth(122) end
+                local title=type(newTab.GetFontString)=="function"
+                    and newTab:GetFontString() or newTab.Text
+                if title and type(title.SetWidth)=="function" then
+                    title:SetWidth(106)
+                end
+                newTab:SetPoint("LEFT",tab,"RIGHT",-3,0)
+                if type(PanelTemplates_DeselectTab)=="function" then
+                    pcall(PanelTemplates_DeselectTab,newTab)
+                end
+                newTab:SetScript("OnClick",function()
+                    if CombatLocked() then return end
+                    HideNativeContent()
+                    if frame then frame:Hide() end
+                    if not ChalkBox_AuctionBrowserShow() then
+                        HidePane()
+                        return
+                    end
+                    marketSelectionActive=true
+                    if type(PanelTemplates_DeselectTab)=="function" then
+                        pcall(PanelTemplates_DeselectTab,tab)
+                        local natives=type(host.Tabs)=="table" and
+                            host.Tabs or
+                            {host.BuyTab,host.SellTab,host.AuctionsTab}
+                        for _,native in pairs(natives) do
+                            if native then pcall(PanelTemplates_DeselectTab,native) end
+                        end
+                    end
+                    if type(PanelTemplates_SelectTab)=="function" then
+                        pcall(PanelTemplates_SelectTab,browserTab)
+                    end
+                end)
+            end
+        end
         if type(host.HookScript)=="function" then
             host:HookScript("OnHide",function()
                 HidePane()
@@ -914,15 +972,15 @@ function ChalkBox_AuctionAttach()
         if type(hooksecurefunc)=="function" and
             type(host.SetDisplayMode)=="function" then
             pcall(hooksecurefunc,host,"SetDisplayMode",function()
-                if frame and type(frame.IsShown)=="function" and
-                    frame:IsShown() then HidePane() end
+                local marketVisible=frame and type(frame.IsShown)=="function"
+                    and frame:IsShown()
+                local browserVisible=type(ChalkBox_AuctionBrowserIsShown)=="function"
+                    and ChalkBox_AuctionBrowserIsShown()
+                if marketVisible or browserVisible then HidePane() end
             end)
         end
     end
     HookOtherTabs()
-    if type(ChalkBox_PriceLensAttach)=="function" then
-        pcall(ChalkBox_PriceLensAttach)
-    end
     return true
 end
 function ChalkBox_AuctionHide()
@@ -948,4 +1006,23 @@ function ChalkBox_AuctionOpen()
     end
     Refresh()
     return true
+end
+
+-- Expose the deliberate addon-only research tab to slash commands.
+function ChalkBox_AuctionOpenBrowser()
+    if not ChalkBox_AuctionAttach() or not browserTab then return false end
+    if CombatLocked() then return false end
+    if type(host.IsShown)=="function" and not host:IsShown() then
+        return false
+    end
+    if type(browserTab.Click)=="function" then
+        browserTab:Click()
+    else
+        local fn=browserTab.GetScript and
+            browserTab:GetScript("OnClick")
+        if type(fn)~="function" then return false end
+        fn(browserTab)
+    end
+    return type(ChalkBox_AuctionBrowserIsShown)=="function"
+        and ChalkBox_AuctionBrowserIsShown() or false
 end
