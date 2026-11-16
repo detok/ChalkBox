@@ -322,14 +322,28 @@ assert(#partyMessages==1 and #chat==oldChat+1
     and chat[#chat]:find("already requested",1,true),
     "double-clicking within three seconds does not spam group chat")
 now=1004
+local copies={}
+_G.ChalkBox_MeterShowCopy=function(message,reason)
+    copies[#copies+1]={text=message,reason=reason}
+    return true
+end
 C_ChatInfo.SendChatMessage=function()
     error("Forever party chat restriction")
 end
 oldChat=#chat
 printButton.script.OnClick(printButton)
-assert(#partyMessages==1 and #chat==oldChat+1
-    and chat[#chat]:find("blocked",1,true),
-    "a Forever chat restriction is surfaced locally, with no fake success")
+assert(#partyMessages==1 and #copies==1
+    and copies[1].text:find("CB HEAL (Overall):",1,true)
+    and copies[1].reason:find("rejected",1,true),
+    "rejected report preserves a copyable summary without another chat send")
+C_ChatInfo.SendChatMessage=function()
+    error("Should not call chat while restricted")
+end
+C_ChatInfo.InChatMessagingLockdown=function() return true end
+printButton.script.OnClick(printButton)
+assert(#copies==2 and #partyMessages==1,
+    "chat lockdown prepares local text without calling protected API")
+C_ChatInfo.InChatMessagingLockdown=nil
 C_ChatInfo.SendChatMessage=nil
 _G.SendChatMessage=function(message,channel)
     partyMessages[#partyMessages+1]={message=message,channel=channel,legacy=true}

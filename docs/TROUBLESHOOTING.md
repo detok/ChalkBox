@@ -97,3 +97,9 @@ Use [GitHub's bug report form](https://github.com/detok/ChalkBox/issues/new/choo
 For earlier version-specific fixes, see the [historical changelog](../CHANGELOG.md). The current user-facing behavior is documented in the [player handbook](USER_GUIDE.md).
 
 [Documentation home](README.md) · [Commands](COMMANDS.md) · [Maintainer runbook](MAINTAINER_RUNBOOK.md)
+
+## 2.2.23 beta: DPS reports rejected by chat
+
+In WoW Forever, a damage meter can show correct combat totals while the game refuses addon-created chat messages. ChalkBox checks `C_ChatInfo.InChatMessagingLockdown()` and `C_ChatInfo.AreOutgoingAddonChatMessagesRestricted()` when supported. If a manual PARTY/SAY report is denied, 2.2.23 provides a **copyable summary** (Ctrl+C) you can paste into normal chat. It never silently changes channels. Successful API submission does not guarantee server delivery. Automatic SAY outside instances is skipped when restricted.
+
+Try after combat. Use `/chalk meter status` and `/chalk meter native status` for diagnostics. Report the selected channel and whether the copy window appeared. **2.2.22 remains the stable release** until this change is verified in-game.

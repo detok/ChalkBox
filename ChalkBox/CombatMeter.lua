@@ -510,13 +510,41 @@ local function PrintFight()
         Chat("Fight report is too long for party chat; nothing sent.")
         return false
     end
+    local info=C_ChatInfo
+    local blocked=false
+    if info then
+        for _,name in ipairs({
+            "InChatMessagingLockdown",
+            "AreOutgoingAddonChatMessagesRestricted",
+        }) do
+            if type(info[name])=="function" then
+                local check,restricted=pcall(info[name])
+                if not check or restricted==true then blocked=true end
+            end
+        end
+    end
+    if blocked then
+        if type(ChalkBox_MeterShowCopy)=="function" then
+            ChalkBox_MeterShowCopy(message,
+                "Forever restricts addon chat right now.")
+        else
+            Chat("Forever restricts addon chat. Copy manually: "..message)
+        end
+        return false
+    end
     local ok,result=pcall(send,message,"PARTY")
     if not ok or result==false then
-        Chat("Party chat blocked the report; nothing else was sent.")
+        if type(ChalkBox_MeterShowCopy)=="function" then
+            ChalkBox_MeterShowCopy(message,
+                "Forever rejected the PARTY report. No other channel tried.")
+        else
+            Chat("PARTY chat rejected the report. Copy manually: "..message)
+        end
         return false
     end
     if Safe(now) and type(now)=="number" then lastPartyReportAt=now end
-    Chat("Party report submitted ("..#parts.." players).")
+    Chat("Party report requested ("..#parts..
+        " players); delivery is controlled by the game.")
     return true
 end
 function ChalkBox_MeterPrintFight()

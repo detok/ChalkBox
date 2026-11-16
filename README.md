@@ -12,6 +12,8 @@ Quality-of-life tools for **World of Warcraft: Forever** — loot discoveries, q
 
 </div>
 
+**Testing 2.2.23 (beta):** A targeted Forever DPS chat-report fix provides a manual copyable summary when the game rejects an addon message. Our 2.2.22 installer remains the latest stable build; [beta builds are listed separately](https://github.com/detok/ChalkBox/releases).
+
 ChalkBox installs as **one `ChalkBox` folder**. Its bundled recipe data needs no separate download. Features are managed through Blizzard's native **Options → AddOns → ChalkBox** pages, or by typing `/chalk`.
 
 > **Stable release: ChalkBox 2.2.22 for WoW Forever.** The first stable release follows a completed in-game full AuctionSense scan with usable shared item and bag pricing. Check [Releases](https://github.com/detok/ChalkBox/releases/tag/v2.2.22) for the actual installer. ChalkBox targets WoW Forever. The code has automated Lua 5.1 tests, but client-specific UI behavior still needs real in-game verification. Retail and ordinary Classic compatibility are **not claimed**.
