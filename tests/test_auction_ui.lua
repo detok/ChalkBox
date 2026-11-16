@@ -762,16 +762,20 @@ _G.ChalkBox_AuctionPrice=function(id)
         low=1500,age=120,stale=false,mixed=false} end
 end
 BrowserClick("Saved")
+local linenRow,gearRow
+for _,row in ipairs(browserRows) do
+    if row.data and row.data.itemID==2589 then linenRow=row end
+    if row.data and row.data.itemID==6003 then gearRow=row end
+end
 assert(BrowserButton("AH Results") and BrowserVisible()==2 and
-    browserRows[1].data.itemID==2589 and
-    browserRows[1].data.low==1000,
-    "Current AH mode displays actually loaded native browse summary prices")
-browserRows[1].scripts.OnEnter(browserRows[1])
+    linenRow and linenRow.data.low==1000 and gearRow,
+    "Current AH mode displays loaded summaries independent of price sort")
+linenRow.scripts.OnEnter(linenRow)
 assert(Text("10s 0c") and Text("-33.3% VS SCAN") and
     not tip.shown and queries==0 and bids==0,
     "current ask compared to saved 15s baseline without item tooltip or queries")
-browserRows[2].scripts.OnEnter(browserRows[2])
-assert(browserRows[2].data.variantSpecific and Text("VARIANTS"),
+gearRow.scripts.OnEnter(gearRow)
+assert(gearRow.data.variantSpecific and Text("VARIANTS"),
     "variant-specific equipment is not compared to aggregated old itemID prices")
 assert(nativeReads>=1 and queries==0 and bids==0
     and nativeRegistryEdits==0 and nativeModeWrites==modeBeforeDirect,
