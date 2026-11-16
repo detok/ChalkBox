@@ -48,7 +48,7 @@ FILES = (
     "AuctionSense.lua",
     "AuctionSenseUI.lua",
     "AuctionCharts.lua",
-    "AuctionPriceLens.lua",
+    "AuctionBrowser.lua",
     "Libs/ForeverDisenchantData/Materials.lua",
     "Libs/ForeverDisenchantData/NoDisenchant.lua",
     "Libs/ForeverDisenchantData/OwnLoot.lua",
