@@ -199,6 +199,17 @@ assert(captured[1]==" " and captured[2]=="Drop Journal"
     "personal loot quantity is visibly blue, separated from item text")
 assert(table.concat(captured," "):find("not official odds",1,true),
     "short loot tooltip labels still identify personal rather than official data")
+-- The native tooltip must not receive the same journal twice on refresh.
+tooltip.GetName=function() return "DropSenseTestTooltip" end
+tooltip.NumLines=function() return #captured end
+for index,line in ipairs(captured) do
+    _G["DropSenseTestTooltipTextLeft"..index]={
+        GetText=function() return line end}
+end
+local originalCount=#captured
+assert(not ChalkBox_DropTooltip(tooltip,"item:500")
+    and #captured==originalCount,
+    "same loot-window tooltip is annotated only once")
 tooltip.GetOwner=function()
     return {GetName=function() return "ContainerFrame1Item1" end}
 end
