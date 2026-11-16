@@ -1,8 +1,8 @@
-# ChalkBox 2.2.22 draft guide — install and first use
+# ChalkBox 2.2.22 stable guide — install and first use
 
-**Unpublished candidate:** these are the current 2.2.22 draft instructions. The linked older ZIP is for the prior version and does not include this auction fix.
+**Stable release: download the playable 2.2.22 addon ZIP from GitHub Releases, not an old test archive.
 
-1. Download the **`ChalkBox-2.2.17.zip`** game asset from [GitHub Releases](https://github.com/detok/ChalkBox/releases/tag/v2.2.17). **Not** the media kit or GitHub Source code ZIP.
+1. Download the **`ChalkBox-2.2.22.zip`** game asset from [GitHub Releases](https://github.com/detok/ChalkBox/releases/tag/v2.2.22). **Not** the media kit or GitHub Source code ZIP.
 2. Extract its single `ChalkBox/` folder into your actual Forever client `Interface/AddOns/`. Confirm `Interface/AddOns/ChalkBox/ChalkBox.toc` exists.
 3. Launch the game and type **`/chalk`** to open the native settings pages.
 4. **LootSense:** Hover items. Quest items may identify the accepted quest and collection progress when reliably matched. Use `/chalk keep [item]` for a personally protected item; learned recipe hints are distinct from potential uses.
