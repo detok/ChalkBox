@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.2.24 — Release candidate polish and experimental charts (Beta)
+
+- Consolidated the compact combat meter into a gear/right-click menu, with actual-user-count height fitting and a five-row fresh default. Saved manually resized row caps are retained.
+- Reused Blizzard native meter's validated Top 3/5/10 PARTY/SAY reporting engine and opt-in auto-report preferences; manual chat-copy fallback remains and never bypasses Forever restrictions.
+- Matched Combat Meter background-only opacity to The Bar's theme and preserved legibility of text, icons and values.
+- Restored AuctionSense's initial Buy highlight and the first native tab highlight after leaving Market without changing Blizzard's auction mode.
+- Added The Bar Bags left-click action using Blizzard's native ToggleAllBags outside combat and layout editing.
+- Added an **experimental, settings-only AuctionSense Charts** page reading actual saved seven-observation low-price history, with native Line and texture fallback. No new scans, storage expansion or claimed sales price.
+- Hardened graph API fallback and tests. Existing AuctionSense/SessionJournal SavedVariables schema and protected trading actions remain unchanged.
+- GitHub **prerelease only** until WoW Forever live verification; 2.2.22 stable remains downloadable.
+
 ## 2.2.23 — Forever combat report reliability (Beta)
 
 - Respect chat lockdown and addon messaging restrictions; show a native copyable manual report whenever Forever rejects addon-sent combat chat.
