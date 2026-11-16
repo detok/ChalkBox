@@ -41,3 +41,6 @@ Add the social-preview graphic through GitHub repository **Settings** when admin
 - Do not claim auction asks are completed sales or disenchant reference odds are proven Forever drop probabilities.
 - The **Release** designation reflects the real-client acceptance milestone and maintained build; reports remain welcome.
 - CurseForge upload/moderation and game-flavor selection are separate actions. Verify the actual portal before describing the project as approved.
+
+
+**2.2.23 beta candidate:** The optional Combat Meter report now checks Forever chat restrictions and provides a copyable summary when manually sending the report is denied. **2.2.22 is still the stable version.** See [candidate release notes](https://github.com/detok/ChalkBox/releases) for the beta test build.
