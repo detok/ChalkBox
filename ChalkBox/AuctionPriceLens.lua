@@ -185,10 +185,7 @@ local function Render()
         return
     end
     local fn=ChalkBox_AuctionChartHistory
-    local ok,data=type(fn)=="function" and
-        pcall(fn,selectedID) or false,nil
-    -- In Lua 5.1 an expression assignment doesn't preserve two pcall
-    -- results through a boolean 'and/or' expression. Call explicitly.
+    local ok,data=false,nil
     if type(fn)=="function" then ok,data=pcall(fn,selectedID) end
     local price
     if type(ChalkBox_AuctionPrice)=="function" then
