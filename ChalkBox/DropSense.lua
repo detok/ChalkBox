@@ -543,9 +543,10 @@ local function PositionAvailable(mapID)
     local fn=C_Map and C_Map.GetPlayerMapPosition
     if type(fn)~="function" then return false end
     local ok,point=pcall(fn,mapID,"player")
-    if not ok or not Public(point) or type(point)~="table" then
-        return false
-    end
+    if not ok or
+        (type(issecretvalue)=="function" and issecretvalue(point)) or
+        point==nil or (type(point)~="table" and
+        type(point)~="userdata") then return false end
     local read,x,y=pcall(function()
         if type(point.GetXY)=="function" then return point:GetXY() end
         return point.x,point.y
