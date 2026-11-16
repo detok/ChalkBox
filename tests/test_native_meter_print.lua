@@ -264,4 +264,16 @@ assert(ChalkBox_NativeMeterStatus().rows==3 and
     ChalkBox_NativeMeterStatus().cooldown==120,
     "saved settings also respond to slash commands")
 ChalkBox_NativeMeterCommand("status")
-print("PASS: native PARTY/SAY print, Top 3/5/10, auto opt-in, duration/cooldown, no secret data, selected session and no spam")
+-- A compact meter can supply a read-only selection adapter without creating
+-- or modifying a protected Blizzard frame. It shares exactly this sender.
+now=550
+local compactAdapter={
+    GetDamageMeterType=function() return Enum.DamageMeterType.Dps end,
+    GetSessionType=function() return Enum.DamageMeterSessionType.Expired end,
+    GetCombatSession=function() return old end,
+}
+assert(ChalkBox_NativeMeterPrint(compactAdapter,"SAY")
+    and #sends==12 and sends[12].channel=="SAY"
+    and sends[12].text:find("CB DPS (Last):",1,true),
+    "compact selection adapter uses shared native validation, Top-N and channel")
+print("PASS: native and compact PARTY/SAY reports, shared adapter, Top 3/5/10, auto opt-in, duration/cooldown, no secret data and no spam")
