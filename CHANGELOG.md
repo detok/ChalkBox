@@ -1,11 +1,11 @@
+# Changelog
+
 ## 2.2.18 — Item tooltip polish (Beta)
 
 - Give DropSense observed counts and source-specific sample rates clearer hierarchy without changing calculations.
 - Use the shared tooltip palette for LootSense explanations and quest progress.
 - Apply gold monetary emphasis to AuctionSense asking prices and clarify DropSense settings terminology.
 - Preserve all existing saved data and decision logic.
-
-# Changelog
 
 ## 2.2.17 — QuestSense arrow size/default and MacroForge native UI polish
 - **Original WoW classic arrow** is now the default on fresh characters; existing HD/Blizzard style preferences are preserved.
