@@ -1,0 +1,37 @@
+name: Compatibility report
+description: Report a problem involving another addon, UI scale, or client update
+title: "[Compatibility] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ChalkBox targets WoW Forever. Compatibility with unrelated WoW client flavors is not claimed.
+        Never include account IDs, private chat, tokens, or credentials.
+  - type: input
+    id: addon
+    attributes:
+      label: ChalkBox version
+      placeholder: "2.2.22"
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: Forever client build
+      placeholder: "Use the build shown at login or /dump GetBuildInfo()"
+  - type: textarea
+    id: add-ons
+    attributes:
+      label: Other relevant addons and UI setup
+      description: Names/versions, UI scale, window mode, and whether the issue persists with only ChalkBox enabled.
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps and observed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: errors
+    attributes:
+      label: Lua error or screenshot (optional)
+      description: Redact personal details before attaching.
