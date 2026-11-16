@@ -2,7 +2,10 @@
 -- No third-party addon code; no bids, purchases, posts or automatic searches.
 -- A scan is a snapshot of asking prices, never evidence of completed sales.
 local addonName=...
-local MAX_LISTINGS=150000
+-- Full replication can legitimately contain hundreds of thousands of auctions.
+-- Stream per-listing reads in frame-bounded batches; only per-item aggregates
+-- are stored. This guard is for implausible/corrupt counts, not ordinary volume.
+local MAX_LISTINGS=5000000
 local MAX_ITEMS=12000
 local MAX_MARKETS=6
 local BATCH=140
@@ -612,7 +615,8 @@ local function AcceptFullResults()
     local count=Call(ah and ah.GetNumReplicateItems)
     if not Integer(count) or count<1 then return false end
     if count>MAX_LISTINGS then
-        Abort("Full snapshot exceeds safe scan size. Previous prices kept.")
+        Abort(("Full snapshot reported %d auctions, beyond the %d safety bound. Previous prices kept."):format(
+            count,MAX_LISTINGS))
         return true
     end
     local now=Now()

@@ -11,6 +11,7 @@ _G.GetNormalizedRealmName=function() return "Whitemane" end
 _G.UnitFactionGroup=function() return "Alliance" end
 _G.DEFAULT_CHAT_FRAME={AddMessage=function() end}
 local countReady=false
+local returnedCount=2
 local browseResults={{itemKey={itemID=2589},minPrice=4300,
     totalQuantity=23}}
 local function Fire(event,...)
@@ -23,7 +24,7 @@ end
 local requests=0
 _G.C_AuctionHouse={
     ReplicateItems=function() requests=requests+1 end,
-    GetNumReplicateItems=function() return countReady and 2 or 0 end,
+    GetNumReplicateItems=function() return countReady and returnedCount or 0 end,
     GetReplicateItemInfo=function(index)
         assert(index==0 or index==1)
         local quantity=index==0 and 2 or 4
@@ -88,4 +89,17 @@ assert(not ChalkBox_AuctionStatus().busy and
     ChalkBox_AuctionStatus().error:find("dropped",1,true)
     and ChalkBox_AuctionPrice(2589).low==4300,
     "explicit server throttle-drop aborts cleanly but preserves data")
+-- The realm can return far more than 150,000 individual auctions. Accept
+-- that real count without reading/storing all auctions in a single frame.
+now=now+901
+returnedCount=200001
+assert(ChalkBox_AuctionFullScan())
+Fire("REPLICATE_ITEM_LIST_UPDATE")
+assert(ChalkBox_AuctionStatus().busy
+    and ChalkBox_AuctionStatus().state:find("200001",1,true),
+    "large but valid Forever snapshot starts batch processing")
+Fire("AUCTION_HOUSE_CLOSED")
+assert(not ChalkBox_AuctionStatus().busy
+    and ChalkBox_AuctionPrice(2589).low==4300,
+    "closing a large scan safely leaves the previous prices intact")
 print("PASS: delayed Forever replicate event, full weighted asks, cooldown, retained browse minima and independently aging listing samples")

@@ -1,15 +1,16 @@
-# ChalkBox 2.2.19 — AuctionSense full-scan reliability (Beta)
+# ChalkBox 2.2.20 — Large Forever auction scans (Beta)
 
 ## Fixed
-- Full auction replication stays pending while the Forever server prepares results. The earlier 25-second timeout could discard a valid snapshot before it arrived. The request now ends on actual server response, an explicit dropped-request event, or closing the Auction House.
-- Full-snapshot events that arrive before the listing count becomes readable are handled by waiting for that same snapshot rather than discarding it.
-- Real per-unit weighted average asks and listing counts from a successful full scan remain available after a normal Browse Scan refreshes low prices. Their original timestamp is preserved and shown; expired full samples are hidden rather than invented.
-- Mixed-variant safeguards, partial-result rollback, scan cooldowns, and original browse scanning remain in place.
+- Full AuctionSense replication no longer rejects an otherwise valid auction-house snapshot merely because it contains over 150,000 listings. The earlier hard cap caused the "Full snapshot exceeds safe scan size" error on busy Forever markets.
+- The scanner keeps reading individual listings in small, frame-bounded batches and stores per-item summary values instead of every individual listing.
+- The upper safety guard now allows up to 5,000,000 listing indices while retaining the 12,000 distinct-item cap, bounded history, and atomic rollback on failed or interrupted scans.
+- Regression covers a 200,001-listing response beginning safely, without deleting previously scanned prices.
 
-## Forever limitations
-The modern `C_AuctionHouse.ReplicateItems` and `REPLICATE_ITEM_LIST_UPDATE` APIs are present for Forever, but server availability varies; actual full-scan completion cannot be guaranteed from mock tests. A normal Browse Scan supplies minimum unit price and total units, not per-listing average/number of lots. No average or listing count is fabricated.
+## Unchanged
+- Full-scan responses still depend on Forever's server. The 15-minute throttle, actual weighted averages, real listing counts, read-only operation, normal Browse Scan, and protection of older snapshots are unchanged.
+- The scanner does not invent average asks or numbers of lots from browse summaries.
 
 ## Verification
-Lua 5.1 regressions cover delayed full-scan results, long waits, explicit server throttle-drop, weighted averages, cooldown, browse refresh preserving full samples, and sample expiry. Live Forever-client confirmation is still required before treating full scans as verified.
+Lua 5.1 tests and installable-archive checks run in GitHub Actions. A full live Forever snapshot is still needed to verify completion, particularly on busy markets.
 
-This is a beta candidate; keep SavedVariables and the previous install until tested.
+This is a beta candidate; preserve SavedVariables while upgrading.
