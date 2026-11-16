@@ -1,6 +1,6 @@
 # Release and publishing runbook
 
-**Development candidate: 2.2.19; verify released ZIPs at GitHub Releases before claiming publication.**
+**Development candidate: 2.2.20; verify released ZIPs at GitHub Releases before claiming publication.**
 
 There are two different downloadable ZIPs. The playable addon ZIP and the CurseForge publishing/media ZIP are not interchangeable.
 
