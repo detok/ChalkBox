@@ -1426,11 +1426,11 @@ local function MakeMeter()
         Button(panel,tostring(n).."%",27+(i-1)*138,-318,120,
             function() Run("scale "..n) end)
     end
-    Label(panel,"Transparency","GameFontNormalLarge",30,-355,132)
+    Label(panel,"Background opacity","GameFontNormalLarge",30,-355,142)
     local opacity=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
     opacity:SetSize(244,17)
-    opacity:SetPoint("TOPLEFT",panel,"TOPLEFT",170,-351)
-    opacity:SetMinMaxValues(35,100)
+    opacity:SetPoint("TOPLEFT",panel,"TOPLEFT",180,-351)
+    opacity:SetMinMaxValues(0,100)
     if opacity.SetValueStep then opacity:SetValueStep(5) end
     local loading=false
     opacity:SetScript("OnValueChanged",function(_,value)
