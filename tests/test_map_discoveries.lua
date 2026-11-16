@@ -120,7 +120,11 @@ _G.CreateFrame=Frame
 _G.C_Map={
     GetBestMapForUnit=function() return 1436 end,
     GetMapInfo=function(id)
-        return {name=({[1436]="Westfall",[1437]="Redridge Mountains"})[id]}
+        if id==9001 then
+            return {name="Moonbrook",mapType=5,parentMapID=1436}
+        end
+        if id==1436 then return {name="Westfall",mapType=3} end
+        if id==1437 then return {name="Redridge Mountains",mapType=3} end
     end
 }
 _G.ChalkBox_DropOptions=function()
@@ -627,6 +631,42 @@ assert(ChalkBox_MapDiscoveriesResetButton())
 assert(not ChalkBox_MapDiscoveriesButtonPosition().custom and
     button.point[4]==18 and button.point[5]==-114,
     "reset puts button back on default map position")
+-- A micro-map viewed inside Westfall is not identical to the normalized
+-- zone key used by DropSense; following still selects its parent zone.
+viewed=9001
+ClickButton("Map sync: OFF")
+journal.OnUpdate(journal,0.8)
+local micro=ChalkBox_DiscoveriesMapCheck()
+assert(micro.followMap and micro.viewedMapID==9001 and
+    micro.zoneMapID==1436 and micro.selectedArea=="z:1436" and
+    micro.sameZone and not micro.exactMapMatch,
+    "follow-map reconciles a subzone with its recorded parent loot zone")
+assert(micro.spots>0 and micro.positionedItems>0 and
+    micro.reason:find("parent zone map",1,true),
+    "existing zone coordinates are not falsely projected onto a subzone")
+first.OnEnter()
+assert(not ping.shown,
+    "hover never draws parent-zone coordinates on a different subzone canvas")
+first.OnLeave()
+viewed=1436
+journal.OnUpdate(journal,0.8)
+local zoneCheck=ChalkBox_DiscoveriesMapCheck()
+assert(zoneCheck.exactMapMatch and zoneCheck.spots>0 and
+    zoneCheck.reason=="Map and recorded positions match",
+    "parent zone map recovers the existing genuine loot markers")
+viewed=1437
+journal.OnUpdate(journal,0.8)
+local missing=ChalkBox_DiscoveriesMapCheck()
+assert(missing.selectedArea=="z:1437" and missing.itemCount==1 and
+    missing.spots==0 and missing.positionedItems==0 and
+    missing.reason:find("no valid map positions",1,true),
+    "an observed item with no coordinates is diagnosed, not hidden or invented")
+assert(journal and journal:IsShown() and
+    WorldMapFrame:GetMapID()==1437,
+    "diagnostics do not move or replace the user's native map")
+viewed=1436
+journal.OnUpdate(journal,0.8)
+ClickButton("Map sync: ON")
 -- Player's manual selection survives not only reopening but a new addon
 -- instance (the same persisted per-character SavedVariables after relog).
 OpenArea()
