@@ -685,17 +685,17 @@ assert(Text("Page 2 / 3") and BrowserVisible()==5 and
     browserRows[1].data.itemID==6006,
     "next page shows actual subsequent saved items")
 BrowserClick("All items")
-assert(Text("Mixed gear") and BrowserVisible()==2 and
+assert(BrowserButton("Mixed gear") and BrowserVisible()==2 and
     browserRows[1].data.itemID==6002 and
     browserRows[2].data.itemID==6005 and
     Text("Page 1 / 1"),
     "mixed variant filter acts only on recorded variant evidence")
 BrowserClick("Mixed gear")
 BrowserClick("Name")
-assert(Text("Low ↑") and browserRows[1].data.itemID==6001,
+assert(BrowserButton("Low ↑") and browserRows[1].data.itemID==6001,
     "saved low-price ascending sort is stable and data driven")
 BrowserClick("Low ↑")
-assert(Text("Low ↓") and browserRows[1].data.itemID==6013,
+assert(BrowserButton("Low ↓") and browserRows[1].data.itemID==6013,
     "descending market sort never requests live Blizzard auctions")
 local edit
 for _,widget in ipairs(allFrames) do
