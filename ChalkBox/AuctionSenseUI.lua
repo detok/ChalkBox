@@ -123,16 +123,41 @@ local function PreviewDate(stamp)
     return "Recorded scan "..tostring(stamp)
 end
 local function BuildPricePreview(parent)
-    local panel=CreateFrame("Frame",nil,parent)
+    local panel=CreateFrame("Frame","ChalkBoxAuctionPricePreview",parent)
+    -- Keep the exact 80px footprint: the Market mode/details row starts
+    -- immediately beneath it on Forever's compact native Auction House.
     panel:SetSize(232,80)
     panel:SetPoint("TOPRIGHT",parent,"TOPRIGHT",-15,-5)
     local bg=panel:CreateTexture(nil,"BACKGROUND")
     bg:SetAllPoints(panel)
-    PreviewPaint(bg,0.035,0.047,0.054,0.76)
+    PreviewPaint(bg,0.055,0.067,0.072,0.82)
+    local edge=panel:CreateTexture(nil,"BORDER")
+    edge:SetSize(230,1)
+    edge:SetPoint("TOPLEFT",panel,"TOPLEFT",1,-1)
+    PreviewPaint(edge,0.87,0.67,0.37,0.48)
     local title=Font(panel,"GameFontHighlightSmall",9,-5,214)
     local footer=Font(panel,"GameFontHighlightSmall",9,-64,214)
+    if type(title.SetMaxLines)=="function" then title:SetMaxLines(1) end
+    if type(title.SetWordWrap)=="function" then title:SetWordWrap(false) end
     Tint(title,COLOR.average)
     Tint(footer,COLOR.muted)
+    local hoverName,hoverSummary,hoverMixed=nil,nil,false
+    if type(panel.EnableMouse)=="function" then panel:EnableMouse(true) end
+    panel:SetScript("OnEnter",function(self)
+        local tip=StartTooltip(self,hoverName or "Saved price history")
+        if not tip then return end
+        tip:AddLine(hoverSummary or
+            "Select a market item to view recorded low asks.",
+            COLOR.neutral[1],COLOR.neutral[2],COLOR.neutral[3])
+        if hoverMixed then
+            tip:AddLine("Different equipment variants may not be comparable.",
+                COLOR.warning[1],COLOR.warning[2],COLOR.warning[3])
+        end
+        tip:AddLine("Observed asking prices only, not completed sales.",
+            COLOR.muted[1],COLOR.muted[2],COLOR.muted[3])
+        EndTooltip(tip)
+    end)
+    panel:SetScript("OnLeave",HideTooltip)
     local baseline=panel:CreateTexture(nil,"ARTWORK")
     baseline:SetSize(210,1)
     baseline:SetPoint("BOTTOMLEFT",panel,"BOTTOMLEFT",11,21)
@@ -194,9 +219,11 @@ local function BuildPricePreview(parent)
     end
     return function(itemID)
         Clear()
+        hoverName,hoverSummary,hoverMixed=nil,nil,false
         if not itemID then
             title:SetText("PRICE HISTORY  /  LOW ASK")
             footer:SetText("Click an item to view its trend")
+            Tint(footer,COLOR.muted)
             return
         end
         local fn=ChalkBox_AuctionChartHistory
@@ -205,12 +232,17 @@ local function BuildPricePreview(parent)
         if not ok or type(data)~="table" then
             title:SetText("PRICE HISTORY  /  LOW ASK")
             footer:SetText("No saved scan for this item")
+            hoverSummary="No recorded low asking prices for this item."
+            Tint(footer,COLOR.muted)
             return
         end
         local name=type(data.name)=="string" and data.name or
             ("Item #"..tostring(itemID))
-        if #name>23 then name=name:sub(1,21)..".." end
-        title:SetText(name.."  /  LOW ASK")
+        hoverName=name
+        -- The existing suffix consumed a third of the label and needlessly
+        -- abbreviated names like "Amber Hoop of the Knight".
+        local shortName=#name>32 and (name:sub(1,30).."...") or name
+        title:SetText(shortName)
         local points={}
         if type(data.points)=="table" then
             for _,p in ipairs(data.points) do
@@ -222,17 +254,28 @@ local function BuildPricePreview(parent)
                 end
             end
         end
+        hoverMixed=data.mixed==true
         if #points==0 then
             footer:SetText("No recorded asking prices")
+            hoverSummary="This item has no saved price observations."
+            Tint(footer,COLOR.muted)
             return
         end
+        local latest=points[#points]
+        hoverSummary=("%d saved scan%s. Latest low ask: %s per unit."):format(
+            #points,#points==1 and "" or "s",Coin(latest.low))
         if data.mixed then
-            footer:SetText("VARIANTS MIXED  /  Check exact gear")
+            -- Item IDs can represent multiple gear variants. Keep real
+            -- observations visible, without claiming like-for-like trends.
+            footer:SetText("LOW "..Coin(latest.low).."  |  "..#points..
+                " scans  |  MIXED")
+            Tint(footer,COLOR.warning)
         elseif #points==1 then
-            footer:SetText("1 scan: "..Coin(points[1].low).."  /  No trend yet")
+            footer:SetText("LOW "..Coin(latest.low).."  |  1 scan")
+            Tint(footer,COLOR.muted)
         else
-            footer:SetText(#points.." scans: "..Coin(points[1].low)..
-                " to "..Coin(points[#points].low))
+            footer:SetText("LOW "..Coin(latest.low).."  |  "..#points.." scans")
+            Tint(footer,COLOR.ready)
         end
         local low,high=points[1].low,points[1].low
         for _,p in ipairs(points) do
@@ -423,12 +466,17 @@ local function Refresh()
                     (tostring(item.quantity or 0).." units"))
                 Tint(row.note,item.mixed and COLOR.warning or COLOR.muted)
             end
-            Tint(row.name,selectedItemID==item.itemID and COLOR.ready or
-                COLOR.neutral)
+            local chosen=selectedItemID==item.itemID
+            Tint(row.name,chosen and COLOR.ready or COLOR.neutral)
+            if row.selectedBack then
+                if chosen then row.selectedBack:Show()
+                else row.selectedBack:Hide() end
+            end
             row.frame.marketView=view
             row.frame.marketData=item
             row.frame:Show()
         else
+            if row.selectedBack then row.selectedBack:Hide() end
             row.frame.marketData=nil
             row.frame.marketView=nil
             row.frame:Hide()
@@ -564,6 +612,11 @@ local function Ensure()
         local row=CreateFrame("Frame",nil,f)
         row:SetSize(735,22)
         row:SetPoint("TOPLEFT",f,"TOPLEFT",17,y)
+        local selectedBack=row:CreateTexture(nil,"BACKGROUND")
+        selectedBack:SetAllPoints(row)
+        PreviewPaint(selectedBack,0.16,0.42,0.38,0.30)
+        selectedBack:Hide()
+        row.selectedBack=selectedBack
         local name=Font(row,"GameFontHighlight",4,-1,340)
         local low=Font(row,"GameFontHighlight",375,-1,102)
         local average=Font(row,"GameFontHighlight",488,-1,102)
@@ -668,7 +721,9 @@ local function Ensure()
             average=average,listings=listings,note=note}
     end
     local previous=Button(f,"Previous",21,-10,104,function()
-        page=math.max(1,page-1);Refresh()
+        page=math.max(1,page-1)
+        selectedItemID=nil;pricePreviewKey=nil
+        Refresh()
     end)
     -- Anchor pager and disclaimer to the BOTTOM of the actual AH content
     -- instead of assuming every client has 450px of vertical room.
@@ -678,7 +733,9 @@ local function Ensure()
     if labels.page.ClearAllPoints then labels.page:ClearAllPoints() end
     labels.page:SetPoint("BOTTOM",f,"BOTTOM",0,41)
     local nextButton=Button(f,"Next",0,-10,104,function()
-        page=page+1;Refresh()
+        page=page+1
+        selectedItemID=nil;pricePreviewKey=nil
+        Refresh()
     end)
     if nextButton.ClearAllPoints then nextButton:ClearAllPoints() end
     nextButton:SetPoint("BOTTOMRIGHT",f,"BOTTOMRIGHT",-21,34)
