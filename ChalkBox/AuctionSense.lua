@@ -304,7 +304,7 @@ local function Commit(scan)
         local average=row.totalCopper and row.quantity>0 and
             math.ceil(row.totalCopper/row.quantity) or nil
         items[itemID]={name=row.name,low=row.low,
-            average=average,quantity=row.quantity,
+            average=average,quantity=row.quantity,variant=row.variant,
             listings=row.listings,mixed=row.mixed}
     end
     if found==0 then
@@ -318,7 +318,11 @@ local function Commit(scan)
         -- refreshes browse minima. Its age remains independently visible.
         for itemID,item in pairs(items) do
             local prev=old.items[itemID]
-            local avg,lots,_,at=Detail(prev,old)
+            local compatible=type(prev)=="table" and
+                not item.mixed and not prev.mixed and
+                (not item.variant or not prev.variant or
+                    item.variant==prev.variant)
+            local avg,lots,_,at=compatible and Detail(prev,old)
             if avg and lots and at then
                 item.detailAverage=avg
                 item.detailListings=lots
