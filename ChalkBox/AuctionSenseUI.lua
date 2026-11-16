@@ -459,9 +459,21 @@ local function Refresh()
     local start=(page-1)*visibleRows
     -- The graph should be useful on opening Market, not an empty box until
     -- the user discovers they must click a row. Keep manual row selection.
-    if view=="market" and not selectedItemID and entries[start+1] and
-        type(entries[start+1].itemID)=="number" then
-        selectedItemID=entries[start+1].itemID
+    if view=="market" then
+        -- Keep the chart aligned with the actual visible page. A new scan,
+        -- search, or page may replace its entries without a row click.
+        local selectedOnPage=false
+        for i=1,visibleRows do
+            local item=entries[start+i]
+            if item and item.itemID==selectedItemID then
+                selectedOnPage=true;break
+            end
+        end
+        if not selectedOnPage then
+            local first=entries[start+1]
+            selectedItemID=first and
+                type(first.itemID)=="number" and first.itemID or nil
+        end
     end
     for i,row in ipairs(labels.rows) do
         local item=(i<=visibleRows) and entries[start+i] or nil
