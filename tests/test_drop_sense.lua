@@ -127,6 +127,14 @@ assert(ambiguousCloth and ambiguousCloth.rate==nil,
 assert(ambiguousCloth.locations and #ambiguousCloth.locations==2 and
     ambiguousCloth.locations[2].x==720,
     "zone-wide browsing retains locations from both creature types")
+local areaAudit=ChalkBox_DropAreaAudit("z:1436")
+assert(areaAudit and areaAudit.items==3 and
+    areaAudit.positionedItems==3 and areaAudit.positions>=3 and
+    areaAudit.invalidPositions==0 and areaAudit.countProblems==0 and
+    areaAudit.sourceProblems==0,
+    "cross-checking saved item windows and coordinates detects no false errors")
+assert(ChalkBox_DropAreaAudit("z:1437")==nil,
+    "a zone with no observations returns no fabricated audit")
 local banditItems=ChalkBox_DropAreaItems("z:1436","c:12345")
 local banditCloth
 for _,item in ipairs(banditItems) do
@@ -249,6 +257,10 @@ handlers.event(nil,"LOOT_OPENED")
 assert(ChalkBox_DropRead(999,"z:1436").areaWindows==1 and
     not ChalkBox_DropRead(999,"z:1436").locations,
     "missing coordinate API never invents or blocks ordinary discovery")
+areaAudit=ChalkBox_DropAreaAudit("z:1436")
+assert(areaAudit and areaAudit.missingPositions>=1 and
+    areaAudit.invalidPositions==0,
+    "recorded loot can correctly lack locations without being corrupt")
 -- Some client builds return the invalid zero/zero map sentinel.
 handlers.event(nil,"LOOT_CLOSED")
 C_Map.GetPlayerMapPosition=function()
@@ -261,6 +273,21 @@ handlers.event(nil,"LOOT_OPENED")
 assert(ChalkBox_DropRead(998,"z:1436").areaWindows==1 and
     not ChalkBox_DropRead(998,"z:1436").locations,
     "zero-zero client placeholder cannot become a claimed loot location")
+local badArea=ChalkBoxZoneDB.dropSense.areas["z:1436"]
+local source=badArea.sources["c:12345"]
+local oldWindows=source.items["100"].windows
+source.items["100"].windows=source.windows+1
+local corrupted=ChalkBox_DropAreaAudit("z:1436")
+assert(corrupted.sourceProblems>0 and
+    ChalkBox_DropRead(100,"z:1436","c:12345").rate==nil,
+    "impossible hits greater than sample windows never produce NaN rates")
+source.items["100"].windows=oldWindows
+local oldLocations=badArea.items["100"].locations
+badArea.items["100"].locations={{x=1500,y=500,count=1}}
+corrupted=ChalkBox_DropAreaAudit("z:1436")
+assert(corrupted.invalidPositions==1,
+    "out-of-bounds positions are counted as malformed, never projected")
+badArea.items["100"].locations=oldLocations
 ChalkBox_DropSetOption("enabled",false)
 -- Previous 1.10.0 saved watches are retained as older unsited observations;
 -- never backfill invented zone/source data.
