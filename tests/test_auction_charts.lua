@@ -78,15 +78,11 @@ find.scripts.OnClick(find)
 assert(reads==1 and #lines==6 and lines[1].shown
     and lines[2].shown and not lines[3].shown,
     "native line graph draws exactly two segments for three real scans")
-assert(lines[1].start[4]<lines[1].finish[4]
-    and lines[1].start[5]>lines[1].finish[5],
+assert(lines[1].start[3]<lines[1].finish[3]
+    and lines[1].start[4]>lines[1].finish[4],
     "actual price drop draws a descending line over time")
-assert(lines[2].finish[4]>lines[1].finish[4],
+assert(lines[2].finish[3]>lines[1].finish[3],
     "graph uses real, uneven timestamps for horizontal placement")
-local firstDot
-for _,f in ipairs(all) do
-    if f.kind=="Button" and f.chartSample then firstDot=firstDot;break end
-end
 local drawn=0
 for _,f in ipairs(all) do
     if f.kind=="Button" and f.chartSample then drawn=drawn+1 end
