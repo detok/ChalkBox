@@ -662,7 +662,7 @@ local function MakeLootAppearance()
         27,-246,480)
     Label(panel,"No secure bag-button modifications; item tooltip hints still work.",
         "GameFontHighlightSmall",27,-275,495)
-    Label(panel,"Preserved marker opacity (inactive)","GameFontNormal",27,-326,145)
+    Label(panel,"Marker opacity (off)","GameFontNormal",27,-326,145)
     local slider=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
     slider:SetSize(255,17)
     slider:SetPoint("TOPLEFT",panel,"TOPLEFT",182,-322)
