@@ -120,4 +120,14 @@ Fire("AUCTION_HOUSE_CLOSED")
 assert(not ChalkBox_AuctionStatus().busy
     and ChalkBox_AuctionPrice(2589).low==4300,
     "closing a large scan safely leaves the previous prices intact")
+Fire("AUCTION_HOUSE_SHOW")
+now=now+901
+assert(ChalkBox_AuctionFullScan())
+Tick(601)
+assert(not ChalkBox_AuctionStatus().busy
+    and ChalkBox_AuctionStatus().error:find("10 minutes",1,true)
+    and ChalkBox_AuctionPrice(2589).low==4300,
+    "silent Forever request stops after 10 minutes without erasing prices")
+assert(ChalkBox_AuctionStatus().cooldown>0,
+    "even a silent accepted full-scan request has a request cooldown")
 print("PASS: delayed Forever replicate event, full weighted asks, cooldown, retained browse minima and independently aging listing samples")
