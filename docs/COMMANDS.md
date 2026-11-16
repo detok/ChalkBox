@@ -23,6 +23,8 @@
 | --- | --- |
 | `/chalk drops map` | Open Discoveries, attached to the World Map |
 | `/chalk drops map status` | Diagnose the Discoveries map button and attachment |
+| `/chalk drops map flights status` | Count character-confirmed flight paths, visible markers and native Map Filter integration |
+| `/chalk drops map flights on` / `off` | Fallback visibility switch for **Known Flight Paths** in Blizzard’s Map Filter dropdown |
 | `/chalk drops map reset` | Restore the draggable Discoveries map button |
 | `/chalk drops map on` / `off` | Show or hide the map button |
 | `/chalk drops on` / `off` | Start or stop sampling readable loot windows |
@@ -30,6 +32,8 @@
 | `/chalk drops status` | Show recorded item, loot and zone totals |
 | `/chalk drops chance 5 20` | Calculate probability of at least one success in 20 independent attempts at a supplied 5% chance |
 | `/chalk drops reference 123 3.5` | Mark a 3.5% reference for an already recorded item ID 123; it is explicitly unverified |
+
+**Known Flight Paths:** Discoveries extends the native World Map **Map Filter** checkbox with a single **Known Flight Paths (ChalkBox)** option. The addon marks only taxi-map nodes whose state was actually `CURRENT` or `REACHABLE` when that character visited a flight master. It never treats an unknown node as discovered, and never loads a public list of undiscovered nodes. Existing paths become visible after opening a flight master; nodes without verified map coordinates are intentionally omitted. Flight markers never change the native map or start travel.
 
 **Important:** DropSense observation counts are loot windows, not every enemy kill. Outdoor positions are where *you opened the loot window*, not exact spawn locations. Generic reference chances are user-supplied, not verified server odds.
 
@@ -53,7 +57,7 @@
 | `/chalk auction status` | Current scan state and market snapshot |
 | `/chalk auction tooltip on` / `off` | Show or hide AH asking-price annotations |
 
-**Quest compass (OFF by default):** `/chalk nav on|off|auto|next|prev|follow QUEST_ID|original|classic|hd|size 32-72|lock|unlock|reset|status`. The small outdoor arrow follows only accepted quests with verified waypoints. Auto honors Blizzard's super-tracked quest first, then the nearest known target. It never sets/clears your map pin or deletes other manual quest watches. It can add the selected accepted quest to Blizzard's native watch list, and never guesses an instance direction. See [Navigation](QUEST_NAVIGATION.md).
+**Quest compass (OFF by default):** `/chalk nav on|off|auto|pin|next|prev|follow QUEST_ID|original|classic|hd|size 32-72|lock|unlock|reset|status`. The small outdoor arrow follows only accepted quests with verified waypoints. Auto honors Blizzard's super-tracked quest first, then the nearest known target. Right-click the arrow to **Follow Map Pin** when a Blizzard World Map waypoint is placed; move the pin to update the arrow, or clear it to return to Auto. It never sets/clears your map pin or deletes other manual quest watches. It can add the selected accepted quest to Blizzard's native watch list, and never guesses an instance direction. See [Navigation](QUEST_NAVIGATION.md).
 
 **Native quick actions:** On compatible Forever builds, right-click Blizzard's objective-tracker header to access QuestSense Settings, Off, Smart, Nearby and the Navigation toggle. The native `/macro` window may show a MacroForge button beside Delete in the native bottom row; `/chalk macro` always remains available.
 
