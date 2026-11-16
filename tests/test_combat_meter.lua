@@ -407,4 +407,19 @@ event.script.OnEvent(event,"PLAYER_LOGIN")
 assert(not window.shown and ChalkBoxDB.meter.shown==false,
     "previously open meter starts closed on a fresh login")
 C_DamageMeter=api
-print("PASS: compact PARTY report modern+legacy chat APIs, secret/solo/raid guards, rate limit, visible confirmed RESET, icons, draggable meter and all sessions")
+ChalkBox_MeterCommand("last")
+local adapter=ChalkBox_MeterReportAdapter()
+assert(adapter and adapter:GetSessionType()==Enum.DamageMeterSessionType.Expired
+    and adapter:GetDamageMeterType()==Enum.DamageMeterType.Dps
+    and adapter:GetCombatSession().combatSources[1].name=="Detok",
+    "compact menu reads its selected last fight and DPS from the shared native API")
+local delegated
+_G.ChalkBox_NativeMeterPrint=function(selected,channel)
+    delegated={selected=selected,channel=channel}
+    return true
+end
+assert(ChalkBox_MeterReportSelected("SAY")
+    and delegated and delegated.channel=="SAY"
+    and delegated.selected:GetSessionType()==Enum.DamageMeterSessionType.Expired,
+    "compact reporting always delegates to native sender, never a second chat path")
+print("PASS: compact native report adapter, five-row auto-fit, secret/solo/raid guards, confirmed RESET, icons, gear header and all sessions")
