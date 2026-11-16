@@ -108,11 +108,25 @@ local function Refresh()
     labels.status:SetText(status.state or "Ready")
     Tint(labels.status,status.error and COLOR.error or
         (status.busy and COLOR.warning or COLOR.ready))
-    labels.progress:SetText(status.busy and
-        (status.mode=="browse" and
-            (tostring(status.scannedItems or 0).." items read") or
-            ("Full scan "..tostring(status.progress or 0).."%")) or
-        (status.scannedAt and ("Last scan "..Age(status.age)) or "No scan yet"))
+    -- Only claim progress once the server provided a real listing count.
+    if status.busy and status.mode=="full" then
+        if status.phase=="reading" and (status.totalListings or 0)>0 then
+            labels.progress:SetText(("%d / %d auctions  ·  %d%%"):format(
+                status.processedListings or 0,status.totalListings,
+                status.progress or 0))
+        elseif status.phase=="settling" then
+            labels.progress:SetText(("%d listings arriving  ·  confirming total"):format(
+                status.reportedListings or 0))
+        else
+            labels.progress:SetText(("%ds elapsed  ·  awaiting server"):format(
+                math.floor(status.waitSeconds or 0)))
+        end
+    elseif status.busy and status.mode=="browse" then
+        labels.progress:SetText(tostring(status.scannedItems or 0).." items read")
+    else
+        labels.progress:SetText(status.scannedAt and
+            ("Last scan "..Age(status.age)) or "No scan yet")
+    end
     local cooldown=status.cooldown or 0
     labels.cooldown:SetText(cooldown>0 and
         ("Full scan  |  "..math.ceil(cooldown/60).."m cooldown") or
@@ -548,9 +562,16 @@ function ChalkBox_AuctionAttach()
                 host,"UIPanelButtonTemplate")
         end
         tab=button
-        -- Short tab label fits Blizzard's tab strip at normal UI scale.
+        -- This is our own addon tab, not one of Blizzard's protected tabs.
+        -- Forever's tab template can ellipsize "Market" at the stock width.
+        -- Reserve real text space after the template initializes.
         tab:SetText("Market")
-        if tab.SetWidth then tab:SetWidth(92) end
+        if tab.SetWidth then tab:SetWidth(122) end
+        local label=type(tab.GetFontString)=="function" and
+            tab:GetFontString() or tab.Text
+        if label and type(label.SetWidth)=="function" then
+            label:SetWidth(106)
+        end
         if previous then
             tab:SetPoint("LEFT",previous,"RIGHT",-3,0)
         else
