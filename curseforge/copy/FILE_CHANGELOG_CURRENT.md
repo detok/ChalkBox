@@ -1,10 +1,10 @@
-# ChalkBox 2.2.22 — First stable release
+# ChalkBox 2.2.23 — Forever combat report compatibility (Beta)
 
-ChalkBox's first stable WoW Forever release brings its integrated loot, quest, auction, macro and adventure tools together.
+- Check WoW Forever chat lockdown and outgoing addon-message restrictions before requesting a group report.
+- When manual reporting is rejected, show an authentic local copyable summary (Ctrl+C; paste in WoW chat yourself). No channel changes or automated resend.
+- Successful chat API requests do not guarantee delivery.
+- Avoid automatic SAY outside instances when Forever requires a hardware event.
+- Compact PRINT and Blizzard's native meter reporting share the same manual copy window.
+- Meter visuals, native combat totals, auction market, saved settings and player macros remain unchanged.
 
-- **Full AuctionSense market scans work in live Forever playtesting.** The Market tab displays real low and weighted-average asking prices, listing counts and quantities. Scan status shows waiting, receiving and processing; delayed and late-arriving results are handled without overwriting good saved prices.
-- **Connected item information:** Bag market values, LootSense item context and read-only DisenchantSense material estimates can make use of available auction data.
-- **Adventure tools:** Discoveries/DropSense, QuestSense with optional navigation, MacroForge, The Bar, Combat Meter, Adventure Journal, camping hints, appearance and optional emotes/social controls.
-- **Safety:** Manual-only auction requests, no automated trading, no fabricated missing prices, preserved player settings on update.
-
-Asking prices are not sale prices; drop rates are observed samples and disenchant odds are reference models. Developed for **World of Warcraft: Forever**.
+**Beta:** Requires in-game verification. ChalkBox 2.2.22 is still the stable release.
