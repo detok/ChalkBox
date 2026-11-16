@@ -1,6 +1,6 @@
 # ChalkBox maintainer runbook
 
-**Working operational checklist · current baseline 2.2.17**
+**Working operational checklist · current stable baseline 2.2.22**
 
 This is how to investigate a report, make a change without breaking established behavior, verify it, and prepare it for release. It complements [Architecture](ARCHITECTURE.md), [Development](DEVELOPMENT.md) and [Publishing](RELEASE_PROCESS.md).
 
