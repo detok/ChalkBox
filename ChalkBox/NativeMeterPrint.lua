@@ -143,6 +143,22 @@ local function BuildMessage(sources,label,title,perSecond,limit)
     if #message>255 then return nil,"Report exceeds the chat limit." end
     return message
 end
+local function MessagingRestricted()
+    local api=C_ChatInfo
+    if not api then return false end
+    for _,name in ipairs({
+        "InChatMessagingLockdown",
+        "AreOutgoingAddonChatMessagesRestricted",
+    }) do
+        local check=api[name]
+        if type(check)=="function" then
+            local ok,blocked=pcall(check)
+            -- Fail closed if the client cannot answer its own safety query.
+            if not ok or blocked==true then return true end
+        end
+    end
+    return false
+end
 local function SendReport(frame,channel,auto)
     local function Reject(why)
         if not auto then Note(why) end
@@ -204,13 +220,32 @@ local function SendReport(frame,channel,auto)
     -- Blizzard session. Identical consecutive summaries are deliberately
     -- skipped rather than risking auto chat spam.
     if auto and message==lastAutoMessage then return false end
+    if MessagingRestricted() then
+        if auto then return false end
+        if type(ChalkBox_MeterShowCopy)=="function" then
+            ChalkBox_MeterShowCopy(message,
+                "Forever restricts addon chat right now.")
+        else
+            Note("Forever restricts addon chat. Report: "..message)
+        end
+        return false
+    end
     local ok,result=pcall(send,message,channel)
     if not ok or result==false then
-        return Reject("Chat rejected the report. No fallback channel used.")
+        if auto then return false end
+        if type(ChalkBox_MeterShowCopy)=="function" then
+            ChalkBox_MeterShowCopy(message,
+                "Forever rejected addon chat; no other channel tried.")
+        else
+            Note("Chat rejected the report. Copy manually: "..message)
+        end
+        return false
     end
     lastSentAt=now
     if auto then lastAutoAt=now;lastAutoMessage=message end
-    Note((auto and "Auto report" or "Report").." submitted to "..channel..".")
+    -- A successful API call is not a delivery acknowledgment.
+    Note((auto and "Auto report" or "Report").." requested in "..channel..
+        " (delivery is controlled by the game).")
     return true
 end
 function ChalkBox_NativeMeterPrint(frame,channel)
