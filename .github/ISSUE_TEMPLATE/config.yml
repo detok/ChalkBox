@@ -2,4 +2,4 @@ blank_issues_enabled: false
 contact_links:
   - name: Installation and troubleshooting
     url: https://github.com/detok/ChalkBox/blob/main/docs/TROUBLESHOOTING.md
-    about: Check the installation steps, test reminders, and scan troubleshooting.
+    about: Check installation, version requirements, and module troubleshooting before opening an issue.
