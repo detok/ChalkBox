@@ -43,4 +43,4 @@ Add the social-preview graphic through GitHub repository **Settings** when admin
 - CurseForge upload/moderation and game-flavor selection are separate actions. Verify the actual portal before describing the project as approved.
 
 
-**2.2.23 beta candidate:** The optional Combat Meter report now checks Forever chat restrictions and provides a copyable summary when manually sending the report is denied. **2.2.22 is still the stable version.** See [candidate release notes](https://github.com/detok/ChalkBox/releases) for the beta test build.
+**2.2.24 GitHub prerelease candidate:** This unverified playtest build combines compact meter reporting/menu polish, The Bar bag clicks, AuctionSense tab fixes and a settings-only experimental chart lab. [Read the live test checklist](https://github.com/detok/ChalkBox/blob/main/docs/RELEASE_CANDIDATE_TEST_2.2.24.md). **2.2.22 remains the stable game/publisher release**; do not substitute the beta ZIP for it until client testing is complete.
