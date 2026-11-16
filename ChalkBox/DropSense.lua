@@ -712,8 +712,16 @@ function ChalkBox_DropCommand(input)
                 info.menuHook and "installed" or "unavailable",
                 info.enabled and "ON" or "OFF",
                 tostring(info.mapID or "not shown")))
+            Note(("Positions: %d observed, %d zone nodes, %d projected; %d missing."):format(
+                info.observedPositions or 0,info.directPositions or 0,
+                info.projectedPositions or 0,info.unplacedNodes or 0))
+            Note(("Last taxi read: %s (map %s, learned there %d)."):format(
+                tostring(info.captureStatus or "unknown"),
+                tostring(info.taxiMapID or "none"),info.taxiKnown or 0))
             if info.verified==0 then
-                Note("Visit a flight master and open the taxi map to confirm known paths.")
+                Note("No learned paths confirmed yet. Open a flight master's taxi map once.")
+            elseif info.mapPins==0 then
+                Note("Known paths saved but none located on this displayed map.")
             end
         else Note("Known flight path diagnostics unavailable.") end
     elseif cmd=="map" and args=="reset" then
