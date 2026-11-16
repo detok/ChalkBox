@@ -784,5 +784,23 @@ BrowserClick("AH Results")
 assert(BrowserButton("Saved") and BrowserVisible()==5
     and browserRows[1].data.itemID==6013,
     "returning to saved mode recovers stored market history immediately")
+local browseReadBefore=nativeReads
+BrowserClick("Search AH")
+assert(queries==1 and bids==0 and BrowserButton("AH Results") and
+    BrowserVisible()==0 and nativeReads==browseReadBefore and
+    Text("Searching the Auction House"),
+    "explicit Search AH starts one user-triggered query and hides stale results")
+local nativeListener
+for _,candidate in ipairs(allFrames) do
+    if candidate.kind=="Frame" and candidate.scripts.OnEvent then
+        nativeListener=candidate
+    end
+end
+assert(nativeListener,"Browser has a read-only native-results event listener")
+nativeListener.scripts.OnEvent(nativeListener,
+    "AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
+assert(BrowserVisible()==2 and nativeReads>browseReadBefore and
+    queries==1 and bids==0,
+    "new native browse results populate after the actual client event")
 ChalkBox_AuctionHide()
 print("PASS: Browser first-click native visibility, actual loaded AH summaries compared with saved scans, variant safety, and no buying/query side effects")
