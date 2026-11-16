@@ -10,8 +10,11 @@ local lastNativeWatch
 -- should release a stale manual override. Only state changes trigger it.
 local lastTracked,lastSelected,observedSelection,selectedFocus=nil,nil,false,nil
 local function Public(v)
-    return v~=nil and (type(issecretvalue)~="function" or
-        not issecretvalue(v))
+    -- A secret-value comparison to nil may itself be restricted.
+    if type(issecretvalue)=="function" and issecretvalue(v) then
+        return false
+    end
+    return v~=nil
 end
 local function Number(v)
     return Public(v) and type(v)=="number" and v==v and
@@ -52,6 +55,8 @@ local function DB()
     saved.arrowSize=math.max(32,math.min(72,
         math.floor((saved.arrowSize-32)/4+0.5)*4+32))
     if not ID(saved.questID) then saved.questID=nil end
+    -- Additive per-character mode. Old characters remain quest-focused.
+    if saved.pinMode~=true then saved.pinMode=nil end
     if not Number(saved.offsetX) or not Number(saved.offsetY)
         or math.abs(saved.offsetX)>1500 or math.abs(saved.offsetY)>1000 then
         saved.offsetX=nil;saved.offsetY=nil
@@ -80,6 +85,37 @@ local function MapPoint(mapID,x,y)
         return nil
     end
     return {mapID=mapID,x=x,y=y}
+end
+-- Read the player's native map pin, never set/clear it. The client may
+-- expose UiMapPoint.position as a plain {x,y} OR a Vector2DMixin.
+-- Only a confirmed nil from the API means the player removed the pin:
+-- transient secret/API errors must not silently switch the destination.
+local function UserPin()
+    local fn=C_Map and C_Map.GetUserWaypoint
+    if type(fn)~="function" then
+        return nil,"Map pin API unavailable",false
+    end
+    local ok,raw=pcall(fn)
+    if not ok or (type(issecretvalue)=="function" and
+        issecretvalue(raw)) then
+        return nil,"Map pin temporarily unavailable",false
+    end
+    if raw==nil then return nil,"No map pin placed",true end
+    if type(raw)~="table" and type(raw)~="userdata" then
+        return nil,"Map pin coordinates unavailable",false
+    end
+    local read,mapID,position=pcall(function()
+        return raw.uiMapID,raw.position
+    end)
+    if not read or not Public(mapID) or not Public(position) then
+        return nil,"Map pin coordinates unavailable",false
+    end
+    local x,y=XY(position)
+    local point=MapPoint(mapID,x,y)
+    if not point then
+        return nil,"Map pin coordinates unavailable",false
+    end
+    return point,"Ready",false
 end
 local function QuestPoint(id,playerMap)
     -- The active quest's current-map travel stop is more useful than
@@ -256,6 +292,21 @@ local function Refresh()
         if frame then frame:Show() end
         return
     end
+    -- An explicitly selected player pin outranks quests but not a corpse.
+    -- Treat the pin as a live reference: moving it updates the same arrow.
+    if db.pinMode then
+        local point,why,removed=UserPin()
+        if not removed then
+            target={kind="pin",name="Map Pin",point=point}
+            chosen="Map Pin"
+            reason=why or "Map pin unavailable"
+            if frame then frame:Show() end
+            return
+        end
+        -- Blizzard confirmed the pin was removed; restore quest Auto.
+        db.pinMode=nil
+        db.questID=nil
+    end
     local accepted=Accepted()
     if not accepted then
         target=nil;options={}
@@ -310,7 +361,10 @@ local function Face()
     local player,why=PlayerPosition()
     if not player then return nil,why end
     local dist,dx,dy=Distance(target.point,player)
-    if not dist then return nil,"Quest is in another region" end
+    if not dist then
+        return nil,target.kind=="pin" and "Map pin is in another region"
+            or "Quest is in another region"
+    end
     if type(math.atan2)~="function" then
         return nil,"Directional math unavailable"
     end
@@ -360,10 +414,15 @@ end
 -- No extra always-visible buttons or background frame.
 local fallbackMenu
 local function MenuEntries()
+    local pin=UserPin()
     return {
         {text="Auto (follow tracked)",action=function()
             ChalkBox_NavCommand("auto")
         end},
+        {text=pin and "Follow Map Pin" or "Follow Map Pin (none placed)",
+            disabled=not pin,action=function()
+                ChalkBox_NavCommand("pin")
+            end},
         {text="Next quest",action=function()
             ChalkBox_NavCommand("next")
         end},
@@ -381,7 +440,13 @@ function ChalkBox_NavOpenMenu(owner)
         local ok=pcall(MenuUtil.CreateContextMenu,owner or frame,
             function(_,root)
                 for _,entry in ipairs(entries) do
-                    root:CreateButton(entry.text,function() entry.action() end)
+                    local button=root:CreateButton(entry.text,function()
+                        if not entry.disabled then entry.action() end
+                    end)
+                    if entry.disabled and button and
+                        type(button.SetEnabled)=="function" then
+                        button:SetEnabled(false)
+                    end
                 end
             end)
         if ok then return true end
@@ -397,7 +462,7 @@ function ChalkBox_NavOpenMenu(owner)
             local items={}
             for _,entry in ipairs(entries) do
                 items[#items+1]={text=entry.text,func=entry.action,
-                    notCheckable=true}
+                    disabled=entry.disabled,notCheckable=true}
             end
             local ok=pcall(EasyMenu,items,fallbackMenu,
                 "cursor",0,0,"MENU")
@@ -525,7 +590,7 @@ local function Build()
         GameTooltip:AddLine(target and target.name or "QuestSense Navigation",
             1,0.82,0.48)
         GameTooltip:AddLine(self.readout or reason,0.9,0.9,0.85)
-        GameTooltip:AddLine("Right-click: Auto / Next / Hide",
+        GameTooltip:AddLine("Right-click: Auto / Map Pin / Next / Hide",
             0.65,0.72,0.75)
         if type(GameTooltip.Show)=="function" then GameTooltip:Show() end
     end)
@@ -558,6 +623,7 @@ function ChalkBox_NavStatus()
         targetType=target and target.kind or "quest",
         title=target and target.name or nil,
         mode=chosen or "Smart",reason=reason,
+        pinMode=db and db.pinMode==true or false,
         candidates=(function()
             local count=0
             for _,q in ipairs(options) do
@@ -585,7 +651,15 @@ function ChalkBox_NavCommand(input)
     elseif action=="off" or action=="hide" then
         db.enabled=false
     elseif action=="auto" then
-        db.enabled=true;db.questID=nil
+        db.enabled=true;db.questID=nil;db.pinMode=nil
+    elseif action=="pin" or action=="waypoint" then
+        local point,why=UserPin()
+        if not point then
+            Message(why or "Place a waypoint on the World Map first.")
+            return false
+        end
+        db.enabled=true
+        db.pinMode=true
     elseif action=="next" or action=="previous" or action=="prev" then
         local items=ChalkBox_NavChoices()
         if #items==0 then
@@ -600,6 +674,7 @@ function ChalkBox_NavCommand(input)
         if action=="next" then index=index%#items+1
         else index=(index-2+#items)%#items+1 end
         db.questID=items[index].id
+        db.pinMode=nil
         db.enabled=true
     elseif action=="hd" or action=="classic" or action=="original" then
         db.arrowStyle=action
@@ -636,9 +711,10 @@ function ChalkBox_NavCommand(input)
                 return false
             end
             db.questID=id
+            db.pinMode=nil
             db.enabled=true
         else
-            Message("Use /chalk nav on|off|auto|next|prev|follow ID|original|classic|hd|size 32-72|lock|unlock|reset|status")
+            Message("Use /chalk nav on|off|auto|pin|next|prev|follow ID|original|classic|hd|size 32-72|lock|unlock|reset|status")
             return false
         end
     end
@@ -654,7 +730,7 @@ for _,name in ipairs({"ADDON_LOADED","PLAYER_ENTERING_WORLD",
     "ZONE_CHANGED_NEW_AREA","PLAYER_REGEN_ENABLED",
     "QUEST_LOG_SELECTION_CHANGED","PLAYER_DEAD","PLAYER_ALIVE",
     "PLAYER_UNGHOST","CORPSE_IN_RANGE","CORPSE_OUT_OF_RANGE",
-    "PLAYER_CORPSE_POSITION_UPDATE"}) do
+    "PLAYER_CORPSE_POSITION_UPDATE","USER_WAYPOINT_UPDATED"}) do
     pcall(listener.RegisterEvent,listener,name)
 end
 listener:SetScript("OnEvent",function(_,name,arg)
