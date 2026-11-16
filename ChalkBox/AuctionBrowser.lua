@@ -115,7 +115,7 @@ local function Draw(points)
         elseif t1==t0 then at=(i-1)/(#points-1)
         else at=(sample.t-t0)/(t1-t0) end
         local x=15+at*285
-        local y=12+(sample.low-floor)/scale*105
+        local y=10+(sample.low-floor)/scale*99
         plot[i]={x=x,y=y}
         local dot=dots[i]
         dot.sample=sample
@@ -309,10 +309,11 @@ local function Refresh()
         end
     end
     labels.page:SetText(("Page %d / %d"):format(page,pages))
+    local hadSelection=selectedID~=nil
     if not selectedID and firstVisible then Select(firstVisible,false) end
-    if selectedID and cacheKey~=labels.drawnKey then
+    if cacheKey~=labels.drawnKey then
         labels.drawnKey=cacheKey
-        DrawDetails()
+        if hadSelection or not selectedID then DrawDetails() end
     end
 end
 local function ControlsChanged()
@@ -421,7 +422,7 @@ function ChalkBox_AuctionBrowserMount(ah)
     divider:SetPoint("TOPLEFT",f,"TOPLEFT",379,-44)
     Paint(divider,0.72,0.50,0.28,0.50)
     labels.item=Font(f,"GameFontNormal",398,-52,326)
-    labels.context=Font(f,"GameFontHighlightSmall",398,-74,326)
+    labels.context=Font(f,"GameFontHighlightSmall",398,-74,250)
     Tint(labels.context,colors.muted)
     Font(f,"GameFontHighlightSmall",398,-94,190):SetText("LATEST LOW ASK / UNIT")
     labels.price=Font(f,"GameFontNormalLarge",398,-108,180)
@@ -433,13 +434,13 @@ function ChalkBox_AuctionBrowserMount(ah)
         DrawDetails()
     end)
     local chart=CreateFrame("Frame",nil,f)
-    chart:SetSize(317,135)
-    chart:SetPoint("TOPLEFT",f,"TOPLEFT",396,-143)
+    chart:SetSize(317,120)
+    chart:SetPoint("TOPLEFT",f,"TOPLEFT",396,-136)
     labels.chart=chart
     local chartBG=chart:CreateTexture(nil,"BACKGROUND")
     chartBG:SetAllPoints(chart)
     Paint(chartBG,0.035,0.045,0.050,0.95)
-    for y=13,126,36 do
+    for y=12,110,30 do
         local grid=chart:CreateTexture(nil,"ARTWORK")
         grid:SetSize(317,1)
         grid:SetPoint("BOTTOMLEFT",chart,"BOTTOMLEFT",0,y)
@@ -484,11 +485,11 @@ function ChalkBox_AuctionBrowserMount(ah)
         end)
         dot:Hide();dots[i]=dot
     end
-    labels.hover=Font(f,"GameFontHighlightSmall",399,-282,310)
+    labels.hover=Font(f,"GameFontHighlightSmall",399,-263,310)
     Tint(labels.hover,colors.muted)
-    labels.range=Font(f,"GameFontHighlightSmall",399,-298,311)
+    labels.range=Font(f,"GameFontHighlightSmall",399,-280,311)
     Tint(labels.range,colors.blue)
-    labels.detail=Font(f,"GameFontHighlightSmall",399,-315,316)
+    labels.detail=Font(f,"GameFontHighlightSmall",399,-298,316)
     Tint(labels.detail,colors.muted)
     labels.hover:SetText("Hover chart points for exact scan prices")
     f:SetScript("OnShow",function()
