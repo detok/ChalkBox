@@ -143,12 +143,17 @@ local function RaisePin(pin,canvas)
     end
     if type(pin.SetFrameStrata)=="function" then
         local strata=world and Call(world.GetFrameStrata,world)
-        if type(strata)=="string" then
+        if type(strata)=="string" and
+            Call(pin.GetFrameStrata,pin)~=strata then
             pcall(pin.SetFrameStrata,pin,strata)
         end
     end
-    if type(pin.SetFrameLevel)=="function" then
-        pcall(pin.SetFrameLevel,pin,math.min(9900,top+60))
+    -- Discoveries' own working map sidecar uses level >=200. Apply the
+    -- same conservative floor to cosmetic pins (within the map canvas).
+    local wanted=math.min(9900,math.max(200,top+60))
+    if type(pin.SetFrameLevel)=="function" and
+        Call(pin.GetFrameLevel,pin)~=wanted then
+        pcall(pin.SetFrameLevel,pin,wanted)
     end
 end
 local function MakePin(canvas,index)
