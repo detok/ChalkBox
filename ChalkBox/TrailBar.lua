@@ -660,7 +660,6 @@ local function CreateBar()
             if (a.unknown or 0)>0 then
                 lines[#lines+1]="Unknown: "..a.unknown
             end
-            lines[#lines+1]="Left-click: open / close all bags"
             return lines
         end},
         {"gear","Durability",function()
