@@ -468,15 +468,15 @@ local function Refresh()
             end
             local chosen=selectedItemID==item.itemID
             Tint(row.name,chosen and COLOR.ready or COLOR.neutral)
-            if row.selectedBack then
-                if chosen then row.selectedBack:Show()
-                else row.selectedBack:Hide() end
+            if row.frame.selectedBack then
+                if chosen then row.frame.selectedBack:Show()
+                else row.frame.selectedBack:Hide() end
             end
             row.frame.marketView=view
             row.frame.marketData=item
             row.frame:Show()
         else
-            if row.selectedBack then row.selectedBack:Hide() end
+            if row.frame.selectedBack then row.frame.selectedBack:Hide() end
             row.frame.marketData=nil
             row.frame.marketView=nil
             row.frame:Hide()
