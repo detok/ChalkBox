@@ -134,8 +134,9 @@ local window
 for _,f in ipairs(frames) do if f.name=="ChalkBoxCombatMeterFrame" then window=f end end
 assert(window and not window.shown and window.w==326 and window.h==266,
     "meter starts hidden at login")
-assert(window.resizable==true and window.alpha==0.94,
-    "window resizable by default, with saved opacity")
+assert(window.resizable==true and window.alpha==1
+    and window.background.color[4]==0.70,
+    "meter starts with Bar-like independent background opacity and full-strength text")
 local function Flush()
     local todo=queued
     queued={}
@@ -215,12 +216,20 @@ local slider
 for _,f in ipairs(frames) do
     if f.kind=="Slider" then slider=f end
 end
-assert(slider and slider.value==94,"opacity slider shown on the meter window")
+assert(slider and slider.value==70 and slider.min==0,
+    "meter background slider defaults to 70%, supporting the Bar's 0-100 range")
 slider:SetValue(75)
-assert(ChalkBoxDB.meter.opacity==0.75 and window.alpha==0.75,
-    "on-window transparency slider changes visibility and saves preference")
+assert(ChalkBoxDB.meter.opacity==0.75 and window.alpha==1
+    and window.background.color[4]==0.75,
+    "meter background opacity changes without fading text and icons")
 ChalkBox_MeterCommand("opacity 60")
-assert(window.alpha==0.60,"slash opacity setting uses same state")
+assert(window.alpha==1 and window.background.color[4]==0.60,
+    "slash opacity setting changes only the background")
+ChalkBox_MeterCommand("opacity 0")
+assert(window.alpha==1 and window.background.color[4]==0
+    and name1:IsShown() and icons[1]:IsShown(),
+    "fully transparent meter still shows the player's data and icons")
+ChalkBox_MeterCommand("opacity 60")
 ChalkBox_MeterCommand("icons spec")
 Flush()
 assert(ChalkBox_MeterStatus().iconMode=="spec"
