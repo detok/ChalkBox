@@ -21,8 +21,8 @@ local function Frame(kind,name,parent)
     function f:Show() self.shown=true end
     function f:Hide() self.shown=false end
     function f:IsShown() return self.shown end
-    function f:CreateTexture()
-        local tex={parent=self,layer=select(2,...)}
+    function f:CreateTexture(_,layer)
+        local tex={parent=self,layer=layer}
         function tex:SetDrawLayer(layer,order)
             self.layer,self.order=layer,order
         end
