@@ -210,6 +210,18 @@ _G.ChalkBox_AuctionRows=function()
     return {{name="Linen Cloth",itemID=2589,low=1500,
         average=nil,listings=nil,quantity=24}}
 end
+-- Compact Market graph must use saved observations and never send AH queries.
+local chartReads=0
+local history={{t=1700000000,low=1500},{t=1700086400,low=1800},
+    {t=1700259200,low=1350}}
+_G.ChalkBox_AuctionChartHistory=function(itemID)
+    chartReads=chartReads+1
+    if itemID~=2589 then return nil end
+    local copy={}
+    for i,p in ipairs(history) do copy[i]={t=p.t,low=p.low} end
+    return {itemID=itemID,name="Linen Cloth",realm="Whitemane",
+        faction="Alliance",source="browse",points=copy}
+end
 _G.ChalkBox_AuctionScan=function() browseScans=browseScans+1;return true end
 _G.ChalkBox_AuctionFullScan=function() fullScans=fullScans+1;return true end
 local bagsRead,salesRead=0,0
@@ -325,7 +337,9 @@ assert(Text("24 units") and
                 font.text:find("Browse prices",1,true) then return true end
         end
     end)(),"browse summaries label their source clearly")
-assert(fullScans==0 and browseScans==0)
+assert(fullScans==0 and browseScans==0 and chartReads==0 and
+    Text("Click an item to view its trend"),
+    "inline preview is idle until a player selects an item")
 -- Size-aware pagination: the photographed 440px native AH leaves 316px
 -- for content after its title/footer; 4 result rows can fit without overlap.
 local items={}
@@ -386,10 +400,49 @@ assert(lowSeen and avgUnknown and unitsSeen and sourceSeen,
     "row hover shows color-coded low, unavailable average, units and source")
 hoverRow.scripts.OnLeave()
 assert(not tip.shown,"hover tooltip hides on mouse leave")
+assert(type(hoverRow.scripts.OnMouseDown)=="function",
+    "Market rows are explicitly selectable without native AH handlers")
+hoverRow.scripts.OnMouseDown(hoverRow,"RightButton")
+assert(chartReads==0,"right-click does not select a history graph")
+hoverRow.scripts.OnMouseDown(hoverRow,"LeftButton")
+assert(chartReads==1 and Text("Linen Cloth  /  LOW ASK")
+    and Text("3 scans: 15s 0c to 13s 50c"),
+    "click displays the selected item's actual saved low asks")
+local dots,bars=0,0
+local sampleDot
+for _,widget in ipairs(allFrames) do
+    if widget.priceSample then
+        dots=dots+1
+        sampleDot=sampleDot or widget
+    end
+    if widget.kind=="Texture" and widget.parent and
+        widget.parent.parent==pane and widget.w==5 and widget.shown then
+        bars=bars+1
+    end
+end
+assert(dots==3 and bars==3,
+    "compact preview plots all three recorded samples with texture fallback")
+sampleDot.scripts.OnEnter(sampleDot)
+assert(tip.shown and tip.lines[2].text=="Lowest ask per unit: 15s 0c",
+    "price dots provide real scan price details on hover")
+sampleDot.scripts.OnLeave()
+assert(not tip.shown and browseScans==0 and fullScans==0 and
+    nativeModeWrites==modeWritesBeforeMarket,
+    "preview is read-only and does not taint auction trading state")
+history[3].low=1400
+status.scannedAt=stamp+3
+pane.scripts.OnUpdate(pane,1.2)
+assert(chartReads==2 and Text("3 scans: 15s 0c to 14s 0c"),
+    "completed scan update redraws selected history without a new query")
 -- My Items and Sales are subviews INSIDE Market; never touch secure
 -- native auction displayMode or Blizzard's native tab registry.
 local modeBefore=nativeModeWrites
 Button("My Items"):Click()
+assert(Text("Click an item to view its trend"),
+    "changing subviews resets stale chart selection")
+rows[1].scripts.OnMouseDown(rows[1],"LeftButton")
+assert(Text("No saved scan for this item"),
+    "item without recorded market history has an honest empty state")
 assert(Text("DE / ITEM") and Text("IN BAG") and Text("My Test Green")
     and bagsRead>0 and rows[1].marketView=="bags",
     "My Items integrates bag/DE appraisal into native Market frame")
