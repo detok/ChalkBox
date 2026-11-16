@@ -553,7 +553,10 @@ local function PrintFight()
 end
 function ChalkBox_MeterPrintFight()
     if not db then db=Settings() end
-    return PrintFight()
+    if type(ChalkBox_NativeMeterPrint)=="function" then
+        return ChalkBox_MeterReportSelected("PARTY")
+    end
+    return PrintFight() -- legacy test/client fallback when native helper absent
 end
 -- Use the native report encoder, validation, configurable Top 3/5/10,
 -- channels and manual copy fallback. Never maintain a second print path.
@@ -747,7 +750,7 @@ function ChalkBox_MeterCommand(input)
     elseif value=="hide" or value=="off" then SetShown(false)
     elseif value=="reset" then ConfirmReset()
     elseif value=="reset confirm" then ResetNative()
-    elseif value=="print" then PrintFight()
+    elseif value=="print" then ChalkBox_MeterPrintFight()
     elseif value:match("^native%s+") then
         if type(ChalkBox_NativeMeterCommand)=="function" then
             ChalkBox_NativeMeterCommand(value:match("^native%s+(.+)$"))
