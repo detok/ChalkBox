@@ -43,3 +43,6 @@ This is the **versioned documentation home** for ChalkBox. GitHub has a Wiki fea
 A feature is not considered documented merely because it appears in a historical changelog. Update the relevant user workflow, technical reference and release notes whenever behavior changes.
 
 [Back to project README](../README.md) · [Report an issue](https://github.com/detok/ChalkBox/issues/new/choose)
+
+
+**2.2.23 beta candidate:** The optional Combat Meter report now checks Forever chat restrictions and provides a copyable summary when manually sending the report is denied. **2.2.22 is still the stable version.** See [candidate release notes](https://github.com/detok/ChalkBox/releases) for the beta test build.
