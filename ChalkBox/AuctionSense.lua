@@ -8,6 +8,7 @@ local MAX_MARKETS=6
 local BATCH=140
 local COOLDOWN=15*60
 local MAX_HISTORY=7
+local DETAIL_MAX_AGE=7*24*3600 -- retain actual full-listing evidence for up to 7 days
 local frame=CreateFrame("Frame")
 local auctionOpen=false
 local job
@@ -106,6 +107,10 @@ function ChalkBox_AuctionStatus()
     local market=key and db.markets[key] or nil
     local age=market and Integer(market.scannedAt) and
         math.max(0,Now()-market.scannedAt) or nil
+    local detailAt=market and market.detailAt
+    if not Integer(detailAt) and market and market.source=="full" then
+        detailAt=market.scannedAt -- older valid full-scan SavedVariables
+    end
     return {available=BrowseAH()~=nil,fullAvailable=FullAH()~=nil,
         open=AtAuctioneer(),busy=job~=nil,mode=job and job.mode or lastMode,
         state=state,progress=progress,error=lastError,
@@ -115,6 +120,7 @@ function ChalkBox_AuctionStatus()
         source=market and market.source or nil,
         items=market and market.itemCount or 0,
         scannedAt=market and market.scannedAt or nil,age=age,
+        detailAge=Integer(detailAt) and math.max(0,Now()-detailAt) or nil,
         cooldown=math.max(0,db.nextAllowed-Now()),
         tooltip=db.tooltip~=false}
 end
@@ -130,6 +136,22 @@ local function Money(copper)
     if s>0 then return ("%ds %dc"):format(s,c) end
     return c.."c"
 end
+-- Browse summaries cannot produce an average. Carry forward a real full
+-- snapshot only with its own timestamp; never pretend it was just scanned.
+local function Detail(entry,market)
+    if type(entry)~="table" or type(market)~="table" then return end
+    local average,listings,detailAt
+    if market.source=="full" then
+        average,listings,detailAt=entry.average,entry.listings,market.scannedAt
+    else
+        average,listings,detailAt=entry.detailAverage,entry.detailListings,entry.detailAt
+    end
+    if not Integer(average) or not Integer(listings) or listings<1 or
+        not Integer(detailAt) then return end
+    local age=math.max(0,Now()-detailAt)
+    if age>DETAIL_MAX_AGE then return end
+    return average,listings,age,detailAt
+end
 function ChalkBox_AuctionPrice(item)
     local id=ItemID(item)
     local key=MarketID()
@@ -137,8 +159,10 @@ function ChalkBox_AuctionPrice(item)
     local entry=id and market and market.items and market.items[tostring(id)]
     if type(entry)~="table" or not Integer(entry.low) then return nil end
     local age=math.max(0,Now()-(market.scannedAt or 0))
-    return {itemID=id,name=entry.name,low=entry.low,average=entry.average,
-        quantity=entry.quantity,listings=entry.listings,
+    local average,listings,detailAge,detailAt=Detail(entry,market)
+    return {itemID=id,name=entry.name,low=entry.low,average=average,
+        quantity=entry.quantity,listings=listings,
+        detailAge=detailAge,detailAt=detailAt,
         market=key,age=age,scannedAt=market.scannedAt,
         stale=age>24*3600,mixed=entry.mixed==true,
         source=market.source or "replicate",kind="asking"}
@@ -198,7 +222,18 @@ function ChalkBox_AuctionTooltip(tooltip,link)
         "count",0.51,0.76,0.98)
     Metric("Units",price.quantity and tostring(price.quantity) or "—",
         "text",0.85,0.87,0.88)
-    Line(source.."  ·  "..when,"muted",0.65,0.70,0.73)
+    Line(source.." low price  ·  "..when,"muted",0.65,0.70,0.73)
+    if price.detailAge and price.source=="browse" then
+        local d=price.detailAge
+        local detailWhen=d<3600 and "under 1h" or
+            (d<86400 and math.floor(d/3600).."h" or
+            math.floor(d/86400).."d")
+        Line("Avg / listings: last full scan ("..detailWhen.." old)",
+            "muted",0.65,0.70,0.73)
+    elseif not price.average then
+        Line("Avg / listings need a successful full scan",
+            "muted",0.65,0.70,0.73)
+    end
     if price.mixed then
         Line("MIXED VARIANTS  ·  Check exact gear","warning",
             0.98,0.66,0.33)
@@ -232,10 +267,12 @@ function ChalkBox_AuctionRows(search,limit)
         if search=="" or id:find(search,1,true) or
             (type(entry.name)=="string" and
                 entry.name:lower():find(search,1,true)) then
+            local avg,lots,detailAge=Detail(entry,market)
             results[#results+1]={itemID=tonumber(id),
                 name=entry.name or ("Item #"..id),low=entry.low,
-                average=entry.average,quantity=entry.quantity,
-                listings=entry.listings,mixed=entry.mixed==true}
+                average=avg,quantity=entry.quantity,
+                listings=lots,detailAge=detailAge,
+                mixed=entry.mixed==true}
         end
     end
     table.sort(results,function(a,b)
@@ -276,6 +313,19 @@ local function Commit(scan)
     end
     local db=State()
     local old=db.markets[id]
+    if scan.mode=="browse" and old and type(old.items)=="table" then
+        -- Keep the last known *full* auction evidence when the player
+        -- refreshes browse minima. Its age remains independently visible.
+        for itemID,item in pairs(items) do
+            local prev=old.items[itemID]
+            local avg,lots,_,at=Detail(prev,old)
+            if avg and lots and at then
+                item.detailAverage=avg
+                item.detailListings=lots
+                item.detailAt=at
+            end
+        end
+    end
     if old and type(old.items)=="table" then
         for itemID,item in pairs(items) do
             local previous=old.items[itemID]
@@ -297,6 +347,9 @@ local function Commit(scan)
         end
     end
     db.markets[id]={realm=realm,faction=faction,scannedAt=Now(),
+        detailAt=scan.mode=="full" and Now() or
+            (old and (old.detailAt or
+                (old.source=="full" and old.scannedAt))) or nil,
         auctions=scan.mode=="full" and scan.total or nil,
         itemCount=found,items=items,source=scan.mode,
         bidOnly=scan.bidOnly}
@@ -311,7 +364,7 @@ local function Commit(scan)
     progress=100
     lastError=nil
     if scan.mode=="browse" then
-        Finish(("Saved %d items from market browse"):format(found))
+        Finish(("Saved %d browse prices (low + units). Avg/listings require full data"):format(found))
     else
         local partial=(scan.partial or 0)>0 and
             (" (%d listings with uncached names)"):format(scan.partial) or ""
@@ -599,7 +652,7 @@ local function StartScan(mode)
     progress=0
     lastMode=mode
     lastError=nil
-    state="Requesting full listing snapshot..."
+    state="Requesting full auction snapshot (may take up to 25s to respond)..."
     frame:SetScript("OnUpdate",function(_,elapsed)
         if not job then return end
         if job.phase=="reading" then
@@ -608,9 +661,9 @@ local function StartScan(mode)
             job.waited=job.waited+
                 (type(elapsed)=="number" and elapsed or 0)
             if job.waited>=25 then
-                Abort("Full Scan timed out with no server response. "..
-                    "The 15-minute account-wide replicate cooldown may be active; "..
-                    "Browse Scan is still available.")
+                Abort("No full-scan response in 25s. The server may be on "..
+                    "the account-wide 15m cooldown or refuse replication. "..
+                    "Browse prices remain usable; no averages were invented.")
             end
         end
     end)
