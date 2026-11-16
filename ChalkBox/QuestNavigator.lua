@@ -356,7 +356,9 @@ local function Face()
         if target.kind=="corpse" then
             return nil,"Corpse position unavailable"
         end
-        return nil,"No waypoint for selected quest"
+        return nil,target.kind=="pin" and (reason or
+            "Map pin coordinates unavailable") or
+            "No waypoint for selected quest"
     end
     local player,why=PlayerPosition()
     if not player then return nil,why end
