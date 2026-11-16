@@ -175,11 +175,6 @@ local function OnItemTooltip(tooltip)
     local name, link = tooltip:GetItem()
     if not Public(name) or type(name) ~= "string" then return end
     if not Public(link) then link = nil end
-    -- An optional read-only, hover-driven AH companion. It ignores tooltip
-    -- owners outside the auctioneer and never interacts with buying controls.
-    if type(ChalkBox_PriceLensObserveTooltip)=="function" then
-        pcall(ChalkBox_PriceLensObserveTooltip,tooltip,link)
-    end
     -- DropSense is an independent, opt-in note available only on native
     -- loot-window item tooltips, even when ordinary LootSense advice is off.
     if type(ChalkBox_DropTooltip)=="function" then
