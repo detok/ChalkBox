@@ -451,6 +451,12 @@ local function Refresh()
         end
     end
     labels.page:SetText(("Page %d / %d"):format(page,pages))
+    if labels.empty then
+        labels.empty:SetText(#all==0 and
+            (source=="live" and
+                "Nothing loaded: search in Blizzard Buy, then return." or
+                "No matching saved prices. Clear the search/filter.") or "")
+    end
     if #all==0 then
         selectedID=nil
         pinned=false
@@ -492,7 +498,7 @@ function ChalkBox_AuctionBrowserMount(ah)
     if type(f.SetFrameLevel)=="function" then
         local level=type(ah.GetFrameLevel)=="function" and
             ah:GetFrameLevel() or 20
-        f:SetFrameLevel(level+20)
+        f:SetFrameLevel(level+35)
     end
     if type(f.EnableMouse)=="function" then f:EnableMouse(true) end
     local bg=f:CreateTexture(nil,"BACKGROUND")
@@ -533,6 +539,9 @@ function ChalkBox_AuctionBrowserMount(ah)
         source=source=="saved" and "live" or "saved"
         ControlsChanged()
     end)
+    labels.empty=Font(f,"GameFontHighlightSmall",18,-148,335)
+    Tint(labels.empty,colors.muted)
+    labels.empty:SetText("")
     Font(f,"GameFontNormal",17,-114,237):SetText("ITEM")
     Font(f,"GameFontNormal",259,-114,94):SetText("LOW / UNIT")
     rows={}
