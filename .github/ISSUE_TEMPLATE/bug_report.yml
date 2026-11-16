@@ -5,14 +5,14 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for helping test ChalkBox! Start with the [troubleshooting guide](https://github.com/detok/ChalkBox/blob/main/docs/TROUBLESHOOTING.md).
-        **2.0 map issue?** Try `/chalk drops map` and `/chalk drops map status` and paste the output below.
+        Thanks for helping improve ChalkBox. Start with the [troubleshooting guide](https://github.com/detok/ChalkBox/blob/main/docs/TROUBLESHOOTING.md).
+        **Map issue?** Try `/chalk drops map` and `/chalk drops map status` and paste the output below.
         Never post passwords, account IDs, private chat, tokens, or identifying screenshots.
   - type: input
     id: addon
     attributes:
       label: ChalkBox version
-      placeholder: "2.0.0"
+      placeholder: "2.2.22 (see /chalk update)"
     validations:
       required: true
   - type: dropdown
@@ -35,6 +35,8 @@ body:
     attributes:
       label: ChalkBox feature
       options:
+        - AuctionSense / Full Scan / Market
+        - AuctionInsights / Bags / DisenchantSense
         - Map Discoveries / DropSense
         - MacroForge
         - LootSense / ProfessionSense
@@ -45,7 +47,8 @@ body:
         - CampSense / Reminder Toast
         - Global Appearance
         - Emota / QuietGuard / Bags
-        - Settings / installation / other
+        - Updates / installation
+        - Settings / other
     validations:
       required: true
   - type: textarea
@@ -68,9 +71,10 @@ body:
   - type: textarea
     id: diagnostics
     attributes:
-      label: Helpful diagnostics (especially for map or macro bugs)
-      description: "Map: paste /chalk drops map status. MacroForge: /chalk forge status. Include any related map/UI addons."
+      label: Helpful diagnostics (especially for AuctionSense, map or macros)
+      description: "Auction: /chalk auction status, scan type, cooldown and result message. Map: /chalk drops map status. MacroForge: /chalk forge status. Include related addons."
       placeholder: |
+        /chalk auction status:
         /chalk drops map status:
         Other addons:
         Fullscreen/windowed map:
