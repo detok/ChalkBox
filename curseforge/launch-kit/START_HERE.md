@@ -30,3 +30,6 @@
 6. Verify that public visitors can access the project page, playable download, GitHub issues and support docs.
 
 No installer source files are modified in this publisher kit. Preserve user SavedVariables on all upgrades.
+
+
+**2.2.23 beta candidate:** The optional Combat Meter report now checks Forever chat restrictions and provides a copyable summary when manually sending the report is denied. **2.2.22 is still the stable version.** See [candidate release notes](https://github.com/detok/ChalkBox/releases) for the beta test build.
