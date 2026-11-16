@@ -690,7 +690,7 @@ local function StartScan(mode)
     progress=0
     lastMode=mode
     lastError=nil
-    state="Requesting full auction snapshot (may take up to 25s to respond)..."
+    state="Requesting full auction snapshot; waiting for server response..."
     frame:SetScript("OnUpdate",function(_,elapsed)
         if not job then return end
         if job.phase=="reading" then
@@ -701,10 +701,17 @@ local function StartScan(mode)
             -- An early replication event can precede the server filling the
             -- result count. Retry reading, never issue a second request.
             if AcceptFullResults() then return end
-            if job and job.waited>=25 then
-                Abort("No full-scan response in 25s. The server may be on "..
-                    "the account-wide 15m cooldown or refuse replication. "..
-                    "Browse prices remain usable; no averages were invented.")
+            -- Forever can deliver the replicate event well after 45 seconds.
+            -- Do not abandon a request that may have consumed the account's
+            -- 15-minute allowance. Wait for results, an explicit server drop,
+            -- or the player closing the Auction House.
+            if job and job.waited>=90 then
+                local waiting=math.floor(job.waited)
+                state=("Still awaiting full auction data (%ds)..."):format(waiting)
+                if waiting~=job.lastShownSecond then
+                    job.lastShownSecond=waiting
+                    UIRefresh()
+                end
             end
         end
     end)
@@ -784,6 +791,10 @@ local function OnEvent(_,event,name)
     elseif event=="AUCTION_HOUSE_BROWSE_FAILURE" and job and
         job.mode=="browse" then
         Abort("Browse scan failed. Your last snapshot was kept.")
+    elseif event=="AUCTION_HOUSE_THROTTLED_MESSAGE_DROPPED"
+        and job and job.mode=="full" and job.phase=="waiting" then
+        Abort("Full auction request was dropped by the server. "..
+            "Previous market prices kept.")
     elseif event=="REPLICATE_ITEM_LIST_UPDATE" and job
         and job.mode=="full" and job.phase=="waiting" and
         AtAuctioneer() then
@@ -800,7 +811,8 @@ for _,event in ipairs({"ADDON_LOADED","AUCTION_HOUSE_SHOW",
     "PLAYER_INTERACTION_MANAGER_FRAME_HIDE",
     "AUCTION_HOUSE_BROWSE_RESULTS_UPDATED",
     "AUCTION_HOUSE_BROWSE_RESULTS_ADDED",
-    "AUCTION_HOUSE_BROWSE_FAILURE"}) do
+    "AUCTION_HOUSE_BROWSE_FAILURE",
+    "AUCTION_HOUSE_THROTTLED_MESSAGE_DROPPED"}) do
     pcall(frame.RegisterEvent,frame,event)
 end
 frame:SetScript("OnEvent",OnEvent)
