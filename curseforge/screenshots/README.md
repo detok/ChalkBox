@@ -20,3 +20,7 @@ These ten JPG files are cropped from genuine WoW Forever captures, not artist mo
 **Version warning:** These were captured around **2.0.5**, including the Discoveries journal repair. They are authentic, but not 2.2.22 full-release visual acceptance captures. The wood-framed Discoveries/MacroForge windows and newer dungeon-aware QuestSense UI were added later; review or replace gallery images before presenting them as current. **A new AuctionSense full-market screenshot and a Bags integration screenshot are the two most valuable additions for the stable release.** An item tooltip demonstrates LootSense's quest relevance, not a promise of guaranteed item classification.
 
 When uploading to CurseForge, use these images as actual gameplay screenshots. The artwork under `Artwork/PNG/Editorial-Only/` is illustrative and must not be labeled as in-game UI. Do not upload the screenshots as the addon file.
+
+## New 2.2.22 authentic cropped gallery
+
+The [28-image source review and reproducible cropping recipe](CROP_REVIEW_2026-11-15.md) documents the 16 main and 12 additional **non-generative** screenshot crops. The sanitized image ZIP was packaged separately; source full-screen JPEGs with names and chat must not be published. Do not mistake the original screenshot series for a full Auction House Market-tab capture.
