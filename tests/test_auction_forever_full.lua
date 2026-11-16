@@ -45,6 +45,11 @@ assert(loadfile("AuctionSense.lua"))("ChalkBox")
 Fire("ADDON_LOADED","ChalkBox")
 Fire("AUCTION_HOUSE_SHOW")
 assert(ChalkBox_AuctionFullScan() and requests==1)
+Tick(60)
+Tick(60)
+assert(ChalkBox_AuctionStatus().busy and
+    ChalkBox_AuctionStatus().state:find("awaiting",1,true),
+    "Forever's delayed replicate response must NOT time out at 25 or 45s")
 Fire("REPLICATE_ITEM_LIST_UPDATE")
 assert(ChalkBox_AuctionStatus().busy,
     "early event with zero count must keep waiting instead of discarding")
@@ -77,4 +82,10 @@ now=now+8*24*3600
 assert(ChalkBox_AuctionPrice(2589).average==nil and
     ChalkBox_AuctionPrice(2589).listings==nil,
     "old full samples expire instead of masquerading as fresh data")
+assert(ChalkBox_AuctionFullScan())
+Fire("AUCTION_HOUSE_THROTTLED_MESSAGE_DROPPED")
+assert(not ChalkBox_AuctionStatus().busy and
+    ChalkBox_AuctionStatus().error:find("dropped",1,true)
+    and ChalkBox_AuctionPrice(2589).low==4300,
+    "explicit server throttle-drop aborts cleanly but preserves data")
 print("PASS: delayed Forever replicate event, full weighted asks, cooldown, retained browse minima and independently aging listing samples")
