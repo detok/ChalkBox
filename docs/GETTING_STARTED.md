@@ -53,3 +53,6 @@ If a visible change is not appearing after installing, type `/reload`, verify th
 Run the matching diagnostic, such as `/chalk quests status`, `/chalk drops map status`, `/chalk auction status`, `/chalk loot status` or `/chalk bar status`. See [Troubleshooting](TROUBLESHOOTING.md) or file a [GitHub bug report](https://github.com/detok/ChalkBox/issues/new/choose) with version, client build, steps and the exact error. Never include passwords, account identifiers or private chat.
 
 [Documentation home](README.md) · [User handbook](USER_GUIDE.md) · [Complete commands](COMMANDS.md)
+
+
+**2.2.23 beta candidate:** The optional Combat Meter report now checks Forever chat restrictions and provides a copyable summary when manually sending the report is denied. **2.2.22 is still the stable version.** See [candidate release notes](https://github.com/detok/ChalkBox/releases) for the beta test build.
