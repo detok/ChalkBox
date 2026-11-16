@@ -695,6 +695,27 @@ function ChalkBox_DropCommand(input)
         local chance=ChalkBox_DropCalculate(rate,tries)
         Note(chance and (("%.2f%% chance in %s independent attempts"):format(
             chance,tries)) or "Usage: /chalk drops chance <percent> <attempts>")
+    elseif cmd=="map" and
+        (args=="flights on" or args=="flights off") then
+        local on=args=="flights on"
+        local ok=type(ChalkBox_DiscoveriesKnownFlightsSet)=="function" and
+            ChalkBox_DiscoveriesKnownFlightsSet(on)
+        Note(ok and ("Known flight paths "..(on and "shown." or "hidden."))
+            or "Known flight path filter is unavailable.")
+    elseif cmd=="map" and args=="flights status" then
+        local fn=ChalkBox_DiscoveriesKnownFlightsStatus
+        local info=type(fn)=="function" and fn() or nil
+        if info then
+            Note(("%d verified learned flight paths. %d visible pins."):format(
+                info.verified,info.mapPins))
+            Note(("Map Filter checkbox %s; overlay %s; map %s."):format(
+                info.menuHook and "installed" or "unavailable",
+                info.enabled and "ON" or "OFF",
+                tostring(info.mapID or "not shown")))
+            if info.verified==0 then
+                Note("Visit a flight master and open the taxi map to confirm known paths.")
+            end
+        else Note("Known flight path diagnostics unavailable.") end
     elseif cmd=="map" and args=="reset" then
         local ok=type(ChalkBox_MapDiscoveriesResetButton)=="function"
             and ChalkBox_MapDiscoveriesResetButton()
