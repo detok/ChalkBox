@@ -12,7 +12,7 @@ Quality-of-life tools for **World of Warcraft: Forever** — loot discoveries, q
 
 </div>
 
-**Testing 2.2.23 (beta):** A targeted Forever DPS chat-report fix provides a manual copyable summary when the game rejects an addon message. Our 2.2.22 installer remains the latest stable build; [beta builds are listed separately](https://github.com/detok/ChalkBox/releases).
+**Testing 2.2.24 (GitHub prerelease):** A release-candidate polish pass brings the compact meter's shared reporting menu, Bar bag clicks, corrected Market tab highlights and experimental auction price charts under settings. [Follow the 2.2.24 live smoke checklist](docs/RELEASE_CANDIDATE_TEST_2.2.24.md). **2.2.22 remains the latest stable build.**
 
 ChalkBox installs as **one `ChalkBox` folder**. Its bundled recipe data needs no separate download. Features are managed through Blizzard's native **Options → AddOns → ChalkBox** pages, or by typing `/chalk`.
 
