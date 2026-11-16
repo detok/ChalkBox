@@ -52,8 +52,9 @@
 | `/chalk auction full` | Request full listings; server cooldown and API limitations apply |
 | `/chalk auction status` | Current scan state and market snapshot |
 | `/chalk auction tooltip on` / `off` | Show or hide AH asking-price annotations |
-| `/chalk auction lens` / `lens off` | Open or close the optional read-only Price Lens beside the native Buy page |
-| `/chalk auction lens 2589` | Inspect the saved market history for an item ID without opening any new AH scan |
+| `/chalk auction browser` | Open the independent AuctionSense Browser tab (read-only saved prices) |
+| `/chalk auction browser 2589` | Open Browser and display the history for a known item ID without scanning |
+| `/chalk auction lens` | Compatibility alias for the Browser tab; the floating Price Lens has been removed |
 
 **Quest compass (OFF by default):** `/chalk nav on|off|auto|next|prev|follow QUEST_ID|original|classic|hd|size 32-72|lock|unlock|reset|status`. The small outdoor arrow follows only accepted quests with verified waypoints. Auto honors Blizzard's super-tracked quest first, then the nearest known target. It never sets/clears your map pin or deletes other manual quest watches. It can add the selected accepted quest to Blizzard's native watch list, and never guesses an instance direction. See [Navigation](QUEST_NAVIGATION.md).
 
