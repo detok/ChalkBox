@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.22 — Full auction snapshot completeness (Beta)
+
+- Monitor growing Forever replicated auction counts through the entire scan and confirm a final stable count before committing.
+- Bound unreadable indexes and guard corrupt cumulative price totals while preserving previous complete snapshots.
+- Keep all UI layouts, item calculations and protected trading controls unchanged.
+
 ## 2.2.21 — Forever full-scan lifecycle and Market tab (Beta)
 
 - Track full snapshot cooldown from request acceptance, allow ten-minute reply window, and settle growing listing counts before processing.
