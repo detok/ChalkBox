@@ -55,14 +55,25 @@ jobs:
           version=$(sed -n 's/^## Version: //p' ChalkBox/ChalkBox.toc | head -1)
           test -n "$version"
           tag="v$version"
+          # Release status is explicit and version-controlled. Documentation
+          # edits can promote the already-tested version without replacing its
+          # playable ZIP or moving the existing release tag.
+          channel=$(cat docs/RELEASE_CHANNEL.txt)
+          case "$channel" in stable|beta) ;; *) echo "Invalid release channel: $channel"; exit 1 ;; esac
           if gh release view "$tag" >/dev/null 2>&1; then
-            echo "$tag already exists: preserving the addon and refreshing the media kit."
+            echo "$tag exists: preserve the playable ZIP; refresh publisher media."
             gh release upload "$tag" "dist/ChalkBox-CurseForge-Media-$version.zip" --clobber
+            if [ "$channel" = "stable" ]; then
+              gh release edit "$tag" --prerelease=false --notes-file docs/RELEASE_NOTES.md
+            else
+              gh release edit "$tag" --prerelease=true --notes-file docs/RELEASE_NOTES.md
+            fi
           else
+            args=()
+            if [ "$channel" = "beta" ]; then args+=(--prerelease); fi
             gh release create "$tag" "dist/ChalkBox-$version.zip" \
               "dist/ChalkBox-CurseForge-Media-$version.zip" \
               --target "$GITHUB_SHA" \
               --title "ChalkBox $tag" \
-              --notes-file docs/RELEASE_NOTES.md \
-              --prerelease
+              --notes-file docs/RELEASE_NOTES.md "${args[@]}"
           fi

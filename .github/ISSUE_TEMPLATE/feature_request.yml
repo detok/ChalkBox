@@ -24,6 +24,7 @@ body:
     attributes:
       label: Feature area
       options:
+        - AuctionSense / AuctionInsights / DisenchantSense
         - Map Discoveries / DropSense
         - MacroForge
         - LootSense / ProfessionSense

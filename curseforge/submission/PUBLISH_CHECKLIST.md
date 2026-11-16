@@ -1,14 +1,14 @@
-# ChalkBox publisher checklist — 2.2.10
+# ChalkBox publisher checklist — 2.2.22
 
-This is a **manual checklist**, not proof that Forever client behavior or a CurseForge project has been approved. The current source of truth for build/publishing mechanics is [Release process](../../docs/RELEASE_PROCESS.md).
+This is a **stable-release publishing checklist**, not proof that Forever client behavior or a CurseForge project has been approved. The current source of truth for build/publishing mechanics is [Release process](../../docs/RELEASE_PROCESS.md).
 
 ## Build and verify
 
-- [ ] Both `ChalkBox.toc` and `ChalkBox_Camelot.toc` declare **2.2.10**, with unchanged intended interface IDs and identical Lua load order.
+- [ ] Both `ChalkBox.toc` and `ChalkBox_Camelot.toc` declare **2.2.22**, with unchanged intended interface IDs and identical Lua load order.
 - [ ] PR CI passes Lua 5.1 syntax, the complete module test suite, addon ZIP, media ZIP and current-changelog checks.
 - [ ] The main-branch workflow has published the exact release/tag and both assets are present.
-- [ ] Playable `ChalkBox-2.2.10.zip` has **one `ChalkBox/` root**. No source tests or screenshots are inside it.
-- [ ] The separate `ChalkBox-CurseForge-Media-2.2.10.zip` contains listing copy, 6 SVGs, 9 PNGs and 10 real gameplay JPGs.
+- [ ] Playable `ChalkBox-2.2.22.zip` has **one `ChalkBox/` root**. No source tests or screenshots are inside it.
+- [ ] The separate `ChalkBox-CurseForge-Media-2.2.22.zip` contains listing copy, 6 SVGs, 9 PNGs and 10 real gameplay JPGs.
 - [ ] No missing required bundled library notices. Do not assume a top-level NOTICE exists; use the verified licenses shipped in `ChalkBox/` and `ChalkBox/Libs/`.
 
 ## Current in-game smoke checks

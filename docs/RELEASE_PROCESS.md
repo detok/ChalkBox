@@ -1,6 +1,6 @@
 # Release and publishing runbook
 
-**Development candidate: 2.2.22; verify released ZIPs at GitHub Releases before claiming publication.**
+**Current stable release: 2.2.22.** Verify actual GitHub release assets before sharing links.
 
 There are two different downloadable ZIPs. The playable addon ZIP and the CurseForge publishing/media ZIP are not interchangeable.
 
@@ -38,7 +38,7 @@ Never upload the media ZIP as the playable addon, or claim that GitHub's generat
 3. Builds/verifies the deterministic, single-root addon ZIP via `scripts/test_packages.py`.
 4. Renders/verifies the media ZIP via `scripts/test_curseforge_kit.py`.
 5. Uploads both ZIPs as workflow artifacts.
-6. **Only on `main` push:** checks `vX.Y.Z`. If a new tag, creates a **GitHub prerelease** with both ZIPs and `docs/RELEASE_NOTES.md`. If the tag already exists, preserves the game release asset and refreshes **only the media ZIP**.
+6. **Only on `main` push:** reads `docs/RELEASE_CHANNEL.txt` (`stable` or `beta`). If a new tag, creates a release matching the channel. If the tag already exists, preserves the playable game ZIP, refreshes publisher media, and synchronizes release notes / stable or prerelease status. Never silently replace an existing playable asset.
 
 A successful PR workflow is not proof a release is published: verify the **main push workflow** and the actual [GitHub Releases](https://github.com/detok/ChalkBox/releases) listing before giving users a download link.
 

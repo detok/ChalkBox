@@ -1,0 +1,44 @@
+name: Help with ChalkBox
+description: Ask for setup help or help diagnosing a feature, without posting private information
+title: "[Help] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before posting, see the [install guide](https://github.com/detok/ChalkBox/blob/main/docs/GETTING_STARTED.md) and [troubleshooting](https://github.com/detok/ChalkBox/blob/main/docs/TROUBLESHOOTING.md).
+        Do not include account IDs, private chat, passwords, tokens, or unredacted personal information.
+  - type: input
+    id: addon
+    attributes:
+      label: ChalkBox version
+      placeholder: "2.2.22 (use /chalk update)"
+    validations:
+      required: true
+  - type: dropdown
+    id: module
+    attributes:
+      label: What do you need help with?
+      options:
+        - Installation or updating
+        - AuctionSense / Market
+        - AuctionInsights / Bags / DisenchantSense
+        - LootSense / Professions
+        - QuestSense / Navigation
+        - DropSense / Discoveries
+        - MacroForge
+        - The Bar / Combat Meter
+        - Other ChalkBox feature
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: What are you trying to do?
+      description: Include what you clicked, what happened, and any in-game message.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Optional game build and screenshots
+      description: Share only necessary, redacted screenshots and harmless diagnostics.

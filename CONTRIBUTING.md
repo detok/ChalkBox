@@ -4,6 +4,12 @@ Thanks for helping improve a practical addon for **World of Warcraft: Forever**.
 
 Start with the [documentation home](docs/README.md), [architecture](docs/ARCHITECTURE.md), [developer guide](docs/DEVELOPMENT.md) and [maintainer runbook](docs/MAINTAINER_RUNBOOK.md).
 
+## For players: reporting a problem
+
+Use the [GitHub issue forms](https://github.com/detok/ChalkBox/issues/new/choose). Pick **Bug**, **Compatibility**, or **Help**; include the installed version from `/chalk update`, Forever client build if available, and steps to reproduce. For AuctionSense issues, paste `/chalk auction status` and say whether you used **Scan Market** or **Full listings**. You do not need to know Lua to make a helpful report.
+
+Please search existing issues first, avoid posting identifying screenshots or private chat, and keep unrelated reports separate. Preserve your SavedVariables when troubleshooting. If an issue turns out to be a question instead of a defect, that's fine—good reports improve the project.
+
 ## Before changing code
 
 1. Read the latest `main` and check [existing issues](https://github.com/detok/ChalkBox/issues). For a new module or major design change, open a feature request describing why it belongs in ChalkBox.
@@ -22,7 +28,7 @@ Describe:
 - **Safety and constraints:** combat, quest/map, bank, auction cooldown, secret/protected APIs, default-off social behavior.
 - **Documentation:** update the [user handbook](docs/USER_GUIDE.md), [commands](docs/COMMANDS.md), [troubleshooting](docs/TROUBLESHOOTING.md) or [release notes](docs/RELEASE_NOTES.md) as appropriate.
 
-Use the repository's [PR template](.github/PULL_REQUEST_TEMPLATE.md). For general reports use the [bug and feature templates](https://github.com/detok/ChalkBox/issues/new/choose).
+Use the repository's [PR template](.github/PULL_REQUEST_TEMPLATE.md). For bugs, compatibility problems, setup questions, and suggestions use the [issue forms](https://github.com/detok/ChalkBox/issues/new/choose).
 
 ## Run the full checks
 

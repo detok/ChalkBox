@@ -1,29 +1,40 @@
-# ChalkBox — short listing copy (2.2.10)
+# ChalkBox — public listing copy (2.2.22 stable)
 
-**Short description**
+## Short description
 
-One WoW Forever addon for personal loot discoveries, dungeon-aware quest tracking, macros, auction insights and a customizable HUD.
+One WoW Forever addon for loot and quest insights, auction prices, macros, discoveries and a customizable HUD.
 
-**Alternate headline**
+## Short alternative
 
-Know what dropped. Find your quests. Build your buttons. Keep playing.
+One addon. Better information. Less UI clutter.
 
-**Suggested GitHub About**
+## Feature headline
 
-Quality-of-life tools for WoW Forever: loot discoveries, quests, MacroForge, auctions and a compact HUD.
+Your loot, auctions, professions and adventure tools—working together.
 
-**Current release announcement**
+## Release announcement
 
-ChalkBox 2.2.10 makes Smart QuestSense dungeon-aware: inside a recognized party dungeon, it shows only accepted quests confirmed for that specific instance and restores prior manual watches when you exit. If the client cannot verify the match, it preserves the tracker rather than guessing. The release retains loot-location observations, the redesigned wood-framed MacroForge/Discoveries UI, AuctionSense, the Bar and the rest of ChalkBox.
+**ChalkBox 2.2.22 is our first stable release!**
 
-**Suggested captions for actual gameplay captures**
+After a lot of real-client testing, AuctionSense's full Forever market scan is now working and feeding actual asking-price data into the connected inventory and item-insight features. ChalkBox also brings together LootSense, QuestSense, Discoveries, MacroForge, The Bar, and the rest of our low-clutter adventure tools in a single addon.
 
-- Discoveries: Your personally observed loot, organized by zone and creature, with optional recent outdoor loot coordinates.
-- MacroForge: Build and save macros from your known spells, with an explicit copy/install step.
-- The Bar: Arrange a compact row of XP, inventory, gear, gold and latency.
-- AuctionSense: Read observed asking prices after an explicit market scan.
-- QuestSense: Manage your native quest tracker, including verified dungeon watches.
+This is a stable release, not the end of development. If something acts up on your Forever client, please use the GitHub issue forms so we can investigate it without losing the context.
 
-**Creator credit:** ChalkBox by Detok Whitemaine.
+## Suggested public image captions
 
-Use only genuine Forever client captures as screenshots. The art folder includes *editorial illustrations* that must not be labeled as game UI.
+- **Discoveries:** Your observed loot, organized by area and source.
+- **LootSense:** See quest and profession context before deciding what to keep.
+- **The Bar:** XP, bags, gear, gold and other information where you want it.
+- **MacroForge:** Build macros from your known abilities; preview and install manually.
+- **AuctionSense (new capture needed):** Browse actual market asking prices and real listing counts after a completed full scan.
+- **Bags (new capture needed):** Compare items against fresh observed auction asks, with no automatic sales.
+
+## Suggested GitHub About
+
+An all-in-one quality-of-life addon for WoW Forever: loot insights, quests, auctions, macros and a compact HUD.
+
+## Creator credit
+
+ChalkBox by **Detok Whitemaine**. Independent community addon; not endorsed by Blizzard.
+
+**Only genuine gameplay screenshots** belong in the CurseForge gameplay gallery. Existing editorial art is for banners and promotional illustrations.

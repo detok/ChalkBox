@@ -1,34 +1,32 @@
-# ChalkBox 2.2.22 (unpublished candidate) — publisher's launch kit
+# ChalkBox 2.2.22 — stable-release publisher's kit
 
-**Draft only:** the below 2.2.17 download links point to the previously published assets. The 2.2.22 package must be built, tested, and checked in-game before these are replaced for publication.
+**Two distinct files:**
 
-**This is the separate `ChalkBox-CurseForge-Media-2.2.17.zip`. It is NOT a playable addon.**
+- **Installable game addon:** [ChalkBox-2.2.22.zip](https://github.com/detok/ChalkBox/releases/download/v2.2.22/ChalkBox-2.2.22.zip). Contains one `ChalkBox/` folder; upload this as the playable CurseForge file.
+- **Publisher materials:** [ChalkBox-CurseForge-Media-2.2.22.zip](https://github.com/detok/ChalkBox/releases/download/v2.2.22/ChalkBox-CurseForge-Media-2.2.22.zip). Contains the art, gallery captures, site text and checklists; **not installable**.
 
-The playable archive is **`ChalkBox-2.2.17.zip`**, available from [GitHub Releases](https://github.com/detok/ChalkBox/releases/tag/v2.2.17). Inside it is one game-installable `ChalkBox/` directory.
+## What goes where
 
-## Where each media-kit file goes
-
-| Publishing purpose | Source inside media ZIP |
+| Location on the site | What to use in the media ZIP |
 | --- | --- |
-| Square project avatar | `Artwork/PNG/Upload-Ready/Project-Icon-512.png` |
-| Header and social artwork | `Artwork/PNG/Upload-Ready/ChalkBox-Social-Banner-1200x630.png` |
-| Full page copy | `Copy-and-Checklist/copy/PROJECT_DESCRIPTION.md` |
-| Short listing / metadata | `Copy-and-Checklist/copy/PROJECT_FIELDS.md` and `SHORT_COPY.md` |
-| **Current file changelog** | `Copy-and-Checklist/copy/FILE_CHANGELOG_CURRENT.md` |
-| Player command reference | `Copy-and-Checklist/copy/COMMANDS.md` — generated from the canonical repo handbook |
-| Genuine game captures | `Screenshots/` — ten actual WoW Forever JPGs |
-| Complete publisher QA checklist | `Copy-and-Checklist/submission/PUBLISH_CHECKLIST.md` |
+| Project icon / avatar | `Artwork/PNG/Upload-Ready/Project-Icon-512.png` |
+| Promotional/social banner, where supported | `Artwork/PNG/Upload-Ready/ChalkBox-Social-Banner-1200x630.png` |
+| Full project description | `Copy-and-Checklist/copy/PROJECT_DESCRIPTION.md` |
+| Short summary / settings | `Copy-and-Checklist/copy/PROJECT_FIELDS.md` and `SHORT_COPY.md` |
+| Per-file release changelog | `Copy-and-Checklist/copy/FILE_CHANGELOG_CURRENT.md` |
+| Gameplay gallery | Genuine captures under `Screenshots/`; consult `screenshots/README.md` for age and ordering |
+| Support/help URL | https://github.com/detok/ChalkBox/issues/new/choose |
+| GitHub social preview | `Artwork/PNG/Upload-Ready/ChalkBox-Social-Banner-1200x630.png` (upload in GitHub Settings) |
 
-Editorial SVG and PNG hero/feature illustrations are **not** screenshots. The existing gameplay images are genuine, but were captured on an earlier UI release; review them before claiming they show the current appearance.
+**Editorial-Only artwork is not a game screenshot.** The ten original gallery images were recorded on an earlier build. Keep authentic historical captures only if they still represent the current module; prioritize fresh AuctionSense full-scan and bag-integration screenshots.
 
-## Before publishing
+## Release steps
 
-1. Verify that the actual CurseForge portal offers a supported **game flavor and client version compatible with WoW Forever**. Never select Retail/Classic merely to pass the form.
-2. Confirm CI and the local addon/media package tests are green, both TOC versions match and the playable ZIP has one `ChalkBox/` root.
-3. Perform in-client smoke tests for the changed modules. Smart QuestSense in a dungeon and the current wood-framed UI have client-specific behaviors not proven by mocked Lua tests alone.
-4. Update the current file changelog to match the current TOC version. Historical `FILE_CHANGELOG_X.Y.Z.md` pages are archives.
-5. Review the screen captures, credits and licenses; remove sensitive chat and identifiable account information.
-6. Upload the playable addon ZIP as a **game file**, and use the separate media contents in appropriate art/description fields.
-7. Share a CurseForge URL **only after the listing exists and approval is verified**.
+1. Ensure the intended ZIP on CurseForge is **2.2.22** and update Release Type to **Release** in the author portal. No new file is required solely to change its type, if the portal allows editing the existing upload.
+2. Copy the current project description and short summary into the project page. Leave the old canonical links in place only if they still point to current materials.
+3. Upload the square project avatar. Use banner art only where an actual banner or social-image field exists.
+4. Add genuine current-client game captures to the gallery. Do not label editorial artwork as actual gameplay.
+5. Verify supported WoW Forever game flavor, license, version, dependency, and file status before saving.
+6. Verify that public visitors can access the project page, playable download, GitHub issues and support docs.
 
-[Full release process](https://github.com/detok/ChalkBox/blob/main/docs/RELEASE_PROCESS.md) · [Publisher checklist](../submission/PUBLISH_CHECKLIST.md) · [Source](https://github.com/detok/ChalkBox)
+No installer source files are modified in this publisher kit. Preserve user SavedVariables on all upgrades.

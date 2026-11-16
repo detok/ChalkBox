@@ -1,4 +1,4 @@
-# ChalkBox feature claims and evidence (2.2.17)
+# ChalkBox feature claims and evidence (2.2.22 stable)
 
 Use this file when reviewing release announcements and the CurseForge listing. It reflects shipped code and automated tests; **live-client validation is still a separate step**.
 
@@ -7,7 +7,7 @@ Use this file when reviewing release announcements and the CurseForge listing. I
 | LootSense, ProfessionSense | Personal KEEP, quest item name/progress when matched, observed learned recipe evidence and bundled potential recipe uses | That unknown items are safe to sell; every custom quest item has a matched title |
 | DropSense | Readable loot-window item/source tracking, zones and dungeons, up to six recent outdoor loot-window positions | Official server odds, every kill counted, exact corpse/spawn location |
 | Discoveries | Searchable, sortable map-docked personal journal, source/area filters, item hover, warm frame | Every zone already has a history or every atlas exists on each client |
-| AuctionSense | Manual browse market asking prices, optional server-throttled full listings accepting uncached names with valid IDs/prices, scan age and market context | Realized sales, automatic trades, unprovided listing averages |
+| AuctionSense | Manual browse asks; live-playtested Forever full listings with low asks, weighted averages, real listing counts, bounded batch processing and scan age/market context | Realized sales, automatic trades, unprovided listing averages |
 | AuctionInsights | Read-only bag appraisal and observed seller-mail Sales & Stats in the native AH | Complete lifetime sales/profit data |
 | DisenchantSense | Read-only modeled outcomes and value estimates when supported | Guaranteed drops, exact unknown Forever odds, automated DE |
 | QuestSense Navigation | Bare arrow with Original WoW, Blizzard Navigation or 256px HD art, yard-distance label and native/legacy right-click menu; selected quest stays watched in Blizzard's tracker; real accepted quest waypoints and conservative unavailable state | No route database, instant dungeon GPS or modification of Blizzard map pins or quest watches |
@@ -24,7 +24,7 @@ Use this file when reviewing release announcements and the CurseForge listing. I
 ## Visual and distribution claims
 
 - Current visual direction: wood-derived Discoveries/MacroForge with a native outer frame, separate readable inset sections and fallback if requested atlas art is unavailable.
-- The ten JPGs under `curseforge/screenshots/` are **genuine gameplay captures from an earlier build**. They are not proof the latest 2.2.10 UI has been visually accepted.
+- The ten JPGs under `curseforge/screenshots/` are **genuine gameplay captures from earlier builds**. They are not screenshots of the successful 2.2.22 full auction scan.
 - Editorial SVG/PNG illustrations are separate from gameplay captures.
 - The game ZIP is one root `ChalkBox/`; CurseForge media ZIP is for publisher assets only.
 - No claim of official Blizzard endorsement or verified Retail/ordinary Classic support.
