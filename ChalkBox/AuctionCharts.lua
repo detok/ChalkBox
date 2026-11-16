@@ -3,9 +3,9 @@
 -- Never sends AH requests, alters secure auction controls or fabricates data.
 local MAX_POINTS=7
 local function Number(v)
-    return type(v)=="number" and v==v and v~=math.huge
-        and v~=-math.huge and v>=0 and
-        (type(issecretvalue)~="function" or not issecretvalue(v))
+    return (type(issecretvalue)~="function" or not issecretvalue(v))
+        and type(v)=="number" and v==v and v~=math.huge
+        and v~=-math.huge and v>=0
 end
 local function Money(copper)
     if not Number(copper) then return "--" end
@@ -84,9 +84,12 @@ function ChalkBox_AuctionChartsMount(panel)
                 linesReady=false
                 break
             end
-            line:SetThickness(2)
-            line:SetColorTexture(0.91,0.73,0.42,1)
-            line:Hide()
+            local configured=pcall(function()
+                line:SetThickness(2)
+                line:SetColorTexture(0.91,0.73,0.42,1)
+                line:Hide()
+            end)
+            if not configured then linesReady=false;break end
             segments[#segments+1]=line
         end
     end
@@ -154,7 +157,13 @@ function ChalkBox_AuctionChartsMount(panel)
             (DateLabel(points[1].t).."  to  "..
              DateLabel(points[#points].t).."  |  newest 7 scans retained") or
             "No saved price observations yet.")
-        if #points==0 then return end
+        if #points==0 then
+            details:SetText("No recorded prices to draw yet.")
+            return
+        end
+        if #points==1 then
+            details:SetText("One scan recorded. Scan again later for a trend.")
+        end
         local low,high=points[1].low,points[1].low
         for _,p in ipairs(points) do
             if p.low<low then low=p.low end
@@ -211,9 +220,11 @@ function ChalkBox_AuctionChartsMount(panel)
                 bar:Show()
             end
         end
-        details:SetText(asLine and
-            "Native Line renderer  |  Hover each point for its actual price." or
-            "Native texture fallback  |  Hover each sample for its actual price.")
+        if #points>1 then
+            details:SetText(asLine and
+                "Native Line renderer  |  Hover points for recorded prices." or
+                "Texture fallback  |  Hover samples for recorded prices.")
+        end
     end
     local function Find()
         local query=type(input.GetText)=="function" and input:GetText() or ""
