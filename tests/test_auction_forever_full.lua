@@ -46,10 +46,12 @@ assert(loadfile("AuctionSense.lua"))("ChalkBox")
 Fire("ADDON_LOADED","ChalkBox")
 Fire("AUCTION_HOUSE_SHOW")
 assert(ChalkBox_AuctionFullScan() and requests==1)
+assert(ChalkBox_AuctionStatus().cooldown>0,
+    "accepted request starts account-wide cooldown before data is returned")
 Tick(60)
 Tick(60)
 assert(ChalkBox_AuctionStatus().busy and
-    ChalkBox_AuctionStatus().state:find("awaiting",1,true),
+    ChalkBox_AuctionStatus().state:find("Waiting for full scan response",1,true),
     "Forever's delayed replicate response must NOT time out at 25 or 45s")
 Fire("REPLICATE_ITEM_LIST_UPDATE")
 assert(ChalkBox_AuctionStatus().busy,
@@ -57,6 +59,11 @@ assert(ChalkBox_AuctionStatus().busy,
 Tick(1)
 assert(ChalkBox_AuctionStatus().busy,"still awaiting the delayed count")
 countReady=true
+Tick(1)
+assert(ChalkBox_AuctionStatus().phase=="settling" and
+    ChalkBox_AuctionStatus().reportedListings==2,
+    "early signal must wait for replicated count to stabilize")
+Tick(1)
 Tick(1)
 Tick(1)
 local full=ChalkBox_AuctionPrice(2589)
@@ -95,11 +102,32 @@ now=now+901
 returnedCount=200001
 assert(ChalkBox_AuctionFullScan())
 Fire("REPLICATE_ITEM_LIST_UPDATE")
-assert(ChalkBox_AuctionStatus().busy
-    and ChalkBox_AuctionStatus().state:find("200001",1,true),
-    "large but valid Forever snapshot starts batch processing")
+assert(ChalkBox_AuctionStatus().busy and
+    ChalkBox_AuctionStatus().reportedListings==200001,
+    "large but valid Forever snapshot is received without rejection")
+Tick(1)
+returnedCount=200002
+Tick(1)
+assert(ChalkBox_AuctionStatus().phase=="settling" and
+    ChalkBox_AuctionStatus().reportedListings==200002,
+    "incoming batches can grow before the scanner starts reading")
+Tick(1)
+Tick(1)
+assert(ChalkBox_AuctionStatus().phase=="reading" and
+    ChalkBox_AuctionStatus().totalListings==200002,
+    "full scanner reads the stabilized final listing count")
 Fire("AUCTION_HOUSE_CLOSED")
 assert(not ChalkBox_AuctionStatus().busy
     and ChalkBox_AuctionPrice(2589).low==4300,
     "closing a large scan safely leaves the previous prices intact")
+Fire("AUCTION_HOUSE_SHOW")
+now=now+901
+assert(ChalkBox_AuctionFullScan())
+Tick(601)
+assert(not ChalkBox_AuctionStatus().busy
+    and ChalkBox_AuctionStatus().error:find("10 minutes",1,true)
+    and ChalkBox_AuctionPrice(2589).low==4300,
+    "silent Forever request stops after 10 minutes without erasing prices")
+assert(ChalkBox_AuctionStatus().cooldown>0,
+    "even a silent accepted full-scan request has a request cooldown")
 print("PASS: delayed Forever replicate event, full weighted asks, cooldown, retained browse minima and independently aging listing samples")

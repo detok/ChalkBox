@@ -232,8 +232,8 @@ for _,v in ipairs(allFrames) do
 end
 assert(matchingAtlas,"Market uses the same auctionhouse-background-index artwork as native Browse")
 assert(tab.template=="AuctionHouseFrameDisplayModeTabTemplate" and
-    tab.text=="Market" and tab.w==92,
-    "short native AH tab stays readable inside the native tab strip")
+    tab.text=="Market" and tab.w==122,
+    "Market tab reserves enough width to avoid the client's Ma... truncation")
 assert(tab.point and tab.point[2]==auctions and
     pane.point[2]==AuctionHouseFrame,
     "new tab aligns after Blizzard's native tabs")
@@ -426,6 +426,20 @@ status.cooldown=0
 pane.scripts.OnUpdate(pane,1.5)
 Button("Full listings (15m)"):Click()
 assert(fullScans==1,"advanced full scan is a separate explicit action")
+status.busy=true;status.mode="full";status.phase="waiting";status.waitSeconds=401
+pane.scripts.OnUpdate(pane,1.2)
+assert(Text("401s elapsed  ·  awaiting server"),
+    "long waits show elapsed time, not invented receiving progress")
+status.phase="settling";status.reportedListings=200002
+pane.scripts.OnUpdate(pane,1.2)
+assert(Text("200002 listings arriving  ·  confirming total"),
+    "full scans show the real count while receiving the snapshot")
+status.phase="reading";status.totalListings=200002
+status.processedListings=5600;status.progress=2
+pane.scripts.OnUpdate(pane,1.2)
+assert(Text("5600 / 200002 auctions  ·  2%"),
+    "full scans show actual processed listings and percentage")
+status.busy=false;status.phase=nil
 buy:Click()
 assert(not pane.shown and not tab.selected
     and AuctionHouseFrame.BrowseResultsFrame.shown

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.21 — Forever full-scan lifecycle and Market tab (Beta)
+
+- Track full snapshot cooldown from request acceptance, allow ten-minute reply window, and settle growing listing counts before processing.
+- Surface actual waiting/receiving/processing status and prevent the Market tab label from truncating on the native auction frame.
+
 ## 2.2.20 — Large Forever auction snapshots (Beta)
 
 - Remove the too-small 150,000 listing hard limit that rejected real Forever AH responses; retain bounded batch processing and a high corruption safety ceiling.

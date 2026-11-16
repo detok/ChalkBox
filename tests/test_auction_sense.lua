@@ -140,7 +140,7 @@ assert(ChalkBox_AuctionTooltip(tip,"item:2589") and
 assert(ChalkBox_AuctionFullScan())
 auctions={Listing("Linen Cloth",2589,1,9000)}
 Fire("REPLICATE_ITEM_LIST_UPDATE")
-Tick(2)
+Tick(4)
 assert(ChalkBox_AuctionPrice(2589).low==9000 and
     ChalkBoxDB.auctionSense.markets["whitemane|alliance"].items["2589"].history[2].low==9000,
     "successful scans atomically replace the market and keep bounded price history")
@@ -160,7 +160,7 @@ auctions={Listing("Uncached",2589,2,6000,nil,false)}
 -- before the item *name* is cached. It must not drop valid price data.
 auctions[1].name=nil
 Fire("REPLICATE_ITEM_LIST_UPDATE")
-Tick(2)
+Tick(4)
 assert(not ChalkBox_AuctionStatus().busy and
     ChalkBox_AuctionPrice(2589).low==3000 and
     ChalkBox_AuctionPrice(2589).quantity==2,
@@ -195,7 +195,7 @@ C_AuctionHouse.ReplicateItems=function()
     Fire("REPLICATE_ITEM_LIST_UPDATE")
 end
 assert(ChalkBox_AuctionFullScan())
-Tick(2)
+Tick(4)
 assert(not ChalkBox_AuctionStatus().busy and
     ChalkBox_AuctionPrice(2589).low==5000,
     "synchronous replicate events are handled before the request returns")
