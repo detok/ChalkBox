@@ -132,7 +132,7 @@ assert(ChalkBoxDB.meter.shown==false and ChalkBoxDB.meter.mode=="dps",
 event.script.OnEvent(event,"PLAYER_LOGIN")
 local window
 for _,f in ipairs(frames) do if f.name=="ChalkBoxCombatMeterFrame" then window=f end end
-assert(window and not window.shown and window.w==326 and window.h==266,
+assert(window and not window.shown and window.w==326 and window.h==191,
     "meter starts hidden at login")
 assert(window.resizable==true and window.alpha==1
     and window.background.color[4]==0.70,
@@ -152,7 +152,7 @@ for _,f in ipairs(frames) do
     if f.kind=="StatusBar" then bars[#bars+1]=f end
     if f.kind=="FontString" then labels[#labels+1]=f end
 end
-assert(#bars==12,"eight shown and four latent row bars")
+assert(#bars==12,"five default rows and seven latent raid row bars")
 assert(bars[1].value==rawValue and bars[1].max==maxValue,
     "secret DPS & scaling passed unchanged to C statusbar")
 local formatted=false;local named=false
@@ -184,26 +184,34 @@ for _,f in ipairs(labels) do
 end
 assert(name1 and name1.anchors and name1.anchors[#name1.anchors][4]==49,
     "player name is aligned after icon, without covering damage amounts")
-assert(ChalkBox_MeterStatus().rows==8)
+assert(ChalkBox_MeterStatus().rows==5)
 local function Button(caption)
     for _,f in ipairs(frames) do
         if f.kind=="Button" and f.caption==caption then return f end
     end
 end
-local printButton=Button("PRINT")
-local resetButton=Button("RESET")
-local lockButton=Button("LOCK")
+local menuButton=Button("Menu")
+local menuOpens=0
+_G.ChalkBox_MeterOpenMenu=function(owner)
+    assert(owner and owner.parent==window,
+        "compact gear popup anchors to the original meter header")
+    menuOpens=menuOpens+1
+    return true
+end
 local grip
 for _,f in ipairs(frames) do
     if f.isChalkBoxResizeGrip then grip=f end
 end
-assert(printButton and resetButton and lockButton and grip,
-    "visible PRINT/RESET/LOCK buttons and resize grip must be directly accessible")
-local controls={Button("DPS  >"),Button("Fight  >"),printButton,resetButton,lockButton}
-for _,control in ipairs(controls) do
-    assert(control and control.w<=60,
-        "five compact controls must fit minimum-width meter window")
-end
+assert(menuButton and grip and not Button("PRINT")
+    and not Button("RESET") and not Button("LOCK"),
+    "the meter has exactly one compact gear menu, plus the original resize grip")
+menuButton.script.OnClick(menuButton)
+assert(menuOpens==1,"gear button opens the compact menu")
+local meterHeader=menuButton.parent
+assert(meterHeader and meterHeader.script.OnMouseUp,
+    "the drag header also owns a right-click menu shortcut")
+meterHeader.script.OnMouseUp(meterHeader,"RightButton")
+assert(menuOpens==2,"right-click opens the same menu without replacing the drag script")
 assert(not Button("X"),"the unwanted meter close button must be gone")
 local sawBranding=false
 for _,f in ipairs(labels) do
@@ -263,12 +271,12 @@ assert(window.h==191,"user can shrink meter to five rows")
 ChalkBox_MeterCommand("scale 115")
 assert(window.scale==1.15,"user can enlarge readable UI")
 ChalkBox_MeterCommand("lock")
-assert(ChalkBoxDB.meter.locked and lockButton.caption=="UNLOCK")
+assert(ChalkBoxDB.meter.locked)
 grip.script.OnMouseDown(grip,"LeftButton")
 assert(not window.sizing,"lock prevents resizing")
-lockButton.script.OnClick(lockButton)
-assert(not ChalkBoxDB.meter.locked and lockButton.caption=="LOCK",
-    "on-window lock button toggles back without visiting options")
+ChalkBox_MeterCommand("unlock")
+assert(not ChalkBoxDB.meter.locked,
+    "compact gear menu's lock/unlock command uses the original preference")
 window:SetSize(422,66+10*25)
 grip.script.OnMouseDown(grip,"LeftButton")
 assert(window.sizing=="BOTTOMRIGHT","grip starts live window resize")
@@ -285,9 +293,9 @@ assert(callCount==old,"hidden window should not poll Blizzard data")
 ChalkBox_MeterCommand("show")
 Flush()
 assert(window.shown and callCount>old,"show immediately displays latest data")
-resetButton.script.OnClick(resetButton)
+ChalkBox_MeterCommand("reset")
 assert(lastPopup=="CHALKBOX_METER_RESET" and resetCount==0,
-    "on-window RESET must invoke existing shared-data confirmation")
+    "menu RESET must invoke existing shared-data confirmation")
 locked=true
 assert(StaticPopupDialogs.CHALKBOX_METER_RESET.OnAccept()==false and resetCount==0,
     "do not reset combat data in combat")
@@ -297,27 +305,27 @@ assert(StaticPopupDialogs.CHALKBOX_METER_RESET.OnAccept()==true and resetCount==
 -- Printing is ONE explicit party chat line, never a multi-line chat flood.
 locked=true
 local oldChat=#chat
-printButton.script.OnClick(printButton)
+ChalkBox_MeterPrintFight()
 assert(#chat==oldChat+1 and chat[#chat]:find("Finish combat",1,true)
     and #partyMessages==0,
-    "PRINT never uses in-combat secret totals or sends to party")
+    "legacy print never uses in-combat secret totals or sends to party")
 locked=false
 oldChat=#chat
-printButton.script.OnClick(printButton)
+ChalkBox_MeterPrintFight()
 assert(#chat==oldChat+1 and chat[#chat]:find("protected",1,true)
     and #partyMessages==0,
     "protected values after combat are never sent or formatted")
 protected=false
 grouped=false
-printButton.script.OnClick(printButton)
+ChalkBox_MeterPrintFight()
 assert(#partyMessages==0 and chat[#chat]:find("Join a party",1,true),
     "solo players do not get a SAY or local-chat fallback")
 grouped=true
 raiding=true
-printButton.script.OnClick(printButton)
+ChalkBox_MeterPrintFight()
 assert(#partyMessages==0,"strict party request must never broadcast to raid")
 raiding=false
-printButton.script.OnClick(printButton)
+ChalkBox_MeterPrintFight()
 assert(#partyMessages==1 and partyMessages[1].channel=="PARTY",
     "one click must submit EXACTLY one standard PARTY chat message")
 assert(partyMessages[1].message:find("CB HEAL (Overall):",1,true)
@@ -326,7 +334,7 @@ assert(partyMessages[1].message:find("CB HEAL (Overall):",1,true)
     and #partyMessages[1].message<=255,
     "party report includes selected stat, selected session and ranking")
 oldChat=#chat
-printButton.script.OnClick(printButton)
+ChalkBox_MeterPrintFight()
 assert(#partyMessages==1 and #chat==oldChat+1
     and chat[#chat]:find("already requested",1,true),
     "double-clicking within three seconds does not spam group chat")
@@ -340,7 +348,7 @@ C_ChatInfo.SendChatMessage=function()
     error("Forever party chat restriction")
 end
 oldChat=#chat
-printButton.script.OnClick(printButton)
+ChalkBox_MeterPrintFight()
 assert(#partyMessages==1 and #copies==1
     and copies[1].text:find("CB HEAL (Overall):",1,true)
     and copies[1].reason:find("rejected",1,true),
@@ -349,7 +357,7 @@ C_ChatInfo.SendChatMessage=function()
     error("Should not call chat while restricted")
 end
 C_ChatInfo.InChatMessagingLockdown=function() return true end
-printButton.script.OnClick(printButton)
+ChalkBox_MeterPrintFight()
 assert(#copies==2 and #partyMessages==1,
     "chat lockdown prepares local text without calling protected API")
 C_ChatInfo.InChatMessagingLockdown=nil
@@ -357,7 +365,7 @@ C_ChatInfo.SendChatMessage=nil
 _G.SendChatMessage=function(message,channel)
     partyMessages[#partyMessages+1]={message=message,channel=channel,legacy=true}
 end
-printButton.script.OnClick(printButton)
+ChalkBox_MeterPrintFight()
 assert(#partyMessages==2 and partyMessages[2].legacy
     and partyMessages[2].channel=="PARTY",
     "old Classic API is a supported fallback when modern chat API is absent")
@@ -374,7 +382,7 @@ C_DamageMeter.GetCombatSessionFromType=function(session,typeId)
 end
 ChalkBox_MeterCommand("current")
 Flush()
-printButton.script.OnClick(printButton)
+ChalkBox_MeterPrintFight()
 assert(#partyMessages==3
     and partyMessages[3].message:find("CB HEAL (Last):",1,true),
     "when the current session is empty, report the last recorded fight")
