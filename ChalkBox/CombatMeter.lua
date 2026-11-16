@@ -39,7 +39,9 @@ local function Settings()
     if value.rows~=5 and value.rows~=8 and value.rows~=12 then value.rows=8 end
     if value.scale~=0.85 and value.scale~=1 and value.scale~=1.15 then value.scale=1 end
     if type(value.width)~="number" or value.width<300 or value.width>600 then value.width=326 end
-    if type(value.opacity)~="number" or value.opacity<0.35 or value.opacity>1 then value.opacity=0.94 end
+    -- Same as The Bar: opacity controls background surfaces, not names,
+    -- numbers, class badges or bar values. Preserve saved values on upgrade.
+    if type(value.opacity)~="number" or value.opacity<0 or value.opacity>1 then value.opacity=0.70 end
     if value.iconMode~="off" and value.iconMode~="class" and value.iconMode~="spec" then
         value.iconMode="class"
     end
@@ -88,13 +90,15 @@ end
 local function Clamp(v,low,high)
     return math.min(high,math.max(low,v))
 end
--- Global theme colors only ChalkBox surfaces; local meter opacity remains
--- independently adjustable. Theme opacity multiplies surface alpha.
+-- Mirror The Bar: tint only ChalkBox surfaces and multiply the local
+-- background transparency by the global theme opacity. Never fade the
+-- entire meter, player names, combat numbers or class icons.
 local function ApplyMeterTheme()
     if not window then return end
-    local r,g,b,a=0.045,0.075,0.11,0.94
+    local surfaceAlpha=db and db.opacity or 0.70
+    local r,g,b,a=0.045,0.075,0.11,surfaceAlpha
     if type(ChalkBox_ThemeBackground)=="function" then
-        r,g,b,a=ChalkBox_ThemeBackground(0.94)
+        r,g,b,a=ChalkBox_ThemeBackground(surfaceAlpha)
     end
     if window.background then
         window.background:SetColorTexture(r,g,b,a)
@@ -103,14 +107,14 @@ local function ApplyMeterTheme()
         if entry.background then
             entry.background:SetColorTexture(
                 math.min(1,r*2+0.035),math.min(1,g*2+0.035),
-                math.min(1,b*2+0.04),i%2==0 and 0.80 or 0.66)
+                math.min(1,b*2+0.04),a*(i%2==0 and 0.80 or 0.66))
         end
     end
     for _,button in ipairs(window.themeButtons or {}) do
         if button.background then
             button.background:SetColorTexture(
                 math.min(1,r*2+0.08),math.min(1,g*2+0.08),
-                math.min(1,b*2+0.08),0.94)
+                math.min(1,b*2+0.08),a*0.94)
         end
     end
     local ar,ag,ab=0.96,0.67,0.27
@@ -121,7 +125,8 @@ local function ApplyMeterTheme()
 end
 function ChalkBox_MeterThemeRefresh() ApplyMeterTheme() end
 local function ApplyOpacity()
-    if window and db and window.SetAlpha then window:SetAlpha(db.opacity) end
+    if window and window.SetAlpha then window:SetAlpha(1) end
+    ApplyMeterTheme()
 end
 local function ApplyLocked()
     if lockButton and db then
@@ -625,15 +630,15 @@ local function CreateWindow()
 
     local opacityLabel=Font(window,"GameFontHighlightSmall",0.65,0.76,0.85)
     opacityLabel:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",12,8)
-    opacityLabel:SetText("Opacity")
+    opacityLabel:SetText("Background")
     opacitySlider=CreateFrame("Slider",nil,window,"OptionsSliderTemplate")
     opacitySlider:SetSize(120,12)
     opacitySlider:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",65,8)
-    opacitySlider:SetMinMaxValues(35,100)
+    opacitySlider:SetMinMaxValues(0,100)
     if opacitySlider.SetValueStep then opacitySlider:SetValueStep(5) end
     opacitySlider:SetScript("OnValueChanged",function(_,amount)
         if db and type(amount)=="number" then
-            db.opacity=Clamp(math.floor(amount+0.5),35,100)/100
+            db.opacity=Clamp(math.floor(amount+0.5),0,100)/100
             ApplyOpacity()
         end
     end)
@@ -696,7 +701,7 @@ local function ConfirmReset()
 end
 local function Help()
     Chat("/chalk meter [show|hide|toggle|dps|damage|hps|healing|taken|interrupts]")
-    Chat("/chalk meter [current|last|overall|print|lock|unlock|icons class/spec/off|rows 5/8/12|opacity 35-100|reset]")
+    Chat("/chalk meter [current|last|overall|print|lock|unlock|icons class/spec/off|rows 5/8/12|opacity 0-100|reset]")
     Chat("Native gear menu: PARTY/SAY reports, Top 3/5/10, optional auto after combat.")
     Chat("/chalk meter native on|off|status|auto on|off|rows 3/5/10|channel party/say")
     Chat("PRINT sends a single top-three summary to PARTY after combat; RESET asks before clearing all Blizzard sessions.")
@@ -723,7 +728,7 @@ function ChalkBox_MeterCommand(input)
         Chat("Native API: "..(enabled and "available" or "unavailable")..
             " | "..db.mode.." | "..db.session..
             " | "..db.rows.." rows | "..db.iconMode.." icons | "..math.floor(db.opacity*100)..
-            "% opacity | "..(db.locked and "locked" or "unlocked")..
+            "% background | "..(db.locked and "locked" or "unlocked")..
             " | "..(db.shown and "shown" or "hidden"))
     elseif value=="icons class" or value=="icons spec" or value=="icons off" then
         db.iconMode=value:match("icons (%w+)")
@@ -744,7 +749,7 @@ function ChalkBox_MeterCommand(input)
         local n=value:match("^rows (%d+)$")
         local scale=value:match("^scale (%d+)$")
         local opacity=value:match("^opacity (%d+)$")
-        if opacity and tonumber(opacity)>=35 and tonumber(opacity)<=100 then
+        if opacity and tonumber(opacity)>=0 and tonumber(opacity)<=100 then
             db.opacity=math.floor(tonumber(opacity)+0.5)/100
             if opacitySlider then opacitySlider:SetValue(db.opacity*100) end
             ApplyOpacity()
