@@ -66,6 +66,9 @@ assert(ChalkBox_AuctionStatus().phase=="settling" and
 Tick(1)
 Tick(1)
 Tick(1)
+Tick(1) -- reads the first batch
+Tick(1) -- waits for any later auction chunks
+Tick(1) -- safely commits after a second quiet window
 local full=ChalkBox_AuctionPrice(2589)
 assert(full and full.low==5000 and full.average==6334 and
     full.listings==2 and full.quantity==6 and
@@ -115,7 +118,12 @@ Tick(1)
 Tick(1)
 assert(ChalkBox_AuctionStatus().phase=="reading" and
     ChalkBox_AuctionStatus().totalListings==200002,
-    "full scanner reads the stabilized final listing count")
+    "full scanner starts reading the stabilized initial listing count")
+returnedCount=200003
+Tick(1)
+assert(ChalkBox_AuctionStatus().totalListings==200003
+    and ChalkBox_AuctionStatus().busy,
+    "later Forever batches extend an active scan rather than losing auctions")
 Fire("AUCTION_HOUSE_CLOSED")
 assert(not ChalkBox_AuctionStatus().busy
     and ChalkBox_AuctionPrice(2589).low==4300,
