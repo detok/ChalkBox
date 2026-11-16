@@ -1,8 +1,8 @@
-# ChalkBox 2.2.19 — AuctionSense full scan reliability
+# ChalkBox 2.2.20 — Large Forever market scans
 
-- Stop discarding Forever full-scan responses after a fixed 25-second timeout; wait for the actual server response or an explicit dropped request.
-- Handle full-scan events whose listing count becomes readable a moment later.
-- Preserve real weighted average asking prices and listing counts from a successful full snapshot when refreshing low prices through Browse Scan. Show the source and age.
-- Retain the last good market data on failed scans. No fabricated averages and no changes to protected trading controls.
+- Fix Full listings rejecting an actual Forever snapshot simply because it contains more than 150,000 auctions.
+- Read large snapshots incrementally and keep bounded per-item totals for lowest unit price, average asking price, and number of listings.
+- Retain the 15-minute replication cooldown, market-specific snapshots, and previous data on failure.
+- No automated buying/selling and no fabricated market figures.
 
-Beta: full snapshot needs verification on the current Forever client/server before public publication.
+Beta: confirm full-scan completion in the real Forever client before public upload.
