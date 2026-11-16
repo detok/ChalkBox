@@ -135,3 +135,6 @@ The optional compact **Combat Meter starts hidden**. Open it from settings or `/
 Start with [Troubleshooting](TROUBLESHOOTING.md), then [Commands](COMMANDS.md) for diagnostics. When filing a bug, supply the ChalkBox version, actual WoW Forever client build, location or dungeon if applicable, reproduction steps and any Lua stack. Avoid sharing private chat or account details.
 
 [Documentation home](README.md) · [Getting started](GETTING_STARTED.md) · [Release notes](RELEASE_NOTES.md)
+
+
+**2.2.23 beta candidate:** The optional Combat Meter report now checks Forever chat restrictions and provides a copyable summary when manually sending the report is denied. **2.2.22 is still the stable version.** See [candidate release notes](https://github.com/detok/ChalkBox/releases) for the beta test build.
