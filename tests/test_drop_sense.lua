@@ -66,6 +66,10 @@ assert(ChalkBox_DropOptions().windows==1 and
     ChalkBox_DropOptions().watched==2 and sessions==1,
     "no manual watch required; duplicate loot-ready/opened samples once")
 assert(seenZone=="z:1436","location uses actual Forever UI zone ID")
+local livePosition=ChalkBox_DropPositionStatus()
+assert(livePosition.rawMapID==1436 and livePosition.zoneMapID==1436
+    and livePosition.rawAvailable and livePosition.zoneAvailable,
+    "on-demand coordinate probe confirms valid live zone data")
 local cloth=ChalkBox_DropRead(100)
 assert(cloth.quantity==2 and cloth.windows==1 and
     not cloth.rate,"global counts never imply a server drop chance")
@@ -250,6 +254,8 @@ assert(#ChalkBox_DropRead(100,"z:1436","c:12345").locations==6,
 -- API unavailable: a new real loot window still counts, but gets no point.
 handlers.event(nil,"LOOT_CLOSED")
 C_Map.GetPlayerMapPosition=nil
+assert(not ChalkBox_DropPositionStatus().zoneAvailable,
+    "on-demand probe reports a missing coordinate API honestly")
 now=2200
 guid="Creature-0-1-22-333-12345-000DDD"
 links={"|Hitem:999:0|h[Unknown Spot]|h"}
@@ -266,6 +272,8 @@ handlers.event(nil,"LOOT_CLOSED")
 C_Map.GetPlayerMapPosition=function()
     return {GetXY=function() return 0,0 end}
 end
+assert(not ChalkBox_DropPositionStatus().zoneAvailable,
+    "on-demand probe rejects the client's invalid zero-zero sentinel")
 now=2360
 guid="Creature-0-1-22-333-12345-000EEE"
 links={"|Hitem:998:0|h[Unknown Map Origin]|h"}
