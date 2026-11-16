@@ -2,7 +2,9 @@
 local allFrames,fonts={},{}
 local function Element(kind,parent,name,template)
     local f={kind=kind,parent=parent,name=name,template=template,
-        scripts={},shown=true}
+        scripts={},shown=true,
+        -- Some native AH tab templates draw selected until explicitly reset.
+        selected=template=="AuctionHouseFrameDisplayModeTabTemplate"}
     function f:SetSize(w,h) self.w,self.h=w,h end
     function f:SetPoint(...)
         self.point={...}
@@ -116,6 +118,18 @@ AuctionHouseFrame.SetDisplayMode=function(self,mode)
     nativeModeWrites=nativeModeWrites+1
     if self.displayMode==mode then return end
     self.displayMode=mode
+    -- Blizzard updates the selected native tab when the display mode changes.
+    -- Its early return above leaves stale visuals when returning from Market
+    -- to an already-selected Buy mode: that's the regression under test.
+    for i,native in ipairs(self.Tabs) do
+        if mode==({AuctionHouseFrameDisplayMode.Buy,
+            AuctionHouseFrameDisplayMode.Sell,
+            AuctionHouseFrameDisplayMode.Auctions})[i] then
+            PanelTemplates_SelectTab(native)
+        else
+            PanelTemplates_DeselectTab(native)
+        end
+    end
     -- Simulated native behavior: this does not modify the native
     -- registry; it simply uses an existing method for our own pane.
     for _,list in pairs(AuctionHouseFrameDisplayMode) do
@@ -220,6 +234,13 @@ local tab=FindFrame("ChalkBoxAuctionSenseTab")
 local pane=FindFrame("ChalkBoxAuctionSensePane")
 assert(tab and pane and pane.parent==AuctionHouseFrame,
     "AuctionSense is built directly inside Blizzard's auction house")
+assert(tab.selected==false and buy.selected==true,
+    "first Auction House opening shows Buy, never prehighlights Market")
+if AuctionHouseFrame.hooks and AuctionHouseFrame.hooks.OnShow then
+    AuctionHouseFrame.hooks.OnShow(AuctionHouseFrame)
+end
+assert(not tab.selected and buy.selected,
+    "reopening AH keeps Blizzard's Buy highlight authoritative")
 assert(AuctionHouseFrame.ChalkBoxAuctionSensePane==nil
     and pane.template=="InsetFrameTemplate",
     "Market uses native-looking art without writing custom data on AH")
@@ -278,7 +299,9 @@ local function VisibleRows()
 end
 assert(nativeRegistryEdits==0,"never touch protected Blizzard tab registry")
 local modeWritesBeforeMarket=nativeModeWrites
-assert(ChalkBox_AuctionOpen() and pane.shown and tab.selected)
+assert(ChalkBox_AuctionOpen() and pane.shown and tab.selected
+    and not buy.selected and not sell.selected and not auctions.selected,
+    "Market alone has the selected highlight while Market is visible")
 assert(AuctionHouseFrame:GetDisplayMode()==AuctionHouseFrameDisplayMode.Buy
     and nativeModeWrites==modeWritesBeforeMarket,
     "Market must NOT call native SetDisplayMode or alter AH displayMode")
@@ -441,8 +464,10 @@ assert(Text("5600 / 200002 auctions  ·  2%"),
     "full scans show actual processed listings and percentage")
 status.busy=false;status.phase=nil
 buy:Click()
-assert(not pane.shown and not tab.selected
-    and AuctionHouseFrame.BrowseResultsFrame.shown
+assert(not pane.shown and not tab.selected and buy.selected
+    and not sell.selected and not auctions.selected,
+    "first native Buy click from Market immediately restores Buy highlight")
+assert(AuctionHouseFrame.BrowseResultsFrame.shown
     and AuctionHouseFrame.SearchBar.shown
     and AuctionHouseFrame:GetDisplayMode()==AuctionHouseFrameDisplayMode.Buy,
     "clicking native Buy restores the same display mode's hidden frames")
@@ -455,7 +480,10 @@ assert(pane.shown and not AuctionHouseFrame.BrowseResultsFrame.shown,
 assert(nativeModeWrites==modeWritesBeforeMarket+1,
     "opening Market does not call SetDisplayMode after native Buy click")
 sell:Click()
-assert(not pane.shown and AuctionHouseFrame.ItemSellFrame.shown
+assert(not pane.shown and sell.selected and not tab.selected
+    and not buy.selected and not auctions.selected,
+    "first native Sell click from Market immediately restores Sell highlight")
+assert(AuctionHouseFrame.ItemSellFrame.shown
     and AuctionHouseFrame:GetDisplayMode()==AuctionHouseFrameDisplayMode.Sell,
     "native Sell owns its untainted mode and shows real auction controls")
 tab:Click()
@@ -463,7 +491,10 @@ assert(pane.shown and not AuctionHouseFrame.ItemSellFrame.shown
     and AuctionHouseFrame:GetDisplayMode()==AuctionHouseFrameDisplayMode.Sell,
     "Market safely overlays Sell without changing native Sell state")
 auctions:Click()
-assert(not pane.shown and AuctionHouseFrame.AuctionsFrame.shown
+assert(not pane.shown and auctions.selected and not tab.selected
+    and not buy.selected and not sell.selected,
+    "first Auctions click from Market immediately restores its highlight")
+assert(AuctionHouseFrame.AuctionsFrame.shown
     and AuctionHouseFrame:GetDisplayMode()==AuctionHouseFrameDisplayMode.Auctions,
     "native Auctions tab retains Blizzard's state and visible controls")
 -- Opening and closing Market within the SAME native mode restores frames

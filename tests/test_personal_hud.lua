@@ -316,6 +316,18 @@ assert(GameTooltip.lines[2].color[1]>GameTooltip.lines[2].color[3],
     "estimated repairs are highlighted as caution, not an exact quote")
 repairHover.scripts.OnLeave(repairHover)
 HoverStat("Bags ",3,"Free: 12 / 96")
+local nativeBagToggles=0
+_G.ToggleAllBags=function() nativeBagToggles=nativeBagToggles+1 end
+local bagStat=FindMetric("Bags ")
+assert(bagStat and bagStat.scripts.OnMouseUp,
+    "bag stat preserves ordinary Bar click handling")
+bagStat.scripts.OnMouseUp(bagStat,"LeftButton")
+assert(nativeBagToggles==1,
+    "a real bag-stat left click invokes Blizzard's all-bags toggle")
+bagStat.scripts.OnMouseUp(bagStat,"LeftButton")
+assert(nativeBagToggles==2,
+    "second bag click toggles bags again without opening new frames")
+_G.ToggleAllBags=nil
 HoverStat("Gear ",3,"Overall: 87%")
 HoverStat("Rest ",2,"420 XP (42%)")
 HoverStat("Pet ",2,"Health: 95%")

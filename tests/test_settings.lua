@@ -350,8 +350,8 @@ assert(loadfile("ChalkBox_Settings.lua"))("ChalkBox")
 local loader=frames[#frames]
 assert(loader.event=="PLAYER_LOGIN","must register settings when the client is ready")
 loader.script.OnEvent(loader,"PLAYER_LOGIN")
-assert(#registered==21,
-    "native settings include the new QuestSense Navigation child page")
+assert(#registered==22,
+    "native settings include the optional AuctionSense Charts and QuestSense Navigation child pages")
 for _,texture in ipairs(textures) do
     assert(not (texture.color and texture.color[1]==0.02
         and texture.color[2]==0.02 and texture.color[3]==0.025
@@ -406,6 +406,15 @@ end
 assert(categories["AuctionSense"] and
     categories["AuctionSense"].parent==categories.home,
     "AuctionSense is an independent ChalkBox module, not a hidden submenu")
+assert(categories["AuctionSense Charts (Experimental)"]
+    and categories["AuctionSense Charts (Experimental)"].parent==categories["AuctionSense"],
+    "chart lab stays nested under AuctionSense, not beside live modules")
+assert(ControlIn("AuctionSense","Charts Lab (Experimental)"),
+    "experimental chart lab has its own settings-only entrance")
+ControlIn("AuctionSense","Charts Lab (Experimental)"):Click()
+assert(opened[#opened]==categories["AuctionSense Charts (Experimental)"].ID
+    and auctionOpens==0 and auctionScans==0,
+    "opening chart settings does not open AH or request any auction scan")
 assert(ControlIn("AuctionSense","Open AuctionSense Tab"),
     "settings directs the player to the native AH tab")
 ControlIn("AuctionSense","Open AuctionSense Tab"):Click()

@@ -18,7 +18,7 @@ local sessions={
     {key="expired",label="Last",enum="Expired"},
     {key="overall",label="Overall",enum="Overall"},
 }
-local meterButton,sessionButton
+local meterTitle
 local function Safe(v)
     -- Inspect the secrecy of a value before asking Lua to evaluate it at all.
     return (type(issecretvalue)~="function" or not issecretvalue(v)) and v~=nil
@@ -36,10 +36,15 @@ local function Settings()
     if value.locked==nil then value.locked=false end
     if value.mode==nil then value.mode="dps" end
     if value.session==nil then value.session="current" end
-    if value.rows~=5 and value.rows~=8 and value.rows~=12 then value.rows=8 end
+    if type(value.rows)~="number" or value.rows~=value.rows or
+        value.rows<5 or value.rows>12 then value.rows=5 end
+    -- A manual resize may select 6, 7, 9, 10 or 11 rows; preserve it.
+    value.rows=math.floor(value.rows+0.5)
     if value.scale~=0.85 and value.scale~=1 and value.scale~=1.15 then value.scale=1 end
     if type(value.width)~="number" or value.width<300 or value.width>600 then value.width=326 end
-    if type(value.opacity)~="number" or value.opacity<0.35 or value.opacity>1 then value.opacity=0.94 end
+    -- Same as The Bar: opacity controls background surfaces, not names,
+    -- numbers, class badges or bar values. Preserve saved values on upgrade.
+    if type(value.opacity)~="number" or value.opacity<0 or value.opacity>1 then value.opacity=0.70 end
     if value.iconMode~="off" and value.iconMode~="class" and value.iconMode~="spec" then
         value.iconMode="class"
     end
@@ -88,13 +93,15 @@ end
 local function Clamp(v,low,high)
     return math.min(high,math.max(low,v))
 end
--- Global theme colors only ChalkBox surfaces; local meter opacity remains
--- independently adjustable. Theme opacity multiplies surface alpha.
+-- Mirror The Bar: tint only ChalkBox surfaces and multiply the local
+-- background transparency by the global theme opacity. Never fade the
+-- entire meter, player names, combat numbers or class icons.
 local function ApplyMeterTheme()
     if not window then return end
-    local r,g,b,a=0.045,0.075,0.11,0.94
+    local surfaceAlpha=db and db.opacity or 0.70
+    local r,g,b,a=0.045,0.075,0.11,surfaceAlpha
     if type(ChalkBox_ThemeBackground)=="function" then
-        r,g,b,a=ChalkBox_ThemeBackground(0.94)
+        r,g,b,a=ChalkBox_ThemeBackground(surfaceAlpha)
     end
     if window.background then
         window.background:SetColorTexture(r,g,b,a)
@@ -103,14 +110,14 @@ local function ApplyMeterTheme()
         if entry.background then
             entry.background:SetColorTexture(
                 math.min(1,r*2+0.035),math.min(1,g*2+0.035),
-                math.min(1,b*2+0.04),i%2==0 and 0.80 or 0.66)
+                math.min(1,b*2+0.04),a*(i%2==0 and 0.80 or 0.66))
         end
     end
     for _,button in ipairs(window.themeButtons or {}) do
         if button.background then
             button.background:SetColorTexture(
                 math.min(1,r*2+0.08),math.min(1,g*2+0.08),
-                math.min(1,b*2+0.08),0.94)
+                math.min(1,b*2+0.08),a*0.94)
         end
     end
     local ar,ag,ab=0.96,0.67,0.27
@@ -121,7 +128,8 @@ local function ApplyMeterTheme()
 end
 function ChalkBox_MeterThemeRefresh() ApplyMeterTheme() end
 local function ApplyOpacity()
-    if window and db and window.SetAlpha then window:SetAlpha(db.opacity) end
+    if window and window.SetAlpha then window:SetAlpha(1) end
+    ApplyMeterTheme()
 end
 local function ApplyLocked()
     if lockButton and db then
@@ -356,6 +364,13 @@ local function Refresh()
             rows[i].bar:SetValue(0)
         end
     end
+    -- Treat saved rows as a maximum, not permanent blank slots.
+    -- Always retain one row of space for the empty-session message.
+    local shown=math.max(1,math.min(db.rows,visible))
+    for i,row in ipairs(rows) do
+        if i<=shown then row:Show() else row:Hide() end
+    end
+    if window.SetHeight then window:SetHeight(66+shown*25) end
     if visible==0 then
         Note("No fight data yet. Attack something!")
     else
@@ -378,11 +393,10 @@ local function SetShown(on)
     if db.shown then window:Show();QueueRefresh() else window:Hide() end
 end
 local function UpdateButtons()
-    if not window or not db then return end
+    if not window or not db or not meterTitle then return end
     local mode=Choice()
     local session=Session()
-    meterButton:SetText(mode.label.."  >")
-    sessionButton:SetText(session.label.."  >")
+    meterTitle:SetText(mode.label.."  /  "..session.label)
 end
 local function SetMode(value)
     local choice=Find(modes,value)
@@ -549,7 +563,43 @@ local function PrintFight()
 end
 function ChalkBox_MeterPrintFight()
     if not db then db=Settings() end
-    return PrintFight()
+    if type(ChalkBox_NativeMeterPrint)=="function" then
+        return ChalkBox_MeterReportSelected("PARTY")
+    end
+    return PrintFight() -- legacy test/client fallback when native helper absent
+end
+-- Use the native report encoder, validation, configurable Top 3/5/10,
+-- channels and manual copy fallback. Never maintain a second print path.
+function ChalkBox_MeterReportAdapter()
+    if not db then db=Settings() end
+    if not IsAvailable() then return nil end
+    local mode=Choice()
+    local session=Session()
+    local kind=EnumValue("DamageMeterType",mode.enum,
+        ({Dps=1,DamageDone=0,Hps=3,HealingDone=2,DamageTaken=7,Interrupts=5})[mode.enum])
+    local sessionID=EnumValue("DamageMeterSessionType",session.enum,
+        ({Current=1,Expired=2,Overall=0})[session.enum])
+    return {
+        GetDamageMeterType=function() return kind end,
+        GetSessionType=function() return sessionID end,
+        GetCombatSession=function()
+            local ok,data=pcall(C_DamageMeter.GetCombatSessionFromType,
+                sessionID,kind)
+            if ok and Safe(data) and type(data)=="table" then return data end
+        end,
+    }
+end
+function ChalkBox_MeterReportSelected(channel)
+    local adapter=ChalkBox_MeterReportAdapter()
+    if not adapter then
+        Chat("Blizzard damage meter unavailable.")
+        return false
+    end
+    if type(ChalkBox_NativeMeterPrint)~="function" then
+        Chat("Shared native report helper unavailable.")
+        return false
+    end
+    return ChalkBox_NativeMeterPrint(adapter,channel or "PARTY")
 end
 
 local function CreateWindow()
@@ -559,9 +609,9 @@ local function CreateWindow()
     window:SetMovable(true)
     if window.SetResizable then window:SetResizable(true) end
     if window.SetResizeBounds then
-        window:SetResizeBounds(300,66+5*25,600,66+12*25)
+        window:SetResizeBounds(300,66+1*25,600,66+12*25)
     elseif window.SetMinResize and window.SetMaxResize then
-        window:SetMinResize(300,66+5*25)
+        window:SetMinResize(300,66+1*25)
         window:SetMaxResize(600,66+12*25)
     end
     if window.SetClampedToScreen then window:SetClampedToScreen(true) end
@@ -598,21 +648,21 @@ local function CreateWindow()
             db.position="custom"
         end
     end)
-    -- Zero branding/footer noise. Every button does something useful.
-    -- Fits at the minimum 300px width: DPS / Fight / PRINT / RESET / LOCK.
-    meterButton=MakeButton(header,"DPS",48,-241,function()
-        Next(modes,"mode",SetMode)
+    -- Bar-style compact header. Both gear and right-click use the same
+    -- menu; all existing actions remain accessible from that menu.
+    meterTitle=Font(header,"GameFontHighlightSmall",1,0.91,0.72)
+    meterTitle:SetPoint("LEFT",header,"LEFT",10,0)
+    meterTitle:SetWidth(210)
+    header:SetScript("OnMouseUp",function(self,button)
+        if button=="RightButton" and
+            type(ChalkBox_MeterOpenMenu)=="function" then
+            ChalkBox_MeterOpenMenu(self)
+        end
     end)
-    sessionButton=MakeButton(header,"Fight",60,-176,function()
-        Next(sessions,"session",SetSession)
-    end)
-    MakeButton(header,"PRINT",52,-119,function() PrintFight() end)
-    MakeButton(header,"RESET",56,-58,function()
-        ChalkBox_MeterCommand("reset") -- existing confirmation; never immediate
-    end)
-    lockButton=MakeButton(header,"LOCK",50,-3,function()
-        db.locked=not db.locked
-        ApplyLocked()
+    MakeButton(header,"Menu",56,-3,function()
+        if type(ChalkBox_MeterOpenMenu)=="function" then
+            ChalkBox_MeterOpenMenu(header)
+        end
     end)
 
     notice=Font(window,"GameFontHighlightSmall",0.62,0.70,0.77)
@@ -625,15 +675,15 @@ local function CreateWindow()
 
     local opacityLabel=Font(window,"GameFontHighlightSmall",0.65,0.76,0.85)
     opacityLabel:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",12,8)
-    opacityLabel:SetText("Opacity")
+    opacityLabel:SetText("Background")
     opacitySlider=CreateFrame("Slider",nil,window,"OptionsSliderTemplate")
     opacitySlider:SetSize(120,12)
     opacitySlider:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",65,8)
-    opacitySlider:SetMinMaxValues(35,100)
+    opacitySlider:SetMinMaxValues(0,100)
     if opacitySlider.SetValueStep then opacitySlider:SetValueStep(5) end
     opacitySlider:SetScript("OnValueChanged",function(_,amount)
         if db and type(amount)=="number" then
-            db.opacity=Clamp(math.floor(amount+0.5),35,100)/100
+            db.opacity=Clamp(math.floor(amount+0.5),0,100)/100
             ApplyOpacity()
         end
     end)
@@ -696,7 +746,7 @@ local function ConfirmReset()
 end
 local function Help()
     Chat("/chalk meter [show|hide|toggle|dps|damage|hps|healing|taken|interrupts]")
-    Chat("/chalk meter [current|last|overall|print|lock|unlock|icons class/spec/off|rows 5/8/12|opacity 35-100|reset]")
+    Chat("/chalk meter [current|last|overall|print|lock|unlock|icons class/spec/off|rows 5/8/12|opacity 0-100|reset]")
     Chat("Native gear menu: PARTY/SAY reports, Top 3/5/10, optional auto after combat.")
     Chat("/chalk meter native on|off|status|auto on|off|rows 3/5/10|channel party/say")
     Chat("PRINT sends a single top-three summary to PARTY after combat; RESET asks before clearing all Blizzard sessions.")
@@ -710,7 +760,7 @@ function ChalkBox_MeterCommand(input)
     elseif value=="hide" or value=="off" then SetShown(false)
     elseif value=="reset" then ConfirmReset()
     elseif value=="reset confirm" then ResetNative()
-    elseif value=="print" then PrintFight()
+    elseif value=="print" then ChalkBox_MeterPrintFight()
     elseif value:match("^native%s+") then
         if type(ChalkBox_NativeMeterCommand)=="function" then
             ChalkBox_NativeMeterCommand(value:match("^native%s+(.+)$"))
@@ -723,7 +773,7 @@ function ChalkBox_MeterCommand(input)
         Chat("Native API: "..(enabled and "available" or "unavailable")..
             " | "..db.mode.." | "..db.session..
             " | "..db.rows.." rows | "..db.iconMode.." icons | "..math.floor(db.opacity*100)..
-            "% opacity | "..(db.locked and "locked" or "unlocked")..
+            "% background | "..(db.locked and "locked" or "unlocked")..
             " | "..(db.shown and "shown" or "hidden"))
     elseif value=="icons class" or value=="icons spec" or value=="icons off" then
         db.iconMode=value:match("icons (%w+)")
@@ -744,7 +794,7 @@ function ChalkBox_MeterCommand(input)
         local n=value:match("^rows (%d+)$")
         local scale=value:match("^scale (%d+)$")
         local opacity=value:match("^opacity (%d+)$")
-        if opacity and tonumber(opacity)>=35 and tonumber(opacity)<=100 then
+        if opacity and tonumber(opacity)>=0 and tonumber(opacity)<=100 then
             db.opacity=math.floor(tonumber(opacity)+0.5)/100
             if opacitySlider then opacitySlider:SetValue(db.opacity*100) end
             ApplyOpacity()

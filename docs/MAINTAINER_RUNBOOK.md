@@ -28,11 +28,15 @@ This is how to investigate a report, make a change without breaking established 
 | The Bar | Saved per-character layout persists, right-click **Done editing** available, widths do not break protected game UI | Move stats, exit via context menu, relog, resize client |
 | QuietGuard | Fresh filters OFF; saved ON choices preserved; Blizzard-native filtering may differ | Check defaults and opt-ins on a test profile; no automatic blocking when off |
 | DropSense | Dedup loot windows; rates only for identified sources; bounded locations; no instance position inference | Loot two different outdoor mobs; open same corpse again; view map tooltip |
-| Auction / DE | No scan without a user request, no trade action, old good scan survives failure, price asks ≠ actual sales | Open AH tab and close/reopen, test cooldown/failure; inspect tooltip disclaimers |
+| Auction / DE | No scan without a user request, no trade action, old good scan survives failure, price asks ≠ actual sales | Open Buy; Market should not start selected. Switch Market → Buy/Sell/Auctions once; test cooldown/failure and original trading controls |
+| Auction Charts (experimental) | Settings-only chart of max seven authentic low-ask samples; read-only current realm/faction, never triggers scans, handles missing Line API | Open AuctionSense → Charts, search saved name/ID, hover line/texture points, test one/no point; ensure no new scan or invented sales data |
+| Meter menu / native reports | One Menu/right-click target, shared Top 3/5/10 PARTY/SAY copy fallback, auto OFF by default, five-row fresh cap, background-only opacity and explicit reset confirmation | Test real combat, first party report, chat-block copy, Last/Overall, row auto-fit, theme at opacity 0 and protected/reset guard |
 | Bank / bags | Avoid protected item-button changes or shifting bags during first-bank initialization | Open bank first time after login; close and test separate bag offset |
 | Combat meter | Starts closed, protected values handled safely, manual print gated | Start/stop combat, inspect session, test manual print after combat |
 | Adventure Journal | The independent window always has a readable native/fallback outer frame, warm wood background and two inset sections, even at zero global opacity; v1 session data preserved | Open current and older sessions with opacity zero, retry native atlas, change theme live; see [Chronicle design](ADVENTURE_CHRONICLE_DESIGN.md) |
 | Session, camp, Emota | Session history bounded; tent use ≠ Camp Benefits; automatic emotes optional and avoid combat | Relog, camp/tent acknowledgment, idle preview and combat |
+
+For the combined 2.2.24 candidate, use the [release-candidate smoke checklist](RELEASE_CANDIDATE_TEST_2.2.24.md) before promoting from GitHub prerelease to stable. Lua CI proves contracts under mock APIs, **not** actual client layout, secret data behavior or successful chat delivery.
 
 ## Versioning and release decision
 

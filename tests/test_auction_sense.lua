@@ -144,6 +144,20 @@ Tick(8)
 assert(ChalkBox_AuctionPrice(2589).low==9000 and
     ChalkBoxDB.auctionSense.markets["whitemane|alliance"].items["2589"].history[2].low==9000,
     "successful scans atomically replace the market and keep bounded price history")
+local history=ChalkBox_AuctionChartHistory(2589)
+assert(history and history.itemID==2589 and history.marketKey=="whitemane|alliance"
+    and #history.points==2 and history.points[2].low==9000
+    and history.points[1].t<history.points[2].t,
+    "chart reads authentic per-item scan history in timestamp order")
+history.points[1].low=1
+assert(ChalkBox_AuctionChartHistory(2589).points[1].low~=1,
+    "chart series is a validated copy; drawing cannot corrupt auction SavedVariables")
+assert(not ChalkBox_AuctionChartHistory(999999),
+    "unknown items cannot be given invented chart history")
+faction="Horde"
+assert(not ChalkBox_AuctionChartHistory(2589),
+    "graphs stay strictly within the active realm/faction market")
+faction="Alliance"
 clock=clock+901
 auctions={Listing("Linen Cloth",2589,1,4000)}
 assert(ChalkBox_AuctionFullScan())

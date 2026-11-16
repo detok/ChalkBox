@@ -11,6 +11,10 @@ local frame,tab,host,labels=nil,nil,nil,{}
 -- frames, without changing the Blizzard-owned auction/trading state.
 local hiddenMode=nil
 local hiddenNative={}
+-- Visual tab state only. Blizzard continues to own its native displayMode.
+-- Remember a Market selection through SetDisplayMode hooks, which may hide
+-- our pane BEFORE the native tab's own OnClick hook runs.
+local marketSelectionActive=false
 local searchText,page="",1
 local view="market"  -- Market / My Items / Sales: same native AH pane.
 local seconds=0
@@ -545,7 +549,20 @@ local function HookOtherTabs()
         if button and button~=tab and not hooked[button] and
             type(button.HookScript)=="function" then
             hooked[button]=true
-            pcall(button.HookScript,button,"OnClick",HidePane)
+            pcall(button.HookScript,button,"OnClick",function(clicked)
+                local restoringNative=marketSelectionActive
+                HidePane()
+                marketSelectionActive=false
+                -- The Blizzard handler can short-circuit SetDisplayMode when
+                -- Buy was already active beneath Market. Its first click then
+                -- leaves Buy visually deselected. Restore ONLY the clicked
+                -- native tab's appearance, never the protected tab registry
+                -- or Blizzard's authoritative auction displayMode.
+                if restoringNative and not CombatLocked() and
+                    type(PanelTemplates_SelectTab)=="function" and clicked then
+                    pcall(PanelTemplates_SelectTab,clicked)
+                end
+            end)
         end
     end
 end
@@ -575,6 +592,11 @@ function ChalkBox_AuctionAttach()
         if label and type(label.SetWidth)=="function" then
             label:SetWidth(106)
         end
+        -- The inherited AH tab template can start in the selected artwork
+        -- state even though Blizzard opens on Buy. Start Market unselected.
+        if type(PanelTemplates_DeselectTab)=="function" then
+            pcall(PanelTemplates_DeselectTab,tab)
+        end
         if previous then
             tab:SetPoint("LEFT",previous,"RIGHT",-3,0)
         else
@@ -587,6 +609,7 @@ function ChalkBox_AuctionAttach()
             -- that native state. Market has its own cosmetic presentation.
             HideNativeContent()
             frame:Show()
+            marketSelectionActive=true
             if type(PanelTemplates_DeselectTab)=="function" then
                 local nativeTabs=type(host.Tabs)=="table" and host.Tabs or
                     {host.BuyTab,host.SellTab,host.AuctionsTab}
@@ -602,8 +625,14 @@ function ChalkBox_AuctionAttach()
             Refresh()
         end)
         if type(host.HookScript)=="function" then
-            host:HookScript("OnHide",HidePane)
-            host:HookScript("OnShow",HidePane)
+            host:HookScript("OnHide",function()
+                HidePane()
+                marketSelectionActive=false
+            end)
+            host:HookScript("OnShow",function()
+                HidePane()
+                marketSelectionActive=false
+            end)
         end
         if type(hooksecurefunc)=="function" and
             type(host.SetDisplayMode)=="function" then
@@ -618,6 +647,7 @@ function ChalkBox_AuctionAttach()
 end
 function ChalkBox_AuctionHide()
     HidePane()
+    marketSelectionActive=false
 end
 function ChalkBox_AuctionOpen()
     if not AuctionHouseFrame then

@@ -2,7 +2,7 @@
 ## Title: ChalkBox
 ## Notes: All-in-one Forever companion: loot discoveries, item insights, The Bar, quests, combat tools, camping, MacroForge and a framed Adventure Journal.
 ## Author: Detok Whitemaine
-## Version: 2.2.23
+## Version: 2.2.24
 ## SavedVariables: ChalkBoxDB
 ## SavedVariablesPerCharacter: ChalkBoxZoneDB, ChalkBoxProfessionDB
 ## IconTexture: Interface\AddOns\ChalkBox\assets\Icon
@@ -36,6 +36,7 @@ CampSense.lua
 DropSense.lua
 AuctionSense.lua
 AuctionSenseUI.lua
+AuctionCharts.lua
 Libs\ForeverDisenchantData\Materials.lua
 Libs\ForeverDisenchantData\NoDisenchant.lua
 Libs\ForeverDisenchantData\OwnLoot.lua
@@ -61,6 +62,7 @@ BagLayout.lua
 MeterReportCopy.lua
 CombatMeter.lua
 NativeMeterPrint.lua
+CombatMeterMenu.lua
 ChalkBox_Settings.lua
 QuestTrackerMenu.lua
 MacroForgeDock.lua

@@ -55,4 +55,4 @@ Run the matching diagnostic, such as `/chalk quests status`, `/chalk drops map s
 [Documentation home](README.md) · [User handbook](USER_GUIDE.md) · [Complete commands](COMMANDS.md)
 
 
-**2.2.23 beta candidate:** The optional Combat Meter report now checks Forever chat restrictions and provides a copyable summary when manually sending the report is denied. **2.2.22 is still the stable version.** See [candidate release notes](https://github.com/detok/ChalkBox/releases) for the beta test build.
+**2.2.24 beta candidate:** The compact Combat Meter has one shared reporting menu and auto-fitting rows; The Bar can toggle native bags and AuctionSense has a settings-only experimental charts page. **2.2.22 is still the stable version.** Use the [2.2.24 smoke checklist](RELEASE_CANDIDATE_TEST_2.2.24.md) for the GitHub prerelease.

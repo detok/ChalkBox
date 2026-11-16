@@ -13,7 +13,8 @@ local navigation = {
     {key="loot", title="LootSense", children={
         {key="loothighlight", title="Appearance"}}},
     {key="drops", title="DropSense"},
-    {key="auction", title="AuctionSense"},
+    {key="auction", title="AuctionSense", children={
+        {key="auctioncharts", title="Charts (Experimental)"}}},
     {key="quests", title="QuestSense", children={
         {key="questnav", title="Navigation"}}},
     {key="journal", title="Session Journal"},
@@ -395,7 +396,10 @@ local function MakeAuction()
         "GameFontHighlight",28,-184,490)
     local details=Label(panel,"No snapshot saved","GameFontHighlightSmall",
         28,-214,490)
-    Button(panel,"Open AuctionSense Tab",28,-253,300,function()
+    Button(panel,"Charts Lab (Experimental)",334,-253,188,function()
+        Activate("auctioncharts")
+    end)
+    Button(panel,"Open AuctionSense Tab",28,-253,288,function()
         if type(ChalkBox_AuctionOpen)=="function" then
             if not ChalkBox_AuctionOpen() then
                 Note("Visit an auctioneer, then choose the AuctionSense tab.")
@@ -438,6 +442,19 @@ local function MakeAuction()
             (st.source=="full" and "Full listing snapshot" or "Unscanned"),
             st.age and (math.floor(st.age/60).."m old") or "No scan"))
     end)
+    return panel
+end
+
+local function MakeAuctionCharts()
+    local panel=Panel("AuctionSense / Charts (Experimental)",
+        "Actual saved low asking prices. A private drawing lab; no scans or purchases.")
+    if type(ChalkBox_AuctionChartsMount)=="function" then
+        local refresh=ChalkBox_AuctionChartsMount(panel)
+        if type(refresh)=="function" then panel:AddRefresh(refresh) end
+    else
+        Label(panel,"Chart rendering module unavailable.",
+            "GameFontHighlight",28,-125,490)
+    end
     return panel
 end
 
@@ -1426,11 +1443,11 @@ local function MakeMeter()
         Button(panel,tostring(n).."%",27+(i-1)*138,-318,120,
             function() Run("scale "..n) end)
     end
-    Label(panel,"Transparency","GameFontNormalLarge",30,-355,132)
+    Label(panel,"Background opacity","GameFontNormalLarge",30,-355,142)
     local opacity=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
     opacity:SetSize(244,17)
-    opacity:SetPoint("TOPLEFT",panel,"TOPLEFT",170,-351)
-    opacity:SetMinMaxValues(35,100)
+    opacity:SetPoint("TOPLEFT",panel,"TOPLEFT",180,-351)
+    opacity:SetMinMaxValues(0,100)
     if opacity.SetValueStep then opacity:SetValueStep(5) end
     local loading=false
     opacity:SetScript("OnValueChanged",function(_,value)
@@ -1458,6 +1475,7 @@ local function Register()
     panels.theme = MakeTheme()
     panels.drops = MakeDrops()
     panels.auction = MakeAuction()
+    panels.auctioncharts = MakeAuctionCharts()
     panels.journal = MakeJournal()
     panels.forge = MakeForge()
     panels.updates = MakeUpdates()

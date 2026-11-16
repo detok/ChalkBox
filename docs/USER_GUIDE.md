@@ -60,6 +60,8 @@ These are three related but distinct systems:
 
 If a browse result does not provide listing-level information, an **average ask or number of listings cannot be assumed**. If a previous full scan supplied real averages and listing counts, those remain visible with their original full-scan age after Browse Scan refreshes the minimum price. Do not interpret listing asks as real completed sales. Existing complete snapshots should survive an incomplete or failed scan.
 
+**Experimental charts (2.2.24 beta):** Open **ChalkBox → AuctionSense → Charts (Experimental)** from Blizzard's AddOns settings. Enter a previously scanned item name or ID and select **Find Item**. The chart plots up to seven existing, dated observations of the **lowest asking price per unit** with hover details, using native lines or a texture fallback. One point is not a trend; a missing item has no invented graph. It does not start scans, retain weekly history, or establish actual selling prices. See the [release candidate test](RELEASE_CANDIDATE_TEST_2.2.24.md).
+
 **To use the estimates:** Enable optional auction/disenchant tooltip hints in AuctionSense settings. For a specific item, shift-click it into `/chalk de [item]`. Tooltips may show ranges, partial price coverage or an unconfirmed bracket. Nothing is automatically bought, posted, mailed, sold or disenchanted.
 
 ## QuestSense
@@ -100,7 +102,7 @@ An optional **Show MacroForge in AddOn Compartment** checkbox adds a shortcut be
 
 New Bar profiles start with **Left:** level/progress, XP/hour; **Center:** elapsed session time, time to level, rested XP; **Right:** bag slots, gear condition, repair estimate, junk vendor value, gold/net, world latency. The pet metric remains available but begins hidden. Older saved arrangements and valuation modes are not silently overwritten.
 
-The Bar has **Balanced**, **Minimal**, **All**, and per-stat settings, plus opacity and position controls. Its width can hide the lowest-priority metrics on a small screen. Right-click an ordinary stat for its controls. Right-click **empty Bar space → Edit layout**; drag modules to the left/center/right groups, then right-click empty space again for **Done editing**. Reset Layout restores the current release's default arrangement.
+The Bar has **Balanced**, **Minimal**, **All**, and per-stat settings, plus opacity and position controls. Its width can hide the lowest-priority metrics on a small screen. **Left-click Bags NN free** to open or close Blizzard's normal bags (outside combat/edit mode); left-click Bag Value to switch its value mode. Right-click an ordinary stat for its controls. Right-click **empty Bar space → Edit layout**; drag modules to the left/center/right groups, then right-click empty space again for **Done editing**. Reset Layout restores the current release's default arrangement.
 
 The optional **Shift top UI below the Bar** uses selective Blizzard-frame positioning; ChalkBox does **not** resize or move `UIParent` or protected action bars. Separate bag offset is configurable from -120px to +120px and deferred when the bank/combat state would make it unsafe.
 
@@ -108,9 +110,9 @@ The optional **Shift top UI below the Bar** uses selective Blizzard-frame positi
 
 ## Combat Meter and Session Journal
 
-The optional compact **Combat Meter starts hidden**. Open it from settings or `/chalk meter show`, then choose supported DPS, damage, healing, interrupts or other native combat categories and a session (Current, Last or Overall). You can lock, move, resize or recolor its supported controls.
+The optional compact **Combat Meter starts hidden**. Open it from settings or `/chalk meter show`. The header has one **Menu** button; right-clicking the header opens the same menu. Switch DPS/damage/healing/HPS/taken/interrupts and Current/Last/Overall, choose icon style or lock, and resize the window. Its default maximum is **five rows**, automatically collapsed to actual visible participants; optionally increase the cap for raids. On-window and settings opacity controls adjust **only the background**, leaving names, DPS and class icons readable.
 
-**PRINT** is a deliberate user action to report a supported fight summary to normal **PARTY**, when client safety restrictions allow it. Native Blizzard meter integration may separately provide its own optional manual/automatic reporting preferences. Some Forever combat values are protected, especially during combat; the addon must not invent readable DPS figures. **RESET** requires confirmation.
+**Print top 3 / 5 / 10 to PARTY or SAY** is a deliberate user action using the **same report logic and preferences** as Blizzard's native meter gear menu. Automatic reporting remains OFF by default and uses its explicit channel, minimum fight and cooldown choices. A chat refusal makes a copyable manual report available instead of bypassing the game's restrictions; a successful API request is not proof of message delivery. Some Forever combat values are protected, especially during combat; ChalkBox never invents them. **RESET** requires confirmation and clears shared Blizzard meter sessions, not just ChalkBox.
 
 **Adventure Journal (Session Journal)** now opens in a fully framed, warm wood window with Session Summary and Field Notes sections; it remains readable even if global background opacity is zero. The existing recording still keeps the current session and up to **20 prior** snapshots of supported observed statistics: XP, gold, completed quests, sampled loot, camp reminders and other available events. It does not retroactively invent events from before installation. Use `/chalk session` or `/chalk session last`. A future [Full Adventure Chronicle](ADVENTURE_CHRONICLE_DESIGN.md) will add validated, bounded individual milestones and Today/Timeline/History views; those features do **not** record events in 2.2.22.
 
@@ -137,4 +139,4 @@ Start with [Troubleshooting](TROUBLESHOOTING.md), then [Commands](COMMANDS.md) f
 [Documentation home](README.md) · [Getting started](GETTING_STARTED.md) · [Release notes](RELEASE_NOTES.md)
 
 
-**2.2.23 beta candidate:** The optional Combat Meter report now checks Forever chat restrictions and provides a copyable summary when manually sending the report is denied. **2.2.22 is still the stable version.** See [candidate release notes](https://github.com/detok/ChalkBox/releases) for the beta test build.
+**2.2.24 GitHub prerelease:** see the [playtest checklist](RELEASE_CANDIDATE_TEST_2.2.24.md). **2.2.22 remains stable** until the new combined build is verified in Forever.
