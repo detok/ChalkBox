@@ -232,8 +232,8 @@ for _,v in ipairs(allFrames) do
 end
 assert(matchingAtlas,"Market uses the same auctionhouse-background-index artwork as native Browse")
 assert(tab.template=="AuctionHouseFrameDisplayModeTabTemplate" and
-    tab.text=="Market" and tab.w==92,
-    "short native AH tab stays readable inside the native tab strip")
+    tab.text=="Market" and tab.w==122,
+    "Market tab reserves enough width to avoid the client's Ma... truncation")
 assert(tab.point and tab.point[2]==auctions and
     pane.point[2]==AuctionHouseFrame,
     "new tab aligns after Blizzard's native tabs")
