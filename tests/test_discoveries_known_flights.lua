@@ -22,6 +22,9 @@ local function Frame(kind,name,parent)
     function f:CreateTexture()
         local tex={parent=self}
         function tex:SetTexture(s) self.texture=s end
+        function tex:SetAtlas(s,resize)
+            self.atlas=s;self.resize=resize
+        end
         function tex:SetVertexColor(...) self.color={...} end
         function tex:SetSize(w,h) self.w,self.h=w,h end
         function tex:SetPoint(...) self.point={...} end
@@ -61,6 +64,10 @@ _G.C_Map={
         end
     end,
 }
+_G.C_Texture={GetAtlasInfo=function(atlas)
+    if atlas=="TaxiNode_Alliance" or atlas=="TaxiNode_Horde" or
+        atlas=="TaxiNode_Neutral" then return {atlas=atlas} end
+end}
 local points={
     {nodeID=7,name="Visited Hub",state=0,
         position={GetXY=function() return .30,.30 end},
@@ -84,13 +91,17 @@ _G.C_TaxiMap={
             -- Screenshot regression: zone Barrens shows Ratchet known FP
             -- even though Blizzard does NOT show taxi nodes via map filter.
             return {
-                {nodeID=8,position={GetXY=function() return .72,.31 end}},
-                {nodeID=9,position={GetXY=function() return .69,.34 end}},
+                {nodeID=8,position={GetXY=function() return .72,.31 end},
+                    atlasName="TaxiNode_Neutral",faction=0},
+                {nodeID=9,position={GetXY=function() return .69,.34 end},
+                    atlasName="TaxiNode_Horde",faction=1},
             }
         elseif id==1436 then
             return {
-                {nodeID=8,position={GetXY=function() return .70,.60 end}},
-                {nodeID=9,position={GetXY=function() return .55,.45 end}},
+                {nodeID=8,position={GetXY=function() return .70,.60 end},
+                    atlasName="TaxiNode_Alliance",faction=2},
+                {nodeID=9,position={GetXY=function() return .55,.45 end},
+                    atlasName="TaxiNode_Horde",faction=1},
             }
         elseif id==1437 then return {}
         elseif id==1414 then return {} end
@@ -180,6 +191,14 @@ for _,f in ipairs(allFrames) do
 end
 assert(drawn["Visited Hub"] and drawn["Known Destination"] and
     not drawn["Not Learned"],"no unlearned marker appears on the map")
+assert(drawn["Known Destination"].icon and
+    drawn["Known Destination"].icon.atlas=="TaxiNode_Alliance" and
+    drawn["Known Destination"].icon.texture~=
+        "Interface\\Buttons\\WHITE8X8",
+    "a known Alliance flight master uses Blizzard's winged-boot atlas, not squares")
+assert(drawn["Visited Hub"].icon and
+    drawn["Visited Hub"].icon.atlas=="TaxiNode_Neutral",
+    "a known node without a reported faction uses native neutral flight master art")
 local pin=drawn["Visited Hub"]
 assert(pin.point and pin.point[1]=="CENTER" and
     pin.point[2]==canvas and pin.point[4]==450 and pin.point[5]==-300,
@@ -216,6 +235,9 @@ end
 assert(ratchetPin and ratchetPin.point[4]==648 and
     ratchetPin.point[5]==-186,
     "known Ratchet-style map-local position uses exact zone canvas geometry")
+assert(ratchetPin.icon.atlas=="TaxiNode_Neutral" and
+    not drawn["Not Learned"],
+    "Ratchet uses Blizzard's neutral winged-boot icon without exposing any unknown FP")
 mapID=1437
 loader.scripts.OnUpdate(loader,1)
 assert(ChalkBox_DiscoveriesKnownFlightsStatus().mapPins==0,
