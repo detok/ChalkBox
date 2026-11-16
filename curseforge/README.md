@@ -28,4 +28,4 @@ Created and maintained by **Detok Whitemaine**. Original ChalkBox code is under 
 ChalkBox targets **WoW Forever**. Only select a truly compatible flavor in the CurseForge portal; do not claim testing on ordinary Classic or Retail. Project approval, release-type changes and live download status must be confirmed in the CurseForge author portal.
 
 
-**2.2.23 beta candidate:** The optional Combat Meter report now checks Forever chat restrictions and provides a copyable summary when manually sending the report is denied. **2.2.22 is still the stable version.** See [candidate release notes](https://github.com/detok/ChalkBox/releases) for the beta test build.
+**2.2.24 GitHub prerelease candidate:** This unverified playtest build combines compact meter reporting/menu polish, The Bar bag clicks, AuctionSense tab fixes and a settings-only experimental chart lab. [Read the live test checklist](https://github.com/detok/ChalkBox/blob/main/docs/RELEASE_CANDIDATE_TEST_2.2.24.md). **2.2.22 remains the stable game/publisher release**; do not substitute the beta ZIP for it until client testing is complete.
