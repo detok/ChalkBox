@@ -204,6 +204,9 @@ assert(footer and footer:find("STALE",1,true),
 -- Rendering never issues another auction scan, sale or bid.
 assert(writes==0 and scans==0 and purchases==0 and
     #AuctionHouseFrame.Tabs==3)
+assert(ChalkBox_PriceLensStatus().attached and
+    ChalkBox_PriceLensStatus().selectedID==2589,
+    "price history remains a separate optional visual with no AH state edits")
 assert(ChalkBox_PriceLensCommand("off") and not panel:IsShown())
 assert(ChalkBox_PriceLensToggle(true))
 if AuctionHouseFrame.hooks and AuctionHouseFrame.hooks.OnHide then
