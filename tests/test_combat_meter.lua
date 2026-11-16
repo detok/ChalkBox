@@ -153,6 +153,14 @@ for _,f in ipairs(frames) do
     if f.kind=="FontString" then labels[#labels+1]=f end
 end
 assert(#bars==12,"five default rows and seven latent raid row bars")
+assert(window.h==141 and bars[1].parent.shown and not bars[4].parent.shown,
+    "three recorded combatants produce only three populated rows, no blank slots")
+ChalkBox_MeterCommand("rows 8")
+Flush()
+assert(ChalkBox_MeterStatus().rows==8 and window.h==141,
+    "raid row cap may expand but height still follows actual combatants")
+ChalkBox_MeterCommand("rows 5")
+Flush()
 assert(bars[1].value==rawValue and bars[1].max==maxValue,
     "secret DPS & scaling passed unchanged to C statusbar")
 local formatted=false;local named=false
