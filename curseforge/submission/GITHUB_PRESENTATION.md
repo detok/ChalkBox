@@ -1,6 +1,6 @@
 # GitHub presentation
 
-ChalkBox's README is a compact public landing page. It points to the **versioned documentation home**, a practical getting-started guide, a player handbook, verified slash commands, developer/maintainer runbooks and troubleshooting. Keep it aligned with the latest tested release.
+ChalkBox 2.2.22 is its first stable release. The README is a compact public landing page. It points to the **versioned documentation home**, a practical getting-started guide, a player handbook, verified slash commands, developer/maintainer runbooks and troubleshooting. Keep it aligned with the latest tested release.
 
 ## Suggested repository About text
 
