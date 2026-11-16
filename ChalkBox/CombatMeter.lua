@@ -18,7 +18,7 @@ local sessions={
     {key="expired",label="Last",enum="Expired"},
     {key="overall",label="Overall",enum="Overall"},
 }
-local meterButton,sessionButton
+local meterTitle
 local function Safe(v)
     -- Inspect the secrecy of a value before asking Lua to evaluate it at all.
     return (type(issecretvalue)~="function" or not issecretvalue(v)) and v~=nil
@@ -36,7 +36,7 @@ local function Settings()
     if value.locked==nil then value.locked=false end
     if value.mode==nil then value.mode="dps" end
     if value.session==nil then value.session="current" end
-    if value.rows~=5 and value.rows~=8 and value.rows~=12 then value.rows=8 end
+    if value.rows~=5 and value.rows~=8 and value.rows~=12 then value.rows=5 end
     if value.scale~=0.85 and value.scale~=1 and value.scale~=1.15 then value.scale=1 end
     if type(value.width)~="number" or value.width<300 or value.width>600 then value.width=326 end
     -- Same as The Bar: opacity controls background surfaces, not names,
@@ -383,11 +383,10 @@ local function SetShown(on)
     if db.shown then window:Show();QueueRefresh() else window:Hide() end
 end
 local function UpdateButtons()
-    if not window or not db then return end
+    if not window or not db or not meterTitle then return end
     local mode=Choice()
     local session=Session()
-    meterButton:SetText(mode.label.."  >")
-    sessionButton:SetText(session.label.."  >")
+    meterTitle:SetText(mode.label.."  /  "..session.label)
 end
 local function SetMode(value)
     local choice=Find(modes,value)
@@ -556,6 +555,39 @@ function ChalkBox_MeterPrintFight()
     if not db then db=Settings() end
     return PrintFight()
 end
+-- Use the native report encoder, validation, configurable Top 3/5/10,
+-- channels and manual copy fallback. Never maintain a second print path.
+function ChalkBox_MeterReportAdapter()
+    if not db then db=Settings() end
+    if not IsAvailable() then return nil end
+    local mode=Choice()
+    local session=Session()
+    local kind=EnumValue("DamageMeterType",mode.enum,
+        ({Dps=1,DamageDone=0,Hps=3,HealingDone=2,DamageTaken=7,Interrupts=5})[mode.enum])
+    local sessionID=EnumValue("DamageMeterSessionType",session.enum,
+        ({Current=1,Expired=2,Overall=0})[session.enum])
+    return {
+        GetDamageMeterType=function() return kind end,
+        GetSessionType=function() return sessionID end,
+        GetCombatSession=function()
+            local ok,data=pcall(C_DamageMeter.GetCombatSessionFromType,
+                sessionID,kind)
+            if ok and Safe(data) and type(data)=="table" then return data end
+        end,
+    }
+end
+function ChalkBox_MeterReportSelected(channel)
+    local adapter=ChalkBox_MeterReportAdapter()
+    if not adapter then
+        Chat("Blizzard damage meter unavailable.")
+        return false
+    end
+    if type(ChalkBox_NativeMeterPrint)~="function" then
+        Chat("Shared native report helper unavailable.")
+        return false
+    end
+    return ChalkBox_NativeMeterPrint(adapter,channel or "PARTY")
+end
 
 local function CreateWindow()
     if window or not UIParent then return end
@@ -603,21 +635,21 @@ local function CreateWindow()
             db.position="custom"
         end
     end)
-    -- Zero branding/footer noise. Every button does something useful.
-    -- Fits at the minimum 300px width: DPS / Fight / PRINT / RESET / LOCK.
-    meterButton=MakeButton(header,"DPS",48,-241,function()
-        Next(modes,"mode",SetMode)
+    -- Bar-style compact header. Both gear and right-click use the same
+    -- menu; all existing actions remain accessible from that menu.
+    meterTitle=Font(header,"GameFontHighlightSmall",1,0.91,0.72)
+    meterTitle:SetPoint("LEFT",header,"LEFT",10,0)
+    meterTitle:SetWidth(210)
+    header:SetScript("OnMouseUp",function(self,button)
+        if button=="RightButton" and
+            type(ChalkBox_MeterOpenMenu)=="function" then
+            ChalkBox_MeterOpenMenu(self)
+        end
     end)
-    sessionButton=MakeButton(header,"Fight",60,-176,function()
-        Next(sessions,"session",SetSession)
-    end)
-    MakeButton(header,"PRINT",52,-119,function() PrintFight() end)
-    MakeButton(header,"RESET",56,-58,function()
-        ChalkBox_MeterCommand("reset") -- existing confirmation; never immediate
-    end)
-    lockButton=MakeButton(header,"LOCK",50,-3,function()
-        db.locked=not db.locked
-        ApplyLocked()
+    MakeButton(header,"Menu",56,-3,function()
+        if type(ChalkBox_MeterOpenMenu)=="function" then
+            ChalkBox_MeterOpenMenu(header)
+        end
     end)
 
     notice=Font(window,"GameFontHighlightSmall",0.62,0.70,0.77)
