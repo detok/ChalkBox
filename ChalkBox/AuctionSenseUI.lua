@@ -117,6 +117,9 @@ local function Refresh()
         elseif status.phase=="settling" then
             labels.progress:SetText(("%d listings arriving  ·  confirming total"):format(
                 status.reportedListings or 0))
+        elseif status.phase=="finalizing" then
+            labels.progress:SetText(("%d / %d auctions  ·  checking final batch"):format(
+                status.processedListings or 0,status.totalListings or 0))
         else
             labels.progress:SetText(("%ds elapsed  ·  awaiting server"):format(
                 math.floor(status.waitSeconds or 0)))
