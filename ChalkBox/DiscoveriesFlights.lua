@@ -128,14 +128,42 @@ local function SetPinArt(pin,atlas)
         icon:SetTexture("Interface\\Minimap\\Tracking\\FlightMaster")
     end
 end
+-- Forever's zone map adds artwork above the base canvas after map changes.
+-- On continents canvas+8 worked, but on zones it left the native taxi atlas
+-- underneath local map layers even though the pin could still be hovered.
+-- Keep map ownership/coordinates, only lift this small cosmetic pin.
+local function RaisePin(pin,canvas)
+    if not pin then return end
+    local world=WorldMapFrame
+    local scroll=world and world.ScrollContainer
+    local top=0
+    for _,frame in ipairs({canvas,scroll,world}) do
+        local level=frame and Call(frame.GetFrameLevel,frame)
+        if Number(level) then top=math.max(top,level) end
+    end
+    if type(pin.SetFrameStrata)=="function" then
+        local strata=world and Call(world.GetFrameStrata,world)
+        if type(strata)=="string" then
+            pcall(pin.SetFrameStrata,pin,strata)
+        end
+    end
+    if type(pin.SetFrameLevel)=="function" then
+        pcall(pin.SetFrameLevel,pin,math.min(9900,top+60))
+    end
+end
 local function MakePin(canvas,index)
     local pin=pins[index]
     if not pin then
         pin=CreateFrame("Frame",nil,canvas)
-        pin:SetSize(20,20)
+        pin:SetSize(24,24)
         if type(pin.EnableMouse)=="function" then pin:EnableMouse(true) end
-        local icon=pin:CreateTexture(nil,"ARTWORK")
+        -- In Forever the zone-specific map tiles may be drawn above
+        -- ARTWORK textures; OVERLAY keeps the flight-master boot visible.
+        local icon=pin:CreateTexture(nil,"OVERLAY")
         icon:SetAllPoints(pin)
+        if type(icon.SetDrawLayer)=="function" then
+            pcall(icon.SetDrawLayer,icon,"OVERLAY",7)
+        end
         pin.icon=icon
         pin:SetScript("OnEnter",function(self)
             if GameTooltip and type(GameTooltip.SetOwner)=="function" and
@@ -154,10 +182,7 @@ local function MakePin(canvas,index)
     elseif type(pin.SetParent)=="function" then
         pin:SetParent(canvas)
     end
-    if type(pin.SetFrameLevel)=="function" and
-        type(canvas.GetFrameLevel)=="function" then
-        pin:SetFrameLevel(canvas:GetFrameLevel()+8)
-    end
+    RaisePin(pin,canvas)
     return pin
 end
 -- Convert points from an explicitly reported parent map into its zone.
@@ -247,7 +272,13 @@ local function Refresh()
     local db=DB()
     if not db then return end
     local key=tostring(mapID)..":"..db.revision..":"..w..":"..h
-    if key==drawnKey and lastCanvas==canvas then return end
+    if key==drawnKey and lastCanvas==canvas then
+        -- The native zone canvas may change levels while textures load or
+        -- while a player switches map zoom without changing the map ID.
+        -- Repair draw order without rebuilding or adding any flight paths.
+        for i=1,lastCount do RaisePin(pins[i],canvas) end
+        return
+    end
     HidePins()
     drawnKey,lastCanvas=key,canvas
     local indexed=IndexedPositions(mapID,db.nodes)
