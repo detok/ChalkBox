@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.20 — Large Forever auction snapshots (Beta)
+
+- Remove the too-small 150,000 listing hard limit that rejected real Forever AH responses; retain bounded batch processing and a high corruption safety ceiling.
+- Add large-snapshot regression and retain all previous market observations on interrupted scans.
+
 ## 2.2.19 — AuctionSense Forever replication reliability (Beta)
 
 - Wait for real full listing data without the premature 25-second abort, using the modern Forever replication event and actual dropped-request signal.
