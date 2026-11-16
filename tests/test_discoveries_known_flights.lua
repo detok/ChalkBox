@@ -42,10 +42,13 @@ local calls=0
 _G.C_Map={
     GetBestMapForUnit=function(unit) assert(unit=="player");return 1436 end,
     GetMapInfo=function(id)
-        if id==1436 or id==1437 then
-            return {mapType=3,id=id,name="Zone"}
+        if id==1436 or id==1437 or id==1413 then
+            return {mapType=3,id=id,name="Zone",
+                parentMapID=id==1413 and 1414 or nil}
         end
-        if id==1415 then return {mapType=2,id=id,name="Continent"} end
+        if id==1415 or id==1414 then
+            return {mapType=2,id=id,name="Continent"}
+        end
         return {mapType=2,id=id,name="Taxi"}
     end,
     GetPlayerMapPosition=function(id,unit)
@@ -77,6 +80,20 @@ _G.C_TaxiMap={
     ShouldMapShowTaxiNodes=function(id) return id==1415 end,
     GetTaxiNodesForMap=function(id)
         browseCalls=browseCalls+1
+        if id==1413 then
+            -- Screenshot regression: zone Barrens shows Ratchet known FP
+            -- even though Blizzard does NOT show taxi nodes via map filter.
+            return {
+                {nodeID=8,position={GetXY=function() return .72,.31 end}},
+                {nodeID=9,position={GetXY=function() return .69,.34 end}},
+            }
+        elseif id==1436 then
+            return {
+                {nodeID=8,position={GetXY=function() return .70,.60 end}},
+                {nodeID=9,position={GetXY=function() return .55,.45 end}},
+            }
+        elseif id==1437 then return {}
+        elseif id==1414 then return {} end
         assert(id==1415)
         return {
             {nodeID=7,position={GetXY=function() return .1,.2 end}},
@@ -152,8 +169,9 @@ scroll.Child=canvas
 world.ScrollContainer=scroll
 loader.scripts.OnUpdate(loader,1)
 local status=ChalkBox_DiscoveriesKnownFlightsStatus()
-assert(status.mapID==1436 and status.mapPins==2,
-    "only confirmed paths render on zone map with safe projected positions")
+assert(status.mapID==1436 and status.mapPins==2 and
+    status.directPositions==1 and status.observedPositions==1,
+    "zone maps render learned nodes from zone-local positions even when taxi map filters are false")
 local drawn={}
 for _,f in ipairs(allFrames) do
     if f.parent==canvas and f.flightName and f.shown then
@@ -181,6 +199,23 @@ checkbox.toggle()
 loader.scripts.OnUpdate(loader,1)
 assert(ChalkBox_DiscoveriesKnownFlightsStatus().mapPins==2,
     "checkbox restores the two known pins")
+-- Actual failing reported view: Ratchet in The Barrens, known node 8
+-- stored through a previous taxi visit but no stored current-zone XY.
+-- It must draw with GetTaxiNodesForMap(zone) without trusting the unknown 9.
+mapID=1413
+loader.scripts.OnUpdate(loader,1)
+local ratchet=ChalkBox_DiscoveriesKnownFlightsStatus()
+assert(ratchet.mapPins==1 and ratchet.directPositions==1 and
+    ratchet.verified==2 and ratchet.unplacedNodes==1,
+    "Barrens displays known Ratchet-style node without exposing unknown node")
+local ratchetPin
+for _,f in ipairs(allFrames) do
+    if f.parent==canvas and f.shown and
+        f.flightName=="Known Destination" then ratchetPin=f end
+end
+assert(ratchetPin and ratchetPin.point[4]==648 and
+    ratchetPin.point[5]==-186,
+    "known Ratchet-style map-local position uses exact zone canvas geometry")
 mapID=1437
 loader.scripts.OnUpdate(loader,1)
 assert(ChalkBox_DiscoveriesKnownFlightsStatus().mapPins==0,
