@@ -36,7 +36,10 @@ local function Settings()
     if value.locked==nil then value.locked=false end
     if value.mode==nil then value.mode="dps" end
     if value.session==nil then value.session="current" end
-    if value.rows~=5 and value.rows~=8 and value.rows~=12 then value.rows=5 end
+    if type(value.rows)~="number" or value.rows~=value.rows or
+        value.rows<5 or value.rows>12 then value.rows=5 end
+    -- A manual resize may select 6, 7, 9, 10 or 11 rows; preserve it.
+    value.rows=math.floor(value.rows+0.5)
     if value.scale~=0.85 and value.scale~=1 and value.scale~=1.15 then value.scale=1 end
     if type(value.width)~="number" or value.width<300 or value.width>600 then value.width=326 end
     -- Same as The Bar: opacity controls background surfaces, not names,
@@ -361,6 +364,13 @@ local function Refresh()
             rows[i].bar:SetValue(0)
         end
     end
+    -- Treat saved rows as a maximum, not permanent blank slots.
+    -- Always retain one row of space for the empty-session message.
+    local shown=math.max(1,math.min(db.rows,visible))
+    for i,row in ipairs(rows) do
+        if i<=shown then row:Show() else row:Hide() end
+    end
+    if window.SetHeight then window:SetHeight(66+shown*25) end
     if visible==0 then
         Note("No fight data yet. Attack something!")
     else
@@ -599,9 +609,9 @@ local function CreateWindow()
     window:SetMovable(true)
     if window.SetResizable then window:SetResizable(true) end
     if window.SetResizeBounds then
-        window:SetResizeBounds(300,66+5*25,600,66+12*25)
+        window:SetResizeBounds(300,66+1*25,600,66+12*25)
     elseif window.SetMinResize and window.SetMaxResize then
-        window:SetMinResize(300,66+5*25)
+        window:SetMinResize(300,66+1*25)
         window:SetMaxResize(600,66+12*25)
     end
     if window.SetClampedToScreen then window:SetClampedToScreen(true) end
