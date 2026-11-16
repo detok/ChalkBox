@@ -322,11 +322,13 @@ local function Commit(scan)
                 not item.mixed and not prev.mixed and
                 (not item.variant or not prev.variant or
                     item.variant==prev.variant)
-            local avg,lots,_,at=compatible and Detail(prev,old)
-            if avg and lots and at then
-                item.detailAverage=avg
-                item.detailListings=lots
-                item.detailAt=at
+            if compatible then
+                local avg,lots,_,at=Detail(prev,old)
+                if avg and lots and at then
+                    item.detailAverage=avg
+                    item.detailListings=lots
+                    item.detailAt=at
+                end
             end
         end
     end
