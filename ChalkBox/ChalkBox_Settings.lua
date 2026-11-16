@@ -314,7 +314,7 @@ end
 
 local function MakeDrops()
     local panel=Panel("DropSense",
-        "Your drops by zone and creature.")
+        "Personal loot observations by zone and creature; never official drop odds.")
     Toggle(panel,"Record drops automatically",nil,-105,
         function()
             local s=ChalkBox_DropOptions and ChalkBox_DropOptions()
@@ -323,7 +323,7 @@ local function MakeDrops()
         function(on)
             if ChalkBox_DropSetOption then ChalkBox_DropSetOption("enabled",on) end
         end)
-    Toggle(panel,"Show drop stats in loot tooltips",
+    Toggle(panel,"Show Drop Journal in loot tooltips",
         nil,-146,
         function()
             local s=ChalkBox_DropOptions and ChalkBox_DropOptions()
@@ -332,7 +332,7 @@ local function MakeDrops()
         function(on)
             if ChalkBox_DropSetOption then ChalkBox_DropSetOption("tooltip",on) end
         end)
-    Toggle(panel,"Show Discoveries on world map",
+    Toggle(panel,"Show Discoveries button on world map",
         nil,-187,
         function()
             local s=ChalkBox_DropOptions and ChalkBox_DropOptions()
@@ -358,7 +358,7 @@ local function MakeDrops()
         end
     end)
     Label(panel,"DROP CHANCE CALCULATOR","GameFontNormalLarge",28,-310,455)
-    Label(panel,"Your reference %","GameFontHighlightSmall",28,-349,150)
+    Label(panel,"Reference drop rate %","GameFontHighlightSmall",28,-349,150)
     local rate=CreateFrame("EditBox",nil,panel,"InputBoxTemplate")
     rate:SetSize(76,24)
     rate:SetPoint("TOPLEFT",panel,"TOPLEFT",171,-341)
@@ -369,7 +369,7 @@ local function MakeDrops()
     attempts:SetPoint("TOPLEFT",panel,"TOPLEFT",334,-341)
     attempts:SetAutoFocus(false)
     local feedback=Label(panel,
-        "Personal estimates only; official rates unknown.",
+        "Enter your own rate; no official rates are supplied.",
         "GameFontHighlightSmall",28,-395,495)
     Button(panel,"Calculate",411,-340,107,function()
         local result=ChalkBox_DropCalculate and
@@ -379,9 +379,9 @@ local function MakeDrops()
                 result,attempts:GetText())) or
             "Enter a rate from 0 to 100 and a whole number of attempts.")
     end)
-    Label(panel,"Drop rates are calculated per creature, not per zone.",
+    Label(panel,"Observed rates require an identified creature source.",
         "GameFontHighlightSmall",28,-416,495)
-    Label(panel,"Loot attempts are tracked; unlooted kills are not.",
+    Label(panel,"Counts are loot windows, not all kills or true server odds.",
         "GameFontHighlightSmall",28,-431,495)
     return panel
 end
@@ -634,7 +634,7 @@ end
 
 local function MakeLootAppearance()
     local panel=Panel("LootSense Appearance",
-        "Choose the kinds of item insights you want without changing WoW's item art.")
+        "Control which item hints appear. WoW's item art remains unchanged.")
     Label(panel,"ITEM INSIGHT FILTERS","GameFontNormalLarge",27,-104,490)
     local kinds={
         {"crafting","Learned crafting uses","Confirmed uses take priority.",-134},
@@ -658,11 +658,11 @@ local function MakeLootAppearance()
                 d.lootCategories[key]=on
             end)
     end
-    Label(panel,"BAG REAGENT OUTLINES PAUSED","GameFontNormalLarge",
+    Label(panel,"BAG OUTLINES DISABLED FOR SAFETY","GameFontNormalLarge",
         27,-246,480)
-    Label(panel,"Protected item-button safety. Item Insight still works.",
+    Label(panel,"No secure bag-button modifications; item tooltip hints still work.",
         "GameFontHighlightSmall",27,-275,495)
-    Label(panel,"Saved marker opacity","GameFontNormal",27,-326,145)
+    Label(panel,"Marker opacity (off)","GameFontNormal",27,-326,145)
     local slider=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
     slider:SetSize(255,17)
     slider:SetPoint("TOPLEFT",panel,"TOPLEFT",182,-322)

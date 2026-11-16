@@ -14,7 +14,7 @@ Quality-of-life tools for **World of Warcraft: Forever** — loot discoveries, q
 
 ChalkBox installs as **one `ChalkBox` folder**. Its bundled recipe data needs no separate download. Features are managed through Blizzard's native **Options → AddOns → ChalkBox** pages, or by typing `/chalk`.
 
-> **Current release: 2.2.17 (GitHub prerelease).** ChalkBox targets WoW Forever. The code has automated Lua 5.1 tests, but client-specific UI behavior still needs real in-game verification. Retail and ordinary Classic compatibility are **not claimed**.
+> **Current published candidate: 2.2.17 (GitHub prerelease). 2.2.18 is under draft review, not yet released.** ChalkBox targets WoW Forever. The code has automated Lua 5.1 tests, but client-specific UI behavior still needs real in-game verification. Retail and ordinary Classic compatibility are **not claimed**.
 
 ## See it in-game
 
@@ -64,7 +64,11 @@ For the full installation, first-use and recovery walkthrough, see [Getting star
 
 [Complete verified command reference](docs/COMMANDS.md)
 
-## What's new in 2.2.17?
+## What's new in 2.2.18 (draft, not released)?
+
+Item tooltip polish: improved DropSense count/observed-rate colors, consistent LootSense progress and evidence text, and gold market asking prices. No gameplay or saved-data changes.
+
+## Previously in 2.2.17
 
 **QuestSense** now defaults to the original old-school arrow on fresh characters, with a **32–72px size slider** (48px default) in QuestSense → Navigation. **MacroForge** opens as one coherent native macro-editor workflow from AddOns Settings, and its small button now sits in the native /macro bottom row beside Delete/New/Exit when the client exposes that layout. Existing saved styles and standalone MacroForge remain available.
 

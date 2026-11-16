@@ -187,8 +187,11 @@ function ChalkBox_AuctionTooltip(tooltip,link)
             end
         end
     end
+    -- Separate historical market evidence from Blizzard's item properties.
+    -- Asking prices are monetary values, not a guaranteed good deal.
+    Line(" ","muted",0.65,0.70,0.73)
     Line(marker..market,"info",0.40,0.83,0.78)
-    Metric("Low / unit",Money(price.low),"good",0.39,0.94,0.62)
+    Metric("Low / unit",Money(price.low),"value",0.98,0.79,0.39)
     Metric("Avg / unit",price.average and Money(price.average) or "—",
         "value",0.98,0.79,0.39)
     Metric("Listings",price.listings and tostring(price.listings) or "—",

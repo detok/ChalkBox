@@ -192,11 +192,24 @@ local tooltip={
 -- Last drop was in dungeon; global count remains valid without claiming a
 -- percentage for current unrelated loot source.
 assert(ChalkBox_DropTooltip(tooltip,"item:500"))
-assert(captured[1]=="Drop Journal" and colors[2]
-    and colors[2][2]>colors[2][1],
-    "personal loot count has a clear informational color")
+assert(captured[1]==" " and captured[2]=="Drop Journal"
+    and captured[3] and captured[3]:find("found",1,true)
+    and colors[3] and colors[3][3]>colors[3][1]
+    and colors[3][3]>colors[3][2],
+    "personal loot quantity is visibly blue, separated from item text")
 assert(table.concat(captured," "):find("not official odds",1,true),
     "short loot tooltip labels still identify personal rather than official data")
+-- The native tooltip must not receive the same journal twice on refresh.
+tooltip.GetName=function() return "DropSenseTestTooltip" end
+tooltip.NumLines=function() return #captured end
+for index,line in ipairs(captured) do
+    _G["DropSenseTestTooltipTextLeft"..index]={
+        GetText=function() return line end}
+end
+local originalCount=#captured
+assert(not ChalkBox_DropTooltip(tooltip,"item:500")
+    and #captured==originalCount,
+    "same loot-window tooltip is annotated only once")
 tooltip.GetOwner=function()
     return {GetName=function() return "ContainerFrame1Item1" end}
 end

@@ -2,7 +2,7 @@
 
 This is the **versioned documentation home** for ChalkBox. GitHub has a Wiki feature, but keeping the primary instructions here means user guides, tests and the actual Lua implementation can be reviewed in the same pull request. Release documentation lives with the code it describes.
 
-**Current addon version: 2.2.17 · Target: World of Warcraft: Forever.** This is not a claim of verified Retail / Classic Era support. Screenshots may represent older versions; check the release notes for behavioral changes.
+**Development candidate: 2.2.18 (draft PR, unpublished) · Latest published prerelease: 2.2.17 · Target: World of Warcraft: Forever.** This is not a claim of verified Retail / Classic Era support. Screenshots may represent older versions; check the release notes for behavioral changes.
 
 ## Player guides
 

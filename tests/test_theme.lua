@@ -37,6 +37,13 @@ local redR,redG,redB=ChalkBox_TipColor("danger")
 local blueR,blueG,blueB=ChalkBox_TipColor("count")
 assert(greenG>greenR and redR>redG and blueB>blueR,
     "one semantic palette communicates good, danger, and counts")
+-- Observed frequency is informational, while quantities are counts.
+local ir,ig,ib=ChalkBox_TipColor("info")
+local cr,cg,cb=ChalkBox_TipColor("count")
+assert(ig>ir and cb>cr and
+    (ir~=greenR or ig~=greenG or ib~=greenB),
+    "observed rates must not use the positive-outcome color")
+assert(cb>cg and cb>cr,"item quantities use blue count emphasis")
 local lines={}
 local tip={AddDoubleLine=function(_,label,value,lr,lg,lb,vr,vg,vb)
     lines[#lines+1]={label=label,value=value,r=vr,g=vg,b=vb}
