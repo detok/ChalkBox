@@ -12,6 +12,7 @@ _G.UnitFactionGroup=function() return "Alliance" end
 _G.DEFAULT_CHAT_FRAME={AddMessage=function() end}
 local countReady=false
 local returnedCount=2
+local syntheticLarge=false
 local browseResults={{itemKey={itemID=2589},minPrice=4300,
     totalQuantity=23}}
 local function Fire(event,...)
@@ -26,6 +27,11 @@ _G.C_AuctionHouse={
     ReplicateItems=function() requests=requests+1 end,
     GetNumReplicateItems=function() return countReady and returnedCount or 0 end,
     GetReplicateItemInfo=function(index)
+        if syntheticLarge then
+            assert(index>=0 and index<returnedCount)
+            return "Linen Cloth",12,1,1,true,1,"",0,0,5000,
+                0,nil,nil,nil,nil,0,2589,true
+        end
         assert(index==0 or index==1)
         local quantity=index==0 and 2 or 4
         local buyout=index==0 and 10000 or 28000
@@ -138,4 +144,31 @@ assert(not ChalkBox_AuctionStatus().busy
     "silent Forever request stops after 10 minutes without erasing prices")
 assert(ChalkBox_AuctionStatus().cooldown>0,
     "even a silent accepted full-scan request has a request cooldown")
+-- Exercise an entire full market snapshot spanning multiple frame batches,
+-- then append an auction before the final two-second completion check.
+now=now+901
+syntheticLarge=true
+returnedCount=160
+assert(ChalkBox_AuctionFullScan())
+Fire("REPLICATE_ITEM_LIST_UPDATE")
+Tick(1)
+Tick(1)
+Tick(1) -- switches to reading after 2 quiet seconds
+Tick(1) -- first 140 listings
+Tick(1) -- remaining 20 listings; begins final quiet period
+assert(ChalkBox_AuctionStatus().phase=="finalizing")
+returnedCount=161
+Tick(1) -- late data invalidates finalization
+assert(ChalkBox_AuctionStatus().totalListings==161
+    and ChalkBox_AuctionStatus().busy,
+    "late full-snapshot chunk invalidates the earlier completion decision")
+Tick(1) -- reads last appended listing
+Tick(1)
+Tick(1) -- final quiet confirmation
+local complete=ChalkBox_AuctionPrice(2589)
+assert(complete and complete.average==5000 and
+    complete.low==5000 and complete.quantity==161 and
+    complete.listings==161 and not ChalkBox_AuctionStatus().busy
+    and ChalkBox_AuctionStatus().auctions==161,
+    "all batches contribute to actual full-market average and listing count")
 print("PASS: delayed Forever replicate event, full weighted asks, cooldown, retained browse minima and independently aging listing samples")
