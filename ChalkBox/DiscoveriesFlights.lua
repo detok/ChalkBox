@@ -258,18 +258,21 @@ local function Capture()
                     local raw=Call(C_Map and C_Map.GetBestMapForUnit,"player")
                     local seen={}
                     local zone=raw
+                    local verifiedZone=false
                     for _=1,10 do
                         if not Integer(zone) or seen[zone] then break end
                         seen[zone]=true
                         local info=Call(C_Map and C_Map.GetMapInfo,zone)
                         if type(info)~="table" then break end
-                        if info.mapType==3 then break end
+                        if info.mapType==3 then
+                            verifiedZone=true;break
+                        end
                         zone=info.parentMapID
                     end
-                    local p=zone and Call(
+                    local p=verifiedZone and Call(
                         C_Map and C_Map.GetPlayerMapPosition,zone,"player")
                     local zx,zy=Point(p)
-                    if zx and Integer(zone) then
+                    if verifiedZone and zx and Integer(zone) then
                         local ix,iy=math.floor(zx*10000+0.5),
                             math.floor(zy*10000+0.5)
                         if record.zoneMapID~=zone or
