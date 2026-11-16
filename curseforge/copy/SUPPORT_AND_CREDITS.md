@@ -12,4 +12,4 @@ ChalkBox is licensed under MIT. Bundled libraries retain their original license 
 
 Not affiliated with or endorsed by Blizzard Entertainment. World of Warcraft is a trademark of Blizzard Entertainment.
 
-**CurseForge status:** project submission and approval are separate from this repository's release process. Don't use an unverified project link or claim a CurseForge download before the listing is approved.
+**Public support:** use the repository's guided Bug, Help, Compatibility, or Feature issue form. GitHub Releases and CurseForge are maintained separately; verify CurseForge's actual project page and file status in the author portal before sharing a direct link.
