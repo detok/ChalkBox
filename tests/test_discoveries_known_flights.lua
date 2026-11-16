@@ -10,8 +10,10 @@ local function Frame(kind,name,parent)
     function f:SetSize(w,h) self.w,self.h=w,h end
     function f:GetWidth() return self.w end
     function f:GetHeight() return self.h end
-    function f:GetFrameLevel() return 20 end
+    function f:GetFrameLevel() return self.level or 20 end
     function f:SetFrameLevel(n) self.level=n end
+    function f:GetFrameStrata() return self.strata or "MEDIUM" end
+    function f:SetFrameStrata(name) self.strata=name end
     function f:SetPoint(...) self.point={...} end
     function f:ClearAllPoints() self.point=nil end
     function f:SetParent(p) self.parent=p end
@@ -20,7 +22,10 @@ local function Frame(kind,name,parent)
     function f:Hide() self.shown=false end
     function f:IsShown() return self.shown end
     function f:CreateTexture()
-        local tex={parent=self}
+        local tex={parent=self,layer=select(2,...)}
+        function tex:SetDrawLayer(layer,order)
+            self.layer,self.order=layer,order
+        end
         function tex:SetTexture(s) self.texture=s end
         function tex:SetAtlas(s,resize)
             self.atlas=s;self.resize=resize
@@ -203,6 +208,17 @@ local pin=drawn["Visited Hub"]
 assert(pin.point and pin.point[1]=="CENTER" and
     pin.point[2]==canvas and pin.point[4]==450 and pin.point[5]==-300,
     "observed CURRENT flight master is placed on exact zone coordinates")
+assert(drawn["Visited Hub"].icon.layer=="OVERLAY" and
+    drawn["Visited Hub"].icon.order==7 and
+    drawn["Visited Hub"].level>=80 and
+    drawn["Visited Hub"].w==24 and drawn["Visited Hub"].h==24,
+    "local flight boot renders above zone map art instead of hidden ARTWORK")
+-- Forever can dynamically raise the local tile layer after the pin is
+-- built, while leaving mapID/width/height unchanged.
+canvas.level=170
+loader.scripts.OnUpdate(loader,1)
+assert(drawn["Visited Hub"].level>=230,
+    "existing visible zone pin relayers after local tile levels change")
 drawn["Visited Hub"].scripts.OnEnter(drawn["Visited Hub"])
 assert(tooltipLines[1]=="Visited Hub" and tooltipLines[2]=="Known flight path",
     "pin tooltip confirms only verified nodes")
@@ -236,8 +252,9 @@ assert(ratchetPin and ratchetPin.point[4]==648 and
     ratchetPin.point[5]==-186,
     "known Ratchet-style map-local position uses exact zone canvas geometry")
 assert(ratchetPin.icon.atlas=="TaxiNode_Neutral" and
-    not drawn["Not Learned"],
-    "Ratchet uses Blizzard's neutral winged-boot icon without exposing any unknown FP")
+    ratchetPin.icon.layer=="OVERLAY" and
+    ratchetPin.level>=230 and not drawn["Not Learned"],
+    "Ratchet uses the raised winged-boot overlay and still excludes unknown FP")
 mapID=1437
 loader.scripts.OnUpdate(loader,1)
 assert(ChalkBox_DiscoveriesKnownFlightsStatus().mapPins==0,
