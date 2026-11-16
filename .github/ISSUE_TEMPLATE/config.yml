@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Support overview
+    url: https://github.com/detok/ChalkBox/blob/main/SUPPORT.md
+    about: Start here for installation, guided issue forms, common diagnostics and privacy.
   - name: Installation and troubleshooting
     url: https://github.com/detok/ChalkBox/blob/main/docs/TROUBLESHOOTING.md
     about: Check installation, version requirements, and module troubleshooting before opening an issue.

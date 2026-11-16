@@ -6,7 +6,7 @@ Start with the [documentation home](docs/README.md), [architecture](docs/ARCHITE
 
 ## For players: reporting a problem
 
-Use the [GitHub issue forms](https://github.com/detok/ChalkBox/issues/new/choose). Pick **Bug**, **Compatibility**, or **Help**; include the installed version from `/chalk update`, Forever client build if available, and steps to reproduce. For AuctionSense issues, paste `/chalk auction status` and say whether you used **Scan Market** or **Full listings**. You do not need to know Lua to make a helpful report.
+Start with the [support hub](SUPPORT.md) or use the [GitHub issue forms](https://github.com/detok/ChalkBox/issues/new/choose). Pick **Bug**, **Compatibility**, or **Help**; include the installed version from `/chalk update`, Forever client build if available, and steps to reproduce. For AuctionSense issues, paste `/chalk auction status` and say whether you used **Scan Market** or **Full listings**. You do not need to know Lua to make a helpful report.
 
 Please search existing issues first, avoid posting identifying screenshots or private chat, and keep unrelated reports separate. Preserve your SavedVariables when troubleshooting. If an issue turns out to be a question instead of a defect, that's fine—good reports improve the project.
 
