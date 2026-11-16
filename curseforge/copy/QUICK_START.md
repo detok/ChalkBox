@@ -1,6 +1,6 @@
-# ChalkBox 2.2.19 draft guide — install and first use
+# ChalkBox 2.2.20 draft guide — install and first use
 
-**Unpublished candidate:** these are the current 2.2.19 draft instructions. The linked older ZIP is for the prior version and does not include this auction fix.
+**Unpublished candidate:** these are the current 2.2.20 draft instructions. The linked older ZIP is for the prior version and does not include this auction fix.
 
 1. Download the **`ChalkBox-2.2.17.zip`** game asset from [GitHub Releases](https://github.com/detok/ChalkBox/releases/tag/v2.2.17). **Not** the media kit or GitHub Source code ZIP.
 2. Extract its single `ChalkBox/` folder into your actual Forever client `Interface/AddOns/`. Confirm `Interface/AddOns/ChalkBox/ChalkBox.toc` exists.
