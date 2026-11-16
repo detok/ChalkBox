@@ -1,6 +1,6 @@
 # ChalkBox player handbook
 
-**ChalkBox 2.2.18 (draft tooltip polish, unpublished) · Latest published prerelease 2.2.17 · World of Warcraft: Forever**
+**ChalkBox 2.2.19 (draft AuctionSense repair, unpublished) · World of Warcraft: Forever**
 
 ChalkBox is a set of optional quality-of-life features inside **one addon**. Use Blizzard's **Options → AddOns → ChalkBox** pages or type `/chalk` (also `/cb`). Features that display observations are not proofs of unseen game data; ChalkBox should be conservative when Forever withholds information.
 
@@ -54,11 +54,11 @@ These are three related but distinct systems:
 | **AuctionInsights** | **My Items** bag appraisal and **Sales & Stats** based on captured seller mail/invoices in the native AH context | A complete lifetime account sales ledger |
 | **DisenchantSense** | Read-only probability/value hints for eligible gear, using supported Forever brackets, Classic-reference probabilities and available auction asks | A guaranteed outcome, exact undisclosed Forever odds or automatic disenchanting |
 
-**Full listings:** This is a heavier server snapshot of individual auctions, unlike regular Browse Scan. It may be refused under an approximately 15-minute account-wide cooldown. A valid price, stack count and item ID can be recorded even when an item name has not finished caching, which ChalkBox labels `Item #ID` rather than discarding the listing.
+**Full listings:** This is a heavier server snapshot of individual auctions, unlike regular Browse Scan. On Forever, the server can take much longer than 25 seconds to respond. ChalkBox now keeps waiting for the response or an explicit dropped-request event, rather than discarding a slow reply. A successful request is subject to the approximately 15-minute account-wide cooldown. A valid price, stack count and item ID can be recorded even when an item name has not finished caching, which ChalkBox labels `Item #ID` rather than discarding the listing.
 
 **To scan:** Visit an auctioneer, open Blizzard's Auction House and choose the **AuctionSense** tab. Press **Scan Market** for the normal browse snapshot. **Full listings** is a separate, more expensive request; on supported servers it can have roughly a 15-minute cooldown. Scans happen only when you start them. The panel shows the realm/faction market, observation time and available data; stale or mixed equipment variants can make a value unreliable.
 
-If a browse result does not provide listing-level information, an **average ask or number of listings cannot be assumed**. Do not interpret listing asks as real completed sales. Existing complete snapshots should survive an incomplete or failed scan.
+If a browse result does not provide listing-level information, an **average ask or number of listings cannot be assumed**. If a previous full scan supplied real averages and listing counts, those remain visible with their original full-scan age after Browse Scan refreshes the minimum price. Do not interpret listing asks as real completed sales. Existing complete snapshots should survive an incomplete or failed scan.
 
 **To use the estimates:** Enable optional auction/disenchant tooltip hints in AuctionSense settings. For a specific item, shift-click it into `/chalk de [item]`. Tooltips may show ranges, partial price coverage or an unconfirmed bracket. Nothing is automatically bought, posted, mailed, sold or disenchanted.
 
@@ -112,7 +112,7 @@ The optional compact **Combat Meter starts hidden**. Open it from settings or `/
 
 **PRINT** is a deliberate user action to report a supported fight summary to normal **PARTY**, when client safety restrictions allow it. Native Blizzard meter integration may separately provide its own optional manual/automatic reporting preferences. Some Forever combat values are protected, especially during combat; the addon must not invent readable DPS figures. **RESET** requires confirmation.
 
-**Adventure Journal (Session Journal)** now opens in a fully framed, warm wood window with Session Summary and Field Notes sections; it remains readable even if global background opacity is zero. The existing recording still keeps the current session and up to **20 prior** snapshots of supported observed statistics: XP, gold, completed quests, sampled loot, camp reminders and other available events. It does not retroactively invent events from before installation. Use `/chalk session` or `/chalk session last`. A future [Full Adventure Chronicle](ADVENTURE_CHRONICLE_DESIGN.md) will add validated, bounded individual milestones and Today/Timeline/History views; those features do **not** record events in 2.2.18.
+**Adventure Journal (Session Journal)** now opens in a fully framed, warm wood window with Session Summary and Field Notes sections; it remains readable even if global background opacity is zero. The existing recording still keeps the current session and up to **20 prior** snapshots of supported observed statistics: XP, gold, completed quests, sampled loot, camp reminders and other available events. It does not retroactively invent events from before installation. Use `/chalk session` or `/chalk session last`. A future [Full Adventure Chronicle](ADVENTURE_CHRONICLE_DESIGN.md) will add validated, bounded individual milestones and Today/Timeline/History views; those features do **not** record events in 2.2.19.
 
 ## Adventure Prep, Emota and QuietGuard
 

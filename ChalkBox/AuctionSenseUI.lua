@@ -403,8 +403,15 @@ local function Ensure()
                 ChalkBox_AuctionStatus() or {}
             local source=current.source=="browse" and "Browse" or
                 (current.source=="full" and "Full listings" or "Unknown")
-            tip:AddLine(source.."  |  Updated "..Age(current.age),
+            tip:AddLine(source.." low price  |  Updated "..Age(current.age),
                 COLOR.muted[1],COLOR.muted[2],COLOR.muted[3])
+            if item.detailAge and current.source=="browse" then
+                tip:AddLine("Avg/listings: full snapshot "..Age(item.detailAge),
+                    COLOR.muted[1],COLOR.muted[2],COLOR.muted[3])
+            elseif not item.average then
+                tip:AddLine("No full listing sample yet",
+                    COLOR.muted[1],COLOR.muted[2],COLOR.muted[3])
+            end
             if current.realm and current.faction then
                 tip:AddLine(current.realm.." / "..current.faction,
                     COLOR.muted[1],COLOR.muted[2],COLOR.muted[3])

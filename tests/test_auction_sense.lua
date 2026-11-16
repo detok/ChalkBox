@@ -171,9 +171,13 @@ assert(ChalkBox_AuctionStatus().state:find("uncached names",1,true),
     "user can distinguish valid uncached-name rows from a failed scan")
 clock=clock+901
 assert(ChalkBox_AuctionFullScan())
-Tick(1,26)
-assert(not ChalkBox_AuctionStatus().busy,
-    "throttled or ignored server requests time out rather than hanging forever")
+Tick(1,120)
+assert(ChalkBox_AuctionStatus().busy,
+    "Forever server may answer after 45s; do not discard pending full scans")
+Fire("AUCTION_HOUSE_THROTTLED_MESSAGE_DROPPED")
+assert(not ChalkBox_AuctionStatus().busy and
+    ChalkBox_AuctionStatus().error:find("dropped",1,true),
+    "explicit server rejection ends the wait without destroying prices")
 assert(ChalkBox_AuctionPrice(2589).low==3000)
 ChalkBox_AuctionSetTooltips(false)
 assert(not ChalkBox_AuctionStatus().tooltip)
@@ -195,4 +199,4 @@ Tick(2)
 assert(not ChalkBox_AuctionStatus().busy and
     ChalkBox_AuctionPrice(2589).low==5000,
     "synchronous replicate events are handled before the request returns")
-print("PASS: AuctionSense manual requests, zero-based replicates, stack prices, weighted asks, variants, stale age, faction isolation, history, cooldown, metadata retries, atomic rollback and timeouts")
+print("PASS: AuctionSense manual requests, zero-based replicates, stack prices, weighted asks, variants, stale age, faction isolation, history, cooldown, metadata retries, atomic rollback and server-dropped requests")

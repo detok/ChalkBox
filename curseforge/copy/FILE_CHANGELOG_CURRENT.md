@@ -1,9 +1,8 @@
-# ChalkBox 2.2.18 — Item tooltip polish
+# ChalkBox 2.2.19 — AuctionSense full scan reliability
 
-- Clearer Drop Journal spacing and blue counts; observed sample rates are teal and explicitly labeled, never presented as guaranteed odds.
-- Consistent neutral LootSense explanations and blue quest-progress counts.
-- AuctionSense market tooltips use gold for price values rather than implying a favorable deal.
-- Clearer DropSense options wording and inactive bag-outline labels.
-- No changes to loot rates, quest/profession decisions, settings or saved observations.
+- Stop discarding Forever full-scan responses after a fixed 25-second timeout; wait for the actual server response or an explicit dropped request.
+- Handle full-scan events whose listing count becomes readable a moment later.
+- Preserve real weighted average asking prices and listing counts from a successful full snapshot when refreshing low prices through Browse Scan. Show the source and age.
+- Retain the last good market data on failed scans. No fabricated averages and no changes to protected trading controls.
 
-Beta: review visual layout inside WoW Forever before uploading.
+Beta: full snapshot needs verification on the current Forever client/server before public publication.

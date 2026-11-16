@@ -1,12 +1,15 @@
-# ChalkBox 2.2.18 — Item tooltip readability pass (Beta)
+# ChalkBox 2.2.19 — AuctionSense full-scan reliability (Beta)
 
-- Drop Journal now starts after a quiet separator; quantities use the shared blue count color.
-- Observed creature-specific frequencies are shown as informational teal, never green "good" odds, with an explicit observed label. These are personal loot-window samples, not server probabilities.
-- LootSense supporting descriptions use the shared neutral tooltip color; quest collection progress uses the shared blue count role.
-- AuctionSense market tooltips gain a quiet separator and gold asking-price emphasis; price values and market freshness logic are unchanged.
-- DropSense settings clarify the difference between loot-window samples, creature-specific observations, and user-provided hypothetical drop rates. Disabled secure-bag outlines are explicitly labeled inactive.
-- No changes to classification, loot capture, quest matching, auction calculations, disenchant models, stored records, or Blizzard's native tooltip text.
-- Updated architecture reference version.
+## Fixed
+- Full auction replication stays pending while the Forever server prepares results. The earlier 25-second timeout could discard a valid snapshot before it arrived. The request now ends on actual server response, an explicit dropped-request event, or closing the Auction House.
+- Full-snapshot events that arrive before the listing count becomes readable are handled by waiting for that same snapshot rather than discarding it.
+- Real per-unit weighted average asks and listing counts from a successful full scan remain available after a normal Browse Scan refreshes low prices. Their original timestamp is preserved and shown; expired full samples are hidden rather than invented.
+- Mixed-variant safeguards, partial-result rollback, scan cooldowns, and original browse scanning remain in place.
+
+## Forever limitations
+The modern `C_AuctionHouse.ReplicateItems` and `REPLICATE_ITEM_LIST_UPDATE` APIs are present for Forever, but server availability varies; actual full-scan completion cannot be guaranteed from mock tests. A normal Browse Scan supplies minimum unit price and total units, not per-listing average/number of lots. No average or listing count is fabricated.
 
 ## Verification
-Run Lua 5.1 tests, packaging, and a real Forever tooltip check for quest items, collected progress, learned materials, drop-journal source rates, and duplicate-free re-hover. Keep the existing 2.2.17 candidate until acceptance.
+Lua 5.1 regressions cover delayed full-scan results, long waits, explicit server throttle-drop, weighted averages, cooldown, browse refresh preserving full samples, and sample expiry. Live Forever-client confirmation is still required before treating full scans as verified.
+
+This is a beta candidate; keep SavedVariables and the previous install until tested.

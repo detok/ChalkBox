@@ -1,6 +1,6 @@
 # ChalkBox — CurseForge publishing assets
 
-**Current published playable release: 2.2.17 · WoW Forever. Version 2.2.18 is an unpublished tooltip-polish candidate; do not upload until tests and visual acceptance pass.**
+**ChalkBox 2.2.19 is an unpublished Forever AuctionSense full-scan repair candidate. Do not upload it until tests and in-client verification pass; earlier downloadable links below are retained as reference.**
 
 This folder is for publishing **the separate addon ZIP and supporting listing materials**. It does not replace the installed ChalkBox addon, and it must not be distributed as a game-addon bundle.
 

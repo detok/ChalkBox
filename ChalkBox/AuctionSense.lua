@@ -8,6 +8,7 @@ local MAX_MARKETS=6
 local BATCH=140
 local COOLDOWN=15*60
 local MAX_HISTORY=7
+local DETAIL_MAX_AGE=7*24*3600 -- retain actual full-listing evidence for up to 7 days
 local frame=CreateFrame("Frame")
 local auctionOpen=false
 local job
@@ -106,6 +107,10 @@ function ChalkBox_AuctionStatus()
     local market=key and db.markets[key] or nil
     local age=market and Integer(market.scannedAt) and
         math.max(0,Now()-market.scannedAt) or nil
+    local detailAt=market and market.detailAt
+    if not Integer(detailAt) and market and market.source=="full" then
+        detailAt=market.scannedAt -- older valid full-scan SavedVariables
+    end
     return {available=BrowseAH()~=nil,fullAvailable=FullAH()~=nil,
         open=AtAuctioneer(),busy=job~=nil,mode=job and job.mode or lastMode,
         state=state,progress=progress,error=lastError,
@@ -115,6 +120,7 @@ function ChalkBox_AuctionStatus()
         source=market and market.source or nil,
         items=market and market.itemCount or 0,
         scannedAt=market and market.scannedAt or nil,age=age,
+        detailAge=Integer(detailAt) and math.max(0,Now()-detailAt) or nil,
         cooldown=math.max(0,db.nextAllowed-Now()),
         tooltip=db.tooltip~=false}
 end
@@ -130,6 +136,22 @@ local function Money(copper)
     if s>0 then return ("%ds %dc"):format(s,c) end
     return c.."c"
 end
+-- Browse summaries cannot produce an average. Carry forward a real full
+-- snapshot only with its own timestamp; never pretend it was just scanned.
+local function Detail(entry,market)
+    if type(entry)~="table" or type(market)~="table" then return end
+    local average,listings,detailAt
+    if market.source=="full" then
+        average,listings,detailAt=entry.average,entry.listings,market.scannedAt
+    else
+        average,listings,detailAt=entry.detailAverage,entry.detailListings,entry.detailAt
+    end
+    if not Integer(average) or not Integer(listings) or listings<1 or
+        not Integer(detailAt) then return end
+    local age=math.max(0,Now()-detailAt)
+    if age>DETAIL_MAX_AGE then return end
+    return average,listings,age,detailAt
+end
 function ChalkBox_AuctionPrice(item)
     local id=ItemID(item)
     local key=MarketID()
@@ -137,8 +159,10 @@ function ChalkBox_AuctionPrice(item)
     local entry=id and market and market.items and market.items[tostring(id)]
     if type(entry)~="table" or not Integer(entry.low) then return nil end
     local age=math.max(0,Now()-(market.scannedAt or 0))
-    return {itemID=id,name=entry.name,low=entry.low,average=entry.average,
-        quantity=entry.quantity,listings=entry.listings,
+    local average,listings,detailAge,detailAt=Detail(entry,market)
+    return {itemID=id,name=entry.name,low=entry.low,average=average,
+        quantity=entry.quantity,listings=listings,
+        detailAge=detailAge,detailAt=detailAt,
         market=key,age=age,scannedAt=market.scannedAt,
         stale=age>24*3600,mixed=entry.mixed==true,
         source=market.source or "replicate",kind="asking"}
@@ -198,7 +222,18 @@ function ChalkBox_AuctionTooltip(tooltip,link)
         "count",0.51,0.76,0.98)
     Metric("Units",price.quantity and tostring(price.quantity) or "—",
         "text",0.85,0.87,0.88)
-    Line(source.."  ·  "..when,"muted",0.65,0.70,0.73)
+    Line(source.." low price  ·  "..when,"muted",0.65,0.70,0.73)
+    if price.detailAge and price.source=="browse" then
+        local d=price.detailAge
+        local detailWhen=d<3600 and "under 1h" or
+            (d<86400 and math.floor(d/3600).."h" or
+            math.floor(d/86400).."d")
+        Line("Avg / listings: last full scan ("..detailWhen.." old)",
+            "muted",0.65,0.70,0.73)
+    elseif not price.average then
+        Line("Avg / listings need a successful full scan",
+            "muted",0.65,0.70,0.73)
+    end
     if price.mixed then
         Line("MIXED VARIANTS  ·  Check exact gear","warning",
             0.98,0.66,0.33)
@@ -232,10 +267,12 @@ function ChalkBox_AuctionRows(search,limit)
         if search=="" or id:find(search,1,true) or
             (type(entry.name)=="string" and
                 entry.name:lower():find(search,1,true)) then
+            local avg,lots,detailAge=Detail(entry,market)
             results[#results+1]={itemID=tonumber(id),
                 name=entry.name or ("Item #"..id),low=entry.low,
-                average=entry.average,quantity=entry.quantity,
-                listings=entry.listings,mixed=entry.mixed==true}
+                average=avg,quantity=entry.quantity,
+                listings=lots,detailAge=detailAge,
+                mixed=entry.mixed==true}
         end
     end
     table.sort(results,function(a,b)
@@ -267,7 +304,7 @@ local function Commit(scan)
         local average=row.totalCopper and row.quantity>0 and
             math.ceil(row.totalCopper/row.quantity) or nil
         items[itemID]={name=row.name,low=row.low,
-            average=average,quantity=row.quantity,
+            average=average,quantity=row.quantity,variant=row.variant,
             listings=row.listings,mixed=row.mixed}
     end
     if found==0 then
@@ -276,6 +313,26 @@ local function Commit(scan)
     end
     local db=State()
     local old=db.markets[id]
+    if scan.mode=="browse" and old and type(old.items)=="table" then
+        -- Keep the last known *full* auction evidence when the player
+        -- refreshes browse minima. Its age remains independently visible.
+        for itemID,item in pairs(items) do
+            local prev=old.items[itemID]
+            -- Full replicate links and browse ItemKeys use different
+            -- signature formats; their raw strings are not comparable.
+            -- Reject known mixed-variant aggregates without false matches.
+            local compatible=type(prev)=="table" and
+                not item.mixed and not prev.mixed
+            if compatible then
+                local avg,lots,_,at=Detail(prev,old)
+                if avg and lots and at then
+                    item.detailAverage=avg
+                    item.detailListings=lots
+                    item.detailAt=at
+                end
+            end
+        end
+    end
     if old and type(old.items)=="table" then
         for itemID,item in pairs(items) do
             local previous=old.items[itemID]
@@ -297,6 +354,9 @@ local function Commit(scan)
         end
     end
     db.markets[id]={realm=realm,faction=faction,scannedAt=Now(),
+        detailAt=scan.mode=="full" and Now() or
+            (old and (old.detailAt or
+                (old.source=="full" and old.scannedAt))) or nil,
         auctions=scan.mode=="full" and scan.total or nil,
         itemCount=found,items=items,source=scan.mode,
         bidOnly=scan.bidOnly}
@@ -311,7 +371,7 @@ local function Commit(scan)
     progress=100
     lastError=nil
     if scan.mode=="browse" then
-        Finish(("Saved %d items from market browse"):format(found))
+        Finish(("Saved %d browse prices (low + units). Avg/listings require full data"):format(found))
     else
         local partial=(scan.partial or 0)>0 and
             (" (%d listings with uncached names)"):format(scan.partial) or ""
@@ -542,6 +602,36 @@ local function Step(_,elapsed)
     end
     if work>0 and scan.index%(BATCH*8)<BATCH then UIRefresh() end
 end
+-- Forever may signal replication before the item count is populated.
+-- Only read results after the actual request's modern update event; an old
+-- cached count by itself is NOT evidence that this request succeeded.
+local function AcceptFullResults()
+    if not job or job.mode~="full" or job.phase~="waiting"
+        or not job.eventSeen or not AtAuctioneer() then return false end
+    local ah=AH()
+    local count=Call(ah and ah.GetNumReplicateItems)
+    if not Integer(count) or count<1 then return false end
+    if count>MAX_LISTINGS then
+        Abort("Full snapshot exceeds safe scan size. Previous prices kept.")
+        return true
+    end
+    local now=Now()
+    State().nextAllowed=math.max(State().nextAllowed,now+COOLDOWN)
+    job.phase="reading"
+    job.total=count
+    job.index=0
+    job.rows={}
+    job.itemCount=0
+    job.bidOnly=0
+    job.missing={}
+    job.nextMissing={}
+    job.retryIndex=1
+    job.passes=1
+    state="Reading "..count.." auction listings..."
+    frame:SetScript("OnUpdate",Step)
+    UIRefresh()
+    return true
+end
 local function StartScan(mode)
     if job then return false,"Scan already in progress" end
     if not AtAuctioneer() then
@@ -595,11 +685,12 @@ local function StartScan(mode)
     end
     -- A full replicate can be very expensive and server-throttled.
     -- Wait state must exist before the client can fire a synchronous event.
-    job={mode="full",phase="waiting",key=key,waited=0,partial=0}
+    job={mode="full",phase="waiting",key=key,waited=0,
+        eventSeen=false,partial=0}
     progress=0
     lastMode=mode
     lastError=nil
-    state="Requesting full listing snapshot..."
+    state="Requesting full auction snapshot; waiting for server response..."
     frame:SetScript("OnUpdate",function(_,elapsed)
         if not job then return end
         if job.phase=="reading" then
@@ -607,10 +698,20 @@ local function StartScan(mode)
         elseif job.phase=="waiting" then
             job.waited=job.waited+
                 (type(elapsed)=="number" and elapsed or 0)
-            if job.waited>=25 then
-                Abort("Full Scan timed out with no server response. "..
-                    "The 15-minute account-wide replicate cooldown may be active; "..
-                    "Browse Scan is still available.")
+            -- An early replication event can precede the server filling the
+            -- result count. Retry reading, never issue a second request.
+            if AcceptFullResults() then return end
+            -- Forever can deliver the replicate event well after 45 seconds.
+            -- Do not abandon a request that may have consumed the account's
+            -- 15-minute allowance. Wait for results, an explicit server drop,
+            -- or the player closing the Auction House.
+            if job and job.waited>=90 then
+                local waiting=math.floor(job.waited)
+                state=("Still awaiting full auction data (%ds)..."):format(waiting)
+                if waiting~=job.lastShownSecond then
+                    job.lastShownSecond=waiting
+                    UIRefresh()
+                end
             end
         end
     end)
@@ -690,30 +791,18 @@ local function OnEvent(_,event,name)
     elseif event=="AUCTION_HOUSE_BROWSE_FAILURE" and job and
         job.mode=="browse" then
         Abort("Browse scan failed. Your last snapshot was kept.")
+    elseif event=="AUCTION_HOUSE_THROTTLED_MESSAGE_DROPPED"
+        and job and job.mode=="full" and job.phase=="waiting" then
+        Abort("Full auction request was dropped by the server. "..
+            "Previous market prices kept.")
     elseif event=="REPLICATE_ITEM_LIST_UPDATE" and job
         and job.mode=="full" and job.phase=="waiting" and
         AtAuctioneer() then
-        local count=Call(AH() and AH().GetNumReplicateItems)
-        if not Integer(count) or count<1 or count>MAX_LISTINGS then
-            Abort("No valid full-scan data. Old prices kept.")
-            return
+        job.eventSeen=true
+        if not AcceptFullResults() then
+            state="Full snapshot signaled; waiting for listing data..."
+            UIRefresh()
         end
-        -- A successful response consumes the server's account-wide throttle.
-        local now=Now()
-        State().nextAllowed=math.max(State().nextAllowed,now+COOLDOWN)
-        job.phase="reading"
-        job.total=count
-        job.index=0
-        job.rows={}
-        job.itemCount=0
-        job.bidOnly=0
-        job.missing={}
-        job.nextMissing={}
-        job.retryIndex=1
-        job.passes=1
-        state="Reading auction listings..."
-        frame:SetScript("OnUpdate",Step)
-        UIRefresh()
     end
 end
 for _,event in ipairs({"ADDON_LOADED","AUCTION_HOUSE_SHOW",
@@ -722,7 +811,8 @@ for _,event in ipairs({"ADDON_LOADED","AUCTION_HOUSE_SHOW",
     "PLAYER_INTERACTION_MANAGER_FRAME_HIDE",
     "AUCTION_HOUSE_BROWSE_RESULTS_UPDATED",
     "AUCTION_HOUSE_BROWSE_RESULTS_ADDED",
-    "AUCTION_HOUSE_BROWSE_FAILURE"}) do
+    "AUCTION_HOUSE_BROWSE_FAILURE",
+    "AUCTION_HOUSE_THROTTLED_MESSAGE_DROPPED"}) do
     pcall(frame.RegisterEvent,frame,event)
 end
 frame:SetScript("OnEvent",OnEvent)

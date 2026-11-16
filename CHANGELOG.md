@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.19 — AuctionSense Forever replication reliability (Beta)
+
+- Wait for real full listing data without the premature 25-second abort, using the modern Forever replication event and actual dropped-request signal.
+- Handle early event before its item count becomes readable and preserve real full-snapshot averages/listing counts across browse refreshes with separate data age.
+- Preserve the fast browse scan, account-wide throttle, market rollback, and safe data estimates.
+
 ## 2.2.18 — Item tooltip polish (Beta)
 
 - Give DropSense observed counts and source-specific sample rates clearer hierarchy without changing calculations.
