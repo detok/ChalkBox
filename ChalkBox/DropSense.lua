@@ -535,6 +535,34 @@ end
 -- Read-only field audit: distinguish missing coordinates (legitimate on
 -- some maps/legacy data) from mismatched counts or malformed spot records.
 -- Area observations are loot windows, not kills and not unique map points.
+-- Probe the client APIs only when requested, without recording or altering
+-- a loot position. A subzone may resolve to its parent for storage while
+-- the parent refuses to return valid player coordinates on some clients.
+local function PositionAvailable(mapID)
+    if not Integer(mapID) or mapID<=0 then return false end
+    local fn=C_Map and C_Map.GetPlayerMapPosition
+    if type(fn)~="function" then return false end
+    local ok,point=pcall(fn,mapID,"player")
+    if not ok or not Public(point) or type(point)~="table" then
+        return false
+    end
+    local read,x,y=pcall(function()
+        if type(point.GetXY)=="function" then return point:GetXY() end
+        return point.x,point.y
+    end)
+    return read and Number(x) and Number(y) and x<=1 and y<=1
+        and not (x==0 and y==0)
+end
+function ChalkBox_DropPositionStatus()
+    local raw=SafeCall(C_Map and C_Map.GetBestMapForUnit,"player")
+    local parent=ZoneMap(raw)
+    local zone=parent and parent.id or nil
+    return {rawMapID=raw,zoneMapID=zone,
+        rawAvailable=PositionAvailable(raw),
+        zoneAvailable=PositionAvailable(zone),
+        sameMap=raw~=nil and raw==zone,
+        tracking=State().enabled~=false}
+end
 function ChalkBox_DropAreaAudit(key)
     local area=State().areas[key]
     if type(area)~="table" then return nil end
@@ -770,6 +798,15 @@ function ChalkBox_DropCommand(input)
             Note(("%d visible items, %d with coordinates, %d saved positions."):format(
                 check.itemCount,check.positionedItems,check.spots))
             Note(check.reason)
+            local pos=ChalkBox_DropPositionStatus()
+            Note(("Client position: current map %s, stored zone %s; raw %s, zone %s."):format(
+                tostring(pos.rawMapID or "?"),
+                tostring(pos.zoneMapID or "?"),
+                pos.rawAvailable and "OK" or "unavailable",
+                pos.zoneAvailable and "OK" or "unavailable"))
+            if not pos.tracking then
+                Note("Tracking is OFF: new loot positions are not being saved.")
+            end
             local audit=ChalkBox_DropAreaAudit(check.selectedArea)
             if audit then
                 Note(("Saved area: %d loot windows, %d item kinds, %d valid spots."):format(
