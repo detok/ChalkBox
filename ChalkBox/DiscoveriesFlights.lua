@@ -485,6 +485,12 @@ function ChalkBox_DiscoveriesKnownFlightsSet(value)
     db.enabled=value==true
     drawnKey=nil
     Refresh()
+    -- Disabling a native data-provider pin requires an explicit refresh:
+    -- Refresh() rightly skips drawing while the checkbox is off.
+    if not db.enabled and
+        type(ChalkBox_MapNativeRefresh)=="function" then
+        ChalkBox_MapNativeRefresh()
+    end
     return true
 end
 function ChalkBox_DiscoveriesKnownFlightsStatus()
