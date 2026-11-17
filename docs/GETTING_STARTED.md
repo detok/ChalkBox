@@ -56,3 +56,6 @@ Run the matching diagnostic, such as `/chalk quests status`, `/chalk drops map s
 
 
 **2.2.25 GitHub beta:** The bank displays a compact vendor-value label and The Bar supports per-module width resizing. Combat reports send normal ranked PARTY/SAY lines without an escape-code or copy fallback; PARTY rows are paced 200ms apart. Auction charts, optional map-pin navigation and learned flight-master markers remain opt-in/read-only where appropriate. **2.2.22 is still the last fully accepted stable version.** See the [current release notes](RELEASE_NOTES.md).
+
+
+**Developer beta:** ChalkBox 2.2.27 is a QuestSense Smart experiment; 2.2.26 remains the supported stable release. [Beta notes](https://github.com/detok/ChalkBox/blob/feature/smart-quest-native-priorities/docs/RELEASE_NOTES.md).
