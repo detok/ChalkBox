@@ -115,6 +115,44 @@ local function PreviewPaint(texture,r,g,b,a)
         texture:SetColorTexture(r,g,b,a)
     end
 end
+-- A small, consistent native-inspired frame used by both the price list
+-- and graph. Decorative textures only: no extra buttons, events or state.
+local function PanelSurface(panel,width,headerHeight,footerHeight)
+    local body=panel:CreateTexture(nil,"BACKGROUND")
+    body:SetAllPoints(panel)
+    PreviewPaint(body,0.035,0.046,0.052,0.92)
+    local header=panel:CreateTexture(nil,"BORDER")
+    header:SetSize(width-2,headerHeight)
+    header:SetPoint("TOPLEFT",panel,"TOPLEFT",1,-1)
+    PreviewPaint(header,0.14,0.16,0.17,0.85)
+    if footerHeight and footerHeight>0 then
+        local bottom=panel:CreateTexture(nil,"BORDER")
+        bottom:SetSize(width-2,footerHeight)
+        bottom:SetPoint("BOTTOMLEFT",panel,"BOTTOMLEFT",1,1)
+        PreviewPaint(bottom,0.11,0.13,0.14,0.86)
+    end
+    local function Stroke(anchor,other,vertical)
+        local line=panel:CreateTexture(nil,"ARTWORK")
+        if vertical then
+            line:SetWidth(1)
+            line:SetPoint(anchor,panel,anchor,0,0)
+            line:SetPoint(other,panel,other,0,0)
+        else
+            line:SetSize(width,1)
+            line:SetPoint(anchor,panel,anchor,0,0)
+        end
+        PreviewPaint(line,0.56,0.44,0.28,0.69)
+        return line
+    end
+    Stroke("TOPLEFT",nil,false)
+    Stroke("BOTTOMLEFT",nil,false)
+    Stroke("TOPLEFT","BOTTOMLEFT",true)
+    Stroke("TOPRIGHT","BOTTOMRIGHT",true)
+    local separator=panel:CreateTexture(nil,"ARTWORK")
+    separator:SetSize(width-2,1)
+    separator:SetPoint("TOPLEFT",panel,"TOPLEFT",1,-headerHeight-1)
+    PreviewPaint(separator,0.71,0.56,0.34,0.36)
+end
 local function PreviewDate(stamp)
     if type(date)=="function" then
         local ok,value=pcall(date,"%b %d %H:%M",stamp)
@@ -131,18 +169,18 @@ local function BuildPricePreview(parent)
     local function Height()
         local h=type(parent.GetHeight)=="function" and parent:GetHeight() or 316
         if type(h)~="number" or h~=h then h=316 end
-        return math.max(96,math.min(292,h-180))
+        return math.max(112,math.min(290,h-164))
     end
     local lastHeight=Height()
     panel:SetSize(width,lastHeight)
     panel:SetPoint("TOPRIGHT",parent,"TOPRIGHT",-16,-136)
-    local bg=panel:CreateTexture(nil,"BACKGROUND")
-    bg:SetAllPoints(panel)
-    PreviewPaint(bg,0.055,0.067,0.072,0.82)
-    local edge=panel:CreateTexture(nil,"BORDER")
-    edge:SetSize(width-2,1)
-    edge:SetPoint("TOPLEFT",panel,"TOPLEFT",1,-1)
-    PreviewPaint(edge,0.87,0.67,0.37,0.48)
+    PanelSurface(panel,width,40,27)
+    -- Inner chart field, below the item heading and above the summary strip.
+    -- The anchors stretch automatically as the AH window's height changes.
+    local plot=panel:CreateTexture(nil,"BACKGROUND")
+    plot:SetPoint("TOPLEFT",panel,"TOPLEFT",10,-43)
+    plot:SetPoint("BOTTOMRIGHT",panel,"BOTTOMRIGHT",-10,33)
+    PreviewPaint(plot,0.016,0.025,0.030,0.65)
     local title=Font(panel,"GameFontHighlightSmall",10,-7,width-20)
     local footer=Font(panel,"GameFontHighlightSmall",10,-8,width-20)
     if type(footer.ClearAllPoints)=="function" then footer:ClearAllPoints() end
@@ -579,10 +617,10 @@ local function Ensure()
             end
         end
     end
-    labels.title=Font(f,"GameFontNormalHuge",20,-9,410)
+    labels.title=Font(f,"GameFontNormalHuge",20,-9,330)
     labels.title:SetText("AuctionSense")
     labels.market=Font(f,"GameFontHighlightSmall",21,-31,425)
-    labels.status=Font(f,"GameFontNormal",20,-49,550)
+    labels.status=Font(f,"GameFontNormal",20,-49,420)
     labels.progress=Font(f,"GameFontHighlight",21,-67,252)
     labels.cooldown=Font(f,"GameFontHighlight",296,-67,275)
     local function Mode(buttonView)
@@ -596,10 +634,11 @@ local function Ensure()
         end
         Refresh()
     end
-    labels.mode_market=Button(f,"Prices",21,-85,78,function() Mode("market") end)
-    labels.mode_bags=Button(f,"My Items",104,-85,92,function() Mode("bags") end)
-    labels.mode_sales=Button(f,"Sales & Stats",201,-85,114,function() Mode("sales") end)
-    labels.details=Font(f,"GameFontHighlightSmall",327,-90,395)
+    labels.mode_market=Button(f,"Prices",21,-87,78,function() Mode("market") end)
+    labels.mode_bags=Button(f,"My Items",104,-87,92,function() Mode("bags") end)
+    labels.mode_sales=Button(f,"Sales & Stats",201,-87,114,function() Mode("sales") end)
+    -- Scan results live under the view choices, not between buttons/search.
+    labels.details=Font(f,"GameFontHighlightSmall",21,-117,446)
     pricePreview=BuildPricePreview(f)
     labels.scan=Button(f,"Scan Market",21,-106,125,function()
         if type(ChalkBox_AuctionScan)=="function" then
@@ -618,10 +657,18 @@ local function Ensure()
     end)
     Hint(labels.fullscan,"Full listings","Complete auction listing snapshot",
         "Server limit: once every 15 minutes")
+    -- Dedicated top-right action row in the unused AH header space.
+    -- Do not change the scan callbacks, cooldown or secure AH state.
+    if labels.fullscan.ClearAllPoints then
+        labels.fullscan:ClearAllPoints()
+    end
+    labels.fullscan:SetPoint("TOPRIGHT",f,"TOPRIGHT",-18,-29)
+    if labels.scan.ClearAllPoints then labels.scan:ClearAllPoints() end
+    labels.scan:SetPoint("RIGHT",labels.fullscan,"LEFT",-8,0)
     local input=CreateFrame("EditBox",nil,f,"SearchBoxTemplate")
     input:SetSize(258,24)
     input:ClearAllPoints()
-    input:SetPoint("TOPRIGHT",f,"TOPRIGHT",-25,-107)
+    input:SetPoint("TOPRIGHT",f,"TOPRIGHT",-25,-87)
     labels.search=input
     if input.SetAutoFocus then input:SetAutoFocus(false) end
     if input.SetMaxLetters then input:SetMaxLetters(70) end
@@ -637,6 +684,13 @@ local function Ensure()
     find:ClearAllPoints()
     find:SetPoint("RIGHT",input,"LEFT",-8,0)
     find:SetText("Find")
+    -- Matching inset surrounds the table, including its built-in pager.
+    -- Its non-interactive background is created BEFORE clickable rows.
+    local listPanel=CreateFrame("Frame","ChalkBoxAuctionMarketListPanel",f)
+    listPanel:SetWidth(476)
+    listPanel:SetPoint("TOPLEFT",f,"TOPLEFT",13,-132)
+    listPanel:SetPoint("BOTTOMLEFT",f,"BOTTOMLEFT",13,27)
+    PanelSurface(listPanel,476,22,33)
     Font(f,"GameFontNormal",21,-138,213):SetText("ITEM")
     labels.hdrLow=Font(f,"GameFontNormal",252,-138,82)
     Tint(labels.hdrLow,COLOR.low)
@@ -650,6 +704,11 @@ local function Ensure()
         local row=CreateFrame("Frame",nil,f)
         row:SetSize(459,22)
         row:SetPoint("TOPLEFT",f,"TOPLEFT",17,y)
+        if i%2==0 then
+            local zebra=row:CreateTexture(nil,"BACKGROUND")
+            zebra:SetAllPoints(row)
+            PreviewPaint(zebra,0.24,0.27,0.28,0.17)
+        end
         local selectedBack=row:CreateTexture(nil,"BACKGROUND")
         selectedBack:SetAllPoints(row)
         PreviewPaint(selectedBack,0.16,0.42,0.38,0.30)
