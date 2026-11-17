@@ -294,6 +294,26 @@ for _,font in ipairs(fonts) do
 end
 assert(#rows==7 and footer and previousButton and nextButton,
     "rows, pager, and scan disclaimer all exist within the native pane")
+local listPanel=FindFrame("ChalkBoxAuctionMarketListPanel")
+assert(listPanel and listPanel.parent==pane and listPanel.w==476
+    and listPanel.points[1][1]=="TOPLEFT"
+    and listPanel.points[1][5]==-132
+    and listPanel.points[2][1]=="BOTTOMLEFT"
+    and listPanel.points[2][5]==27,
+    "matching list inset frames rows and pager with margin above footer")
+local function Textures(parent)
+    local result={}
+    for _,element in ipairs(allFrames) do
+        if element.kind=="Texture" and element.parent==parent then
+            result[#result+1]=element
+        end
+    end
+    return result
+end
+assert(#Textures(listPanel)>=8,
+    "item list uses bordered header, lower pager band and an inset backdrop")
+assert(#Textures(rows[2])>#Textures(rows[1]),
+    "alternate list rows have a subtle secondary background")
 assert(rows[1].w==459 and rows[1].h==22
     and nextButton.point[1]=="BOTTOMLEFT"
     and nextButton.point[4]==354,
@@ -305,6 +325,42 @@ assert(previousButton.point[1]=="BOTTOMLEFT"
     and previousButton.point[5]==34 and nextButton.point[5]==34
     and footer.point[5]==12,
     "paging and notes anchor to the pane bottom, not a hard-coded height")
+-- Scan actions use unused upper-right space, while mode buttons and
+-- search share a separate toolbar line; no vertical collision is possible.
+local scan=Button("Scan Market")
+local fullscan=Button("Full listings (15m)")
+local mode=Button("Prices")
+local function OnRow(button)
+    return button.point and button.point[1]=="TOPLEFT"
+end
+assert(scan and fullscan and
+    fullscan.point[1]=="TOPRIGHT" and fullscan.point[5]==-29
+    and scan.point[1]=="RIGHT" and scan.point[2]==fullscan
+    and scan.point[4]==-8,
+    "existing two scan buttons are grouped in upper-right header space")
+assert(mode and OnRow(mode) and mode.point[5]==-87 and
+    Button("My Items").point[5]==-87 and
+    Button("Sales & Stats").point[5]==-87,
+    "mode buttons share a distinct aligned toolbar row")
+local search
+for _,element in ipairs(allFrames) do
+    if element.kind=="EditBox" and element.parent==pane then
+        search=element;break
+    end
+end
+assert(search and search.point[1]=="TOPRIGHT" and
+    search.point[5]==-87,
+    "search shares the toolbar with mode buttons instead of overlapping scans")
+local listDetails
+for _,font in ipairs(fonts) do
+    if font.parent==pane and font.point and
+        font.point[1]=="TOPLEFT" and font.point[4]==21 and
+        font.point[5]==-117 then listDetails=font end
+end
+assert(listDetails,
+    "market counts have their own quiet summary line above the table frame")
+assert(scan.scripts.OnClick and fullscan.scripts.OnClick,
+    "visual reanchoring preserves the working scan actions")
 local function VisibleRows()
     local n=0
     for _,row in ipairs(rows) do if row.shown then n=n+1 end end
@@ -369,13 +425,13 @@ pane.scripts.OnUpdate(pane,1.5)
 assert(VisibleRows()==7 and Text("Page 1 / 2"),
     "taller native AH uses seven rows without changing scan data")
 local largePreview=FindFrame("ChalkBoxAuctionPricePreview")
-assert(largePreview and largePreview.w==248 and largePreview.h==230,
-    "responsive graph gains real height on a taller native AH")
+assert(largePreview and largePreview.w==248 and largePreview.h==246,
+    "framed graph uses available height on a taller native AH")
 pane.mockHeight=316
 pane.scripts.OnUpdate(pane,1.5)
 assert(VisibleRows()==4 and Text("Page 1 / 3")
-    and largePreview.h==136,
-    "resizing smaller repaginates and keeps graph above the bottom pager")
+    and largePreview.h==152,
+    "compact framed graph uses available height while staying clear of footer")
 -- Restore the familiar sample before verifying prices and mouseover hints.
 _G.ChalkBox_AuctionRows=function()
     reads=reads+1
@@ -420,10 +476,10 @@ assert(chartReads==readCount+1 and Text("Linen Cloth")
     rows[1].selectedBack and rows[1].selectedBack.shown,
     "click displays the latest real low ask, scan count and a subtle row highlight")
 local preview=FindFrame("ChalkBoxAuctionPricePreview")
-assert(preview and preview.w==248 and preview.h==136 and
+assert(preview and preview.w==248 and preview.h==152 and
     preview.point[1]=="TOPRIGHT" and preview.point[5]==-136
-    and preview.parent==pane,
-    "expanded chart occupies its own right-hand column below search/scan controls")
+    and preview.parent==pane and #Textures(preview)>=10,
+    "price card is framed with a distinct header, plot field and footer")
 preview.scripts.OnEnter(preview)
 assert(tip.shown and tip.lines[1].text=="Linen Cloth" and
     tip.lines[2].text:find("Latest low ask: 13s 50c",1,true),
