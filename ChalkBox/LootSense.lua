@@ -231,6 +231,22 @@ local function OnItemTooltip(tooltip)
         local ok,found=pcall(ChalkBox_QuestItemDetails,name)
         if ok and type(found)=="table" then quests=found end
     end
+    -- An item-class flag alone has no quest ID. When the live accepted log
+    -- cannot name the item, consult our own bundled, static MIT Classic
+    -- reference by exact item ID. It is never presented as a confirmed
+    -- Forever quest or as a reason to override live quest progress.
+    local reference,referenceTotal
+    if label=="KEEP" and (not quests or #quests==0)
+        and type(ChalkBox_QuestReferenceCandidates)=="function"
+        and Public(link) and type(link)=="string" then
+        local id=tonumber(link:match("item:(%d+)"))
+        if id then
+            local ok,found,total=pcall(ChalkBox_QuestReferenceCandidates,id,3)
+            if ok and type(found)=="table" and #found>0 then
+                reference,referenceTotal=found,total
+            end
+        end
+    end
     if label and not HasLine(tooltip,label) then
         tooltip:AddLine(" ",1,1,1)
         tooltip:AddLine(label,cr or r,cg or g,cb or b,true)
@@ -241,6 +257,11 @@ local function OnItemTooltip(tooltip)
             else
                 details="Needed for "..#quests.." accepted quests"
             end
+        end
+        if message=="KEEP: quest item" and reference then
+            details="Quest item  ·  Classic quest references"
+        elseif message=="KEEP: quest item" then
+            details="Quest item  ·  No matching accepted quest identified"
         end
         if details and details~="" then
             -- Evidence stays quieter than the action/category heading.
@@ -287,6 +308,23 @@ local function OnItemTooltip(tooltip)
                         tooltip:AddLine(line,0.83,0.85,0.78,true)
                     end
                 end
+            end
+        end
+        if reference then
+            for _,q in ipairs(reference) do
+                if type(q.title)=="string" and q.title~="" then
+                    local relation=q.relation=="starts" and "Starts quest" or
+                        "Needed for"
+                    local status=q.onQuest==true and "In quest log" or
+                        (q.completed==true and "Completed" or "Classic reference")
+                    tooltip:AddLine(relation..": "..q.title.."  ·  "..status,
+                        0.88,0.84,0.70,true)
+                end
+            end
+            if type(referenceTotal)=="number" and
+                referenceTotal>#reference then
+                tooltip:AddLine("+"..(referenceTotal-#reference)..
+                    " more Classic quest references",0.72,0.76,0.78,true)
             end
         end
         if type(IsShiftKeyDown)=="function" and IsShiftKeyDown()
