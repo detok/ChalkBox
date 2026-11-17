@@ -263,6 +263,26 @@ mapID=1415
 loader.scripts.OnUpdate(loader,1)
 assert(ChalkBox_DiscoveriesKnownFlightsStatus().mapPins==2 and
     browseCalls>0, "continent can use map node coordinates only for learned IDs")
+-- Forever can return map-local taxi coordinates only after the canvas is
+-- already displayed. A cached empty draw must repair itself without closing
+-- the map, altering saved learned nodes, or changing map dimensions.
+local originalNodes=C_TaxiMap.GetTaxiNodesForMap
+local taxiDataReady=false
+C_TaxiMap.GetTaxiNodesForMap=function(id)
+    if id==1413 and not taxiDataReady then return {} end
+    return originalNodes(id)
+end
+mapID=1413
+loader.scripts.OnUpdate(loader,1)
+assert(ChalkBox_DiscoveriesKnownFlightsStatus().mapPins==0,
+    "initial browse with delayed zone taxi coordinates has no pins")
+local savedRevision=before.revision
+taxiDataReady=true
+for _=1,6 do loader.scripts.OnUpdate(loader,1) end
+assert(ChalkBox_DiscoveriesKnownFlightsStatus().mapPins==1
+    and before.revision==savedRevision,
+    "late taxi coordinates draw known node without map navigation or DB changes")
+C_TaxiMap.GetTaxiNodesForMap=originalNodes
 mapID=1436
 loader.scripts.OnUpdate(loader,1)
 world:Hide()
