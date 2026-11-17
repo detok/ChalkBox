@@ -746,7 +746,9 @@ function ChalkBox_DropCommand(input)
         else Note("Map diagnostics are unavailable in this client.") end
     elseif cmd=="open" or cmd=="map" then
         if type(ChalkBox_OpenMapDiscoveries)=="function" then
-            ChalkBox_OpenMapDiscoveries()
+            if not ChalkBox_OpenMapDiscoveries() then
+                Note("Open the World Map, then select Discoveries.")
+            end
         else Note("Map Discoveries unavailable.") end
     elseif cmd=="status" or cmd=="" then
         local opt=ChalkBox_DropOptions()
