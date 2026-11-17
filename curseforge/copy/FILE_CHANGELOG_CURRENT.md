@@ -1,11 +1,9 @@
-# ChalkBox 2.2.26 — Adventure Tools & World Map
+# ChalkBox 2.2.27 — QuestSense Smart (Beta)
 
-- **Discoveries:** View recorded outdoor loot locations and learned flight paths on the local World Map. Browse loot history by area and creature.
-- **LootSense:** Optional future-quest hints for selected items, alongside quest and profession context.
-- **AuctionSense:** Historical asking-price charts and connected item-value insights.
-- **The Bar:** Resize individual modules, and view a remembered bank vendor-value total.
-- **Combat Meter:** Ranked PARTY/SAY reports and compact display controls.
-- **QuestSense & MacroForge:** Follow a selected map waypoint; use MacroForge alongside Blizzard's macro editor.
-- **Emota:** Optional Hunter pet interactions when the client supports them.
+- Prefer native quest-helper distances and current-zone relevance when Smart selects objectives.
+- Sort Smart choices by nearest, zone, level, title or quest-log order.
+- Offer optional completed-first priority and a configurable Nearby radius.
+- Add Smart Rules settings and opt-in sorting on Blizzard's existing objective tracker.
+- Keep manual watches, quest navigation and dungeon focus intact.
 
-Built for World of Warcraft: Forever. Player preferences and recorded data persist across upgrades.
+Beta only; **2.2.26 remains the stable CurseForge release**. Zone separator headings are not yet included.
