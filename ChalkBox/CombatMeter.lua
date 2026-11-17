@@ -456,7 +456,8 @@ local function PrintFight()
         Chat("Join a party to use PRINT. Nothing was sent.")
         return false
     end
-    local send=C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
+    local send=type(SendChatMessage)=="function" and SendChatMessage or
+        (C_ChatInfo and C_ChatInfo.SendChatMessage)
     if type(send)~="function" then
         Chat("This client has no supported party chat send API.")
         return false
