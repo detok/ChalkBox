@@ -165,7 +165,9 @@ local function BuildPricePreview(parent)
     -- A dedicated right-hand sidebar next to the result rows. It grows
     -- when the native AH is taller, and always stops above the page footer.
     -- This avoids overlapping the mode buttons, search bar and scan controls.
-    local width=248
+    -- A narrow gutter separates this card from the framed price table
+    -- on Forever's fixed-width Auction House.
+    local width=220
     local function Height()
         local h=type(parent.GetHeight)=="function" and parent:GetHeight() or 316
         if type(h)~="number" or h~=h then h=316 end
@@ -687,16 +689,16 @@ local function Ensure()
     -- Matching inset surrounds the table, including its built-in pager.
     -- Its non-interactive background is created BEFORE clickable rows.
     local listPanel=CreateFrame("Frame","ChalkBoxAuctionMarketListPanel",f)
-    listPanel:SetWidth(476)
+    listPanel:SetWidth(469)
     listPanel:SetPoint("TOPLEFT",f,"TOPLEFT",13,-132)
     listPanel:SetPoint("BOTTOMLEFT",f,"BOTTOMLEFT",13,27)
-    PanelSurface(listPanel,476,22,33)
+    PanelSurface(listPanel,469,22,33)
     Font(f,"GameFontNormal",21,-138,213):SetText("ITEM")
     labels.hdrLow=Font(f,"GameFontNormal",252,-138,82)
     Tint(labels.hdrLow,COLOR.low)
     labels.hdrAverage=Font(f,"GameFontNormal",340,-138,87)
     Tint(labels.hdrAverage,COLOR.average)
-    labels.hdrListings=Font(f,"GameFontNormal",430,-138,62)
+    labels.hdrListings=Font(f,"GameFontNormal",430,-138,48)
     Tint(labels.hdrListings,COLOR.counts)
     labels.rows={}
     for i=1,MAX_ROWS do
@@ -717,7 +719,7 @@ local function Ensure()
         local name=Font(row,"GameFontHighlight",4,-1,215)
         local low=Font(row,"GameFontHighlight",231,-1,82)
         local average=Font(row,"GameFontHighlight",320,-1,86)
-        local listings=Font(row,"GameFontHighlightSmall",413,-1,61)
+        local listings=Font(row,"GameFontHighlightSmall",413,-1,47)
         local note=Font(row,"GameFontHighlightSmall",4,-12,454)
         Tint(low,COLOR.low)
         Tint(average,COLOR.average)
