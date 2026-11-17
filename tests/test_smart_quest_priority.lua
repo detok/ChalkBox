@@ -137,7 +137,9 @@ local nativeBuilder=function()
     return result
 end
 _G.QuestObjectiveTrackerMixin={BuildQuestWatchInfos=nativeBuilder}
-_G.QuestObjectiveTracker={Update=function(self) self.updated=true end}
+-- Simulate an XML-built frame that has COPIED the method at construction.
+_G.QuestObjectiveTracker={BuildQuestWatchInfos=nativeBuilder,
+    Update=function(self) self.updated=true end}
 assert(loadfile("QuestSense.lua"))("ChalkBox")
 local function Fire(event,a,b)
     assert(frame.events[event],"missing event: "..event)
@@ -174,18 +176,20 @@ Flush()
 assert(watches[101] and watches[102] and watches[301] and not watches[201],
     "zone-first setting restores current-area choices")
 assert(loadfile("QuestTrackerMenu.lua"))("ChalkBox")
-local before=QuestObjectiveTrackerMixin.BuildQuestWatchInfos()
+local before=QuestObjectiveTracker:BuildQuestWatchInfos()
 assert(before[1].quest:GetID()==101,"native order unchanged by default")
 local writes=#changes
 ChalkBox_QuestCommand("nativeorder on")
 Flush()
-local sorted=QuestObjectiveTrackerMixin.BuildQuestWatchInfos()
+local sorted=QuestObjectiveTracker:BuildQuestWatchInfos()
 assert(sorted[1].quest:GetID()==102,
     "optional native display order puts closest local objective first")
+assert(QuestObjectiveTrackerMixin.BuildQuestWatchInfos==nativeBuilder,
+    "actual tracker frame is sorted, original mixin prototype untouched")
 assert(#changes==writes,
     "native visual sort never removes or re-adds Blizzard quest watches")
 ChalkBox_QuestCommand("nativeorder off")
-local restored=QuestObjectiveTrackerMixin.BuildQuestWatchInfos()
+local restored=QuestObjectiveTracker:BuildQuestWatchInfos()
 assert(restored[1].quest:GetID()==101,
     "disabling visual sort restores Blizzard's regular watch order")
 -- Nearby can pick up objective map data attached to a current subzone
