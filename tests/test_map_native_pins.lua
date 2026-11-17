@@ -115,18 +115,19 @@ assert(flight and flight.point[2]==overlay and flight.point[4]==240
     "the actual displayed boot frame follows normalized map coordinates")
 assert(flight.icon.atlas=="TaxiNode_Alliance"
     and flight.icon.visible==true
-    and flight.back.visible==false and flight.face.visible==false,
-    "native flight icon remains visible without either square backplate")
--- Even when the atlas is genuinely missing, keep a visible fallback.
--- A restored supported atlas must immediately hide the emergency squares.
+    and not flight.back and not flight.face,
+    "native flight icon has no rectangular textures at all")
+-- Even when a taxi atlas is missing, use a flight-master image rather than
+-- drawing square fallbacks over the working local map.
 C_Texture.GetAtlasInfo=function() return nil end
 ChalkBox_MapNativeRefresh()
-assert(flight.back.visible==true and flight.face.visible==true,
-    "missing flight atlas retains an emergency visible marker")
+assert(not flight.back and not flight.face
+    and flight.icon.texture=="Interface\\Minimap\\Tracking\\FlightMaster",
+    "missing taxi atlas falls back to flight-master artwork, never squares")
 C_Texture.GetAtlasInfo=function() return {valid=true} end
 ChalkBox_MapNativeRefresh()
-assert(flight.back.visible==false and flight.face.visible==false,
-    "square fallback disappears when client artwork returns")
+assert(flight.icon.atlas=="TaxiNode_Alliance" and not flight.back
+    and not flight.face,"recovered atlas stays square-free")
 flight.scripts.OnEnter(flight)
 assert(hover[1]=="Booty Bay" and hover[2]=="Known flight path",
     "the flight tooltip belongs to the same visible frame")
@@ -167,7 +168,7 @@ for _,f in ipairs(frames) do
     if f.scripts.OnUpdate then f.scripts.OnUpdate(f,0.3) end
 end
 assert(flight.point[4]==300 and flight.point[5]==-300
-    and flight.w==13 and flight.face.w==7.5,
+    and flight.w==13 and not flight.face and not flight.back,
     "canvas zoom resizes the marker to constant screen pixels without moving its map position")
 local lootCrosshair
 for _,f in ipairs(frames) do
