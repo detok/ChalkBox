@@ -168,12 +168,37 @@ local function MapID()
     end
     if type(id)=="number" and id>0 then return id end
 end
+-- DropSense stores outdoor loot under the first parent UI zone (type 3).
+-- Follow the same zone when the visible map is a smaller subzone/micro view.
+-- Drawing on a different map still requires an actual client coordinate
+-- transformation; never reinterpret saved zone coordinates directly.
+local function ZoneMapID(id)
+    local origin,seen=id,{}
+    for _=1,12 do
+        if type(id)~="number" or id<=0 or id%1~=0 or seen[id] then
+            break
+        end
+        seen[id]=true
+        local info=Call(C_Map and C_Map.GetMapInfo,id)
+        if type(info)~="table" then break end
+        if Public(info.mapType) and info.mapType==3 then return id end
+        if Public(info.mapType) and type(info.mapType)=="number"
+            and info.mapType<3 then break end
+        local parent=Public(info.parentMapID) and info.parentMapID or nil
+        if type(parent)~="number" or parent<=0 then break end
+        id=parent
+    end
+    return origin
+end
 -- One transient loot-position pulse on Blizzard's *existing* map canvas.
 -- Never move the map, call AddPin, store an extra map marker, or infer a
 -- corpse/creature spawn from where a loot window happened to open.
 local lootPulse,hoverSpot
 local function PulseClear()
     hoverSpot=nil
+    if type(ChalkBox_MapNativeLootClear)=="function" then
+        ChalkBox_MapNativeLootClear()
+    end
     if lootPulse and type(lootPulse.Hide)=="function" then
         lootPulse:Hide()
     end
@@ -209,12 +234,23 @@ local function PulseHover(item)
     PulseClear()
     if mode~="outdoor" or type(item)~="table"
         or type(item.locations)~="table" or #item.locations<1
-        or selectedArea~="z:"..tostring(MapID() or "") then return end
+        or selectedArea~="z:"..tostring(ZoneMapID(MapID()) or "") then return end
     -- Recent observation only. Does not imply this is the mob's spawn.
     local spot=item.locations[#item.locations]
     if type(spot)~="table" or not ValidOffset(spot.x)
         or not ValidOffset(spot.y) or spot.x<0 or spot.x>1000
         or spot.y<0 or spot.y>1000 then return end
+    -- Preferred path: the built-in MapCanvas pin system positions and
+    -- draws the dot during local zoom, panning and map changes. It also
+    -- projects a parent-zone sample onto a subzone only when Forever
+    -- supplies a valid rectangle and the sample lies inside it.
+    local sourceMap=tonumber(selectedArea:match("^z:(%d+)$"))
+    if sourceMap and type(ChalkBox_MapNativeAvailable)=="function"
+        and ChalkBox_MapNativeAvailable() and
+        type(ChalkBox_MapNativeLootSet)=="function" then
+        if ChalkBox_MapNativeLootSet(sourceMap,
+            spot.x/1000,spot.y/1000) then return end
+    end
     local canvas=PulseCanvas()
     if not canvas then return end
     if not lootPulse or lootPulse.canvas~=canvas then
@@ -322,7 +358,8 @@ local function Areas(kind)
 end
 local function DefaultArea()
     if mode=="outdoor" then
-        local key=currentMap and ("z:"..currentMap) or nil
+        local zone=currentMap and ZoneMapID(currentMap)
+        local key=zone and ("z:"..zone) or nil
         -- Following the viewed map must NEVER show the first unrelated zone.
         if followMap and key then return key end
         if key and type(ChalkBox_DropAreaInfo)=="function" and
@@ -348,7 +385,7 @@ local function EnsureSelection()
     end
     if not found then
         if not (followMap and mode=="outdoor" and currentMap and
-            selectedArea=="z:"..currentMap) then
+            selectedArea=="z:"..ZoneMapID(currentMap)) then
             selectedArea=DefaultArea();selectedSource=nil;page=1
         end
     end
