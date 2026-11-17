@@ -62,6 +62,7 @@ FILES = (
     "FutureQuestItems.lua",
     "LootSense.lua",
     "BagReagents.lua",
+    "FutureQuestGlow.lua",
     "QuietGuard.lua",
     "PersonalityContext.lua",
     "Emota.lua",
