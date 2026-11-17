@@ -675,9 +675,9 @@ local function MakeLootAppearance()
                 d.lootCategories[key]=on
             end)
     end
-    Label(panel,"BAG OUTLINES DISABLED FOR SAFETY","GameFontNormalLarge",
+    Label(panel,"PROFESSION BAG OUTLINES STILL PAUSED","GameFontNormalLarge",
         27,-246,480)
-    Label(panel,"No secure bag-button modifications; item tooltip hints still work.",
+    Label(panel,"Future-quest markers are separate and never modify bag buttons.",
         "GameFontHighlightSmall",27,-275,495)
     Label(panel,"Marker opacity (off)","GameFontNormal",27,-326,145)
     local slider=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
@@ -697,14 +697,22 @@ local function MakeLootAppearance()
         loading=true;slider:SetValue(value);loading=false
         alpha:SetText(tostring(value).."%")
     end)
-    Button(panel,"Scan Open Profession",28,-371,224,function()
-        if ChalkBox_ProfessionRefresh then ChalkBox_ProfessionRefresh() end
-        if ChalkBox_BagHighlightsRefresh then
-            ChalkBox_BagHighlightsRefresh()
-        end
-    end)
-    Label(panel,"Your quest and personal KEEP protections always stay prioritized.",
-        "GameFontHighlightSmall",27,-420,510)
+    Toggle(panel,"Purple borders for future-quest items",
+        "Curated item IDs only. Regular quest-item glow is untouched.",-367,
+        function()
+            local d=DB()
+            return d==nil or d.futureQuestGlow~=false
+        end,
+        function(on)
+            if type(ChalkBox_FutureQuestGlowSet)=="function" then
+                ChalkBox_FutureQuestGlowSet(on)
+            else
+                local d=DB()
+                if d then d.futureQuestGlow=on end
+            end
+        end)
+    Label(panel,"Detached marker is limited to supported Blizzard bag layouts.",
+        "GameFontHighlightSmall",27,-425,510)
     return panel
 end
 
