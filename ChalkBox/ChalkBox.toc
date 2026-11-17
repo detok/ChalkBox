@@ -3,7 +3,6 @@
 ## Notes: All-in-one Forever companion: loot discoveries, item insights, The Bar, quests, combat tools, camping, MacroForge and a framed Adventure Journal.
 ## Author: Detok Whitemaine
 ## Version: 2.2.25
-## OptionalDeps: QuestieDB
 ## SavedVariables: ChalkBoxDB
 ## SavedVariablesPerCharacter: ChalkBoxZoneDB, ChalkBoxProfessionDB
 ## IconTexture: Interface\AddOns\ChalkBox\assets\Icon
@@ -27,7 +26,6 @@ Libs\LibProfessionDB-1.0\Data\AcquireMethods.lua
 Libs\LibProfessionDB-1.0\Data\Sources.lua
 Libs\LibProfessionDB-1.0\Data\SourceNames.lua
 Core.lua
-QuestItemLinks.lua
 ProfessionSense.lua
 RecipeAdvisor.lua
 Theme.lua
