@@ -188,7 +188,10 @@ assert(QuestObjectiveTrackerMixin.BuildQuestWatchInfos==nativeBuilder,
     "actual tracker frame is sorted, original mixin prototype untouched")
 assert(#changes==writes,
     "native visual sort never removes or re-adds Blizzard quest watches")
+QuestObjectiveTracker.updated=false
 ChalkBox_QuestCommand("nativeorder off")
+assert(QuestObjectiveTracker.updated,
+    "turning native order off immediately refreshes Blizzard's original list")
 local restored=QuestObjectiveTracker:BuildQuestWatchInfos()
 assert(restored[1].quest:GetID()==101,
     "disabling visual sort restores Blizzard's regular watch order")
