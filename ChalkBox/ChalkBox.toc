@@ -26,6 +26,8 @@ Libs\LibProfessionDB-1.0\Data\AcquireMethods.lua
 Libs\LibProfessionDB-1.0\Data\Sources.lua
 Libs\LibProfessionDB-1.0\Data\SourceNames.lua
 Core.lua
+Libs\ClassicQuestReference\Data.lua
+QuestItemReference.lua
 ProfessionSense.lua
 RecipeAdvisor.lua
 Theme.lua
