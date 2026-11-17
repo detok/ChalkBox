@@ -231,24 +231,6 @@ local function OnItemTooltip(tooltip)
         local ok,found=pcall(ChalkBox_QuestItemDetails,name)
         if ok and type(found)=="table" then quests=found end
     end
-    -- Quest-class metadata by itself only says the item is a Quest item,
-    -- not WHICH quest uses it. QuestieDB supplies reverse item-ID links
-    -- (including quests not in the player's log), when installed.
-    local dbLinks
-    local questLinkState
-    if label=="KEEP" and (not quests or #quests==0)
-        and type(ChalkBox_QuestItemDatabaseLinks)=="function" then
-        local itemID=Public(link) and type(link)=="string" and
-            tonumber(link:match("item:(%d+)")) or nil
-        if itemID then
-            local ok,found=pcall(ChalkBox_QuestItemDatabaseLinks,itemID)
-            if ok and type(found)=="table" then dbLinks=found end
-        end
-        if type(ChalkBox_QuestItemDatabaseStatus)=="function" then
-            local ok,state=pcall(ChalkBox_QuestItemDatabaseStatus)
-            if ok and type(state)=="string" then questLinkState=state end
-        end
-    end
     if label and not HasLine(tooltip,label) then
         tooltip:AddLine(" ",1,1,1)
         tooltip:AddLine(label,cr or r,cg or g,cb or b,true)
@@ -258,17 +240,6 @@ local function OnItemTooltip(tooltip)
                 details="Needed for: "..quests[1].title
             else
                 details="Needed for "..#quests.." accepted quests"
-            end
-        end
-        if message=="KEEP: quest item" and (not quests or #quests==0) then
-            if dbLinks and #dbLinks>0 then
-                details="Known quest connections"
-            elseif questLinkState=="indexing" or questLinkState=="not started" then
-                details="Quest lookup loading; re-hover in a moment"
-            elseif questLinkState=="QuestieDB unavailable" then
-                details="Quest item (QuestieDB not installed)"
-            else
-                details="Quest item (no verified quest link yet)"
             end
         end
         if details and details~="" then
@@ -316,38 +287,6 @@ local function OnItemTooltip(tooltip)
                         tooltip:AddLine(line,0.83,0.85,0.78,true)
                     end
                 end
-            end
-        end
-        -- Database relations are specific to item ID. A reward, starter
-        -- and required collection item are different claims, so label them
-        -- separately instead of calling every link "needed".
-        if dbLinks and #dbLinks>0 then
-            local roleNames={
-                objective="Needed for",required="Needed for",
-                used="Used for",starts="Starts quest",
-                provided="Provided by",related="Related to",
-                reward="Reward from",
-            }
-            local maxLines=math.min(#dbLinks,5)
-            for i=1,maxLines do
-                local q=dbLinks[i]
-                if type(q)=="table" and type(q.title)=="string"
-                    and q.title~="" then
-                    local prefix=roleNames[q.role] or "Related to"
-                    local line=prefix..": "..q.title
-                    if q.active==true then
-                        line=line.."  ·  In quest log"
-                    elseif q.complete==true then
-                        line=line.."  ·  Completed"
-                    elseif q.active==false then
-                        line=line.."  ·  Not in quest log"
-                    end
-                    tooltip:AddLine(line,0.88,0.84,0.70,true)
-                end
-            end
-            if #dbLinks>maxLines then
-                tooltip:AddLine("+"..(#dbLinks-maxLines)..
-                    " more quest connections",0.72,0.76,0.78,true)
             end
         end
         if type(IsShiftKeyDown)=="function" and IsShiftKeyDown()
@@ -423,16 +362,6 @@ SlashCmdList.CHALKBOX = function(input)
             "; active profession: "..tostring(window)..".")
         Note("Scanner: "..tostring(scanSource).."; bundled recipe catalog: "..
             tostring(state).." ("..tostring(recipes).." indexed recipes).")
-        if type(ChalkBox_QuestItemDatabaseStatus)=="function" then
-            local ok,phase,done,total=pcall(ChalkBox_QuestItemDatabaseStatus)
-            if ok then
-                Note("Quest item links (QuestieDB): "..tostring(phase)..
-                    (type(done)=="number" and done>0 and
-                        ("; indexed "..done.." quests") or "")..
-                    (phase=="indexing" and type(total)=="number" and
-                        ("/"..total) or "")..".")
-            end
-        end
         if tonumber(learnedCount)==0 then
             Note("Open a crafting window, let its recipe list load, and /chalk loot scan. Then re-hover the item.")
         end
