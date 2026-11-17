@@ -154,39 +154,37 @@ group=true
 editing=true
 now=128
 Button("Print top 10 to PARTY")()
-assert(#sends==7,"edit-mode preview isn't fight data")
+assert(#sends==8 and sends[8].channel=="PARTY",
+    "meter's IsEditing state must not block a manual report")
 editing=false
 source2.amountPerSecond=secret
 Button("Print top 10 to PARTY")()
-assert(#sends==7,"never format protected values")
+assert(#sends==8,"never format protected values")
 source2.amountPerSecond=423
 source1.name=secret
 Button("Print top 10 to PARTY")()
-assert(#sends==7,"never send protected names")
+assert(#sends==8,"never send protected names")
 source1.name="Detok"
 now=132
 Button("Print top 10 to PARTY")()
-assert(#sends==8)
+assert(#sends==9)
 Button("Print top 10 to PARTY")()
-assert(#sends==8,"manual 3-second throttle prevents accidental double click")
+assert(#sends==9,"manual 3-second throttle prevents accidental double click")
 local copies={}
 _G.ChalkBox_MeterShowCopy=function(message,reason)
     copies[#copies+1]={text=message,reason=reason}
-    return true
 end
 now=145
 C_ChatInfo.InChatMessagingLockdown=function() return true end
-C_ChatInfo.SendChatMessage=function() error("chat should not run in lockdown") end
+C_ChatInfo.SendChatMessage=function() error("server rejected send") end
 Button("Print top 10 to PARTY")()
-assert(#copies==1 and #sends==8
-    and copies[1].text:find("CB DPS",1,true),
-    "manual print attempts the API and falls back to copy on actual rejection")
+assert(#copies==0 and #sends==9 and
+    chat[#chat]:find("report was not sent",1,true),
+    "failed send reports error without copy or alternate channel")
 C_ChatInfo.InChatMessagingLockdown=nil
 now=150
 Button("Print top 10 to PARTY")()
-assert(#copies==2 and #sends==8
-    and copies[2].reason:find("failed",1,true),
-    "server rejection preserves complete report text without changing channel")
+assert(#copies==0 and #sends==9,"manual report has no copy fallback")
 C_ChatInfo.SendChatMessage=function(message,channel)
     sends[#sends+1]={text=message,channel=channel}
 end
@@ -195,7 +193,7 @@ end
 now=200
 Fire("PLAYER_REGEN_DISABLED");now=225
 Fire("PLAYER_REGEN_ENABLED");Tick(4)
-assert(#sends==8,"auto default OFF")
+assert(#sends==9,"auto default OFF")
 MenuOpen()
 Button("After combat: ")()
 assert(ChalkBox_NativeMeterStatus().auto)
@@ -210,48 +208,48 @@ Button("Auto stat: DPS")()
 assert(ChalkBox_NativeMeterStatus().metric=="dps")
 now=300;Fire("PLAYER_REGEN_DISABLED");now=305
 Fire("PLAYER_REGEN_ENABLED");Tick(3)
-assert(#sends==8,"minimum fight length defaults to 10s")
+assert(#sends==9,"minimum fight length defaults to 10s")
 now=310;Fire("PLAYER_REGEN_DISABLED");now=322
 old={combatSources={{name="Previous",amountPerSecond=201,totalAmount=2001}}}
 Fire("PLAYER_REGEN_ENABLED")
 Tick(1)
-assert(#sends==8,"auto report waits for completed native session")
+assert(#sends==9,"auto report waits for completed native session")
 Tick(1.5)
-assert(#sends==9 and sends[9].channel=="SAY"
-    and sends[9].text=="CB DPS (Last): 1 Previous 201",
+assert(#sends==10 and sends[10].channel=="SAY"
+    and sends[10].text=="CB DPS (Last): 1 Previous 201",
     "after-combat auto report uses selected auto stat and explicit channel")
 -- Cooldown prevents a second rapid report even if another fight ends.
 now=330;Fire("PLAYER_REGEN_DISABLED")
 now=344;old={combatSources={{name="Previous",amountPerSecond=301,totalAmount=3001}}}
 Fire("PLAYER_REGEN_ENABLED");Tick(3)
-assert(#sends==9,"auto cooldown prevents repeated chat spam")
+assert(#sends==10,"auto cooldown prevents repeated chat spam")
 -- After cooldown, old unchanged snapshot is not re-broadcast.
 now=400;Fire("PLAYER_REGEN_DISABLED");now=412
 old={combatSources={{name="Previous",amountPerSecond=201,totalAmount=2001}}}
 Fire("PLAYER_REGEN_ENABLED");Tick(3)
-assert(#sends==9,"identical old auto summary is not repeated")
+assert(#sends==10,"identical old auto summary is not repeated")
 now=500;Fire("PLAYER_REGEN_DISABLED");now=512
 old={combatSources={{name="Previous",amountPerSecond=405,totalAmount=4050}}}
 Fire("PLAYER_REGEN_ENABLED");Tick(3)
-assert(#sends==10 and sends[10].channel=="SAY" and
-    sends[10].text:find("405",1,true),
+assert(#sends==11 and sends[11].channel=="SAY" and
+    sends[11].text:find("405",1,true),
     "new completed result can be posted once cooldown clears")
 MenuOpen()
 Button("After combat: ")()
 assert(not ChalkBox_NativeMeterStatus().auto)
 now=520;Fire("PLAYER_REGEN_DISABLED");now=535
 Fire("PLAYER_REGEN_ENABLED");Tick(4)
-assert(#sends==10,"disabled auto never posts")
+assert(#sends==11,"disabled auto never posts")
 now=540
 ChalkBox_NativeMeterCommand("off")
 assert(not ChalkBox_NativeMeterStatus().enabled)
 local root2={CreateButton=function() error("disabled menu must be empty") end}
 callback(gear,root2)
-assert(not ChalkBox_NativeMeterPrint(native) and #sends==10)
+assert(not ChalkBox_NativeMeterPrint(native) and #sends==11)
 ChalkBox_NativeMeterCommand("on")
 MenuOpen()
 Button("Print top 10 to PARTY")()
-assert(#sends==11,"native gear report returns after re-enable")
+assert(#sends==12,"native gear report returns after re-enable")
 assert(ChalkBox_NativeMeterStatus().auto==false,
     "re-enabling must not silently enable auto")
 ChalkBox_NativeMeterCommand("rows 3")
@@ -273,7 +271,7 @@ local compactAdapter={
     GetCombatSession=function() return old end,
 }
 assert(ChalkBox_NativeMeterPrint(compactAdapter,"SAY")
-    and #sends==12 and sends[12].channel=="SAY"
-    and sends[12].text:find("CB DPS (Last):",1,true),
+    and #sends==13 and sends[13].channel=="SAY"
+    and sends[13].text:find("CB DPS (Last):",1,true),
     "compact selection adapter uses shared native validation, Top-N and channel")
 print("PASS: native and compact PARTY/SAY reports, shared adapter, Top 3/5/10, auto opt-in, duration/cooldown, no secret data and no spam")
