@@ -259,6 +259,31 @@ mapID=1437
 loader.scripts.OnUpdate(loader,1)
 assert(ChalkBox_DiscoveriesKnownFlightsStatus().mapPins==0,
     "zone with no verified coordinates is empty, not mapped with false positions")
+-- A common Forever race: a newly opened zone has not returned its taxi
+-- directory on the first draw. The map ID/size do not change when it loads.
+local getBefore=C_TaxiMap.GetTaxiNodesForMap
+local lateList
+C_TaxiMap.GetTaxiNodesForMap=function(id)
+    if id==1437 then return lateList or {} end
+    return getBefore(id)
+end
+lateList={{
+    nodeID=8,position={GetXY=function() return .24,.36 end},
+    atlasName="TaxiNode_Alliance",faction=2,
+}}
+for _=1,5 do loader.scripts.OnUpdate(loader,1) end
+local late=ChalkBox_DiscoveriesKnownFlightsStatus()
+assert(late.mapPins==1 and late.directPositions==1
+    and late.verified==2,
+    "same zone ID/size must recover known flights when coordinates load late")
+local lateNode
+for _,f in ipairs(allFrames) do
+    if f.parent==canvas and f.shown and
+        f.flightName=="Known Destination" then lateNode=f end
+end
+assert(lateNode and lateNode.point[4]==216 and
+    lateNode.point[5]==-216,
+    "late-arriving client local coordinates are drawn on the zone canvas")
 mapID=1415
 loader.scripts.OnUpdate(loader,1)
 assert(ChalkBox_DiscoveriesKnownFlightsStatus().mapPins==2 and
