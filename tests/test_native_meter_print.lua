@@ -111,13 +111,13 @@ assert(#calls==10 and calls[2].name=="Combat reports")
 Button("Print top 3 to PARTY")()
 assert(#sends==1 and sends[1].channel=="PARTY")
 assert(sends[1].text==
-    "CB DPS (Current): 1 Detok 555, 2 Friend 423, 3 PartyMate 318",
+    "CB DPS (Current): 1. Detok - 555, 2. Friend - 423, 3. PartyMate - 318",
     "native current session, sorted rankings, and escaped chat")
 assert(#sends[1].lines==4 and #rawLines==4
     and rawLines[1].text=="CB DPS (Current):"
-    and rawLines[2].text=="1 Detok 555"
-    and rawLines[3].text=="2 Friend 423"
-    and rawLines[4].text=="3 PartyMate 318",
+    and rawLines[2].text=="1. Detok - 555"
+    and rawLines[3].text=="2. Friend - 423"
+    and rawLines[4].text=="3. PartyMate - 318",
     "heading and ranked players are four distinct plain chat sends")
 now=104
 Button("Print top 3 to SAY")()
@@ -129,7 +129,7 @@ MenuOpen()
 assert(Button("Print top 5 to PARTY"))
 now=108
 Button("Print top 5 to PARTY")()
-assert(#sends==3 and sends[3].text:find("5 Fifth 101",1,true),
+assert(#sends==3 and sends[3].text:find("5. Fifth - 101",1,true),
     "user-selected Top 5 ranks use the native meter")
 Button("Report size: Top 5")()
 assert(ChalkBox_NativeMeterStatus().rows==10)
@@ -139,13 +139,13 @@ now=112
 meterType=0;sessionType=nil;sessionID=5
 Button("Print top 10 to SAY")()
 assert(#sends==4 and sends[4].channel=="SAY" and
-    sends[4].text=="CB DMG (Fight 5): 1 Buddy 900",
+    sends[4].text=="CB DMG (Fight 5): 1. Buddy - 900",
     "history session and selected stat survive channel selection")
 now=116
 meterType=1;sessionType=1;sessionID=nil
 current={combatSources={}}
 Button("Print top 10 to PARTY")()
-assert(#sends==5 and sends[5].text=="CB DPS (Last): 1 Previous 99",
+assert(#sends==5 and sends[5].text=="CB DPS (Last): 1. Previous - 99",
     "Current-empty falls back to Blizzard's expired fight")
 current=data
 now=120
@@ -231,7 +231,7 @@ Tick(1)
 assert(#sends==9,"auto report waits for completed native session")
 Tick(1.5)
 assert(#sends==10 and sends[10].channel=="SAY"
-    and sends[10].text=="CB DPS (Last): 1 Previous 201",
+    and sends[10].text=="CB DPS (Last): 1. Previous - 201",
     "after-combat auto report uses selected auto stat and explicit channel")
 -- Cooldown prevents a second rapid report even if another fight ends.
 now=330;Fire("PLAYER_REGEN_DISABLED")
@@ -289,4 +289,38 @@ assert(ChalkBox_NativeMeterPrint(compactAdapter,"SAY")
     and #sends==13 and sends[13].channel=="SAY"
     and sends[13].text:find("CB DPS (Last):",1,true),
     "compact selection adapter uses shared native validation, Top-N and channel")
-print("PASS: native and compact PARTY/SAY reports, shared adapter, Top 3/5/10, auto opt-in, duration/cooldown, no secret data and no spam")
+-- Details-style pacing: on a modern client, each PARTY line is sent about
+-- 200ms apart. SAY stays synchronous, preserving the click's hardware context.
+local pending={}
+_G.C_Timer={After=function(delay,fn)
+    assert(delay==0.20,"PARTY rows must be spaced by 200ms")
+    pending[#pending+1]=fn
+end}
+compactAdapter.GetCombatSession=function() return data end
+now=600
+local before=#rawLines
+assert(ChalkBox_NativeMeterPrint(compactAdapter,"PARTY"),
+    "click starts a valid PARTY report")
+assert(#rawLines==before+1 and #pending==1
+    and rawLines[#rawLines].text=="CB DPS (Last):",
+    "click sends the heading immediately and queues the first row")
+assert(not ChalkBox_NativeMeterPrint(compactAdapter,"PARTY")
+    and #rawLines==before+1,
+    "another click cannot interleave with an in-progress report")
+for i=1,3 do
+    assert(#pending==1,"one queued send at a time")
+    local callback=table.remove(pending,1)
+    callback()
+    assert(#rawLines==before+1+i
+        and rawLines[#rawLines].channel=="PARTY",
+        "each queued line arrives in order on PARTY")
+end
+assert(#pending==0 and #sends==14 and #sends[14].lines==4,
+    "all rows sent and queue cleared")
+now=610
+before=#rawLines
+assert(ChalkBox_NativeMeterPrint(compactAdapter,"SAY")
+    and #rawLines==before+4 and #pending==0
+    and #sends==15 and sends[15].channel=="SAY",
+    "SAY sends all lines from direct click without delayed hardware actions")
+print("PASS: native and compact PARTY/SAY reports, safe separated rows, 200ms PARTY pacing, instant-click SAY, Top 3/5/10, auto opt-in and no spam")
