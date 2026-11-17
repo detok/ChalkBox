@@ -534,8 +534,8 @@ function ChalkBox_DiscoveriesKnownFlightsStatus()
         verified=db and Count(db.nodes) or 0,
         mapPins=native and native.available and native.flightPins
             or lastCount,menuHook=menuInstalled,
-        renderer=native and native.available and "native MapCanvas"
-            or "compatibility canvas",
+        renderer=native and native.available and
+            (native.renderer or "map overlay") or "compatibility canvas",
         rendererProblem=native and native.problem or nil,
         mapID=ViewedMap(),captureRetry=capturePending>0,
         captureStatus=lastCapture.status,taxiMapID=lastCapture.taxiMapID,

@@ -245,24 +245,47 @@ end
 local function PulseHover(item)
     PulseClear()
     if mode~="outdoor" or type(item)~="table"
-        or type(item.locations)~="table" or #item.locations<1
-        or selectedArea~="z:"..tostring(ZoneMapID(MapID()) or "") then return end
-    -- Recent observation only. Does not imply this is the mob's spawn.
-    local spot=item.locations[#item.locations]
-    if type(spot)~="table" or not ValidOffset(spot.x)
-        or not ValidOffset(spot.y) or spot.x<0 or spot.x>1000
-        or spot.y<0 or spot.y>1000 then return end
-    -- Preferred path: the built-in MapCanvas pin system positions and
-    -- draws the dot during local zoom, panning and map changes. It also
-    -- projects a parent-zone sample onto a subzone only when Forever
-    -- supplies a valid rectangle and the sample lies inside it.
-    local sourceMap=tonumber(selectedArea:match("^z:(%d+)$"))
-    if sourceMap and type(ChalkBox_MapNativeAvailable)=="function"
+        or type(item.locations)~="table" or #item.locations<1 then return end
+    local sourceMap=selectedArea and
+        tonumber(selectedArea:match("^z:(%d+)$"))
+    if not sourceMap then return end
+    -- Hover is an explicit request to view the item's recorded position.
+    -- When browsing a saved zone, open that zone on Blizzard's existing map;
+    -- preserve a currently viewed subzone of the same parent instead.
+    local viewed=MapID()
+    if ZoneMapID(viewed)~=sourceMap then
+        local world=WorldMapFrame
+        if not world or type(world.SetMapID)~="function" then return end
+        local ok=pcall(world.SetMapID,world,sourceMap)
+        if not ok then return end
+    end
+    if ZoneMapID(MapID())~=sourceMap then return end
+    -- Show ALL recorded positions, not just the most recent. These are
+    -- loot-window locations, not invented creature spawn coordinates.
+    local locations={}
+    for _,spot in ipairs(item.locations) do
+        if type(spot)=="table" and ValidOffset(spot.x)
+            and ValidOffset(spot.y) and spot.x>=0 and spot.x<=1000
+            and spot.y>=0 and spot.y<=1000 then
+            locations[#locations+1]={x=spot.x/1000,y=spot.y/1000}
+        end
+    end
+    if #locations==0 then return end
+    if type(ChalkBox_MapNativeAvailable)=="function"
+        and ChalkBox_MapNativeAvailable() and
+        type(ChalkBox_MapNativeLootSetMany)=="function" then
+        if ChalkBox_MapNativeLootSetMany(sourceMap,locations) then return end
+    elseif type(ChalkBox_MapNativeAvailable)=="function"
         and ChalkBox_MapNativeAvailable() and
         type(ChalkBox_MapNativeLootSet)=="function" then
-        if ChalkBox_MapNativeLootSet(sourceMap,
-            spot.x/1000,spot.y/1000) then return end
+        local first=locations[#locations]
+        if ChalkBox_MapNativeLootSet(sourceMap,first.x,first.y) then
+            return
+        end
     end
+    -- Older clients without the shared map overlay retain a single marker.
+    local spot=item.locations[#item.locations]
+    if type(spot)~="table" then return end
     local canvas=PulseCanvas()
     if not canvas then return end
     if not lootPulse or lootPulse.canvas~=canvas then

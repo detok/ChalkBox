@@ -1,208 +1,153 @@
--- MapCanvas native marker integration. No actual WoW client required.
+-- ChalkBox unified map marker renderer: exercise actual marker frames, not
+-- an invented MapCanvas AcquirePin stub that can pass without painting art.
 _G.ChalkBoxZoneDB={}
-_G.C_Map={
-    GetMapInfo=function(id)
-        if id==1436 then return {id=id,mapType=3,parentMapID=13} end
-        if id==999 then return {id=id,mapType=5,parentMapID=1436} end
-        if id==13 then return {id=id,mapType=2,parentMapID=947} end
-        if id==1413 then return {id=id,mapType=3,parentMapID=13} end
-    end,
-    GetMapRectOnMap=function(child,parent)
-        if child==999 and parent==1436 then return .20,.60,.20,.60 end
-    end,
-}
-local world,allFrames,pools={}, {},{}
-local function Texture()
-    return {
-        SetAllPoints=function() end,SetSize=function() end,
-        SetPoint=function() end,
-        SetAtlas=function(self,atlas) self.atlas=atlas end,
-        SetTexture=function(self,v) self.texture=v end,
-        SetColorTexture=function(self,...) self.color={...} end,
-        SetAlpha=function(self,v) self.alpha=v end,
-        Show=function(self) self.shown=true end,
-        Hide=function(self) self.shown=false end,
-    }
-end
+local frames={}
 local function Frame(parent)
-    local f={parent=parent,scripts={},visible=true}
-    function f:RegisterEvent() end
-    function f:SetScript(name,callback) self.scripts[name]=callback end
-    function f:SetSize(w,h) self.width,self.height=w,h end
-    function f:CreateTexture() return Texture() end
-    function f:Hide() self.visible=false end
+    local f={parent=parent,visible=true,scripts={},strata="FULLSCREEN_DIALOG",
+        level=20}
+    function f:SetScript(n,fn) self.scripts[n]=fn end
+    function f:SetSize(w,h) self.w,self.h=w,h end
+    function f:GetWidth() return self.w end
+    function f:GetHeight() return self.h end
+    function f:SetAllPoints(target) self.all=target end
+    function f:SetPoint(...) self.point={...} end
+    function f:ClearAllPoints() self.point=nil end
+    function f:SetFrameLevel(v) self.level=v end
+    function f:GetFrameLevel() return self.level end
+    function f:GetFrameStrata() return self.strata end
+    function f:SetFrameStrata(v) self.strata=v end
+    function f:EnableMouse(v) self.mouse=v end
     function f:Show() self.visible=true end
-    function f:ClearAllPoints() self.anchor=nil end
-    function f:SetPoint(...) self.anchor={...} end
-    function f:SetOwningMap(map) self.owningMap=map end
-    function f:SetFrameLevel(level) self.level=level end
-    function f:UseFrameLevelType(t) self.levelType=t end
-    function f:SetScalingLimits(...) self.limits={...} end
-    function f:SetMouseClickEnabled(value) self.click=value end
-    function f:SetMouseMotionEnabled(value) self.motion=value end
-    function f:GetMap() return self.owningMap end
-    allFrames[#allFrames+1]=f
+    function f:Hide() self.visible=false end
+    function f:IsShown() return self.visible end
+    function f:CreateTexture(_,layer)
+        local t={layer=layer}
+        function t:SetDrawLayer(l,o) self.layer,self.order=l,o end
+        function t:SetSize(w,h) self.w,self.h=w,h end
+        function t:SetPoint(...) self.point={...} end
+        function t:SetAllPoints(v) self.all=v end
+        function t:SetTexture(v) self.texture=v end
+        function t:SetVertexColor(...) self.color={...} end
+        function t:SetColorTexture(...) self.color={...} end
+        function t:SetAtlas(v) self.atlas=v;return true end
+        return t
+    end
+    frames[#frames+1]=f
     return f
 end
 _G.CreateFrame=function(_,__,parent) return Frame(parent) end
-_G.MapCanvasPinMixin={
-    SetPosition=function(self,x,y)
-        assert(x>=0 and x<=1 and y>=0 and y<=1)
-        self.position={x,y}
-    end
-}
-_G.MapCanvasDataProviderMixin={
-    OnAdded=function(self,map) self.map=map end,
-    GetMap=function(self) return self.map end,
-    OnMapChanged=function(self) self:RefreshAllData() end,
-}
-_G.CreateFromMixins=function(base)
-    local t={}
-    for key,value in pairs(base) do t[key]=value end
-    return t
-end
-_G.Mixin=function(obj,mixin)
-    for key,value in pairs(mixin) do obj[key]=value end
-    return obj
-end
--- A real CreateFramePool captures its standard frame constructor at setup;
--- replacing a field after construction does not produce mixed-in pins.
-_G.CreateFramePool=function() error("native code must not use FramePool for custom pins") end
-_G.CreateObjectPool=function(create,reset)
-    local pool={used={},available={}}
-    function pool:Acquire()
-        local frame=table.remove(self.available)
-        local isNew=frame==nil
-        frame=frame or create()
-        self.used[#self.used+1]=frame
-        return frame,isNew
-    end
-    function pool:ReleaseAll()
-        while #self.used>0 do
-            local frame=table.remove(self.used)
-            reset(self,frame)
-            self.available[#self.available+1]=frame
-        end
-    end
-    function pool:EnumerateActive()
-        local i=0
-        return function()
-            i=i+1
-            return pool.used[i]
-        end
-    end
-    pools[#pools+1]=pool
-    return pool
-end
-local mapID=1436
-local canvas=Frame()
-world.pinPools={}
-function world:GetMapID() return mapID end
+local world=Frame()
+local scroll=Frame(world)
+local canvas=Frame(scroll)
+canvas:SetSize(800,600)
+scroll.Child=canvas
+world.ScrollContainer=scroll
+local viewed=1434
+function world:GetMapID() return viewed end
 function world:GetCanvas() return canvas end
-function world:AddDataProvider(provider)
-    self.provider=provider
-    provider:OnAdded(self)
-end
-function world:AcquirePin(template,...)
-    assert(template=="ChalkBoxNativeFlightMarker" or
-        template=="ChalkBoxNativeLootMarker")
-    local pool=self.pinPools[template]
-    local pin,isNew=pool:Acquire()
-    pin.pinTemplate=template
-    pin:SetOwningMap(self)
-    if isNew then pin:OnLoad() end
-    pin:Show()
-    pin:OnAcquired(...)
-    return pin
-end
-function world:RemoveAllPinsByTemplate(template)
-    self.pinPools[template]:ReleaseAll()
-end
+function world:AcquirePin() error("native pin factory must not be used") end
 _G.WorldMapFrame=world
-local captured=0
-local flights={
-    {x=.3,y=.6,atlas="TaxiNode_Alliance",name="Known Flight"},
-    {x=.7,y=.8,atlas="TaxiNode_Neutral",name="Visited Flight"},
+_G.C_Map={
+    GetMapInfo=function(id)
+        if id==1434 then return {mapType=3,parentMapID=13} end
+        if id==999 then return {mapType=5,parentMapID=1434} end
+        if id==13 then return {mapType=2,parentMapID=947} end
+    end,
+    GetMapRectOnMap=function(child,parent)
+        if child==999 and parent==1434 then return .2,.6,.2,.6 end
+    end,
 }
-_G.ChalkBox_DiscoveriesFlightCandidates=function(mapID)
-    captured=captured+1
-    return mapID==1436 and flights or {}
+_G.C_Texture={GetAtlasInfo=function() return {valid=true} end}
+local flightCalls=0
+_G.ChalkBox_DiscoveriesFlightCandidates=function(id)
+    flightCalls=flightCalls+1
+    if id==1434 then return {
+        {x=.3,y=.4,name="Booty Bay",atlas="TaxiNode_Alliance"},
+    } end
+    if id==999 then return {
+        {x=.25,y=.5,name="Booty Bay",atlas="TaxiNode_Alliance"},
+    } end
+    return {}
 end
+local hover={}
+_G.GameTooltip={
+    SetOwner=function() end,
+    AddLine=function(_,s) hover[#hover+1]=s end,
+    Show=function() end,
+    Hide=function() end,
+}
 assert(loadfile("MapNativePins.lua"))("ChalkBox")
-assert(ChalkBox_MapNativeAvailable(),"native provider installs on available modern map")
-assert(world.provider and #pools==2 and
-    ChalkBox_MapNativeStatus().available)
-assert(type(pools[1].used)=="table" and #pools[1].used==0,
-    "native pools initialized via explicit custom factories")
-assert(ChalkBox_MapNativeRefresh())
-assert(#pools[1].used==2 and #pools[2].used==0 and
-    ChalkBox_MapNativeStatus().pinCount==2,
-    "two native flight pins acquired, not independent canvas frames")
-local byName={}
-for _,pin in ipairs(pools[1].used) do byName[pin.flightName]=pin end
-assert(byName["Known Flight"] and byName["Known Flight"].position[1]==.3
-    and byName["Known Flight"].glyph.atlas=="TaxiNode_Alliance"
-    and byName["Known Flight"].levelType=="PIN_FRAME_LEVEL_TOPMOST",
-    "native SetPosition and native map pin level used")
-assert(byName["Visited Flight"] and
-    byName["Visited Flight"].glyph.atlas=="TaxiNode_Neutral",
-    "preserve Blizzard's flight icon")
-assert(ChalkBox_MapNativeProject(1436,1436,.5,.6)==.5)
-local x,y=ChalkBox_MapNativeProject(1436,999,.30,.30)
-assert(math.abs(x-.25)<0.000001 and math.abs(y-.25)<0.000001,
-    "child/micro map projection uses client-supplied rectangle")
-assert(ChalkBox_MapNativeProject(1436,999,.90,.30)==nil,
-    "no marker when actual loot position is outside displayed micro map")
-assert(ChalkBox_MapNativeProject(1436,1413,.30,.30)==nil,
-    "never transpose unrelated zone coordinates")
-assert(ChalkBox_MapNativeProject(1436,13,.30,.30)==nil,
-    "no invented parent/continent position for loot")
-assert(ChalkBox_MapNativeLootSet(1436,.3,.3))
-assert(pools[1].used[1]==byName["Known Flight"] or
-    pools[1].used[2]==byName["Known Flight"],
-    "hovering a loot row must not rebuild or flicker the flight pins")
-assert(#pools[1].used==2 and #pools[2].used==1 and
-    ChalkBox_MapNativeStatus().loot and
-    ChalkBox_MapNativeStatus().pinCount==3,
-    "one temporary native loot pin coexists with verified flights")
-local loot
-for _,pin in ipairs(pools[2].used) do
-    if pin.kind=="loot" then loot=pin end
+assert(ChalkBox_MapNativeAvailable(),"map overlay attaches to visible map")
+assert(ChalkBox_MapNativeRefresh(),"visible local flight markers refresh")
+local status=ChalkBox_MapNativeStatus()
+assert(status.available and status.renderer=="map-owned overlay" and
+    status.mapID==1434 and status.flightPins==1,
+    "one learned flight on the current zone, not every worldwide path")
+local overlay,flight
+for _,f in ipairs(frames) do
+    if f.parent==scroll and f.all==canvas then overlay=f end
 end
-assert(loot and loot.position[1]==.3
-    and loot.position[2]==.3
-    and loot.glyph.shown==false and loot.ring.shown==true
-    and not loot.motion,
-    "loot dot drawn natively and does not eat map mouse input")
-mapID=999
-world.provider:OnMapChanged()
-assert(#pools[1].used==0 and #pools[2].used==1
-    and pools[2].used[1].kind=="loot",
-    "native map changes remove flight pins that are not on this map")
-assert(math.abs(pools[2].used[1].position[1]-.25)<.000001,
-    "native map changes project the loot dot without reanchoring map frames")
-mapID=1413
-world.provider:OnMapChanged()
-assert(#pools[1].used==0 and #pools[2].used==0,
-    "unrelated zone gets no marker")
-mapID=1436
-world.provider:OnMapChanged()
-assert(#pools[1].used==2 and #pools[2].used==1,
-    "returning to the zone restores native pins without resetting saved data")
+assert(overlay and overlay.level>=220 and overlay.mouse==false,
+    "visible map overlay is a raised scroll sibling, not behind canvas artwork")
+for _,f in ipairs(frames) do
+    if f.parent==overlay and f.flightName=="Booty Bay" and f.visible then
+        flight=f
+    end
+end
+assert(flight and flight.point[2]==overlay and flight.point[4]==240
+    and flight.point[5]==-240,
+    "the actual displayed boot frame follows normalized map coordinates")
+assert(flight.back.texture=="Interface\\Buttons\\WHITE8X8"
+    and flight.face.texture=="Interface\\Buttons\\WHITE8X8"
+    and flight.face.color[4]==1 and flight.icon.atlas=="TaxiNode_Alliance",
+    "flight marker has visible colored pixels even if Taxi atlas paints blank")
+flight.scripts.OnEnter(flight)
+assert(hover[1]=="Booty Bay" and hover[2]=="Known flight path",
+    "the flight tooltip belongs to the same visible frame")
+assert(ChalkBox_MapNativeLootSetMany(1434,{
+    {x=.30,y=.40},{x=.35,y=.45},
+}),"multiple recorded positions appear on the local zone map")
+status=ChalkBox_MapNativeStatus()
+assert(status.flightPins==1 and status.lootPins==2 and status.pinCount==3,
+    "loot overlays coexist with flights and display every item location")
+local count=0
+for _,f in ipairs(frames) do
+    if f.parent==overlay and f.mouse==false and f.visible and f.center then
+        count=count+1
+        assert(f.face.texture=="Interface\\Buttons\\WHITE8X8"
+            and f.center.texture=="Interface\\Buttons\\WHITE8X8",
+            "loot markers paint real, opaque pixel-backed textures")
+    end
+end
+assert(count==2,"two separate marker frames displayed")
+-- Pan/resize/zone-switch: map canvas moves beneath its raised sibling.
+canvas:SetSize(1000,750)
+for _,f in ipairs(frames) do
+    if f.scripts.OnUpdate then f.scripts.OnUpdate(f,0.3) end
+end
+assert(flight.point[4]==300 and flight.point[5]==-300,
+    "canvas resizing repositions the same flight frame without recreating it")
+viewed=999
+for _,f in ipairs(frames) do
+    if f.scripts.OnUpdate then f.scripts.OnUpdate(f,0.3) end
+end
+status=ChalkBox_MapNativeStatus()
+assert(status.flightPins==1 and status.lootPins==2,
+    "saved parent-zone positions project into viewed child map")
+assert(flight.point[4]==250 and flight.point[5]==-375,
+    "zoomed-in local flight coordinate is placed at child map position")
+assert(math.abs(ChalkBox_MapNativeProject(1434,999,.3,.4)-.25)<.000001)
+assert(ChalkBox_MapNativeProject(1434,999,.9,.4)==nil,
+    "out-of-child locations are not invented")
 ChalkBox_MapNativeLootClear()
-assert(#pools[1].used==2 and #pools[2].used==0
-    and not ChalkBox_MapNativeStatus().loot,
-    "mouse leave removes only the temporary loot data")
-table.remove(flights,2)
-assert(ChalkBox_MapNativeRefresh())
-assert(#pools[1].used==1,
-    "new flight discovery state can rerender without stale cache")
-assert(ChalkBox_MapNativeStatus().problem=="native MapCanvas provider installed")
-world.AcquirePin=function() error("native pin is not supported on this fork") end
-assert(not ChalkBox_MapNativeRefresh() and
-    not ChalkBox_MapNativeAvailable() and
-    not ChalkBox_MapNativeStatus().available,
-    "unsupported native pin acquisition fails closed so flight fallback may draw")
-assert(ChalkBox_MapNativeStatus().problem:find("native pin is not supported",1,true),
-    "native fallback reason remains available to diagnostics")
-print("PASS: native MapCanvas flight/loot pins, zoom-aware positioning, child projection, no false coordinates, independent pools and safe fallback")
+assert(ChalkBox_MapNativeStatus().lootPins==0 and
+    ChalkBox_MapNativeStatus().flightPins==1,
+    "leaving a Discoveries item hides only its temporary pins")
+viewed=13
+for _,f in ipairs(frames) do
+    if f.scripts.OnUpdate then f.scripts.OnUpdate(f,0.3) end
+end
+assert(ChalkBox_MapNativeStatus().flightPins==0,
+    "unrelated maps never retain stale flight pins")
+assert(flightCalls>=3,"map changes refresh the candidate directory")
+print("PASS: shared raised overlay, visible flight art, all loot locations, child projection, canvas resizing, independent hover cleanup and map changes")
