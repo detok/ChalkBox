@@ -1,11 +1,11 @@
-# ChalkBox 2.2.25 — Bank Value, Bar Resizing and Combat Reports (Beta)
+# ChalkBox 2.2.26 — Adventure Tools & World Map
 
-- Bank vendor value remembered per character, shown as unobtrusive text above the bank coin bar and in The Bar. Unknown values are not invented.
-- Resize individual Trail Bar modules in Edit Mode; layouts and widths persist per character.
-- Native and compact combat reports use separate safe chat lines. PARTY reports send ranked rows in order, 200 ms apart; SAY uses direct-click sends. Fixed false Edit Mode rejection, invalid pipe escapes, and removed copy-dialog fallback. Auto-report remains OFF by default.
-- AuctionSense settings-only historical asking-price graph; never starts a scan or claims sales prices.
-- Learned flight-master map markers and optional map-pin-following quest navigation.
-- Hunter Emota can use the client's native pet reaction when available and enabled.
-- Lua 5.1, documentation, installation ZIP and publisher media checks run on the complete addon.
+- **Discoveries:** View recorded outdoor loot locations and learned flight paths on the local World Map. Browse loot history by area and creature.
+- **LootSense:** Optional future-quest hints for selected items, alongside quest and profession context.
+- **AuctionSense:** Historical asking-price charts and connected item-value insights.
+- **The Bar:** Resize individual modules, and view a remembered bank vendor-value total.
+- **Combat Meter:** Ranked PARTY/SAY reports and compact display controls.
+- **QuestSense & MacroForge:** Follow a selected map waypoint; use MacroForge alongside Blizzard's macro editor.
+- **Emota:** Optional Hunter pet interactions when the client supports them.
 
-**GitHub beta/prerelease; full live Forever smoke test remains necessary before stable promotion.** The previous 2.2.22 stable release remains downloadable.
+Built for World of Warcraft: Forever. Player preferences and recorded data persist across upgrades.
