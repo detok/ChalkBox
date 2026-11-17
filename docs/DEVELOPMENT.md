@@ -1,6 +1,6 @@
 # Developing ChalkBox
 
-**Current code baseline: 2.2.22 · Lua 5.1 · WoW Forever**
+**Current main baseline: 2.2.25 beta · Last fully accepted stable: 2.2.22 · Lua 5.1 · WoW Forever**
 
 ChalkBox is a single self-contained addon. Most changes should be small, local and reversible. Mocked WoW APIs exercise code paths but do not establish complete real-client compatibility.
 
