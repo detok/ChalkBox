@@ -356,8 +356,9 @@ assert(gearContext and gearContext.scripts.OnMouseUp)
 gearContext.scripts.OnMouseUp(gearContext,"RightButton")
 assert(FindMenu(lastNativeMenu,"Hide"),
     "right-click outside Edit Mode shows compact per-stat controls")
-assert(#lastNativeMenu==5 and not FindMenu(lastNativeMenu,"Modules"),
-    "stat menu excludes the full bar settings menu")
+assert(#lastNativeMenu==6 and not FindMenu(lastNativeMenu,"Modules")
+    and FindMenu(lastNativeMenu,"Width (82 px)"),
+    "stat menu adds per-module width while keeping compact native controls")
 assert(lastNativeMenu[1].isTitle and
     lastNativeMenu[1].text:find("|cffffd36a",1,true),
     "stat heading is clearly gold, not another white action")
@@ -421,7 +422,7 @@ _G.EasyMenu=function(items)
 end
 assert(ChalkBox_BarOpenMenu("gear",gearContext),
     "legacy right-click menu opens without MenuUtil")
-assert(capturedLegacy and #capturedLegacy==5 and
+assert(capturedLegacy and #capturedLegacy==6 and
     capturedLegacy[1].isTitle and
     capturedLegacy[1].text:find("|cffffd36a",1,true),
     "legacy menu keeps gold headings and a compact stat-only layout")
@@ -496,6 +497,21 @@ assert(ChalkBox_BarEditStatus(),"in-game editor is enabled")
 local bagWidget=FindMetric("Bags ")
 assert(bagWidget and bagWidget.movable and bagWidget.dragButton=="LeftButton",
     "user can physically drag stat modules within the 18px bar")
+local grip=bagWidget.resizeGrip
+assert(grip and grip.parent==bagWidget and grip.visible and
+    grip.dragButton=="LeftButton" and ChalkBox_BarWidthGet("bags")==90,
+    "Edit Mode adds a gold right-edge grip while preserving the module body drag")
+cursorX=300
+grip.scripts.OnDragStart(grip)
+cursorX=347
+grip.scripts.OnUpdate(grip,.1)
+assert(bagWidget.width==136 and ChalkBox_BarWidthGet("bags")==136 and
+    ChalkBox_BarLayoutWidthGet("bags")==nil,
+    "resizing previews a 46px wider stat without saving until release")
+grip.scripts.OnDragStop(grip)
+assert(not grip.dragging and ChalkBox_BarLayoutWidthGet("bags")==136
+    and bagWidget.width==136 and ChalkBox_BarWidthGet("gold")==182,
+    "release persists only the chosen stat width; other widths remain unchanged")
 cursorX=945
 bagWidget.scripts.OnDragStart(bagWidget)
 assert(bagWidget.moving,"left drag must start moving only in edit mode")
@@ -513,12 +529,26 @@ local done=FindMenu(lastNativeMenu,"Done editing")
 assert(done and done.func,
     "empty-Bar right-click offers Done editing without opening settings")
 done.func()
-assert(not ChalkBox_BarEditStatus(),"Done editing exits and saves dragged layout")
+assert(not ChalkBox_BarEditStatus() and not grip.visible and
+    ChalkBox_BarWidthGet("bags")==136,
+    "Done editing hides the resize grip and preserves its saved width")
 ChalkBox_BarCommand("layout reset")
 assert(ChalkBox_BarLayoutGet().right[1]=="bags"
     and ChalkBox_BarLayoutGet().center[1]=="time"
-    and not ChalkBox_BarLayoutGet().align.bags,
-    "reset layout restores the screenshot order and text justification")
+    and not ChalkBox_BarLayoutGet().align.bags
+    and ChalkBox_BarWidthGet("bags")==90 and
+    ChalkBox_BarLayoutWidthGet("bags")==nil,
+    "reset layout restores screenshot order, text alignment and metric widths")
+assert(ChalkBox_BarWidthSet("gold",248)
+    and ChalkBox_BarWidthGet("gold")==248,
+    "precise stat width control can be adjusted outside Edit Mode")
+ChalkBox_BarCommand("width gold 116")
+assert(ChalkBox_BarWidthGet("gold")==116 and
+    ChalkBox_BarLayoutWidthGet("gold")==116,
+    "slash width command persists independently of other modules")
+ChalkBox_BarCommand("width gold reset")
+assert(ChalkBox_BarWidthGet("gold")==182,
+    "slash width reset restores the original module footprint")
 assert(ChalkBox_BarAppearanceSet(0))
 assert(ChalkBox_BarAppearanceGet()==0 and bar.background.rgba[4]==0,
     "zero opacity removes only the charcoal panel background")
