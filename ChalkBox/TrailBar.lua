@@ -150,7 +150,7 @@ local function TipRole(key,line)
             return "danger"
         end
         return "value"
-    elseif key=="bagvalue" then
+    elseif key=="bagvalue" or key=="bankvalue" then
         return "value"
     elseif key=="rate" or key=="rested" then
         return "good"
@@ -195,6 +195,7 @@ local statDefaults={
     rate=true,eta=true,time=true,gold=true,
     bags=true,gear=true,rested=true,latency=true,pet=false,
     bagvalue=true, -- fresh installs match the reference Bar; saved choices win
+    bankvalue=false, -- opt-in: no surprising top-bar crowding on older saves
     repair=true, -- honest quote/estimate, not uncalibrated guesswork
 }
 local specs={
@@ -202,6 +203,7 @@ local specs={
     rate={width=104,group="left"},
     bags={width=90,group="left"},
     bagvalue={width=125,group="right"},
+    bankvalue={width=132,group="right"},
     repair={width=116,group="right"},
     gear={width=82,group="left"},
     eta={width=128,group="center"},
@@ -214,9 +216,9 @@ local specs={
 local groups={
     left={"level","rate"},
     center={"time","eta","rested"},
-    right={"bags","gear","repair","bagvalue","gold","latency","pet"},
+    right={"bags","gear","repair","bagvalue","bankvalue","gold","latency","pet"},
 }
-local dropPriority={"latency","time","pet","eta","rate","rested","gear","bagvalue","bags","repair","gold"}
+local dropPriority={"latency","time","pet","eta","rate","rested","gear","bankvalue","bagvalue","bags","repair","gold"}
 local displayed={}
 local lastLayout=""
 local editMode=false
@@ -409,11 +411,11 @@ end
 -- global controls. WoW color codes also work with the legacy menu fallback.
 local menuNames={
     level="Level / XP",rate="XP/hr",bags="Bags",
-    bagvalue="Bag value",repair="Repair",gear="Durability",
+    bagvalue="Bag value",bankvalue="Bank value",repair="Repair",gear="Durability",
     eta="Level ETA",rested="Rested XP",pet="Pet",
     time="Session",latency="Latency",gold="Gold",
 }
-local menuOrder={"rate","bags","bagvalue","repair","gear","eta",
+local menuOrder={"rate","bags","bagvalue","bankvalue","repair","gear","eta",
     "rested","pet","time","latency","gold"}
 local menuColors={
     title="ffffd36a",    -- gold: headings
@@ -629,6 +631,24 @@ local function CreateBar()
             local lines={"Junk: "..junk,"Total: "..total}
             if (v.totalUnknown or 0)>0 then
                 lines[#lines+1]="Unknown: "..v.totalUnknown
+            end
+            return lines
+        end},
+        {"bankvalue","Bank value",function()
+            local v=latest.bankvalue
+            if not v then return {"Open your bank to record its value"} end
+            local lines={
+                "Vendor: "..(v.vendorComplete and "" or "at least ")..
+                    Coins(v.vendorCopper),
+                "Last seen: "..(v.age or "bank visit")
+            }
+            lines[#lines+1]="AH asks: "..(v.ahPriced>0 and
+                ((v.ahComplete and "" or "at least ")..
+                Coins(v.ahCopper)) or "unavailable")
+            lines[#lines+1]=(v.ahPriced or 0).."/"..
+                (v.stacks or 0).." stacks AH-priced"
+            if (v.vendorUnknown or 0)>0 then
+                lines[#lines+1]=v.vendorUnknown.." vendor prices unavailable"
             end
             return lines
         end},
@@ -849,6 +869,12 @@ Refresh=function()
             StatEnabled("bagvalue"),StatEnabled("repair"))
         if ok and type(value)=="table" then stats=value end
     end
+    if type(ChalkBox_BankValueStatus)=="function" then
+        local ok,value=pcall(ChalkBox_BankValueStatus)
+        if ok and type(value)=="table" then
+            stats.bankvalue=value
+        end
+    end
     latest=stats
     if session.level then
         if session.maxXP and session.maxXP>0 then
@@ -868,6 +894,10 @@ Refresh=function()
             or nil,true)..")")
     widgets.time.text:SetText("Time "..Duration(elapsed))
     widgets.bagvalue.text:SetText(BagValueText(stats.bagvalue))
+    local bank=stats.bankvalue
+    widgets.bankvalue.text:SetText(bank and
+        ("Bank "..(bank.vendorComplete and "" or ">=")..
+        Money(bank.vendorCopper)) or "Bank --")
     local cost=stats.repair
     local repairText="Repair --"
     if cost and type(cost.copper)=="number" then
@@ -913,6 +943,11 @@ Refresh=function()
     elseif bar.xpProgress then bar.xpProgress:Hide() end
 end
 
+-- The bank reader triggers this after a user actually opens a banker.
+-- It must never cause another bank scan or touch bank item buttons.
+function ChalkBox_BarBankValueRefresh()
+    if Refresh then Refresh() end
+end
 function ChalkBox_BarStatus()
     local chosen={}
     for _,group in ipairs({"left","center","right"}) do
@@ -1055,6 +1090,7 @@ function ChalkBox_BarCommand(message)
         Note("Layout: /chalk bar edit on/off | layout reset | move <module> <left|center|right> [index]")
         Note("Text alignment: /chalk bar align <module> <left|center|right> | opacity 0-100")
         Note("Vendor value: /chalk bar stat bagvalue on | bagvalue junk|total|toggle")
+        Note("Bank snapshot: /chalk bar stat bankvalue on | show remembered vendor price; hover for AuctionSense estimates")
         Note("Repairs: /chalk bar stat repair on|off | repair status|reset. Right-click a module for a menu.")
     end
     end
