@@ -283,6 +283,9 @@ local function OnItemTooltip(tooltip)
                     type(q.required)=="number" and q.required>0 then
                     local progress=("%d / %d collected"):format(
                         q.have,q.required)
+                    if q.stale then
+                        progress="Last observed: "..progress
+                    end
                     if q.complete then
                         progress=progress.."  ·  Objective complete"
                     end
@@ -304,6 +307,7 @@ local function OnItemTooltip(tooltip)
                             line=line..("  ·  %d/%d"):format(
                                 q.have,q.required)
                         end
+                        if q.stale then line=line.."  ·  Last observed" end
                         if q.complete then line=line.."  ·  Complete" end
                         tooltip:AddLine(line,0.83,0.85,0.78,true)
                     end
@@ -315,8 +319,9 @@ local function OnItemTooltip(tooltip)
                 if type(q.title)=="string" and q.title~="" then
                     local relation=q.relation=="starts" and "Starts quest" or
                         "Needed for"
-                    local status=q.onQuest==true and "In quest log" or
-                        (q.completed==true and "Completed" or "Classic reference")
+                    local status=q.onQuest==true and "In log (reference)" or
+                        (q.completed==true and "Completed (reference)"
+                            or "Classic reference")
                     tooltip:AddLine(relation..": "..q.title.."  ·  "..status,
                         0.88,0.84,0.70,true)
                 end
