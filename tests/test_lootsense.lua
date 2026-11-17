@@ -182,6 +182,11 @@ assert(futureHops:find("FUTURE QUEST",1,true)
     and futureHops:find("Need 5",1,true)
     and futureHops:find("Reference only",1,true),
     "Hops keeps its normal KEEP line while showing future quest specifics")
+assert(deCalls[#deCalls].protected,
+    "a researched future-quest item must not receive destructive DE advice")
+local purple=tip.colors["FUTURE QUEST"]
+assert(purple and purple[3]>purple[1] and purple[3]>purple[2],
+    "future quest uses a distinct purple tint rather than active quest orange")
 local futureOkra=Hover(732)
 assert(futureOkra:find("FUTURE QUEST",1,true)
     and futureOkra:find("Westfall Stew",1,true)
