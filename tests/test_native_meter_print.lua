@@ -180,7 +180,7 @@ C_ChatInfo.SendChatMessage=function() error("chat should not run in lockdown") e
 Button("Print top 10 to PARTY")()
 assert(#copies==1 and #sends==8
     and copies[1].text:find("CB DPS",1,true),
-    "chat lockdown opens manual copy instead of attempting a protected send")
+    "manual print attempts the API and falls back to copy on actual rejection")
 C_ChatInfo.InChatMessagingLockdown=nil
 now=150
 Button("Print top 10 to PARTY")()
