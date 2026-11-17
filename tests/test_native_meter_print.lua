@@ -185,7 +185,7 @@ C_ChatInfo.InChatMessagingLockdown=nil
 now=150
 Button("Print top 10 to PARTY")()
 assert(#copies==2 and #sends==8
-    and copies[2].reason:find("rejected",1,true),
+    and copies[2].reason:find("failed",1,true),
     "server rejection preserves complete report text without changing channel")
 C_ChatInfo.SendChatMessage=function(message,channel)
     sends[#sends+1]={text=message,channel=channel}
