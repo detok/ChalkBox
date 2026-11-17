@@ -25,17 +25,30 @@ local function ItemNameKey(name)
 end
 
 local function GetQuest(index)
-    if C_QuestLog and C_QuestLog.GetInfo then
-        local info = C_QuestLog.GetInfo(index)
-        if info and not info.isHeader then
-            return info.title, info.questID
+    if C_QuestLog and type(C_QuestLog.GetInfo)=="function" then
+        local ok,info=pcall(C_QuestLog.GetInfo,index)
+        if not ok or not Safe(info) or type(info)~="table" then
+            return nil,nil,"pending"
         end
-    elseif GetQuestLogTitle then
-        local title, _, _, isHeader, _, _, _, questID = GetQuestLogTitle(index)
-        if not isHeader then
-            return title, questID
+        if not Safe(info.isHeader) then return nil,nil,"pending" end
+        if info.isHeader then return nil,nil,"header" end
+        if Safe(info.title) and type(info.title)=="string" and
+            Safe(info.questID) and type(info.questID)=="number" then
+            return info.title,info.questID,"quest"
         end
+        return nil,nil,"pending"
+    elseif type(GetQuestLogTitle)=="function" then
+        local ok,title,_,_,isHeader,_,_,_,questID=
+            pcall(GetQuestLogTitle,index)
+        if not ok or not Safe(isHeader) then return nil,nil,"pending" end
+        if isHeader then return nil,nil,"header" end
+        if Safe(title) and type(title)=="string" and Safe(questID)
+            and type(questID)=="number" then
+            return title,questID,"quest"
+        end
+        return nil,nil,"pending"
     end
+    return nil,nil,"pending"
 end
 
 local function ParseObjective(text)
@@ -53,15 +66,21 @@ end
 local function RebuildQuestItems()
     local fresh = {}
     local pending = false
-    local count = (C_QuestLog and C_QuestLog.GetNumQuestLogEntries and C_QuestLog.GetNumQuestLogEntries())
-        or (GetNumQuestLogEntries and GetNumQuestLogEntries()) or 0
-    if not Safe(count) or type(count) ~= "number" then
+    local getCount=C_QuestLog and C_QuestLog.GetNumQuestLogEntries
+    if type(getCount)~="function" then getCount=GetNumQuestLogEntries end
+    local ok,count=pcall(getCount or function() return nil end)
+    if not ok or not Safe(count) or type(count)~="number"
+        or count<0 then
         questDataPending = true
-        return
+        return -- Do not erase the last known quest names on an unreadable log.
     end
-
+    local missing={}
     for index = 1, count do
-        local title, questID = GetQuest(index)
+        local title, questID, state = GetQuest(index)
+        if state=="pending" then
+            questDataPending=true
+            return -- Incomplete log snapshot: preserve all previous evidence.
+        end
         if Safe(title) and type(title) == "string" and title ~= ""
             and Safe(questID) and type(questID) == "number" and questID > 0
             and C_QuestLog and type(C_QuestLog.GetQuestObjectives) == "function" then
@@ -69,9 +88,11 @@ local function RebuildQuestItems()
             if not ok or not Safe(objectives) or objectives == nil then
                 -- Forever may return nil until quest details finish caching.
                 pending = true
+                missing[questID]=true
             elseif type(objectives) == "table" then
                 for _, objective in ipairs(objectives) do
-                    if objective.type == "item" then
+                    if Safe(objective) and type(objective)=="table"
+                        and Safe(objective.type) and objective.type=="item" then
                         local name, parsedHave, parsedTotal = ParseObjective(objective.text)
                         local key = ItemNameKey(name)
                         if key then
@@ -122,6 +143,32 @@ local function RebuildQuestItems()
             end
         end
     end
+    -- Missing objectives should not make a previously verified active quest
+    -- disappear from KEEP, but its old collection progress is not current.
+    -- Never preserve entries after the quest leaves the readable log.
+    for key,previous in pairs(questItems) do
+        if type(previous)=="table" and type(previous.quests)=="table" then
+            for _,q in ipairs(previous.quests) do
+                if missing[q.id] then
+                    local entry=fresh[key]
+                    if not entry then
+                        entry={protect=q.title,purchase=nil,quests={}}
+                        fresh[key]=entry
+                    end
+                    local found=false
+                    for _,existing in ipairs(entry.quests) do
+                        if existing.id==q.id then found=true;break end
+                    end
+                    if not found then
+                        entry.quests[#entry.quests+1]={
+                            title=q.title,id=q.id,have=q.have,
+                            required=q.required,complete=q.complete,stale=true,
+                        }
+                    end
+                end
+            end
+        end
+    end
     questItems = fresh
     questDataPending = pending
 end
@@ -130,7 +177,9 @@ end
 -- throttle retries across item hovers. No second scan on every tooltip.
 local function RetryPendingQuestData()
     if not questDataPending then return end
-    local now = type(GetTime) == "function" and GetTime() or nil
+    local ok,now=pcall(type(GetTime)=="function" and GetTime or
+        function() return nil end)
+    if not ok then return end
     if Safe(now) and type(now) == "number" then
         if now - lastQuestRetry < 2 then return end
         lastQuestRetry = now
@@ -165,7 +214,7 @@ function ChalkBox_QuestItemDetails(itemName)
     for _,quest in ipairs(entry.quests) do
         found[#found+1]={title=quest.title,id=quest.id,
             have=quest.have,required=quest.required,
-            complete=quest.complete}
+            complete=quest.complete,stale=quest.stale}
     end
     return found
 end
