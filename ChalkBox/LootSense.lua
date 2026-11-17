@@ -326,6 +326,7 @@ local function OnItemTooltip(tooltip)
                 objective="Needed for",required="Needed for",
                 used="Used for",starts="Starts quest",
                 provided="Provided by",related="Related to",
+                reward="Reward from",
             }
             local maxLines=math.min(#dbLinks,5)
             for i=1,maxLines do
