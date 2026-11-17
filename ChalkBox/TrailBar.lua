@@ -195,7 +195,7 @@ local statDefaults={
     rate=true,eta=true,time=true,gold=true,
     bags=true,gear=true,rested=true,latency=true,pet=false,
     bagvalue=true, -- fresh installs match the reference Bar; saved choices win
-    bankvalue=false, -- opt-in: no surprising top-bar crowding on older saves
+    bankvalue=true, -- new builds show Bank -- even before the first visit
     repair=true, -- honest quote/estimate, not uncalibrated guesswork
 }
 local specs={
@@ -218,7 +218,7 @@ local groups={
     center={"time","eta","rested"},
     right={"bags","gear","repair","bagvalue","bankvalue","gold","latency","pet"},
 }
-local dropPriority={"latency","time","pet","eta","rate","rested","gear","bankvalue","bagvalue","bags","repair","gold"}
+local dropPriority={"latency","time","pet","eta","rate","rested","gear","bagvalue","bankvalue","bags","repair","gold"}
 local displayed={}
 local lastLayout=""
 local editMode=false
@@ -312,6 +312,13 @@ local function ConfigureStats()
     for key,enabled in pairs(statDefaults) do
         if type(db.barStats[key])~="boolean" then db.barStats[key]=enabled end
     end
+    -- First Bank Value prerelease defaulted OFF, silently saving false for
+    -- everyone. One-time onboarding exposes the promised "Bank --" even
+    -- when no banker has been visited. Later user OFF remains persistent.
+    if db.bankValueOnboardV2~=true then
+        db.barStats.bankvalue=true
+        db.bankValueOnboardV2=true
+    end
 end
 local function StatEnabled(key)
     if key=="level" then return true end
@@ -337,7 +344,8 @@ local function Reflow()
     local chosen={}
     for key in pairs(specs) do
         chosen[key]=StatEnabled(key) and (key=="level" or
-            key=="rate" or key=="eta" or key=="time" or key=="gold" or latest[key]~=nil)
+            key=="rate" or key=="eta" or key=="time" or key=="gold" or
+            key=="bankvalue" or latest[key]~=nil)
     end
     local function Measure(group)
         local total,count=0,0
@@ -1009,7 +1017,29 @@ function ChalkBox_BarCommand(message)
         else Note("Unknown TrailBar module.") end
     else
         local stat,choice=action:match("^stat%s+(%a+)%s+(%a+)$")
-    if action=="repair status" then
+    if action=="bank status" or action=="bankvalue status" then
+        local diagnostic=type(ChalkBox_BankValueDebug)=="function"
+            and ChalkBox_BankValueDebug() or nil
+        local on=StatEnabled("bankvalue")
+        local shown=displayed.bankvalue==true
+        Note(("Bank Bar: %s, %s; first visit %s."):format(
+            on and "enabled" or "disabled",
+            shown and "visible" or "not visible at current width",
+            type(ChalkBox_BankValueStatus)=="function" and
+                ChalkBox_BankValueStatus() and "recorded" or "not recorded"))
+        if diagnostic then
+            Note(("Bank reader: %s, frame %s, panel %s; %d tabs from %s."):format(
+                diagnostic.open and "OPEN" or "closed",
+                tostring(diagnostic.bankFrame),
+                diagnostic.panel and "shown" or "not shown",
+                diagnostic.tabs or 0,tostring(diagnostic.tabSource)))
+            Note(("%d readable tabs, %d missing; %s."):format(
+                diagnostic.readable or 0,diagnostic.missing or 0,
+                tostring(diagnostic.reason)))
+        else
+            Note("Bank reader unavailable: confirm new build is installed.")
+        end
+    elseif action=="repair status" then
         local status=type(ChalkBox_RepairLearningStatus)=="function"
             and ChalkBox_RepairLearningStatus() or nil
         if status then
@@ -1090,7 +1120,7 @@ function ChalkBox_BarCommand(message)
         Note("Layout: /chalk bar edit on/off | layout reset | move <module> <left|center|right> [index]")
         Note("Text alignment: /chalk bar align <module> <left|center|right> | opacity 0-100")
         Note("Vendor value: /chalk bar stat bagvalue on | bagvalue junk|total|toggle")
-        Note("Bank snapshot: /chalk bar stat bankvalue on | show remembered vendor price; hover for AuctionSense estimates")
+        Note("Bank snapshot: /chalk bar stat bankvalue on/off | bank status for live diagnostics")
         Note("Repairs: /chalk bar stat repair on|off | repair status|reset. Right-click a module for a menu.")
     end
     end
