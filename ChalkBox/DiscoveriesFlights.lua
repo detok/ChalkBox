@@ -165,6 +165,24 @@ local function MakePin(canvas,index)
         if type(pin.EnableMouse)=="function" then pin:EnableMouse(true) end
         -- In Forever the zone-specific map tiles may be drawn above
         -- ARTWORK textures; OVERLAY keeps the flight-master boot visible.
+        -- The frame can be hoverable while its taxi atlas is invisible.
+        -- A small color texture guarantees a visible marker on Forever
+        -- builds whose atlas registration differs from Blizzard retail.
+        local backing=pin:CreateTexture(nil,"OVERLAY")
+        backing:SetSize(11,11)
+        backing:SetPoint("CENTER",pin,"CENTER",0,0)
+        if type(backing.SetDrawLayer)=="function" then
+            pcall(backing.SetDrawLayer,backing,"OVERLAY",5)
+        end
+        if type(backing.SetColorTexture)=="function" then
+            backing:SetColorTexture(1,0.70,0.16,0.95)
+        else
+            backing:SetTexture("Interface\\Buttons\\WHITE8X8")
+            if type(backing.SetVertexColor)=="function" then
+                backing:SetVertexColor(1,0.70,0.16,0.95)
+            end
+        end
+        pin.backing=backing
         local icon=pin:CreateTexture(nil,"OVERLAY")
         icon:SetAllPoints(pin)
         if type(icon.SetDrawLayer)=="function" then
