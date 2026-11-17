@@ -175,6 +175,40 @@ assert(relic:find("Needed for: Relics of the Past",1,true)
     and relic:find("1 / 4 collected",1,true),
     "quest-class KEEP items display a known active quest rather than only generic KEEP")
 questDetails["Quest Relic"]=nil
+-- Query the bundled reference only when a verified accepted objective is
+-- missing. Item-ID links distinguish required and quest-starter roles.
+local refsRequested={}
+_G.ChalkBox_QuestReferenceCandidates=function(id,limit)
+    refsRequested[#refsRequested+1]={id=id,limit=limit}
+    if id==106 then
+        return {
+            {id=42,title="Relics of Ancient Days",relation="required",
+                onQuest=false,provenance="Classic reference"},
+            {id=43,title="A Quest Begins",relation="starts",
+                onQuest=false,provenance="Classic reference"},
+        },2
+    end
+    return nil
+end
+local suggested=Hover(106)
+assert(suggested:find("Needed for: Relics of Ancient Days",1,true)
+    and suggested:find("Starts quest: A Quest Begins",1,true)
+    and suggested:find("Classic reference",1,true)
+    and #refsRequested==1 and refsRequested[1].id==106
+    and refsRequested[1].limit==3,
+    "generic quest-class KEEP has precise quest titles from embedded item ID reference")
+refsRequested={}
+activeQuest["Quest Relic"]=true
+questDetails["Quest Relic"]={{title="Verified Forever Quest",id=99,
+    have=2,required=3}}
+local activeRelic=Hover(106)
+assert(activeRelic:find("Needed for: Verified Forever Quest",1,true)
+    and not activeRelic:find("Relics of Ancient Days",1,true)
+    and #refsRequested==0,
+    "live accepted quest details override historical Classic reference results")
+activeQuest["Quest Relic"]=nil
+questDetails["Quest Relic"]=nil
+_G.ChalkBox_QuestReferenceCandidates=nil
 assert(Hover(107)=="","uncached quality should not produce sell advice")
 activeQuest["Broken Fang"]=true
 questDetails["Broken Fang"]={{title="Fangs for the Hunter",
