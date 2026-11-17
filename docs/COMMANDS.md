@@ -70,7 +70,9 @@
 | `/chalk bar status` | XP rate, Bar layout and safe display diagnostics |
 | `/chalk bar edit` or `edit on` / `off` | Toggle/finish Edit Mode; empty-Bar right-click also has **Done editing** |
 | `/chalk bar layout` | Show positions of Bar modules |
-| `/chalk bar layout reset` | Restore the release's default layout (does not reset other settings) |
+| `/chalk bar layout reset` | Restore default Bar positions, alignment **and module widths**, leaving other settings alone |
+| `/chalk bar width bags 112` | Set one module's width (60–280 px, snapped to 4); resize by dragging its right-hand gold grip in Edit Mode |
+| `/chalk bar width bags reset` | Reset the selected module to its original width |
 | `/chalk bar move gear right` | Move a recognized module to left / center / right |
 | `/chalk bar align gear left` | Change a recognized module's text alignment |
 | `/chalk bar stat bagvalue on` | Enable the bag valuation metric |
@@ -87,7 +89,7 @@
 | `/chalk bags reset` | Return bags to Blizzard's position |
 | `/chalk bags status` | Check bag offset, hook and deferred state |
 
-**Bank Value (LootSense):** Open your character bank to record a read-only snapshot of the visible character bank tabs, with the combined **vendor resale total** prominently shown in the bank window. The Bar now displays **Bank --** before the first bank visit, and remembers the vendor total afterward; the tooltip labels it **last seen**. If the bank's contents are not yet available, the bank summary shows a waiting message instead of vanishing. `/chalk bar bank status` explains which part of the client bank API is available. Within the bank card and Bar tooltip, AuctionSense's recent non-mixed **asking-price estimate** is separate from vendor value and shows coverage of priced stacks; missing prices do not silently become zero. Only per-character bank tabs are included; warband/account bank, guild bank, and carried bags are excluded. Uncached vendor prices make the total a stated lower bound. No items are moved or sold.
+**Bank Value (LootSense):** Open your character bank to record a read-only snapshot of the visible character bank tabs, with a single **vendor resale total** on the bank's header line, beside the search field, with no frame over item slots. Hover the text to see separate AH asking-price estimates and coverage. The Bar now displays **Bank --** before the first bank visit, and remembers the vendor total afterward; the tooltip labels it **last seen**. If the bank's contents are not yet available, the header shows **Bank --**, while the tooltip/diagnostics explain the waiting state. `/chalk bar bank status` explains which part of the client bank API is available. Within the bank readout's tooltip and Bar tooltip, AuctionSense's recent non-mixed **asking-price estimate** is separate from vendor value and shows coverage of priced stacks; missing prices do not silently become zero. Only per-character bank tabs are included; warband/account bank, guild bank, and carried bags are excluded. Uncached vendor prices make the total a stated lower bound. No items are moved or sold.
 
 The Bar's fresh layout differs from players' older saved layouts; upgrades do **not** forcibly overwrite customized positions. Repair numbers marked with a tilde are estimates.
 
