@@ -606,7 +606,7 @@ Control("Reset Layout"):Click()
 assert(printed[#printed]=="bar layout reset","reset layout button reaches controller")
 categories["The Bar Stats"].panel:Show()
 local statsChecks=FindCheckByParentTitle("The Bar Stats")
-assert(#statsChecks==11,"eleven independent stats include bag value and repair estimate")
+assert(#statsChecks==12,"twelve stats include opt-in bank value alongside bag value and repair")
 assert(statsChecks[1].checked==true and statsChecks[4].checked==true,
     "bag space and World latency are enabled in the reference Bar")
 statsChecks[4]:Click(true)
@@ -614,8 +614,9 @@ assert(ChalkBoxDB.barStats.latency==true,
     "latency checkbox persists the new module preference")
 statsChecks[2]:Click(false)
 assert(ChalkBoxDB.barStats.gear==false,"gear checkbox disables the module")
-assert(statsChecks[10].checked and statsChecks[11].checked,
-    "Junk value and repair status start enabled in the reference Bar")
+assert(statsChecks[10].checked and not statsChecks[11].checked and
+    statsChecks[12].checked,
+    "Bank value is opt-in while bag vendor and repair stats keep their defaults")
 statsChecks[10]:Click(true)
 assert(ChalkBoxDB.barStats.bagvalue,
     "new vendor total module can be enabled through native settings")
