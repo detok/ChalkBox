@@ -160,7 +160,14 @@ end
 local function Raise(world,scroll,canvas)
     if not layer then return end
     local cv=Safe(canvas.GetFrameLevel,canvas)
-    local wanted=math.max(2012,type(cv)=="number" and cv+2 or 2012)
+    -- The native map's pin-level manager is the authoritative draw order;
+    -- ForeverQuestPins also uses its AREA_POI level for manually drawn pins.
+    local manager=Safe(world.GetPinFrameLevelsManager,world)
+    local nativeLevel=manager and Safe(manager.GetValidFrameLevel,
+        manager,"PIN_FRAME_LEVEL_AREA_POI")
+    local wanted=math.max(2012,
+        type(cv)=="number" and cv+400 or 2012,
+        type(nativeLevel)=="number" and nativeLevel or 0)
     local om=rawget(_G,"OpenMapAPI")
     if type(om)=="table" and type(om.IsStitched)=="function"
         and type(om.ArtTopLevel)=="function" then
@@ -178,8 +185,15 @@ local function Raise(world,scroll,canvas)
             pcall(layer.SetFixedFrameLevel,layer,true)
         end
     end
-    local strata=Safe(world.GetFrameStrata,world)
-    if type(strata)=="string" and type(layer.SetFrameStrata)=="function" then
+    -- Crucial for Forever: child-map artwork and pins must be composited
+    -- on the *canvas* strata. The WorldMapFrame's higher strata can make
+    -- a hoverable marker render beneath or outside the map's scene.
+    local strata=Safe(canvas.GetFrameStrata,canvas)
+    if type(strata)~="string" then
+        strata=Safe(world.GetFrameStrata,world)
+    end
+    if type(strata)=="string" and type(layer.SetFrameStrata)=="function"
+        and Safe(layer.GetFrameStrata,layer)~=strata then
         layer:SetFrameStrata(strata)
     end
 end
