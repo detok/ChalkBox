@@ -22,3 +22,6 @@ Some current-looking screenshots were captured on older versions; check real-cli
 
 
 **2.2.26 GitHub beta:** Adds saved bank vendor value and a frameless bank readout, adjustable Trail Bar module widths, safe ranked PARTY/SAY combat reports, learned flight-master markers, map-pin navigation and a read-only AuctionSense chart. [Read the current 2.2.26 release notes](https://github.com/detok/ChalkBox/blob/main/docs/RELEASE_NOTES.md). **2.2.26 remains the last fully accepted stable version** until the combined beta passes a live-client smoke test.
+
+
+**Developer beta:** ChalkBox 2.2.27 is a QuestSense Smart experiment; 2.2.26 remains the supported stable release. [Beta notes](https://github.com/detok/ChalkBox/blob/feature/smart-quest-native-priorities/docs/RELEASE_NOTES.md).
