@@ -1,6 +1,6 @@
 -- Curated item IDs + explicitly documented quest facts; no external DB.
 _G.UnitFactionGroup=function() return "Alliance" end
-local active={},{}
+local active={}
 local completed={}
 local titles={}
 _G.C_QuestLog={
