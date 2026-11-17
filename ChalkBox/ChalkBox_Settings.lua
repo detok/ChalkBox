@@ -933,6 +933,7 @@ local function MakeBarStats()
         {"time","Session timer","Since login or last bar reset"},
         {"gold","Gold and session net","Current money and net change"},
         {"bagvalue","Bag vendor value","Click the stat or the mode button to flip"},
+        {"bankvalue","Bank value (last seen)","Bank vendor total; AuctionSense estimates in hover"},
         {"repair","Repair estimate","Exact at a repair vendor; ~ based on prior quote"},
     }
     for index,item in ipairs(options) do
