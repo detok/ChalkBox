@@ -31,6 +31,9 @@ local function Frame(parent)
         function t:SetVertexColor(...) self.color={...} end
         function t:SetColorTexture(...) self.color={...} end
         function t:SetAtlas(v) self.atlas=v;return true end
+        function t:Show() self.visible=true end
+        function t:Hide() self.visible=false end
+        function t:SetAlpha(v) self.alpha=v end
         return t
     end
     frames[#frames+1]=f
@@ -110,10 +113,21 @@ end
 assert(flight and flight.point[2]==overlay and flight.point[4]==240
     and flight.point[5]==-240,
     "the actual displayed boot frame follows normalized map coordinates")
-assert(flight.back.texture=="Interface\\Buttons\\WHITE8x8"
-    and flight.face.texture=="Interface\\Buttons\\WHITE8x8"
-    and flight.face.color[4]==1 and flight.icon.atlas=="TaxiNode_Alliance",
-    "flight marker has visible colored pixels even if Taxi atlas paints blank")
+assert(flight.icon.atlas=="TaxiNode_Alliance"
+    and flight.icon.visible==true
+    and not flight.back and not flight.face,
+    "native flight icon has no rectangular textures at all")
+-- Even when a taxi atlas is missing, use a flight-master image rather than
+-- drawing square fallbacks over the working local map.
+C_Texture.GetAtlasInfo=function() return nil end
+ChalkBox_MapNativeRefresh()
+assert(not flight.back and not flight.face
+    and flight.icon.texture=="Interface\\Minimap\\Tracking\\FlightMaster",
+    "missing taxi atlas falls back to flight-master artwork, never squares")
+C_Texture.GetAtlasInfo=function() return {valid=true} end
+ChalkBox_MapNativeRefresh()
+assert(flight.icon.atlas=="TaxiNode_Alliance" and not flight.back
+    and not flight.face,"recovered atlas stays square-free")
 flight.scripts.OnEnter(flight)
 assert(hover[1]=="Booty Bay" and hover[2]=="Known flight path",
     "the flight tooltip belongs to the same visible frame")
@@ -127,9 +141,11 @@ local count=0
 for _,f in ipairs(frames) do
     if f.parent==overlay and f.mouse==false and f.visible and f.center then
         count=count+1
-        assert(f.face.texture=="Interface\\Buttons\\WHITE8x8"
+        assert(not f.back and not f.face
+            and f.horizontal.texture=="Interface\\Buttons\\WHITE8x8"
+            and f.vertical.texture=="Interface\\Buttons\\WHITE8x8"
             and f.center.texture=="Interface\\Buttons\\WHITE8x8",
-            "loot markers paint real, opaque pixel-backed textures")
+            "observed loot markers use visible gold crosshairs, not square backplates")
     end
 end
 assert(count==2,"two separate marker frames displayed")
@@ -152,8 +168,18 @@ for _,f in ipairs(frames) do
     if f.scripts.OnUpdate then f.scripts.OnUpdate(f,0.3) end
 end
 assert(flight.point[4]==300 and flight.point[5]==-300
-    and flight.w==13 and flight.face.w==7.5,
+    and flight.w==13 and not flight.face and not flight.back,
     "canvas zoom resizes the marker to constant screen pixels without moving its map position")
+local lootCrosshair
+for _,f in ipairs(frames) do
+    if f.parent==overlay and f.center and f.visible then
+        lootCrosshair=f;break
+    end
+end
+assert(lootCrosshair and lootCrosshair.w==8.5
+    and lootCrosshair.horizontal.w==6.5
+    and lootCrosshair.vertical.h==6.5,
+    "loot crosshair stays compact when zoomed")
 viewed=999
 for _,f in ipairs(frames) do
     if f.scripts.OnUpdate then f.scripts.OnUpdate(f,0.3) end
