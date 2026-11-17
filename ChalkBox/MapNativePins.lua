@@ -261,8 +261,10 @@ local function Make(kind,index)
             if GameTooltip then GameTooltip:Hide() end
         end)
     else
-        marker.back=Texture(marker,17,17,5,0.12,0.08,0.02,0.9)
-        marker.face=Texture(marker,13,13,6,1,0.72,0.24,0.95)
+        -- A small gold crosshair shows the observed loot point without
+        -- covering the map with the old solid 17x17 square backplate.
+        marker.horizontal=Texture(marker,13,3,6,1,0.72,0.24,0.95)
+        marker.vertical=Texture(marker,3,13,6,1,0.72,0.24,0.95)
         marker.center=Texture(marker,5,5,7,1,0.96,0.73,1)
     end
     list[index]=marker
@@ -277,6 +279,8 @@ local function Place(pin,x,y,w,h,scale)
     local faceSize=pin.isFlight and 15 or 13
     if pin.back then pin.back:SetSize(backSize/scale,backSize/scale) end
     if pin.face then pin.face:SetSize(faceSize/scale,faceSize/scale) end
+    if pin.horizontal then pin.horizontal:SetSize(13/scale,3/scale) end
+    if pin.vertical then pin.vertical:SetSize(3/scale,13/scale) end
     if pin.center then pin.center:SetSize(5/scale,5/scale) end
     local function Pixel(v)
         return math.floor(v*scale+0.5)/scale
@@ -303,8 +307,23 @@ local function SetFlightArtwork(pin,atlas)
         usable=false
     end
     if not usable and type(pin.icon.SetTexture)=="function" then
-        pin.icon:SetTexture("Interface\\Minimap\\Tracking\\FlightMaster")
+        pcall(pin.icon.SetTexture,pin.icon,
+            "Interface\\Minimap\\Tracking\\FlightMaster")
+        -- Keep the emergency underlay only if the atlas is unavailable.
     end
+    -- The atlas has transparent edges and is now properly rendered by the
+    -- canvas. Only show the old squares on clients lacking this artwork.
+    if pin.back then
+        if usable then pin.back:Hide() else pin.back:Show() end
+    end
+    if pin.face then
+        if usable then pin.face:Hide() else pin.face:Show() end
+    end
+    if type(pin.icon.SetVertexColor)=="function" then
+        pin.icon:SetVertexColor(1,1,1,1)
+    end
+    if type(pin.icon.SetAlpha)=="function" then pin.icon:SetAlpha(1) end
+    if type(pin.icon.Show)=="function" then pin.icon:Show() end
 end
 local function RedrawFlights(id,w,h,scale)
     local get=ChalkBox_DiscoveriesFlightCandidates
