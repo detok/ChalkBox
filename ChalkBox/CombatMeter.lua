@@ -524,28 +524,8 @@ local function PrintFight()
         Chat("Fight report is too long for party chat; nothing sent.")
         return false
     end
-    local info=C_ChatInfo
-    local blocked=false
-    if info then
-        for _,name in ipairs({
-            "InChatMessagingLockdown",
-            "AreOutgoingAddonChatMessagesRestricted",
-        }) do
-            if type(info[name])=="function" then
-                local check,restricted=pcall(info[name])
-                if not check or restricted==true then blocked=true end
-            end
-        end
-    end
-    if false and blocked then
-        if type(ChalkBox_MeterShowCopy)=="function" then
-            ChalkBox_MeterShowCopy(message,
-                "Forever restricts addon chat right now.")
-        else
-            Chat("Forever restricts addon chat. Copy manually: "..message)
-        end
-        return false
-    end
+    -- A player-clicked PRINT may be permitted even while general addon
+    -- messaging lockdown is reported. Attempt the legitimate PARTY API.
     local ok,result=pcall(send,message,"PARTY")
     if not ok or (Safe(result) and result==false) then
         if type(ChalkBox_MeterShowCopy)=="function" then
