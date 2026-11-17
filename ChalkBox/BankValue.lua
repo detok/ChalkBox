@@ -89,7 +89,9 @@ local function CharacterContainers()
             lastTabSource="C_Bank purchased character tabs"
             lastTabCount=#ids
             if #ids>0 then return ids,"purchased" end
-            return nil,"No purchased character bank tabs returned yet"
+            -- Some client builds return an empty list on bank open before
+            -- receiving purchased-tab data. Continue with explicit enum
+            -- names, then require actual readable slots before saving.
         end
     end
     -- Some Forever patches expose only the CharacterBankTab_N enum, and
@@ -108,7 +110,7 @@ local function CharacterContainers()
             return ids,"tabs"
         end
         local first=indexes.Bank
-        if Integer(first) and first<0 then
+        if type(first)=="number" and first<0 then
             ids[#ids+1]=first
             for i=1,9 do
                 local id=indexes["BankBag_"..i]
