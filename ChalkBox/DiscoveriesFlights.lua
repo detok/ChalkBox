@@ -6,6 +6,7 @@
 local MAX_NODES,MAX_MARKERS=160,80
 local pins={}
 local drawnKey,menuInstalled=nil,false
+local lastCandidateSignature,refreshCycles=nil,0
 local capturePending=0
 local lastCanvas=nil
 local tick=0
@@ -314,53 +315,68 @@ function ChalkBox_DiscoveriesFlightCandidates(mapID)
     return result
 end
 
+-- Coordinate lookups may become available after a zone map loads.
+-- Recheck periodically, but only reconstruct visible pins when the actual
+-- candidate set changes. Off-map learned nodes are not a reason to flicker.
+local function CandidateSignature(candidates)
+    local parts={}
+    for i,entry in ipairs(candidates) do
+        parts[i]=("%.5f:%.5f:%s:%s"):format(
+            entry.x,entry.y,entry.name,entry.atlas or "")
+    end
+    return table.concat(parts,"|")
+end
 local function Refresh()
     if not WorldMapFrame or type(WorldMapFrame.IsShown)~="function" or
         not WorldMapFrame:IsShown() or not Enabled() then
         local wasDrawn=drawnKey~=nil
-        HidePins();drawnKey=nil
-        if wasDrawn and
-            type(ChalkBox_MapNativeRefresh)=="function" then
+        HidePins();drawnKey=nil;lastCandidateSignature=nil
+        refreshCycles=0
+        if wasDrawn and type(ChalkBox_MapNativeRefresh)=="function" then
             ChalkBox_MapNativeRefresh()
         end
         return
     end
     local mapID,canvas=ViewedMap(),Canvas()
     if not mapID or not canvas then
-        HidePins();drawnKey=nil;return
+        HidePins();drawnKey=nil;lastCandidateSignature=nil;return
     end
     local w,h=Call(canvas.GetWidth,canvas),Call(canvas.GetHeight,canvas)
     if not Number(w) or not Number(h) or w<=0 or h<=0 then
-        HidePins();drawnKey=nil;return
+        HidePins();drawnKey=nil;lastCandidateSignature=nil;return
     end
     local db=DB()
     if not db then return end
-    local key=tostring(mapID)..":"..db.revision..":"..w..":"..h
-    if type(ChalkBox_MapNativeAvailable)=="function" and
-        ChalkBox_MapNativeAvailable() then
-        -- The actual pin position and layer now belong to Blizzard's
-        -- MapCanvas, including its zoom/pan/map-change lifecycle.
-        if key==drawnKey and lastCanvas==canvas and
-            positionSources.unplaced==0 then return end
-        -- Do not cache missing positions as final. Forever's local taxi
-        -- coordinates can arrive after the visible map tiles.
-        HidePins()
-        drawnKey,lastCanvas=key,canvas
+    local native=type(ChalkBox_MapNativeAvailable)=="function" and
+        ChalkBox_MapNativeAvailable()
+    local key=tostring(mapID)..":"..db.revision..":"..w..":"..h..":"..
+        (native and "native" or "fallback")
+    local unchanged=key==drawnKey and lastCanvas==canvas
+    if unchanged then
+        if not native then
+            -- Native zone artwork can change frame levels after first show.
+            for i=1,lastCount do RaisePin(pins[i],canvas) end
+        end
+        refreshCycles=refreshCycles+1
+        if refreshCycles<4 then return end
+    end
+    refreshCycles=0
+    local candidates=ChalkBox_DiscoveriesFlightCandidates(mapID)
+    local signature=CandidateSignature(candidates)
+    if unchanged and signature==lastCandidateSignature then
+        return -- Late lookup still gave the same answer: no repaint
+    end
+    lastCandidateSignature=signature
+    drawnKey,lastCanvas=key,canvas
+    if native then
+        HidePins() -- clear any previous legacy-only frames
         if type(ChalkBox_MapNativeRefresh)=="function" then
             ChalkBox_MapNativeRefresh()
         end
         return
     end
-    if key==drawnKey and lastCanvas==canvas and
-        positionSources.unplaced==0 then
-        for i=1,lastCount do RaisePin(pins[i],canvas) end
-        return
-    end
-    -- Compatibility-only fallback if this Forever build has no pin API.
-    -- Use the same candidates rather than duplicating coordinate rules.
+    -- Conservative compatibility path for clients without native pins.
     HidePins()
-    drawnKey,lastCanvas=key,canvas
-    local candidates=ChalkBox_DiscoveriesFlightCandidates(mapID)
     for i,entry in ipairs(candidates) do
         local pin=MakePin(canvas,i)
         pin.flightName=entry.name
