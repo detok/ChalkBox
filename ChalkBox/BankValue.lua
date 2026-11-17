@@ -413,8 +413,30 @@ local function Refresh()
         ChalkBox_BarBankValueRefresh()
     end
 end
--- The vanilla BANKFRAME_OPENED event is supported on Forever. Keep
--- observing for late-loaded bank tabs, price cache, and tab purchases.
+-- BankPanel can be loaded lazily after ChalkBox and its OnShow can
+-- precede the Camelot BANKFRAME_OPENED event. Observe both safe signals.
+-- We never hook a protected bank-item button or alter Blizzard frame state.
+local hooked=setmetatable({},{__mode="k"})
+local function HookBankFrames()
+    for _,bank in ipairs({BankPanel or false,BankFrame or false}) do
+        if bank and not hooked[bank] and
+            type(bank.HookScript)=="function" then
+            local ok=pcall(bank.HookScript,bank,"OnShow",function()
+                if not open then
+                    open=true
+                    lastReason="Bank window shown; reading character tabs"
+                    pending=8
+                    elapsed=0
+                end
+                Refresh()
+            end)
+            if ok then hooked[bank]=true end
+        end
+    end
+end
+-- Register and retry against late-loaded bank frames without relying on a
+-- specific load order for the Camelot BankFrame/BankPanel.
+HookBankFrames()
 local listener=CreateFrame("Frame")
 for _,event in ipairs({"BANKFRAME_OPENED","BANKFRAME_CLOSED",
     "PLAYERBANKSLOTS_CHANGED","PLAYERBANKBAGSLOTS_CHANGED",
@@ -432,6 +454,7 @@ listener:SetScript("OnEvent",function(_,event)
         lastReason="Bank closed"
         if panel then panel:Hide() end
     elseif event=="BANKFRAME_OPENED" then
+        HookBankFrames()
         open=true
         lastReason="Bank opened; checking character tabs"
         pending=8
@@ -443,10 +466,27 @@ listener:SetScript("OnEvent",function(_,event)
     end
 end)
 listener:SetScript("OnUpdate",function(_,dt)
-    if not open then return end
     elapsed=elapsed+(type(dt)=="number" and dt or 0)
     if elapsed<.7 then return end
     elapsed=0
+    HookBankFrames()
+    if not open then
+        -- Last-resort discovery if Camelot omitted the BANKFRAME event or
+        -- the panel was already visible when ChalkBox registered hooks.
+        local frame=BankPanel
+        local visible=frame and Read(frame.IsShown,frame)==true
+        local canView=type(C_Bank)=="table" and
+            Read(C_Bank.CanViewBank,
+                type(Enum)=="table" and type(Enum.BankType)=="table"
+                    and Enum.BankType.Character or 0)
+        if visible and canView==true then
+            open=true
+            pending=8
+            lastReason="BankPanel visible; character bank accessible"
+            Refresh()
+        end
+        return
+    end
     if pending>0 then
         pending=pending-1
         Refresh()
