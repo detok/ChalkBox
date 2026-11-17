@@ -12,3 +12,6 @@ The **game ZIP** is `ChalkBox-2.2.26.zip`; upload that as the addon. The separat
 Use the original avatar under `Artwork/PNG/Upload-Ready/Project-Icon-512.png`, and only current, genuine game screenshots from the screenshots directory. [Publisher checklist](submission/PUBLISH_CHECKLIST.md).
 
 **WoW Forever only.** Verify the game flavor in CurseForge's uploader before submission. License: MIT for ChalkBox, with bundled library notices.
+
+
+**Developer beta:** ChalkBox 2.2.27 is a QuestSense Smart experiment; 2.2.26 remains the supported stable release. [Beta notes](https://github.com/detok/ChalkBox/blob/feature/smart-quest-native-priorities/docs/RELEASE_NOTES.md).
