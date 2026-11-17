@@ -30,8 +30,10 @@ local function GetQuest(index)
         if not ok or not Safe(info) or type(info)~="table" then
             return nil,nil,"pending"
         end
-        if not Safe(info.isHeader) then return nil,nil,"pending" end
-        if info.isHeader then return nil,nil,"header" end
+        if info.isHeader~=nil and not Safe(info.isHeader) then
+            return nil,nil,"pending"
+        end
+        if info.isHeader==true then return nil,nil,"header" end
         if Safe(info.title) and type(info.title)=="string" and
             Safe(info.questID) and type(info.questID)=="number" then
             return info.title,info.questID,"quest"
@@ -40,8 +42,10 @@ local function GetQuest(index)
     elseif type(GetQuestLogTitle)=="function" then
         local ok,title,_,_,isHeader,_,_,_,questID=
             pcall(GetQuestLogTitle,index)
-        if not ok or not Safe(isHeader) then return nil,nil,"pending" end
-        if isHeader then return nil,nil,"header" end
+        if not ok or (isHeader~=nil and not Safe(isHeader)) then
+            return nil,nil,"pending"
+        end
+        if isHeader==true then return nil,nil,"header" end
         if Safe(title) and type(title)=="string" and Safe(questID)
             and type(questID)=="number" then
             return title,questID,"quest"
@@ -75,6 +79,10 @@ local function RebuildQuestItems()
         return -- Do not erase the last known quest names on an unreadable log.
     end
     local missing={}
+    if not (C_QuestLog and type(C_QuestLog.GetQuestObjectives)=="function") then
+        questDataPending=true
+        return -- Can't confirm objective changes yet: preserve verified data.
+    end
     for index = 1, count do
         local title, questID, state = GetQuest(index)
         if state=="pending" then
