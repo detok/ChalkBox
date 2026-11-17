@@ -810,15 +810,20 @@ local function MakeQuestSmart()
             return st and st.nativeOrder
         end,
         function(on) Run("nativeorder "..(on and "on" or "off")) end)
-    local explanation=Label(panel,
-        "Smart favors actual quest-helper distances. Missing positions stay last.",
-        "GameFontHighlightSmall",28,-428,492)
+    Label(panel,"Nearby radius","GameFontNormal",28,-407,160)
+    for i,radius in ipairs({0,500,1000,2000}) do
+        Button(panel,radius==0 and "Zone" or (radius.."y"),
+            170+(i-1)*88,-401,80,function()
+                Run("range "..radius)
+            end)
+    end
+    local explanation=Label(panel,"","GameFontHighlightSmall",28,-448,492)
     panel:AddRefresh(function()
         local st=ChalkBox_QuestStatus and ChalkBox_QuestStatus() or {}
         rank:SetText("Selected: "..tostring(st.sort or "nearest"))
-        explanation:SetText("Native sort "..(st.nativeOrder and "ON" or "OFF")..
-            "  |  closest ranked quest #"..
-            tostring(st.nearest or "unknown"))
+        explanation:SetText("Tracker sort "..(st.nativeOrder and "ON" or "OFF")..
+            " | Nearby radius "..tostring(st.nearbyRange or 0)..
+            "y | first quest #"..tostring(st.nearest or "unknown"))
     end)
     return panel
 end
