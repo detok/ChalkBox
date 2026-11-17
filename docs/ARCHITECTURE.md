@@ -16,7 +16,7 @@ ChalkBox is **one Lua 5.1 addon** for WoW Forever. No separate addon, backend pr
 
 | Area | Key files | Responsibility |
 | --- | --- | --- |
-| Quest/vendor and item safety | `Core.lua`, `LootSense.lua` | Accepted quest item matching, merchant context, personal KEEP and tooltip evidence |
+| Quest/vendor and item safety | `Core.lua`, `Libs/ClassicQuestReference/Data.lua`, `QuestItemReference.lua`, `LootSense.lua` | Live accepted-quest evidence and cached progress first; bundled MIT Classic item-to-quest lookup as explicitly labeled reference, merchant context, personal KEEP and tooltip presentation |
 | Profession evidence | `ProfessionSense.lua`, `RecipeAdvisor.lua`, `Libs/LibProfessionDB-1.0/` | Learned recipes versus possible catalog uses |
 | Loot tracking / journal | `DropSense.lua`, `MapDiscoveries.lua` | Loot-window observations, source/area aggregation, outdoor position samples and native World Map sidecar |
 | Market / DE | `AuctionSense.lua`, `AuctionSenseUI.lua`, `AuctionInsights.lua`, `DisenchantSense.lua` | Explicit AH read scans, realm/faction snapshots, bag/sales insights and modeled DE outcomes |
@@ -40,6 +40,8 @@ The TOCs declare three data roots:
 | `ChalkBoxProfessionDB` | Per character | Learned-profession observation data |
 
 Never delete a player's SavedVariables during a normal update. Prefer additive optional fields, bounded collections and version-aware migrations (existing DropSense version 2 is preserved). **Do not retroactively invent observations**: e.g., old loot data cannot acquire real coordinates or source-confirmed odds after the fact.
+
+The **Classic quest reference** is a precomputed static lookup loaded with the addon (2,200 item IDs, 2,323 named quests from pinned pfQuest MIT source files). It does not call QuestieDB, scan at startup, use network requests or write SavedVariables. A Classic item-to-quest relationship is **not** proof the quest exists unchanged in Forever; only the live player's quest objectives justify an active-quest KEEP recommendation. See the bundled upstream LICENSE and pinned source blobs before regenerating the data.
 
 ## Evidence hierarchy
 
