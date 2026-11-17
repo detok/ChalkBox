@@ -614,9 +614,9 @@ assert(ChalkBoxDB.barStats.latency==true,
     "latency checkbox persists the new module preference")
 statsChecks[2]:Click(false)
 assert(ChalkBoxDB.barStats.gear==false,"gear checkbox disables the module")
-assert(statsChecks[10].checked and not statsChecks[11].checked and
+assert(statsChecks[10].checked and statsChecks[11].checked and
     statsChecks[12].checked,
-    "Bank value is opt-in while bag vendor and repair stats keep their defaults")
+    "Bank value is visibly enabled alongside bag vendor and repair stats")
 statsChecks[10]:Click(true)
 assert(ChalkBoxDB.barStats.bagvalue,
     "new vendor total module can be enabled through native settings")
