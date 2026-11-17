@@ -153,6 +153,61 @@ assert(#matching==2 and
     "both accepted quest titles are preserved, including complete objectives")
 assert(ChalkBox_IsTrackedQuestItem("Flask of Oil"),
     "shared quest item remains protected while either quest is accepted")
+-- Forever commonly reports item objectives with progress first rather
+-- than the legacy "Name: 0/8" wording. Case and extra spaces in tooltip text
+-- must not suppress an otherwise verified quest title.
+C_QuestLog.GetNumQuestLogEntries=function() return 1 end
+C_QuestLog.GetInfo=function()
+    return {title="A Special Delivery",questID=9901,isHeader=false}
+end
+C_QuestLog.GetQuestObjectives=function()
+    return {{type="item",text="0/8  Flintfire's   Shipment",
+        numFulfilled=0,numRequired=8,finished=false}}
+end
+eventCallback(nil,"QUEST_LOG_UPDATE")
+matching=ChalkBox_QuestItemDetails("  FLINTFIRE'S shipment  ")
+assert(matching and #matching==1 and matching[1].title=="A Special Delivery"
+    and matching[1].have==0 and matching[1].required==8
+    and ChalkBox_IsTrackedQuestItem("Flintfire's Shipment"),
+    "Forever progress-first objectives resolve the actual accepted quest despite spaces/case")
+assert(ChalkBox_QuestItemDetails("Random Shipment")==nil,
+    "different item text cannot inherit a nearby quest title")
+C_QuestLog.GetQuestObjectives=function()
+    return {{type="item",text="Flintfire's Shipment (3/8)",
+        numFulfilled=3,numRequired=8,finished=false}}
+end
+eventCallback(nil,"QUEST_LOG_UPDATE")
+matching=ChalkBox_QuestItemDetails("Flintfire's Shipment")
+assert(matching and matching[1].have==3 and matching[1].required==8,
+    "parenthesized objective progress is matched without dropping the quest title")
+
+-- Quest objective details can be unavailable on the first Forever API read.
+-- Retrying a missing cache must never invent a result or require /reload.
+local loading=true
+_G.GetTime=function() return 42 end
+C_QuestLog.GetQuestObjectives=function()
+    if loading then return nil end
+    return {{type="item",text="0/8 Flintfire's Shipment",
+        numFulfilled=2,numRequired=8,finished=false}}
+end
+eventCallback(nil,"QUEST_LOG_UPDATE")
+assert(ChalkBox_QuestItemDetails("Flintfire's Shipment")==nil,
+    "unloaded quest objectives do not produce a guessed quest title")
+loading=false
+matching=ChalkBox_QuestItemDetails("Flintfire's Shipment")
+assert(matching and matching[1].title=="A Special Delivery"
+    and matching[1].have==2,
+    "next eligible tooltip lookup refreshes delayed Forever quest details")
+-- Identical wording from a non-item objective does not prove this item
+-- belongs to the quest.
+C_QuestLog.GetQuestObjectives=function()
+    return {{type="monster",text="Flintfire's Shipment: 2/8",
+        numFulfilled=2,numRequired=8}}
+end
+eventCallback(nil,"QUEST_LOG_UPDATE")
+assert(ChalkBox_QuestItemDetails("Flintfire's Shipment")==nil,
+    "non-item objectives cannot claim an item or quest title")
+
 C_QuestLog.GetNumQuestLogEntries=function() return 0 end
 eventCallback(nil,"QUEST_REMOVED")
 assert(ChalkBox_QuestItemDetails("Flask of Oil")==nil
