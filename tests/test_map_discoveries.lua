@@ -658,6 +658,27 @@ assert(cleared,"mouse leave clears the native transient marker")
 _G.ChalkBox_MapNativeAvailable=nil
 _G.ChalkBox_MapNativeLootSet=nil
 _G.ChalkBox_MapNativeLootClear=nil
+-- Regression: the same subzone must work when native pin acquisition fails.
+-- Previously PulseHover allowed the parent zone but PulsePosition rejected
+-- the raw micro map ID, so no fallback item marker could ever show.
+_G.ChalkBox_MapNativeProject=function(source,target,x,y)
+    if source~=1436 or target~=999 then return nil end
+    if x<.6 or x>.8 or y<.4 or y>.6 then return nil end
+    return (x-.6)/.2,(y-.4)/.2
+end
+linen.OnEnter()
+local fallback
+for _,candidate in ipairs(frames) do
+    if candidate.parent==mapCanvas and candidate.w==18 and
+        candidate.h==18 and candidate.shown then fallback=candidate end
+end
+assert(fallback and fallback.point and fallback.point[2]==mapCanvas
+    and math.abs(fallback.point[4]-182.5)<.01
+    and math.abs(fallback.point[5]+196)<.01,
+    "compatibility item pulse projects parent loot coordinate onto child zone")
+linen.OnLeave()
+assert(not fallback.shown,"fallback pulse hides after item hover ends")
+_G.ChalkBox_MapNativeProject=nil
 viewed=1436
 journal.OnUpdate(journal,0.8)
 ClickButton("Map sync: ON")
