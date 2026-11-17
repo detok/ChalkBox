@@ -207,6 +207,43 @@ local function ProjectOnZone(x,y,zoneID,sourceMapID)
     local zoneY=(y-minY)/(maxY-minY)
     if ValidXY(zoneX,zoneY) then return zoneX,zoneY end
 end
+-- Saved, independently observed zone coordinates are authoritative.
+-- Map navigation can browse a child/micro map or its parent continent;
+-- use only rectangles returned by the client for an actual ancestor path.
+local function IsAncestor(child,parent)
+    local seen={}
+    for _=1,12 do
+        if child==parent then return true end
+        if not Integer(child) or seen[child] then break end
+        seen[child]=true
+        local info=Call(C_Map and C_Map.GetMapInfo,child)
+        if type(info)~="table" or not Integer(info.parentMapID)
+            or info.parentMapID<=0 then break end
+        child=info.parentMapID
+    end
+    return false
+end
+local function FromObservedZone(node,mapID)
+    local zone=node.zoneMapID
+    local x=node.zoneX and node.zoneX/10000
+    local y=node.zoneY and node.zoneY/10000
+    if not Integer(zone) or not ValidXY(x,y) then return end
+    if zone==mapID then return x,y end
+    if IsAncestor(mapID,zone) then
+        return ProjectOnZone(x,y,mapID,zone)
+    end
+    if IsAncestor(zone,mapID) then
+        local minX,maxX,minY,maxY=Call(
+            C_Map and C_Map.GetMapRectOnMap,zone,mapID)
+        if Number(minX) and Number(maxX) and Number(minY) and
+            Number(maxY) and maxX>minX and maxY>minY and
+            maxX<=1 and maxY<=1 then
+            local px=minX+x*(maxX-minX)
+            local py=minY+y*(maxY-minY)
+            if ValidXY(px,py) then return px,py end
+        end
+    end
+end
 local function GetProjected(node,mapID)
     local x=node.x and node.x/10000 or nil
     local y=node.y and node.y/10000 or nil
@@ -283,12 +320,8 @@ function ChalkBox_DiscoveriesFlightCandidates(mapID)
         local node=db.nodes[id]
         if type(node)=="table" then
             local x,y,from
-            if node.zoneMapID==mapID then
-                x,y=node.zoneX and node.zoneX/10000,
-                    node.zoneY and node.zoneY/10000
-                if not ValidXY(x,y) then x,y=nil,nil
-                else from="observed" end
-            end
+            x,y=FromObservedZone(node,mapID)
+            if x then from="observed" end
             if not x and indexed[id] then
                 x,y=indexed[id].x,indexed[id].y
                 from=indexed[id].from
