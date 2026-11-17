@@ -6,6 +6,7 @@
 local MAX_NODES,MAX_MARKERS=160,80
 local pins={}
 local drawnKey,menuInstalled=nil,false
+local lastCandidateSignature,refreshCycles=nil,0
 local capturePending=0
 local lastCanvas=nil
 local tick=0
@@ -261,41 +262,27 @@ local function IndexedPositions(mapID,known)
     end
     return list
 end
-local function Refresh()
-    if not WorldMapFrame or type(WorldMapFrame.IsShown)~="function" or
-        not WorldMapFrame:IsShown() or not Enabled() then
-        HidePins();drawnKey=nil;return
-    end
-    local mapID,canvas=ViewedMap(),Canvas()
-    if not mapID or not canvas then
-        HidePins();drawnKey=nil;return
-    end
-    local w,h=Call(canvas.GetWidth,canvas),Call(canvas.GetHeight,canvas)
-    if not Number(w) or not Number(h) or w<=0 or h<=0 then
-        HidePins();drawnKey=nil;return
-    end
+-- This is the single source of flight-marker positions for both renderers.
+-- Only learned taxi node IDs in this character's DB may generate candidates.
+-- The native MapCanvas data provider consumes normalized map coordinates;
+-- legacy cosmetic frames are used only if this client's provider is absent.
+function ChalkBox_DiscoveriesFlightCandidates(mapID)
+    local result={}
     local db=DB()
-    if not db then return end
-    local key=tostring(mapID)..":"..db.revision..":"..w..":"..h
-    if key==drawnKey and lastCanvas==canvas then
-        -- The native zone canvas may change levels while textures load or
-        -- while a player switches map zoom without changing the map ID.
-        -- Repair draw order without rebuilding or adding any flight paths.
-        for i=1,lastCount do RaisePin(pins[i],canvas) end
-        return
+    if not db or not Enabled() or not Integer(mapID) then
+        positionSources={observed=0,direct=0,projected=0,unplaced=0}
+        lastCount=0
+        return result
     end
-    HidePins()
-    drawnKey,lastCanvas=key,canvas
     local indexed=IndexedPositions(mapID,db.nodes)
     positionSources={observed=0,direct=0,projected=0,unplaced=0}
     local ids={}
     for id in pairs(db.nodes) do ids[#ids+1]=id end
-    table.sort(ids) -- deterministic ordering without altering learned data
+    table.sort(ids)
     for _,id in ipairs(ids) do
         local node=db.nodes[id]
         if type(node)=="table" then
-            local x,y
-            local from
+            local x,y,from
             if node.zoneMapID==mapID then
                 x,y=node.zoneX and node.zoneX/10000,
                     node.zoneY and node.zoneY/10000
@@ -311,22 +298,94 @@ local function Refresh()
                 if x then from="projected" end
             end
             if ValidXY(x,y) then
-                local pin=MakePin(canvas,lastCount+1)
-                pin.flightName=type(node.name)=="string" and node.name or
-                    "Flight master"
-                SetPinArt(pin,TaxiAtlas(node,indexed[id]))
-                pin:ClearAllPoints()
-                pin:SetPoint("CENTER",canvas,"TOPLEFT",x*w,-y*h)
-                pin:Show()
+                result[#result+1]={x=x,y=y,
+                    name=type(node.name)=="string" and node.name
+                        or "Flight master",
+                    atlas=TaxiAtlas(node,indexed[id]),
+                    from=from or "projected"}
                 positionSources[from or "projected"]=
                     positionSources[from or "projected"]+1
-                lastCount=lastCount+1
-                if lastCount>=MAX_MARKERS then break end
+                if #result>=MAX_MARKERS then break end
             else
                 positionSources.unplaced=positionSources.unplaced+1
             end
         end
     end
+    lastCount=#result
+    return result
+end
+
+-- Coordinate lookups may become available after a zone map loads.
+-- Recheck periodically, but only reconstruct visible pins when the actual
+-- candidate set changes. Off-map learned nodes are not a reason to flicker.
+local function CandidateSignature(candidates)
+    local parts={}
+    for i,entry in ipairs(candidates) do
+        parts[i]=("%.5f:%.5f:%s:%s"):format(
+            entry.x,entry.y,entry.name,entry.atlas or "")
+    end
+    return table.concat(parts,"|")
+end
+local function Refresh()
+    if not WorldMapFrame or type(WorldMapFrame.IsShown)~="function" or
+        not WorldMapFrame:IsShown() or not Enabled() then
+        local wasDrawn=drawnKey~=nil
+        HidePins();drawnKey=nil;lastCandidateSignature=nil
+        refreshCycles=0
+        if wasDrawn and type(ChalkBox_MapNativeRefresh)=="function" then
+            ChalkBox_MapNativeRefresh()
+        end
+        return
+    end
+    local mapID,canvas=ViewedMap(),Canvas()
+    if not mapID or not canvas then
+        HidePins();drawnKey=nil;lastCandidateSignature=nil;return
+    end
+    local w,h=Call(canvas.GetWidth,canvas),Call(canvas.GetHeight,canvas)
+    if not Number(w) or not Number(h) or w<=0 or h<=0 then
+        HidePins();drawnKey=nil;lastCandidateSignature=nil;return
+    end
+    local db=DB()
+    if not db then return end
+    local native=type(ChalkBox_MapNativeAvailable)=="function" and
+        ChalkBox_MapNativeAvailable()
+    local key=tostring(mapID)..":"..db.revision..":"..w..":"..h..":"..
+        (native and "native" or "fallback")
+    local unchanged=key==drawnKey and lastCanvas==canvas
+    if unchanged then
+        if not native then
+            -- Native zone artwork can change frame levels after first show.
+            for i=1,lastCount do RaisePin(pins[i],canvas) end
+        end
+        refreshCycles=refreshCycles+1
+        if refreshCycles<4 then return end
+    end
+    refreshCycles=0
+    local candidates=ChalkBox_DiscoveriesFlightCandidates(mapID)
+    local signature=CandidateSignature(candidates)
+    if unchanged and signature==lastCandidateSignature then
+        return -- Late lookup still gave the same answer: no repaint
+    end
+    lastCandidateSignature=signature
+    drawnKey,lastCanvas=key,canvas
+    if native then
+        HidePins() -- clear any previous legacy-only frames
+        if type(ChalkBox_MapNativeRefresh)=="function" then
+            ChalkBox_MapNativeRefresh()
+        end
+        return
+    end
+    -- Conservative compatibility path for clients without native pins.
+    HidePins()
+    for i,entry in ipairs(candidates) do
+        local pin=MakePin(canvas,i)
+        pin.flightName=entry.name
+        SetPinArt(pin,entry.atlas)
+        pin:ClearAllPoints()
+        pin:SetPoint("CENTER",canvas,"TOPLEFT",entry.x*w,-entry.y*h)
+        pin:Show()
+    end
+    lastCount=#candidates
     for i=lastCount+1,#pins do pins[i]:Hide() end
 end
 local function Capture()
@@ -426,13 +485,25 @@ function ChalkBox_DiscoveriesKnownFlightsSet(value)
     db.enabled=value==true
     drawnKey=nil
     Refresh()
+    -- Disabling a native data-provider pin requires an explicit refresh:
+    -- Refresh() rightly skips drawing while the checkbox is off.
+    if not db.enabled and
+        type(ChalkBox_MapNativeRefresh)=="function" then
+        ChalkBox_MapNativeRefresh()
+    end
     return true
 end
 function ChalkBox_DiscoveriesKnownFlightsStatus()
     local db=DB()
+    local native=type(ChalkBox_MapNativeStatus)=="function" and
+        ChalkBox_MapNativeStatus() or nil
     return {enabled=db and db.enabled~=false or false,
         verified=db and Count(db.nodes) or 0,
-        mapPins=lastCount,menuHook=menuInstalled,
+        mapPins=native and native.available and native.flightPins
+            or lastCount,menuHook=menuInstalled,
+        renderer=native and native.available and "native MapCanvas"
+            or "compatibility canvas",
+        rendererProblem=native and native.problem or nil,
         mapID=ViewedMap(),captureRetry=capturePending>0,
         captureStatus=lastCapture.status,taxiMapID=lastCapture.taxiMapID,
         taxiKnown=lastCapture.reachable,
