@@ -529,11 +529,13 @@ local function PrintFight()
     -- messaging lockdown is reported. Attempt the legitimate PARTY API.
     local ok,result=pcall(send,message,"PARTY")
     if not ok or (Safe(result) and result==false) then
+        local detail=not ok and Safe(result) and type(result)=="string"
+            and result:sub(1,180) or "chat API returned false"
         if type(ChalkBox_MeterShowCopy)=="function" then
             ChalkBox_MeterShowCopy(message,
-                "Forever rejected the PARTY report. No other channel tried.")
+                "PARTY send failed: "..detail)
         else
-            Chat("PARTY chat rejected the report. Copy manually: "..message)
+            Chat("PARTY send failed ("..detail.."). Copy manually: "..message)
         end
         return false
     end
