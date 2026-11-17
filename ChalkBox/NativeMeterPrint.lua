@@ -7,6 +7,7 @@ local lastAutoAt=-1000000000
 local lastAutoMessage=nil
 local combatStartedAt=nil
 local pendingDelay=nil
+local reportInProgress=false
 
 local function Safe(value)
     return value~=nil and
@@ -135,7 +136,7 @@ local function BuildMessages(sources,label,title,perSecond,limit)
         end
         name=name:gsub("[%c|]",""):sub(1,64)
         if name=="" then name="Unknown" end
-        local line=string.format("%d %s %.0f",i,name,amount)
+        local line=string.format("%d. %s - %.0f",i,name,amount)
         if #line>255 then return nil,"Report line exceeds chat limit." end
         lines[#lines+1]=line
     end
@@ -180,6 +181,7 @@ local function SendReport(frame,channel,auto)
     end
     local now=Clock()
     if not now then return Reject("Combat report clock unavailable.") end
+    if reportInProgress then return Reject("A report is already being sent.") end
     if now-lastSentAt<3 then return Reject("Report just sent. Try again shortly.") end
     if auto and now-lastAutoAt<Settings().nativeAutoCooldown then return false end
     local send=type(SendChatMessage)=="function" and SendChatMessage or
@@ -217,25 +219,42 @@ local function SendReport(frame,channel,auto)
     local fingerprint=table.concat(lines,"\n")
     if auto and fingerprint==lastAutoMessage then return false end
     if auto and MessagingRestricted() then return false end
-    -- Send each visual line as its own normal PARTY/SAY message, directly
-    -- from the click rather than deferring to a timer that loses hardware context.
-    -- Never retry or redirect a failed line.
-    for i,line in ipairs(lines) do
-        local ok,result=pcall(send,line,channel)
+    -- As in Details!, send ordinary chat lines in order with small spacing.
+    -- Group chat permits deferred addon messages. For SAY, use the actual
+    -- user click for every line so hardware-event restrictions still apply.
+    -- Never combine lines with newlines, retry, or change destination.
+    local paced=(channel=="PARTY" and C_Timer and
+        type(C_Timer.After)=="function")
+    local function Finished()
+        reportInProgress=false
+        if auto then lastAutoAt=now;lastAutoMessage=fingerprint end
+        Note((auto and "Auto report" or "Report").." requested in "..channel..
+            " (delivery is controlled by the game).")
+    end
+    local SendLine
+    SendLine=function(i)
+        local ok,result=pcall(send,lines[i],channel)
         if not ok or (Safe(result) and result==false) then
-            if auto then return false end
-            local detail=not ok and Safe(result) and type(result)=="string"
-                and result:sub(1,180) or "chat API returned false"
-            Note(channel.." report stopped at line "..i..": "..detail)
+            reportInProgress=false
+            if not auto then
+                local detail=not ok and Safe(result) and type(result)=="string"
+                    and result:sub(1,180) or "chat API returned false"
+                Note(channel.." report stopped at line "..i..": "..detail)
+            end
             return false
         end
         if i==1 then lastSentAt=now end
+        if i==#lines then
+            Finished()
+        elseif paced then
+            C_Timer.After(0.20,function() SendLine(i+1) end)
+        else
+            return SendLine(i+1)
+        end
+        return true
     end
-    if auto then lastAutoAt=now;lastAutoMessage=fingerprint end
-    -- A successful API call is not a delivery acknowledgment.
-    Note((auto and "Auto report" or "Report").." requested in "..channel..
-        " (delivery is controlled by the game).")
-    return true
+    reportInProgress=true
+    return SendLine(1)
 end
 function ChalkBox_NativeMeterPrint(frame,channel)
     return SendReport(frame,channel or "PARTY",false)
