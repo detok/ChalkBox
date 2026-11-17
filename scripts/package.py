@@ -59,6 +59,7 @@ FILES = (
     "UpdateCheck.lua",
     "MacroForge.lua",
     "MacroForgeUI.lua",
+    "FutureQuestItems.lua",
     "LootSense.lua",
     "BagReagents.lua",
     "QuietGuard.lua",
