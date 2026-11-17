@@ -197,6 +197,10 @@ assert(suggested:find("Needed for: Relics of Ancient Days",1,true)
     and #refsRequested==1 and refsRequested[1].id==106
     and refsRequested[1].limit==3,
     "generic quest-class KEEP has precise quest titles from embedded item ID reference")
+SlashCmdList.CHALKBOX("loot quest |Hitem:106:0|h[Quest Relic]|h")
+assert(messages[#messages]:find("A Quest Begins",1,true)
+    and messages[#messages-1]:find("Relics of Ancient Days",1,true),
+    "item-specific source diagnostic prints the same verified reference titles")
 refsRequested={}
 activeQuest["Quest Relic"]=true
 questDetails["Quest Relic"]={{title="Verified Forever Quest",id=99,
