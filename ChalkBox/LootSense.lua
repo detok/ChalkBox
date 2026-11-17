@@ -170,6 +170,43 @@ function ChalkBox_LootPresentation(message)
     return Insight("ITEM NOTE",message,"text",0.85,0.87,0.88)
 end
 
+-- Independent evidence layer: only catalogued FUTURE quest uses.
+-- This never changes existing active-quest KEEP classification or progress.
+local function FutureUses(name,link)
+    if type(ChalkBox_FutureQuestUses)~="function"
+        or not Public(link) or type(link)~="string" then return nil end
+    if type(ChalkBox_IsTrackedQuestItem)=="function" then
+        local ok,tracked=pcall(ChalkBox_IsTrackedQuestItem,name)
+        if not ok or tracked then return nil end
+    end
+    local id=link:match("item:(%d+)")
+    if not id then return nil end
+    local ok,found=pcall(ChalkBox_FutureQuestUses,id)
+    return ok and type(found)=="table" and #found>0 and found or nil
+end
+
+local function AddFutureQuestNote(tooltip,uses)
+    if not uses or HasLine(tooltip,"FUTURE QUEST") then return false end
+    tooltip:AddLine(" ",1,1,1)
+    tooltip:AddLine("FUTURE QUEST",0.72,0.52,1.0,true)
+    for i=1,math.min(#uses,3) do
+        local q=uses[i]
+        if type(q.questName)=="string" and
+            type(q.required)=="number" then
+            local line=q.questName.."  ·  Need "..q.required
+            if type(q.zone)=="string" then line=line.."  ·  "..q.zone end
+            tooltip:AddLine(line,0.89,0.85,0.95,true)
+        end
+    end
+    if #uses>3 then
+        tooltip:AddLine("+"..(#uses-3).." more possible quest uses",
+            0.75,0.73,0.82,true)
+    end
+    tooltip:AddLine("Reference only  ·  Not an active quest",
+        0.65,0.69,0.73,true)
+    return true
+end
+
 local function OnItemTooltip(tooltip)
     if not db or not tooltip or not tooltip.GetItem or IsVendorOffer(tooltip) then return end
     local name, link = tooltip:GetItem()
@@ -185,10 +222,11 @@ local function OnItemTooltip(tooltip)
     if type(ChalkBox_AuctionTooltip)=="function" then
         pcall(ChalkBox_AuctionTooltip,tooltip,link)
     end
-    -- Read-only DE economics: never auto-cast, alter bag buttons, or suggest
-    -- destroying protected/quest items. The item tooltip owns the display.
+    local future=FutureUses(name,link)
+    -- Future-quest reference items should never receive an unqualified
+    -- recommendation to disenchant, even before their quest is accepted.
     if type(ChalkBox_DisenchantTooltip)=="function" then
-        local protected=IsProtected(name,link) or
+        local protected=IsProtected(name,link) or future~=nil or
             (type(ChalkBox_IsTrackedQuestItem)=="function" and
                 ChalkBox_IsTrackedQuestItem(name))
         pcall(ChalkBox_DisenchantTooltip,tooltip,link,protected)
@@ -212,7 +250,12 @@ local function OnItemTooltip(tooltip)
     end
     local message, r, g, b = Classify(name, link, quality, itemType, itemSubType,
         equipLoc, sellPrice, classID, bindType, isCraftingReagent)
-    if not message then return end
+    if not message then
+        -- Ordinary trade goods such as Okra had no LootSense heading.
+        -- Future-quest evidence is a standalone, additive note.
+        if AddFutureQuestNote(tooltip,future) then tooltip:Show() end
+        return
+    end
 
     -- The existing addon already prints its more specific quest warning at merchants.
     if MerchantFrame and MerchantFrame.IsShown and MerchantFrame:IsShown()
@@ -295,6 +338,7 @@ local function OnItemTooltip(tooltip)
             local detail=ChalkBox_RecipeDetails(id,name)
             if detail then tooltip:AddLine(detail,0.65,0.78,0.93,true) end
         end
+        AddFutureQuestNote(tooltip,future)
         tooltip:Show()
     end
 end

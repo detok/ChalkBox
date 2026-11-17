@@ -16,7 +16,7 @@ ChalkBox is **one Lua 5.1 addon** for WoW Forever. No separate addon, backend pr
 
 | Area | Key files | Responsibility |
 | --- | --- | --- |
-| Quest/vendor and item safety | `Core.lua`, `LootSense.lua` | Accepted quest item matching, merchant context, personal KEEP and tooltip evidence |
+| Quest/vendor and item safety | `Core.lua`, `FutureQuestItems.lua`, `FutureQuestGlow.lua`, `LootSense.lua` | Unchanged active quest matching and native glow; separate small curated future quest reference and detached purple bag markers; merchant context, personal KEEP and tooltip evidence |
 | Profession evidence | `ProfessionSense.lua`, `RecipeAdvisor.lua`, `Libs/LibProfessionDB-1.0/` | Learned recipes versus possible catalog uses |
 | Loot tracking / journal | `DropSense.lua`, `MapDiscoveries.lua`, `MapNativePins.lua`, `DiscoveriesFlights.lua` | Loot-window observations, source/area aggregation, outdoor position samples; learned flight-node capture; shared native MapCanvas pin provider with conservative fallback and native World Map sidecar |
 | Market / DE | `AuctionSense.lua`, `AuctionSenseUI.lua`, `AuctionInsights.lua`, `DisenchantSense.lua` | Explicit AH read scans, realm/faction snapshots, bag/sales insights and modeled DE outcomes |

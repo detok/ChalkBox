@@ -49,8 +49,10 @@ DiscoveriesFlights.lua
 UpdateCheck.lua
 MacroForge.lua
 MacroForgeUI.lua
+FutureQuestItems.lua
 LootSense.lua
 BagReagents.lua
+FutureQuestGlow.lua
 QuietGuard.lua
 PersonalityContext.lua
 Emota.lua

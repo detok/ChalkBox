@@ -67,6 +67,9 @@ local catalog = {
     [106]={name="Quest Relic",quality=1,sell=0,classID=12},
     [107]={name="Mystery Item",quality=nil,sell=0,classID=0},
     [108]={name="Silk Cloth",quality=1,sell=50,classID=7,subType="Cloth"},
+    [1274]={name="Hops",quality=1,sell=8,classID=12},
+    [732]={name="Okra",quality=1,sell=6,classID=7,subType="Herb"},
+    [730]={name="Murloc Eye",quality=1,sell=16,classID=7,subType="Other"},
     [4470]={name="Simple Wood",quality=1,sell=8,classID=7},
     [4471]={name="Flint and Tinder",quality=1,sell=33,classID=7},
     [279981]={name="Basic Campfire Kit",quality=1,sell=0,classID=0},
@@ -108,6 +111,13 @@ local function Hover(id)
     return table.concat(tip.lines," | ")
 end
 
+_G.UnitFactionGroup=function() return "Alliance" end
+local activeFuture={}
+_G.C_QuestLog={
+    IsOnQuest=function(id) return activeFuture[id]==true end,
+    IsQuestFlaggedCompleted=function() return false end,
+}
+assert(loadfile("FutureQuestItems.lua"))()
 assert(loadfile("LootSense.lua"))("ChalkBox")
 assert(type(onTooltip)=="function")
 callback(nil,"ADDON_LOADED","ChalkBox")
@@ -166,6 +176,43 @@ assert(unknownQuest:find("KEEP",1,true) and
     not unknownQuest:find("Needed for:",1,true),
     "quest-class items without matched accepted objectives get no fake quest")
 assert(Hover(107)=="","uncached quality should not produce sell advice")
+local futureHops=Hover(1274)
+assert(futureHops:find("FUTURE QUEST",1,true)
+    and futureHops:find("Thunderbrew",1,true)
+    and futureHops:find("Need 5",1,true)
+    and futureHops:find("Reference only",1,true),
+    "Hops keeps its normal KEEP line while showing future quest specifics")
+assert(deCalls[#deCalls].protected,
+    "a researched future-quest item must not receive destructive DE advice")
+local purple=tip.colors["FUTURE QUEST"]
+assert(purple and purple[3]>purple[1] and purple[3]>purple[2],
+    "future quest uses a distinct purple tint rather than active quest orange")
+local futureOkra=Hover(732)
+assert(futureOkra:find("FUTURE QUEST",1,true)
+    and futureOkra:find("Westfall Stew",1,true)
+    and futureOkra:find("Need 3",1,true),
+    "ordinary trade goods with no former tooltip advice now get future quest note")
+local futureEye=Hover(730)
+assert(futureEye:find("Westfall Stew",1,true)
+    and futureEye:find("My First Real Potion",1,true)
+    and not futureEye:find("Wild Eyes",1,true),
+    "future quest note shows multiple faction-appropriate uses")
+local noDup=#tip.lines
+onTooltip(tip)
+assert(#tip.lines==noDup,"future notes are not duplicated on repeated tooltip callback")
+activeQuest["Hops"]=true
+questDetails["Hops"]={{title="Active Hops Quest",id=117,have=2,required=5}}
+activeFuture[117]=true
+local liveHops=Hover(1274)
+assert(liveHops:find("KEEP",1,true)
+    and liveHops:find("Needed for: Active Hops Quest",1,true)
+    and liveHops:find("2 / 5 collected",1,true)
+    and not liveHops:find("FUTURE QUEST",1,true),
+    "existing live quest heading and progress are unchanged; future note suppressed")
+activeQuest["Hops"]=nil
+questDetails["Hops"]=nil
+activeFuture[117]=nil
+
 activeQuest["Broken Fang"]=true
 questDetails["Broken Fang"]={{title="Fangs for the Hunter",
     id=1234,have=2,required=6,complete=false}}
