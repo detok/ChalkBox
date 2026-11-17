@@ -30,6 +30,10 @@ local function AttachSort()
     mixin.BuildQuestWatchInfos=function(self,...)
         local infos=nativeBuilder(self,...)
         local opts=ChalkBoxZoneDB
+        if type(InCombatLockdown)=="function" then
+            local ok,locked=pcall(InCombatLockdown)
+            if not ok or locked then return infos end
+        end
         if type(infos)~="table" or type(opts)~="table" or
             opts.nativeOrder~=true or opts.enabled==false or
             type(ChalkBox_QuestDisplayOrder)~="function" then
@@ -104,7 +108,7 @@ local function Entries()
         {label=(zone and "✓ " or "").."Nearby",run=function() SetMode("zone") end},
         {label="Sort: "..(q.sort or "nearest").." (next)",
             run=function()
-                local modes={"nearest","zone","level","log"}
+                local modes={"nearest","zone","level","title","log"}
                 local current=q.sort or "nearest"
                 for i,m in ipairs(modes) do
                     if m==current then
