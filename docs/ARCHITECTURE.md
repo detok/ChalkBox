@@ -18,7 +18,7 @@ ChalkBox is **one Lua 5.1 addon** for WoW Forever. No separate addon, backend pr
 | --- | --- | --- |
 | Quest/vendor and item safety | `Core.lua`, `LootSense.lua` | Accepted quest item matching, merchant context, personal KEEP and tooltip evidence |
 | Profession evidence | `ProfessionSense.lua`, `RecipeAdvisor.lua`, `Libs/LibProfessionDB-1.0/` | Learned recipes versus possible catalog uses |
-| Loot tracking / journal | `DropSense.lua`, `MapDiscoveries.lua` | Loot-window observations, source/area aggregation, outdoor position samples and native World Map sidecar |
+| Loot tracking / journal | `DropSense.lua`, `MapDiscoveries.lua`, `MapNativePins.lua`, `DiscoveriesFlights.lua` | Loot-window observations, source/area aggregation, outdoor position samples; learned flight-node capture; shared native MapCanvas pin provider with conservative fallback and native World Map sidecar |
 | Market / DE | `AuctionSense.lua`, `AuctionSenseUI.lua`, `AuctionInsights.lua`, `DisenchantSense.lua` | Explicit AH read scans, realm/faction snapshots, bag/sales insights and modeled DE outcomes |
 | Quest navigation | `QuestNavigator.lua` | Standalone, optional, read-only waypoint/facing arrow; per-character settings, no quest-watch / user-map-pin writes |
 | Quests | `QuestSense.lua`, `QuestTrackerMenu.lua` | Native watch-list reconciliation, conservative zone and instance matching, saved manual watches |
@@ -60,6 +60,7 @@ When the client cannot provide data, label it **unknown**, preserve the current 
 - The optional `MacroForgeDock.lua` attaches a compact footer macro-window button by Delete/New/Exit when actual native controls leave room, but never replaces MacroFrame scripts or editor controls. It side-docks the existing `MacroForgeUI.lua` only when the display has room; `/chalk macro` remains standalone. `QuestTrackerMenu.lua` uses an additive `HookScript` on the existing objective tracker header instead of replacing Blizzard quest-row context menus.
 - MacroForge can **display** code, allow Ctrl+C, or explicitly create a new macro outside combat; its generated commands obey Blizzard's physical-keypress and cooldown rules.
 - Keep Blizzard's native Settings surface transparent. MapDiscoveries should **dock** to the map without altering WorldMapFrame geometry. The art atlas has a readable fallback when unavailable.
+- `MapNativePins.lua` is the **rendering** boundary. It registers ChalkBox-owned pin pools and a native `MapCanvasDataProviderMixin` only when those client APIs are supported. Blizzard performs zoom, pan, map-change position and frame-level handling; custom code never reparents or raises native World Map tiles. Separate flight/loot pools prevent a Discoveries row hover from redrawing taxi icons. For native forks without pin support, legacy canvas-only markers remain available, and no saved data is modified. Source map IDs must exactly match the target or a client-supplied `GetMapRectOnMap` descendant rectangle before transient loot projection. Never infer missing coordinates or flight unlocks.
 - The Bar may shift eligible Blizzard top frames safely; never move `UIParent` or protected action bars. Bag adjustment is deferred during combat and first bank initialization.
 - QuietGuard filters are default OFF; do not overwrite an existing saved opt-in. Emota automatic behavior is opt-in and must not fire during combat.
 
