@@ -40,6 +40,8 @@ In version 2.2.8 and later, each item can retain up to **six distinct recent out
 
 Older records, dungeon observations and readings without an accessible map position have no made-up coordinates. The journal does not place permanent pins automatically.
 
+**Map marker rendering (experimental draft):** On supported Forever clients, native Blizzard MapCanvas pins position the temporary loot pulse and known flight-master markers during zoom/pan/zone-map transitions. A saved zone loot sample appears in a nested subzone only when Blizzard provides a valid conversion and that sample actually falls within the subzone. If that data is absent, the marker stays hidden rather than appearing in the wrong place. Older map clients use the existing conservative compatibility renderer. No change to which loot samples or learned flight paths are recorded. Use `/chalk drops map flights status` to see the current native/compatibility renderer and learned-vs-positioned counts.
+
 ### What the numbers mean
 
 **Found** describes item quantity observed, **Loots** is the number of loot windows in which it appeared, and **Rate** is an *observed window frequency* from an identified source. It is **not** the official server drop rate, and unlooted kills are not counted. The `/chalk drops chance 5 20` calculator uses a chance *you supply* rather than one discovered from server data.
