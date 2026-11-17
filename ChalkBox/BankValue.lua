@@ -79,10 +79,9 @@ local function CharacterContainers()
     -- Only a legacy Classic bank uses these special container constants.
     -- A modern client with no exposed character-tab enum is unsupported;
     -- do not accidentally scan account bank tabs by index.
-    if Integer(BANK_CONTAINER) and BANK_CONTAINER<0 and
-        type(GetContainerNumSlots)=="function" then
+    if Public(BANK_CONTAINER) and type(BANK_CONTAINER)=="number" and
+        BANK_CONTAINER<0 and type(GetContainerNumSlots)=="function" then
         ids[1]=BANK_CONTAINER
-        local first=Read(GetInventorySlotInfo,"BagSlotFlag") -- no-op: no guess
         local base=type(NUM_BAG_SLOTS)=="number" and NUM_BAG_SLOTS or 4
         local bank=type(NUM_BANKBAGSLOTS)=="number" and
             NUM_BANKBAGSLOTS or 0
@@ -156,8 +155,10 @@ local function Snapshot()
                         if noValue==true then
                             sell=0
                         elseif identity then
-                            local cached,_,_,_,_,_,_,_,_,_,price=
-                                pcall(itemFn,identity)
+                            local cached,price=pcall(function()
+                                local _,_,_,_,_,_,_,_,_,_,sell=itemFn(identity)
+                                return sell
+                            end)
                             if cached and Numeric(price) and price<=1e9 then
                                 sell=price
                             end
