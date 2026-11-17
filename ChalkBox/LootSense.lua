@@ -408,6 +408,62 @@ SlashCmdList.CHALKBOX = function(input)
         if tonumber(learnedCount)==0 then
             Note("Open a crafting window, let its recipe list load, and /chalk loot scan. Then re-hover the item.")
         end
+    elseif command=="loot" and argument:match("^quest%s+") then
+        -- Optional source audit for a single linked item; no UI frame or scan.
+        -- Shift-click an item into /chalk loot quest [link].
+        local raw=argument:match("^quest%s+(.+)$")
+        local id=raw and tonumber(raw:match("item:(%d+)") or
+            raw:match("^(%d+)$"))
+        local name=raw and raw:match("%[([^%]]+)%]") or nil
+        if not name and id then
+            local getter=C_Item and C_Item.GetItemInfo or GetItemInfo
+            if type(getter)=="function" then
+                local ok,value=pcall(getter,id)
+                if ok and Public(value) and type(value)=="string" then
+                    name=value
+                end
+            end
+        end
+        if not name and not id then name=raw end
+        if not name or name=="" then
+            Note("Usage: /chalk loot quest [shift-clicked item link or item ID]")
+            return
+        end
+        local found={}
+        local known=false
+        if type(ChalkBox_QuestItemDetails)=="function" then
+            local ok,quests=pcall(ChalkBox_QuestItemDetails,name)
+            if ok and type(quests)=="table" then
+                for _,q in ipairs(quests) do
+                    if Public(q.title) and type(q.title)=="string" then
+                        Note("Accepted quest: "..q.title..
+                            (q.stale and " (last observed)" or ""))
+                        if type(q.id)=="number" then found[q.id]=true end
+                        known=true
+                    end
+                end
+            end
+        end
+        if id and type(ChalkBox_QuestReferenceCandidates)=="function" then
+            local ok,refs,total=pcall(ChalkBox_QuestReferenceCandidates,id,5)
+            if ok and type(refs)=="table" then
+                for _,q in ipairs(refs) do
+                    if not found[q.id] and type(q.title)=="string" then
+                        Note("Classic reference ("..
+                            (q.relation=="starts" and "starts" or "needed")..
+                            "): "..q.title)
+                        known=true
+                    end
+                end
+                if type(total)=="number" and total>#refs then
+                    Note("+"..(total-#refs).." more Classic reference links.")
+                end
+            end
+        end
+        if not known then
+            Note("No verified accepted quest or bundled Classic reference for "..
+                name.."; quest-class metadata alone does not identify a quest.")
+        end
     elseif command=="de" or command=="disenchant" then
         if type(ChalkBox_DisenchantCommand)=="function" then
             ChalkBox_DisenchantCommand(argument)
