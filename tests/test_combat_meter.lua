@@ -359,7 +359,7 @@ oldChat=#chat
 ChalkBox_MeterPrintFight()
 assert(#partyMessages==1 and #copies==1
     and copies[1].text:find("CB HEAL (Overall):",1,true)
-    and copies[1].reason:find("rejected",1,true),
+    and copies[1].reason:find("failed",1,true),
     "rejected report preserves a copyable summary without another chat send")
 C_ChatInfo.SendChatMessage=function()
     error("Should not call chat while restricted")
@@ -380,6 +380,7 @@ assert(#partyMessages==2 and partyMessages[2].legacy
 C_ChatInfo.SendChatMessage=function(message,channel)
     partyMessages[#partyMessages+1]={message=message,channel=channel}
 end
+_G.SendChatMessage=nil
 now=1010
 local saved=C_DamageMeter.GetCombatSessionFromType
 C_DamageMeter.GetCombatSessionFromType=function(session,typeId)
