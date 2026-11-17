@@ -40,7 +40,15 @@ _G.CreateFrame=function(_,__,parent) return Frame(parent) end
 local world=Frame()
 local scroll=Frame(world)
 local canvas=Frame(scroll)
+canvas.strata="MEDIUM" -- intentionally different from WorldMapFrame
 canvas:SetSize(800,600)
+-- Forever's manager can place area pins higher than a hard-coded level.
+function world:GetPinFrameLevelsManager()
+    return {GetValidFrameLevel=function(_,kind)
+        assert(kind=="PIN_FRAME_LEVEL_AREA_POI")
+        return 2675
+    end}
+end
 scroll.Child=canvas
 local scale=1
 function scroll:GetCanvasScale() return scale end
@@ -90,9 +98,10 @@ local overlay,flight
 for _,f in ipairs(frames) do
     if f.parent==canvas and f.all==canvas then overlay=f end
 end
-assert(overlay and overlay.level>=2012 and overlay.mouse==false
-    and overlay.fixed==true,
-    "pins use Forever-proven map canvas parent and a fixed 2012+ level")
+assert(overlay and overlay.level>=2675 and overlay.mouse==false
+    and overlay.fixed==true and overlay.strata==canvas.strata
+    and overlay.strata~=world.strata,
+    "pin overlay uses canvas compositing strata and native AREA_POI level")
 for _,f in ipairs(frames) do
     if f.parent==overlay and f.flightName=="Booty Bay" and f.visible then
         flight=f
@@ -124,6 +133,18 @@ for _,f in ipairs(frames) do
     end
 end
 assert(count==2,"two separate marker frames displayed")
+_G.OpenMapAPI={
+    IsStitched=function() return true end,
+    ArtTopLevel=function() return 3200 end,
+}
+-- Stitched map art may be raised after markers are created. Re-evaluate
+-- actual art levels, never trust the initial frame level forever.
+for _,f in ipairs(frames) do
+    if f.scripts.OnUpdate then f.scripts.OnUpdate(f,0.3) end
+end
+assert(overlay.level>=3202 and overlay.strata==canvas.strata,
+    "overlay stays over later-stitched artwork on canvas strata")
+_G.OpenMapAPI=nil
 -- Pan/resize/zone-switch: real map canvas owns the markers.
 canvas:SetSize(1000,750)
 scale=2
