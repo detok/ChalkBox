@@ -2,10 +2,11 @@
 -- This module owns *rendering only*. DropSense owns recorded loot coordinates;
 -- DiscoveriesFlights owns which flight paths were personally confirmed.
 -- No external library, copied pin code, saved-variable migration or map writes.
-local TEMPLATE="ChalkBoxNativeMapMarker"
-local provider,installedMap,pool
+local FLIGHT_TEMPLATE="ChalkBoxNativeFlightMarker"
+local LOOT_TEMPLATE="ChalkBoxNativeLootMarker"
+local provider,flightPool,lootPool
 local transientLoot
-local markerCount=0
+local markerCount,flightCount,lootCount=0,0,0
 local mapRetry=0
 local refreshBusy=false
 local lastProblem="native map canvas not loaded"
@@ -175,69 +176,92 @@ local function InitProvider(map)
         lastProblem="native map canvas not ready"
         return false
     end
-    -- Programmatic frame pool: no third-party addon or XML template required.
-    local ok,newPool=pcall(CreateFramePool,"FRAME")
-    if not ok or type(newPool)~="table" then
-        lastProblem="native frame pool unavailable"
+    -- Separate native pools prevent rapid loot-row hover from rebuilding
+    -- the flight markers or making their artwork flicker.
+    local function NewPool()
+        local ok,newPool=pcall(CreateFramePool,"FRAME")
+        if not ok or type(newPool)~="table" then return nil end
+        newPool.parent=canvas
+        newPool.createFunc=function()
+            local frame=CreateFrame("Frame",nil,canvas)
+            frame:SetSize(24,24)
+            return Mixin(frame,pinMixin)
+        end
+        newPool.creationFunc=newPool.createFunc
+        newPool.resetFunc=function(_,pin)
+            pin:Hide()
+            pin:ClearAllPoints()
+            pin:OnReleased()
+            pin.pinTemplate=nil
+            if type(pin.SetOwningMap)=="function" then
+                pin:SetOwningMap(nil)
+            end
+        end
+        newPool.resetterFunc=newPool.resetFunc
+        return newPool
+    end
+    local fp,lp=NewPool(),NewPool()
+    if not fp or not lp then
+        lastProblem="native frame pools unavailable"
         return false
     end
-    newPool.parent=canvas
-    newPool.createFunc=function()
-        local frame=CreateFrame("Frame",nil,canvas)
-        frame:SetSize(24,24)
-        return Mixin(frame,pinMixin)
-    end
-    newPool.creationFunc=newPool.createFunc
-    newPool.resetFunc=function(_,pin)
-        pin:Hide()
-        pin:ClearAllPoints()
-        pin:OnReleased()
-        pin.pinTemplate=nil
-        if type(pin.SetOwningMap)=="function" then
-            pin:SetOwningMap(nil)
-        end
-    end
-    newPool.resetterFunc=newPool.resetFunc
     local p=CreateFromMixins(MapCanvasDataProviderMixin)
     function p:RemoveAllData()
         local owning=self:GetMap()
-        if owning then owning:RemoveAllPinsByTemplate(TEMPLATE) end
+        if owning then
+            owning:RemoveAllPinsByTemplate(FLIGHT_TEMPLATE)
+            owning:RemoveAllPinsByTemplate(LOOT_TEMPLATE)
+        end
+        markerCount,flightCount,lootCount=0,0,0
     end
-    function p:RefreshAllData()
-        self:RemoveAllData()
+    function p:RefreshFlights()
         local owning=self:GetMap()
+        if not owning then return end
+        owning:RemoveAllPinsByTemplate(FLIGHT_TEMPLATE)
+        flightCount=0
         local viewed=MapID(owning)
-        markerCount=0
-        if not viewed then return end
-        local discovered=type(ChalkBox_DiscoveriesFlightCandidates)=="function"
+        local discovered=viewed and
+            type(ChalkBox_DiscoveriesFlightCandidates)=="function"
             and ChalkBox_DiscoveriesFlightCandidates(viewed) or {}
         for i=1,math.min(#discovered,80) do
             local entry=discovered[i]
             if entry and Number(entry.x) and Number(entry.y) then
-                local good=pcall(owning.AcquirePin,owning,TEMPLATE,
+                local good=pcall(owning.AcquirePin,owning,FLIGHT_TEMPLATE,
                     "flight",entry.x,entry.y,entry.name,entry.atlas)
-                if good then markerCount=markerCount+1 end
+                if good then flightCount=flightCount+1 end
             end
         end
-        if transientLoot then
+        markerCount=flightCount+lootCount
+    end
+    function p:RefreshLoot()
+        local owning=self:GetMap()
+        if not owning then return end
+        owning:RemoveAllPinsByTemplate(LOOT_TEMPLATE)
+        lootCount=0
+        local viewed=MapID(owning)
+        if viewed and transientLoot then
             local x,y=Project(transientLoot.mapID,viewed,
                 transientLoot.x,transientLoot.y)
             if x then
-                local good=pcall(owning.AcquirePin,owning,TEMPLATE,
+                local good=pcall(owning.AcquirePin,owning,LOOT_TEMPLATE,
                     "loot",x,y)
-                if good then markerCount=markerCount+1 end
+                if good then lootCount=1 end
             end
         end
+        markerCount=flightCount+lootCount
     end
-    -- Register only on a canvas known to support its own pin lifecycle.
-    map.pinPools[TEMPLATE]=newPool
+    function p:RefreshAllData()
+        self:RefreshFlights()
+        self:RefreshLoot()
+    end
+    map.pinPools[FLIGHT_TEMPLATE],map.pinPools[LOOT_TEMPLATE]=fp,lp
     local registered=pcall(map.AddDataProvider,map,p)
     if not registered then
-        map.pinPools[TEMPLATE]=nil
+        map.pinPools[FLIGHT_TEMPLATE],map.pinPools[LOOT_TEMPLATE]=nil,nil
         lastProblem="native data provider registration failed"
         return false
     end
-    pool,provider,installedMap=newPool,p,map
+    flightPool,lootPool,provider=fp,lp,p
     lastProblem="native MapCanvas provider installed"
     return true
 end
@@ -253,7 +277,7 @@ end
 function ChalkBox_MapNativeRefresh()
     if refreshBusy or not Ensure() then return false end
     refreshBusy=true
-    local ok=pcall(provider.RefreshAllData,provider)
+    local ok=pcall(provider.RefreshFlights,provider)
     refreshBusy=false
     if not ok then
         lastProblem="native map marker refresh failed"
@@ -266,16 +290,19 @@ function ChalkBox_MapNativeLootSet(mapID,x,y)
     end
     if not Ensure() then return false end
     transientLoot={mapID=mapID,x=x,y=y}
-    return ChalkBox_MapNativeRefresh()
+    local ok=pcall(provider.RefreshLoot,provider)
+    if not ok then lastProblem="native loot marker refresh failed" end
+    return ok
 end
 function ChalkBox_MapNativeLootClear()
     if not transientLoot then return end
     transientLoot=nil
-    ChalkBox_MapNativeRefresh()
+    if provider then pcall(provider.RefreshLoot,provider) end
 end
 function ChalkBox_MapNativeStatus()
     return {available=provider~=nil,
         mapID=MapID(WorldMapFrame),pinCount=markerCount,
+        flightPins=flightCount,lootPins=lootCount,
         problem=lastProblem,loot=transientLoot~=nil}
 end
 -- The MapCanvas provider handles map changes, panning and zoom natively.
