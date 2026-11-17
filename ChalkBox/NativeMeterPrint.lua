@@ -136,10 +136,10 @@ local function BuildMessage(sources,label,title,perSecond,limit)
         if name=="" then name="Unknown" end
         parts[#parts+1]=string.format("%d %s %.0f",i,name,amount)
     end
-    local message=prefix..table.concat(parts," | ")
+    local message=prefix..table.concat(parts,", ")
     while #message>255 and #parts>1 do
         table.remove(parts)
-        message=prefix..table.concat(parts," | ")
+        message=prefix..table.concat(parts,", ")
     end
     if #message>255 then return nil,"Report exceeds the chat limit." end
     return message
