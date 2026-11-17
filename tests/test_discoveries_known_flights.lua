@@ -50,6 +50,7 @@ local calls=0
 _G.C_Map={
     GetBestMapForUnit=function(unit) assert(unit=="player");return 1436 end,
     GetMapInfo=function(id)
+        if id==999 then return {mapType=5,id=id,name="Subzone",parentMapID=1436} end
         if id==1436 or id==1437 or id==1413 then
             return {mapType=3,id=id,name="Zone",
                 parentMapID=id==1413 and 1414 or nil}
@@ -64,6 +65,9 @@ _G.C_Map={
         return {GetXY=function() return .50,.50 end}
     end,
     GetMapRectOnMap=function(zone,top)
+        if zone==999 and top==1436 then
+            return .25,.65,.30,.70
+        end
         if zone==1436 and top==1463 then
             return .20,.60,.20,.60
         end
@@ -108,6 +112,7 @@ _G.C_TaxiMap={
                 {nodeID=9,position={GetXY=function() return .55,.45 end},
                     atlasName="TaxiNode_Horde",faction=1},
             }
+        elseif id==999 then return {}
         elseif id==1437 then return {}
         elseif id==1414 then return {} end
         assert(id==1415)
@@ -165,6 +170,13 @@ loader.scripts.OnEvent(loader,"TAXIMAP_OPENED")
 assert(calls>=1 and ChalkBox_DiscoveriesKnownFlightsStatus().verified==2
     and before.nodes["7"] and before.nodes["8"] and not before.nodes["9"],
     "CURRENT + REACHABLE only; isUndiscovered=false does not unlock unknown")
+-- A flight path with a verified parent-zone coordinate must stay visible
+-- when browsing the local subzone, even without a native taxi-node listing.
+local nested=ChalkBox_DiscoveriesFlightCandidates(999)
+assert(#nested==1 and nested[1].name=="Visited Hub"
+    and math.abs(nested[1].x-.625)<.000001
+    and math.abs(nested[1].y-.5)<.000001,
+    "observed flight locations project into child maps using actual map rect")
 assert(before.nodes["7"].zoneMapID==1436
     and before.nodes["7"].zoneX==5000
     and before.nodes["7"].zoneY==5000,
