@@ -191,7 +191,8 @@ local function SendReport(frame,channel,auto)
     if not now then return Reject("Combat report clock unavailable.") end
     if now-lastSentAt<3 then return Reject("Report just sent. Try again shortly.") end
     if auto and now-lastAutoAt<Settings().nativeAutoCooldown then return false end
-    local send=(C_ChatInfo and C_ChatInfo.SendChatMessage) or SendChatMessage
+    local send=type(SendChatMessage)=="function" and SendChatMessage or
+        (C_ChatInfo and C_ChatInfo.SendChatMessage)
     if type(send)~="function" then return Reject("Chat API unavailable.") end
     local kind,label,perSecond,title,sources
     if auto then
