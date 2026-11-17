@@ -495,9 +495,15 @@ function ChalkBox_DiscoveriesKnownFlightsSet(value)
 end
 function ChalkBox_DiscoveriesKnownFlightsStatus()
     local db=DB()
+    local native=type(ChalkBox_MapNativeStatus)=="function" and
+        ChalkBox_MapNativeStatus() or nil
     return {enabled=db and db.enabled~=false or false,
         verified=db and Count(db.nodes) or 0,
-        mapPins=lastCount,menuHook=menuInstalled,
+        mapPins=native and native.available and native.flightPins
+            or lastCount,menuHook=menuInstalled,
+        renderer=native and native.available and "native MapCanvas"
+            or "compatibility canvas",
+        rendererProblem=native and native.problem or nil,
         mapID=ViewedMap(),captureRetry=capturePending>0,
         captureStatus=lastCapture.status,taxiMapID=lastCapture.taxiMapID,
         taxiKnown=lastCapture.reachable,
