@@ -181,12 +181,6 @@ local function SendReport(frame,channel,auto)
         (type(IsInRaid)=="function" and IsInRaid())) then
         return Reject("PARTY requires a normal party. No message sent.")
     end
-    if frame and type(frame.IsEditing)=="function" then
-        local ok,editing=pcall(frame.IsEditing,frame)
-        if not ok or not Safe(editing) or editing then
-            return Reject("Exit Edit Mode before printing.")
-        end
-    end
     local now=Clock()
     if not now then return Reject("Combat report clock unavailable.") end
     if now-lastSentAt<3 then return Reject("Report just sent. Try again shortly.") end
@@ -231,17 +225,14 @@ local function SendReport(frame,channel,auto)
     -- Preserve the guard for timer-driven auto reports; manual sends must
     -- be judged by the actual chat API result instead of the status flag.
     if auto and MessagingRestricted() then return false end
+    -- One standard chat attempt to exactly the selected channel.
+    -- No copy dialog, no alternate destination, no retry.
     local ok,result=pcall(send,message,channel)
     if not ok or (Safe(result) and result==false) then
+        if auto then return false end
         local detail=not ok and Safe(result) and type(result)=="string"
             and result:sub(1,180) or "chat API returned false"
-        if auto then return false end
-        if type(ChalkBox_MeterShowCopy)=="function" then
-            ChalkBox_MeterShowCopy(message,
-                "Chat send failed: "..detail)
-        else
-            Note("Chat send failed ("..detail.."). Copy manually: "..message)
-        end
+        Note(channel.." report was not sent: "..detail)
         return false
     end
     lastSentAt=now
