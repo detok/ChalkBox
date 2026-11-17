@@ -13,6 +13,7 @@ local function Frame(parent)
     function f:SetPoint(...) self.point={...} end
     function f:ClearAllPoints() self.point=nil end
     function f:SetFrameLevel(v) self.level=v end
+    function f:SetFixedFrameLevel(v) self.fixed=v end
     function f:GetFrameLevel() return self.level end
     function f:GetFrameStrata() return self.strata end
     function f:SetFrameStrata(v) self.strata=v end
@@ -41,6 +42,8 @@ local scroll=Frame(world)
 local canvas=Frame(scroll)
 canvas:SetSize(800,600)
 scroll.Child=canvas
+local scale=1
+function scroll:GetCanvasScale() return scale end
 world.ScrollContainer=scroll
 local viewed=1434
 function world:GetMapID() return viewed end
@@ -85,10 +88,11 @@ assert(status.available and status.renderer=="map-owned overlay" and
     "one learned flight on the current zone, not every worldwide path")
 local overlay,flight
 for _,f in ipairs(frames) do
-    if f.parent==scroll and f.all==canvas then overlay=f end
+    if f.parent==canvas and f.all==canvas then overlay=f end
 end
-assert(overlay and overlay.level>=220 and overlay.mouse==false,
-    "visible map overlay is a raised scroll sibling, not behind canvas artwork")
+assert(overlay and overlay.level>=2012 and overlay.mouse==false
+    and overlay.fixed==true,
+    "pins use Forever-proven map canvas parent and a fixed 2012+ level")
 for _,f in ipairs(frames) do
     if f.parent==overlay and f.flightName=="Booty Bay" and f.visible then
         flight=f
@@ -97,8 +101,8 @@ end
 assert(flight and flight.point[2]==overlay and flight.point[4]==240
     and flight.point[5]==-240,
     "the actual displayed boot frame follows normalized map coordinates")
-assert(flight.back.texture=="Interface\\Buttons\\WHITE8X8"
-    and flight.face.texture=="Interface\\Buttons\\WHITE8X8"
+assert(flight.back.texture=="Interface\\Buttons\\WHITE8x8"
+    and flight.face.texture=="Interface\\Buttons\\WHITE8x8"
     and flight.face.color[4]==1 and flight.icon.atlas=="TaxiNode_Alliance",
     "flight marker has visible colored pixels even if Taxi atlas paints blank")
 flight.scripts.OnEnter(flight)
@@ -114,19 +118,21 @@ local count=0
 for _,f in ipairs(frames) do
     if f.parent==overlay and f.mouse==false and f.visible and f.center then
         count=count+1
-        assert(f.face.texture=="Interface\\Buttons\\WHITE8X8"
-            and f.center.texture=="Interface\\Buttons\\WHITE8X8",
+        assert(f.face.texture=="Interface\\Buttons\\WHITE8x8"
+            and f.center.texture=="Interface\\Buttons\\WHITE8x8",
             "loot markers paint real, opaque pixel-backed textures")
     end
 end
 assert(count==2,"two separate marker frames displayed")
--- Pan/resize/zone-switch: map canvas moves beneath its raised sibling.
+-- Pan/resize/zone-switch: real map canvas owns the markers.
 canvas:SetSize(1000,750)
+scale=2
 for _,f in ipairs(frames) do
     if f.scripts.OnUpdate then f.scripts.OnUpdate(f,0.3) end
 end
-assert(flight.point[4]==300 and flight.point[5]==-300,
-    "canvas resizing repositions the same flight frame without recreating it")
+assert(flight.point[4]==300 and flight.point[5]==-300
+    and flight.w==13 and flight.face.w==7.5,
+    "canvas zoom resizes the marker to constant screen pixels without moving its map position")
 viewed=999
 for _,f in ipairs(frames) do
     if f.scripts.OnUpdate then f.scripts.OnUpdate(f,0.3) end
@@ -149,5 +155,21 @@ for _,f in ipairs(frames) do
 end
 assert(ChalkBox_MapNativeStatus().flightPins==0,
     "unrelated maps never retain stale flight pins")
+-- The client's world-coordinate API converts positions between maps even
+-- when no parent/child rectangle exists (same pattern used by Forever DonMap).
+_G.CreateVector2D=function(x,y) return {GetXY=function() return x,y end} end
+C_Map.GetWorldPosFromMapPos=function(map,pos)
+    if map~=1434 then return nil end
+    local x,y=pos:GetXY()
+    return 13,{GetXY=function() return x*1000,y*1000 end}
+end
+C_Map.GetMapPosFromWorldPos=function(cont,world,target)
+    if cont~=13 or target~=1437 then return nil end
+    local x,y=world:GetXY()
+    return target,{GetXY=function() return x/2000,y/2000 end}
+end
+local wx,wy=ChalkBox_MapNativeProject(1434,1437,.3,.4)
+assert(wx and math.abs(wx-.15)<.000001 and math.abs(wy-.2)<.000001,
+    "world conversion finds location on a different valid local zone map")
 assert(flightCalls>=3,"map changes refresh the candidate directory")
 print("PASS: shared raised overlay, visible flight art, all loot locations, child projection, canvas resizing, independent hover cleanup and map changes")
