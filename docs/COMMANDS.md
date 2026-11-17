@@ -9,6 +9,7 @@
 | `/chalk`, `/cb`, `/chalk settings` | Open ChalkBox settings |
 | `/chalk theme` | Open Global Appearance |
 | `/chalk loot status` | Item advice and profession evidence diagnostics |
+| `/chalk loot quest [item link or ID]` | Explain which accepted-quest or bundled Classic reference relationships identify the item; never scans or changes game state |
 | `/chalk loot scan` | Recheck the currently open profession window and refresh supported hints |
 | `/chalk loot on` / `off` | Toggle extra item advice; basic quest protection remains |
 | `/chalk keep [item link]` | Add a personally protected item. Shift-click its link into chat. Exact item name is also supported |
