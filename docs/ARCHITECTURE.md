@@ -1,6 +1,6 @@
 # ChalkBox architecture and safety boundaries
 
-**Maintainer reference · addon version 2.2.22**
+**Maintainer reference · 2.2.25 code baseline (2.2.22 last stable release)**
 
 ChalkBox is **one Lua 5.1 addon** for WoW Forever. No separate addon, backend process, runtime HTTP client or outside service is required. The code runs inside the game client under native Blizzard event and UI constraints. All tests simulate supported events/APIs, but in-client testing remains necessary.
 
