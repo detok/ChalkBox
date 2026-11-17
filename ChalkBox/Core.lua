@@ -3,12 +3,25 @@
 -- Purely informational; never intercepts clicks, buys, or sells anything.
 
 local questItems = {}
+local questDataPending = false
+local lastQuestRetry = -1000000000
 local merchantHighlights = {}
 local highlightRefreshPending = false
 local merchantUpdateHooked = false
 
 local function Safe(value)
     return value ~= nil and (not issecretvalue or not issecretvalue(value))
+end
+
+-- Quest objectives and tooltip item names can differ in case and whitespace,
+-- especially on Forever's localized progress-first objective format.
+-- Keep the association exact after normalization; never infer a quest from
+-- item category, partial text, a plural guess or an external database.
+local function ItemNameKey(name)
+    if not Safe(name) or type(name) ~= "string" then return nil end
+    local key = name:gsub("^%s+", ""):gsub("%s+$", "")
+        :gsub("%s+", " "):lower()
+    return key ~= "" and key or nil
 end
 
 local function GetQuest(index)
@@ -32,28 +45,40 @@ local function ParseObjective(text)
     if name then return name, tonumber(have), tonumber(total) end
     have, total, name = text:match("^%s*(%d+)%s*/%s*(%d+)%s+(.+)%s*$")
     if name then return name, tonumber(have), tonumber(total) end
+    name, have, total = text:match("^%s*(.-)%s*%(%s*(%d+)%s*/%s*(%d+)%s*%)%s*$")
+    if name then return name, tonumber(have), tonumber(total) end
     return text:match("^%s*(.-)%s*$")
 end
 
 local function RebuildQuestItems()
     local fresh = {}
+    local pending = false
     local count = (C_QuestLog and C_QuestLog.GetNumQuestLogEntries and C_QuestLog.GetNumQuestLogEntries())
         or (GetNumQuestLogEntries and GetNumQuestLogEntries()) or 0
-    if not Safe(count) or type(count) ~= "number" then return end
+    if not Safe(count) or type(count) ~= "number" then
+        questDataPending = true
+        return
+    end
 
     for index = 1, count do
         local title, questID = GetQuest(index)
-        if Safe(title) and Safe(questID) and C_QuestLog and C_QuestLog.GetQuestObjectives then
-            local objectives = C_QuestLog.GetQuestObjectives(questID)
-            if type(objectives) == "table" then
+        if Safe(title) and type(title) == "string" and title ~= ""
+            and Safe(questID) and type(questID) == "number" and questID > 0
+            and C_QuestLog and type(C_QuestLog.GetQuestObjectives) == "function" then
+            local ok, objectives = pcall(C_QuestLog.GetQuestObjectives, questID)
+            if not ok or not Safe(objectives) or objectives == nil then
+                -- Forever may return nil until quest details finish caching.
+                pending = true
+            elseif type(objectives) == "table" then
                 for _, objective in ipairs(objectives) do
                     if objective.type == "item" then
                         local name, parsedHave, parsedTotal = ParseObjective(objective.text)
-                        if name and name ~= "" then
-                            local entry = fresh[name]
+                        local key = ItemNameKey(name)
+                        if key then
+                            local entry = fresh[key]
                             if not entry then
                                 entry = { protect = nil, purchase = nil, quests = {} }
-                                fresh[name] = entry
+                                fresh[key] = entry
                             end
                             -- Keep the original behavior: warn about accepted-quest items,
                             -- including completed objectives until the quest is turned in.
@@ -98,20 +123,40 @@ local function RebuildQuestItems()
         end
     end
     questItems = fresh
+    questDataPending = pending
+end
+
+-- Re-query only while Forever explicitly has unresolved quest data, and
+-- throttle retries across item hovers. No second scan on every tooltip.
+local function RetryPendingQuestData()
+    if not questDataPending then return end
+    local now = type(GetTime) == "function" and GetTime() or nil
+    if Safe(now) and type(now) == "number" then
+        if now - lastQuestRetry < 2 then return end
+        lastQuestRetry = now
+    else
+        -- Without a monotonic clock, only quest-log events trigger refresh.
+        return
+    end
+    RebuildQuestItems()
 end
 
 -- Read-only quest lookup for optional LootSense advice; original behavior is unchanged.
 function ChalkBox_IsTrackedQuestItem(itemName)
-    return Safe(itemName) and type(itemName) == "string"
-        and questItems[itemName] ~= nil and questItems[itemName].protect ~= nil
+    local key = ItemNameKey(itemName)
+    if not key then return false end
+    if not questItems[key] then RetryPendingQuestData() end
+    return questItems[key] ~= nil and questItems[key].protect ~= nil
 end
 
 -- Read-only evidence for LootSense; only use objectives the accepted quest
 -- log itself identifies as item collections. Do not invent a matching quest
 -- from item rarity, quest-class flags, or an external name database.
 function ChalkBox_QuestItemDetails(itemName)
-    if not Safe(itemName) or type(itemName)~="string" then return nil end
-    local entry=questItems[itemName]
+    local key=ItemNameKey(itemName)
+    if not key then return nil end
+    if not questItems[key] then RetryPendingQuestData() end
+    local entry=questItems[key]
     if not entry or type(entry.quests)~="table" or #entry.quests==0 then
         return nil
     end
@@ -170,7 +215,8 @@ local function OnItemTooltip(tooltip)
     local itemName = tooltip:GetItem()
     if not Safe(itemName) or type(itemName) ~= "string" then return end
 
-    local entry = questItems[itemName]
+    local key = ItemNameKey(itemName)
+    local entry = key and questItems[key] or nil
     if not entry then return end
 
     local slot, vendorBuyTab = TooltipVendorSlot(tooltip)
@@ -266,7 +312,8 @@ local function RefreshVendorGlows()
             local highlight = MakeVendorGlow(button)
             local index = button:GetID()
             local name = index and GetVendorName(index)
-            local entry = Safe(name) and questItems[name] or nil
+            local key = ItemNameKey(name)
+            local entry = key and questItems[key] or nil
             local shouldGlow = button:IsShown() and entry and entry.purchase
             if shouldGlow then
                 highlight.glow:Show()
