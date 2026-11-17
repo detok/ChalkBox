@@ -537,7 +537,7 @@ local function PrintFight()
             end
         end
     end
-    if blocked then
+    if false and blocked then
         if type(ChalkBox_MeterShowCopy)=="function" then
             ChalkBox_MeterShowCopy(message,
                 "Forever restricts addon chat right now.")
@@ -547,7 +547,7 @@ local function PrintFight()
         return false
     end
     local ok,result=pcall(send,message,"PARTY")
-    if not ok or result==false then
+    if not ok or (Safe(result) and result==false) then
         if type(ChalkBox_MeterShowCopy)=="function" then
             ChalkBox_MeterShowCopy(message,
                 "Forever rejected the PARTY report. No other channel tried.")
