@@ -186,6 +186,14 @@ local function InitProvider(map)
         newPool.createFunc=function()
             local frame=CreateFrame("Frame",nil,canvas)
             frame:SetSize(24,24)
+            -- MapCanvas checks mouse capabilities before it calls OnLoad.
+            -- Mark motion-capable now so flight hover tooltips are wired.
+            if type(frame.SetMouseMotionEnabled)=="function" then
+                frame:SetMouseMotionEnabled(true)
+            end
+            if type(frame.SetMouseClickEnabled)=="function" then
+                frame:SetMouseClickEnabled(false)
+            end
             return Mixin(frame,pinMixin)
         end
         newPool.creationFunc=newPool.createFunc
