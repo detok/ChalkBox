@@ -26,6 +26,7 @@ This is the **versioned documentation home** for ChalkBox. GitHub has a Wiki fea
 | [Development and tests](DEVELOPMENT.md) | Lua 5.1 environment, manifest order and test commands |
 | [Maintainer runbook](MAINTAINER_RUNBOOK.md) | Reproduce issues, approve changes, review gameplay and UI |
 | [Releases and CurseForge](RELEASE_PROCESS.md) | GitHub Actions, addon ZIP vs. media kit, prereleases and publication |
+| [Release-readiness audit](RELEASE_READINESS_AUDIT.md) | Full 2.2.25 module/link audit, open risks, and live-client go/no-go checklist |
 | [Contributing](../CONTRIBUTING.md) | PR standards, test expectations, licensing and screenshots |
 | [Recipe database and licensing](RECIPE_DATA.md) | Bundled Forever recipe provenance and proof levels |
 | [AuctionSense design notes](AUCTIONSENSE_DESIGN.md) | Technical background; read code for current behavior |
