@@ -136,7 +136,7 @@ assert(status.flightPins==1 and status.lootPins==2,
     "saved parent-zone positions project into viewed child map")
 assert(flight.point[4]==250 and flight.point[5]==-375,
     "zoomed-in local flight coordinate is placed at child map position")
-assert(ChalkBox_MapNativeProject(1434,999,.3,.4)==.25)
+assert(math.abs(ChalkBox_MapNativeProject(1434,999,.3,.4)-.25)<.000001)
 assert(ChalkBox_MapNativeProject(1434,999,.9,.4)==nil,
     "out-of-child locations are not invented")
 ChalkBox_MapNativeLootClear()
