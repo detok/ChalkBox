@@ -10,7 +10,7 @@ Developed for **WoW Forever**. Retail / regular Classic support has not been ver
 No. LootSense is advisory, AuctionSense scans only when you ask, DE estimates are read-only, and MacroForge cannot automate a rotation or bypass Blizzard's GCD/key-press restrictions.
 
 **Why does a quest item say only KEEP — Quest Item?**  
-The game identified quest relevance, but ChalkBox did not find a reliable match to an accepted quest objective. When it can, it shows the quest name and collection progress.
+The game marked the item's class as Quest; that alone doesn't identify a particular quest. ChalkBox checks your active objectives and, when QuestieDB is enabled, also looks up the item's exact ID in QuestieDB's quest-index data, including not-yet-accepted quests. The database builds incrementally after login. If no quest appears, check whether QuestieDB is enabled and re-hover once indexing finishes. Missing custom entries aren't guessed. When it can, it shows the quest name and collection progress.
 
 **What does Smart QuestSense choose?**  
 It manages which *accepted quests* appear in Blizzard's tracker. It does not optimize leveling routes. In a party dungeon with verified quest-match data, it focuses on quests for that **specific instance**. If no match is reliable, it preserves the tracker rather than hide everything.
