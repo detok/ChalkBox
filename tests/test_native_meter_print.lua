@@ -1,6 +1,19 @@
 -- Tests for the real Blizzard damage meter gear menu extension.
 local callback,eventFrame
-local chat,sends={},{}
+local chat,sends,rawLines={},{},{}
+-- Keep report-level assertions intact while checking the actual chat lines.
+local function RecordLine(message,channel)
+    assert(not message:find("[|\r\n]"),"chat lines cannot contain bare pipes or newlines")
+    rawLines[#rawLines+1]={text=message,channel=channel}
+    if message:match("^CB .+%):$") then
+        sends[#sends+1]={text=message,channel=channel,lines={message}}
+    else
+        local report=sends[#sends]
+        assert(report and report.channel==channel,"row must follow its own channel heading")
+        report.text=report.text..(#report.lines==1 and " " or ", ")..message
+        report.lines[#report.lines+1]=message
+    end
+end
 local group,raid,combat,editing=true,false,false,false
 local now=100
 local secret="SECRET"
@@ -27,9 +40,7 @@ end}
 _G.DEFAULT_CHAT_FRAME={AddMessage=function(_,message)
     chat[#chat+1]=message
 end}
-_G.C_ChatInfo={SendChatMessage=function(message,channel)
-    sends[#sends+1]={text=message,channel=channel}
-end}
+_G.C_ChatInfo={SendChatMessage=RecordLine}
 _G.C_DamageMeter={GetCombatSessionFromType=function(kind,stat)
     assert(kind==2 and (stat==meterType or stat==Enum.DamageMeterType.Dps
         or stat==Enum.DamageMeterType.DamageDone
@@ -100,8 +111,14 @@ assert(#calls==10 and calls[2].name=="Combat reports")
 Button("Print top 3 to PARTY")()
 assert(#sends==1 and sends[1].channel=="PARTY")
 assert(sends[1].text==
-    "CB DPS (Current): 1 Detok 555 | 2 Friend 423 | 3 PartyMate 318",
+    "CB DPS (Current): 1 Detok 555, 2 Friend 423, 3 PartyMate 318",
     "native current session, sorted rankings, and escaped chat")
+assert(#sends[1].lines==4 and #rawLines==4
+    and rawLines[1].text=="CB DPS (Current):"
+    and rawLines[2].text=="1 Detok 555"
+    and rawLines[3].text=="2 Friend 423"
+    and rawLines[4].text=="3 PartyMate 318",
+    "heading and ranked players are four distinct plain chat sends")
 now=104
 Button("Print top 3 to SAY")()
 assert(#sends==2 and sends[2].channel=="SAY",
@@ -179,15 +196,13 @@ C_ChatInfo.InChatMessagingLockdown=function() return true end
 C_ChatInfo.SendChatMessage=function() error("server rejected send") end
 Button("Print top 10 to PARTY")()
 assert(#copies==0 and #sends==9 and
-    chat[#chat]:find("report was not sent",1,true),
+    chat[#chat]:find("report stopped at line",1,true),
     "failed send reports error without copy or alternate channel")
 C_ChatInfo.InChatMessagingLockdown=nil
 now=150
 Button("Print top 10 to PARTY")()
 assert(#copies==0 and #sends==9,"manual report has no copy fallback")
-C_ChatInfo.SendChatMessage=function(message,channel)
-    sends[#sends+1]={text=message,channel=channel}
-end
+C_ChatInfo.SendChatMessage=RecordLine
 
 -- A short fight is not broadcast; auto must be explicitly turned on.
 now=200
