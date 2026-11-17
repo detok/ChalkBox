@@ -343,8 +343,9 @@ local function IdlePool()
             -- A real petting emote, addressed to the summoned hunter pet.
             -- Only offer it when the Forever client exposes PET natively.
             local available=false
-            for _,entry in ipairs(Catalog()) do
-                if entry.token=="PET" then available=true;break end
+            for name,token in pairs(_G) do
+                if type(name)=="string" and name:match("^EMOTE%d+_TOKEN$")
+                    and token=="PET" then available=true;break end
             end
             if available and ChalkBox_EmotaGetEnabled("PET") then
                 pool[#pool+1]={token="PET",weight=9,petName=context.petName}
