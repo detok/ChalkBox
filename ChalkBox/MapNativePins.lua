@@ -352,7 +352,7 @@ function ChalkBox_MapNativeLootSetMany(sourceMap,locations)
         end
     end
     lootRecords=accepted
-    local id,w,h=Ensure()
+    local id,w,h,scale=Ensure()
     if not id then activeLoot=0;return false end
     RedrawLoot(id,w,h,scale)
     return activeLoot>0
@@ -380,15 +380,15 @@ driver:SetScript("OnUpdate",function(_,elapsed)
     tick=tick+(type(elapsed)=="number" and elapsed or 0)
     if tick<0.25 then return end
     tick=0
-    local id,w,h=Ensure()
+    local id,w,h,scale=Ensure()
     if not id then
         activeFlights,activeLoot=0,0
-        lastView,lastW,lastH=nil,nil,nil
+        lastView,lastW,lastH,lastScale=nil,nil,nil,nil
         return
     end
     if id~=lastView or w~=lastW or h~=lastH or scale~=lastScale then
-        RedrawFlights(id,w,h)
-        RedrawLoot(id,w,h)
-        lastView,lastW,lastH=id,w,h
+        RedrawFlights(id,w,h,scale)
+        RedrawLoot(id,w,h,scale)
+        lastView,lastW,lastH,lastScale=id,w,h,scale
     end
 end)
