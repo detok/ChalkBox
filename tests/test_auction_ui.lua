@@ -295,7 +295,7 @@ end
 assert(#rows==7 and footer and previousButton and nextButton,
     "rows, pager, and scan disclaimer all exist within the native pane")
 local listPanel=FindFrame("ChalkBoxAuctionMarketListPanel")
-assert(listPanel and listPanel.parent==pane and listPanel.w==476
+assert(listPanel and listPanel.parent==pane and listPanel.w==469
     and listPanel.points[1][1]=="TOPLEFT"
     and listPanel.points[1][5]==-132
     and listPanel.points[2][1]=="BOTTOMLEFT"
@@ -361,6 +361,11 @@ assert(listDetails,
     "market counts have their own quiet summary line above the table frame")
 assert(scan.scripts.OnClick and fullscan.scripts.OnClick,
     "visual reanchoring preserves the working scan actions")
+-- Native Auction House width in the photographed UI is ~726 UI units.
+-- Panel edges must have breathing room, rather than overlapping by 25px.
+local nominalWidth=726
+assert(13+listPanel.w+7 <= nominalWidth-16-220,
+    "framed price table and chart have visible horizontal separation")
 local function VisibleRows()
     local n=0
     for _,row in ipairs(rows) do if row.shown then n=n+1 end end
@@ -425,7 +430,7 @@ pane.scripts.OnUpdate(pane,1.5)
 assert(VisibleRows()==7 and Text("Page 1 / 2"),
     "taller native AH uses seven rows without changing scan data")
 local largePreview=FindFrame("ChalkBoxAuctionPricePreview")
-assert(largePreview and largePreview.w==248 and largePreview.h==246,
+assert(largePreview and largePreview.w==220 and largePreview.h==246,
     "framed graph uses available height on a taller native AH")
 pane.mockHeight=316
 pane.scripts.OnUpdate(pane,1.5)
@@ -476,7 +481,7 @@ assert(chartReads==readCount+1 and Text("Linen Cloth")
     rows[1].selectedBack and rows[1].selectedBack.shown,
     "click displays the latest real low ask, scan count and a subtle row highlight")
 local preview=FindFrame("ChalkBoxAuctionPricePreview")
-assert(preview and preview.w==248 and preview.h==152 and
+assert(preview and preview.w==220 and preview.h==152 and
     preview.point[1]=="TOPRIGHT" and preview.point[5]==-136
     and preview.parent==pane and #Textures(preview)>=10,
     "price card is framed with a distinct header, plot field and footer")
