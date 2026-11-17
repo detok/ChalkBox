@@ -122,13 +122,15 @@ local function PanelSurface(panel,width,headerHeight,footerHeight)
     body:SetAllPoints(panel)
     PreviewPaint(body,0.035,0.046,0.052,0.92)
     local header=panel:CreateTexture(nil,"BORDER")
-    header:SetSize(width-2,headerHeight)
+    header:SetHeight(headerHeight)
     header:SetPoint("TOPLEFT",panel,"TOPLEFT",1,-1)
+    header:SetPoint("TOPRIGHT",panel,"TOPRIGHT",-1,-1)
     PreviewPaint(header,0.14,0.16,0.17,0.85)
     if footerHeight and footerHeight>0 then
         local bottom=panel:CreateTexture(nil,"BORDER")
-        bottom:SetSize(width-2,footerHeight)
+        bottom:SetHeight(footerHeight)
         bottom:SetPoint("BOTTOMLEFT",panel,"BOTTOMLEFT",1,1)
+        bottom:SetPoint("BOTTOMRIGHT",panel,"BOTTOMRIGHT",-1,1)
         PreviewPaint(bottom,0.11,0.13,0.14,0.86)
     end
     local function Stroke(anchor,other,vertical)
@@ -138,8 +140,11 @@ local function PanelSurface(panel,width,headerHeight,footerHeight)
             line:SetPoint(anchor,panel,anchor,0,0)
             line:SetPoint(other,panel,other,0,0)
         else
-            line:SetSize(width,1)
+            line:SetHeight(1)
             line:SetPoint(anchor,panel,anchor,0,0)
+            local otherEdge=anchor=="TOPLEFT" and "TOPRIGHT" or
+                "BOTTOMRIGHT"
+            line:SetPoint(otherEdge,panel,otherEdge,0,0)
         end
         PreviewPaint(line,0.56,0.44,0.28,0.69)
         return line
@@ -149,8 +154,9 @@ local function PanelSurface(panel,width,headerHeight,footerHeight)
     Stroke("TOPLEFT","BOTTOMLEFT",true)
     Stroke("TOPRIGHT","BOTTOMRIGHT",true)
     local separator=panel:CreateTexture(nil,"ARTWORK")
-    separator:SetSize(width-2,1)
+    separator:SetHeight(1)
     separator:SetPoint("TOPLEFT",panel,"TOPLEFT",1,-headerHeight-1)
+    separator:SetPoint("TOPRIGHT",panel,"TOPRIGHT",-1,-headerHeight-1)
     PreviewPaint(separator,0.71,0.56,0.34,0.36)
 end
 local function PreviewDate(stamp)
@@ -219,8 +225,9 @@ local function BuildPricePreview(parent,listPanel)
     end)
     panel:SetScript("OnLeave",HideTooltip)
     local baseline=panel:CreateTexture(nil,"ARTWORK")
-    baseline:SetSize(width-22,1)
+    baseline:SetHeight(1)
     baseline:SetPoint("BOTTOMLEFT",panel,"BOTTOMLEFT",11,33)
+    baseline:SetPoint("BOTTOMRIGHT",panel,"BOTTOMRIGHT",-11,33)
     PreviewPaint(baseline,0.6,0.64,0.68,0.35)
     local segments,strips,dots={},{},{}
     local canLine=type(panel.CreateLine)=="function"
