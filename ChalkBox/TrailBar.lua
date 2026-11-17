@@ -223,6 +223,28 @@ local displayed={}
 local lastLayout=""
 local editMode=false
 local backgroundOpacity=70
+local previewWidths={} -- preview only; persisted once a resize finishes
+local function RoundedWidth(value)
+    if type(value)~="number" or value~=value then return nil end
+    return math.floor(math.max(60,math.min(280,value))/4+0.5)*4
+end
+local function ModuleWidth(key)
+    if previewWidths[key] then return previewWidths[key] end
+    local saved=type(ChalkBox_BarLayoutWidthGet)=="function"
+        and ChalkBox_BarLayoutWidthGet(key) or nil
+    return saved or specs[key].width
+end
+local function CursorInBar()
+    if type(GetCursorPosition)~="function" or not bar then return nil end
+    local x=GetCursorPosition()
+    local scale=type(bar.GetEffectiveScale)=="function"
+        and bar:GetEffectiveScale() or 1
+    if not Public(x) or type(x)~="number" or
+        not Public(scale) or type(scale)~="number" or scale<=0 then
+        return nil
+    end
+    return x/scale
+end
 local function ApplyAppearance()
     if not db then return end
     local a=tonumber(db.barBackgroundOpacity)
@@ -255,6 +277,13 @@ local function EditDecorations()
             widget.editBackground:SetColorTexture(0.45,0.32,0.12,
                 editMode and 0.55 or 0)
         end
+        if widget.resizeGrip then
+            if editMode then widget.resizeGrip:Show()
+            else
+                widget.resizeGrip.dragging=false
+                widget.resizeGrip:Hide()
+            end
+        end
     end
 end
 function ChalkBox_BarEditStatus() return editMode end
@@ -263,7 +292,12 @@ function ChalkBox_BarEditSet(on)
         return false
     end
     editMode=(on==true)
+    if not editMode then
+        for key in pairs(previewWidths) do previewWidths[key]=nil end
+        lastLayout=""
+    end
     EditDecorations()
+    if Refresh then Refresh() end
     return true
 end
 function ChalkBox_BarBagValueModeGet()
@@ -350,7 +384,10 @@ local function Reflow()
     local function Measure(group)
         local total,count=0,0
         for _,key in ipairs(groups[group]) do
-            if chosen[key] then total=total+specs[key].width+ (count>0 and 7 or 0);count=count+1 end
+            if chosen[key] then
+                total=total+ModuleWidth(key)+(count>0 and 7 or 0)
+                count=count+1
+            end
         end
         return total,count
     end
@@ -373,14 +410,19 @@ local function Reflow()
     local signature=math.floor(width+0.5)..":"
     for _,group in ipairs({"left","center","right"}) do
         for _,key in ipairs(groups[group]) do
-            if chosen[key] then signature=signature..key.."," end
+            if chosen[key] then
+                signature=signature..key.."="..ModuleWidth(key)..","
+            end
         end
     end
     if signature==lastLayout then return end
     lastLayout=signature
     displayed={}
     for key,widget in pairs(widgets) do
-        if chosen[key] then widget:Show();displayed[key]=true
+        if chosen[key] then
+            widget:SetSize(ModuleWidth(key),16)
+            widget:Show()
+            displayed[key]=true
         else widget:Hide() end
     end
     local _,leftWidth,centerWidth,rightWidth=Need()
@@ -397,12 +439,12 @@ local function Reflow()
                 if group=="left" then
                     widget:SetPoint("LEFT",bar,"LEFT",x,0)
                 elseif group=="center" then
-                    widget:SetPoint("CENTER",bar,"LEFT",x+specs[key].width/2,0)
+                    widget:SetPoint("CENTER",bar,"LEFT",x+ModuleWidth(key)/2,0)
                 else
                     widget:SetPoint("RIGHT",bar,"RIGHT",
-                        x+specs[key].width-width,0)
+                        x+ModuleWidth(key)-width,0)
                 end
-                x=x+specs[key].width+7
+                x=x+ModuleWidth(key)+7
             end
         end
     end
@@ -413,6 +455,35 @@ local function Reflow()
             rightStart-centerWidth-(rightWidth>0 and 10 or 0)))
     Arrange("center",centerStart)
     Arrange("right",rightStart)
+end
+-- Cosmetic widths are per-character and never resize protected game UI.
+function ChalkBox_BarWidthGet(key)
+    return specs[key] and ModuleWidth(key) or nil
+end
+function ChalkBox_BarWidthSet(key,value)
+    local pixels=RoundedWidth(value)
+    if not specs[key] or not pixels then return false end
+    if type(InCombatLockdown)=="function" and InCombatLockdown() then
+        return false
+    end
+    if type(ChalkBox_BarLayoutWidthSet)~="function" or
+        not ChalkBox_BarLayoutWidthSet(key,pixels) then return false end
+    previewWidths[key]=nil
+    lastLayout=""
+    Reflow()
+    return true
+end
+function ChalkBox_BarWidthReset(key)
+    if not specs[key] or type(ChalkBox_BarLayoutWidthReset)~="function"
+        then return false end
+    if type(InCombatLockdown)=="function" and InCombatLockdown() then
+        return false
+    end
+    if not ChalkBox_BarLayoutWidthReset(key) then return false end
+    previewWidths[key]=nil
+    lastLayout=""
+    Reflow()
+    return true
 end
 
 -- The stat menu controls only that stat. Right-click empty bar space for
