@@ -21,4 +21,4 @@
 Some current-looking screenshots were captured on older versions; check real-client appearance before publishing gallery claims.
 
 
-**2.2.24 GitHub prerelease candidate:** This unverified playtest build combines compact meter reporting/menu polish, The Bar bag clicks, AuctionSense tab fixes and a settings-only experimental chart lab. [Read the live test checklist](https://github.com/detok/ChalkBox/blob/main/docs/RELEASE_CANDIDATE_TEST_2.2.24.md). **2.2.22 remains the stable game/publisher release**; do not substitute the beta ZIP for it until client testing is complete.
+**2.2.25 GitHub beta:** Adds saved bank vendor value and a frameless bank readout, adjustable Trail Bar module widths, safe ranked PARTY/SAY combat reports, learned flight-master markers, map-pin navigation and a read-only AuctionSense chart. [Read the current 2.2.25 release notes](https://github.com/detok/ChalkBox/blob/main/docs/RELEASE_NOTES.md). **2.2.22 remains the last fully accepted stable version** until the combined beta passes a live-client smoke test.

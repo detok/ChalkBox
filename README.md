@@ -12,7 +12,7 @@ Quality-of-life tools for **World of Warcraft: Forever** — loot discoveries, q
 
 </div>
 
-**Testing 2.2.24 (GitHub prerelease):** A release-candidate polish pass brings the compact meter's shared reporting menu, Bar bag clicks, corrected Market tab highlights and experimental auction price charts under settings. [Follow the 2.2.24 live smoke checklist](docs/RELEASE_CANDIDATE_TEST_2.2.24.md). **2.2.22 remains the latest stable build.**
+**New in 2.2.25 (GitHub beta):** Bank vendor value in the bank window and The Bar, independent per-module Bar widths, ordinary ranked PARTY/SAY combat reports with Details-style PARTY pacing, learned flight-master markers, optional map-pin navigation and read-only auction price charts. [See the 2.2.25 release notes](docs/RELEASE_NOTES.md). **2.2.22 remains the latest fully accepted stable build.**
 
 ChalkBox installs as **one `ChalkBox` folder**. Its bundled recipe data needs no separate download. Features are managed through Blizzard's native **Options → AddOns → ChalkBox** pages, or by typing `/chalk`.
 

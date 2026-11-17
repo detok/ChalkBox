@@ -456,7 +456,8 @@ local function PrintFight()
         Chat("Join a party to use PRINT. Nothing was sent.")
         return false
     end
-    local send=C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
+    local send=type(SendChatMessage)=="function" and SendChatMessage or
+        (C_ChatInfo and C_ChatInfo.SendChatMessage)
     if type(send)~="function" then
         Chat("This client has no supported party chat send API.")
         return false
@@ -491,8 +492,8 @@ local function PrintFight()
         Chat("No completed fight data to report.")
         return false
     end
-    -- Keep it to ONE group message, top three combatants only. Validate
-    -- everything before calling chat; partial secret rankings never leak.
+    -- Build a plain heading and one chat line per player (top three).
+    -- Validate all sources before sending anything; never leak secret data.
     local parts={}
     for i=1,math.min(#sources,3) do
         local source=sources[i]
@@ -512,51 +513,26 @@ local function PrintFight()
         if name=="" then name="Unknown" end
         parts[#parts+1]=string.format("%d %s %.0f",i,name,amount)
     end
-    local message="CB "..mode.label.." ("..title.."): "..table.concat(parts," | ")
-    if #message>255 then
-        -- Avoid truncation by the chat API: drop lower-ranked entries.
-        while #message>255 and #parts>1 do
-            table.remove(parts)
-            message="CB "..mode.label.." ("..title.."): "..table.concat(parts," | ")
+    local lines={"CB "..mode.label.." ("..title.."):"}
+    for _,part in ipairs(parts) do
+        if #part>255 then
+            Chat("Fight report line is too long; nothing sent.")
+            return false
         end
+        lines[#lines+1]=part
     end
-    if #message>255 then
-        Chat("Fight report is too long for party chat; nothing sent.")
-        return false
-    end
-    local info=C_ChatInfo
-    local blocked=false
-    if info then
-        for _,name in ipairs({
-            "InChatMessagingLockdown",
-            "AreOutgoingAddonChatMessagesRestricted",
-        }) do
-            if type(info[name])=="function" then
-                local check,restricted=pcall(info[name])
-                if not check or restricted==true then blocked=true end
-            end
+    -- Each visual line is one normal PARTY chat message; no embedded
+    -- newlines, bare pipe escapes, fallback window, or alternate channel.
+    for i,line in ipairs(lines) do
+        local ok,result=pcall(send,line,"PARTY")
+        if not ok or (Safe(result) and result==false) then
+            local detail=not ok and Safe(result) and type(result)=="string"
+                and result:sub(1,180) or "chat API returned false"
+            Chat("PARTY report stopped at line "..i..": "..detail)
+            return false
         end
+        if i==1 and Safe(now) and type(now)=="number" then lastPartyReportAt=now end
     end
-    if blocked then
-        if type(ChalkBox_MeterShowCopy)=="function" then
-            ChalkBox_MeterShowCopy(message,
-                "Forever restricts addon chat right now.")
-        else
-            Chat("Forever restricts addon chat. Copy manually: "..message)
-        end
-        return false
-    end
-    local ok,result=pcall(send,message,"PARTY")
-    if not ok or result==false then
-        if type(ChalkBox_MeterShowCopy)=="function" then
-            ChalkBox_MeterShowCopy(message,
-                "Forever rejected the PARTY report. No other channel tried.")
-        else
-            Chat("PARTY chat rejected the report. Copy manually: "..message)
-        end
-        return false
-    end
-    if Safe(now) and type(now)=="number" then lastPartyReportAt=now end
     Chat("Party report requested ("..#parts..
         " players); delivery is controlled by the game.")
     return true
@@ -569,7 +545,7 @@ function ChalkBox_MeterPrintFight()
     return PrintFight() -- legacy test/client fallback when native helper absent
 end
 -- Use the native report encoder, validation, configurable Top 3/5/10,
--- channels and manual copy fallback. Never maintain a second print path.
+-- channels. Never maintain a second print path.
 function ChalkBox_MeterReportAdapter()
     if not db then db=Settings() end
     if not IsAvailable() then return nil end

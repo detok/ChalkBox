@@ -26,7 +26,7 @@ local idleTicker = nil
 -- Blizzard's EMOTE##_TOKEN constants expose this client's native emote list.
 -- Triggered emotes stay enabled by default; other entries are opt-in for idle
 -- variety, but each can be previewed manually from the native settings page.
-local automatic={WAVE=true,JOKE=true,TRAIN=true,CHEER=true,CRY=true,
+local automatic={WAVE=true,JOKE=true,TRAIN=true,CHEER=true,PET=true,CRY=true,
     MOURN=true,OOM=true,SIGH=true,BOW=true,LAUGH=true,FLEX=true}
 -- Intentional, curated *default* idle reactions. They are checked by default in
 -- the emote catalog, and each can be disabled independently. Pose actions alter
@@ -58,7 +58,7 @@ local defaults={"WAVE","JOKE","TRAIN","CHEER","CRY","MOURN","OOM","SIGH",
     "BOW","LAUGH","FLEX","DANCE","SALUTE","KNEEL","THANK","HELLO",
     "GOODBYE","NO","YES","APPLAUD","ROAR","SHY","SLEEP","SIT",
     "LAYDOWN","STAND","YAWN","PONDER","SHRUG","ROFL","STARE","LOOK",
-    "POINT","BEG","CHICKEN","TALK","WELCOME","CONGRATULATE"}
+    "POINT","BEG","CHICKEN","TALK","WELCOME","CONGRATULATE","PET"}
 local catalog
 local function Catalog()
     if catalog then return catalog end
@@ -339,8 +339,20 @@ local function IdlePool()
                 if not found then pool[#pool+1]={token=token,weight=weight} end
             end
         end
-        if context.petName and ChalkBox_EmotaGetEnabled("CHEER") then
-            pool[#pool+1]={token="CHEER",weight=5,petName=context.petName}
+        if context.petName then
+            -- A real petting emote, addressed to the summoned hunter pet.
+            -- Only offer it when the Forever client exposes PET natively.
+            local available=false
+            for name,token in pairs(_G) do
+                if type(name)=="string" and name:match("^EMOTE%d+_TOKEN$")
+                    and token=="PET" then available=true;break end
+            end
+            if available and ChalkBox_EmotaGetEnabled("PET") then
+                pool[#pool+1]={token="PET",weight=9,petName=context.petName}
+            end
+            if ChalkBox_EmotaGetEnabled("CHEER") then
+                pool[#pool+1]={token="CHEER",weight=5,petName=context.petName}
+            end
         end
     end
     if settings and settings.idleVariety then

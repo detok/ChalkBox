@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.25 — Bank valuation, adjustable HUD, chat reporting and navigation (Beta)
+
+- Show the last observed per-character bank vendor value in The Bar and a small frameless label above the bank's coin bar; preserve missing/partial-value honesty and separate auction asking-price estimates.
+- Add per-module, per-character Trail Bar width grips in Edit Mode, with persistence, clamping, drag-to-reorder and reset intact.
+- Replace broken meter report formatting with plain separate ranked PARTY/SAY chat lines. Fix false native meter Edit Mode guard; remove copy fallback, stray pipes and embedded newlines. Pace PARTY lines at 200ms and keep SAY on the direct click, as established damage-meter addons do. Auto-report remains opt-in.
+- Extend AuctionSense's read-only historical asks chart and add learned flight-master map markers plus optional navigation following a selected map pin.
+- Allow Hunter Emota idle PET reaction only when the native client exposes it; preserve user opt-in and combat safeguards.
+- Expand regression coverage for bank display, saved widths, maps, auctions and protected chat reporting. No SavedVariables reset or automatic trading.
+
 ## 2.2.24 — Release candidate polish and experimental charts (Beta)
 
 - Consolidated the compact combat meter into a gear/right-click menu, with actual-user-count height fitting and a five-row fresh default. Saved manually resized row caps are retained.

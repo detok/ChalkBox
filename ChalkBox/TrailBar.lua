@@ -150,7 +150,7 @@ local function TipRole(key,line)
             return "danger"
         end
         return "value"
-    elseif key=="bagvalue" then
+    elseif key=="bagvalue" or key=="bankvalue" then
         return "value"
     elseif key=="rate" or key=="rested" then
         return "good"
@@ -195,6 +195,7 @@ local statDefaults={
     rate=true,eta=true,time=true,gold=true,
     bags=true,gear=true,rested=true,latency=true,pet=false,
     bagvalue=true, -- fresh installs match the reference Bar; saved choices win
+    bankvalue=true, -- new builds show Bank -- even before the first visit
     repair=true, -- honest quote/estimate, not uncalibrated guesswork
 }
 local specs={
@@ -202,6 +203,7 @@ local specs={
     rate={width=104,group="left"},
     bags={width=90,group="left"},
     bagvalue={width=125,group="right"},
+    bankvalue={width=132,group="right"},
     repair={width=116,group="right"},
     gear={width=82,group="left"},
     eta={width=128,group="center"},
@@ -214,13 +216,35 @@ local specs={
 local groups={
     left={"level","rate"},
     center={"time","eta","rested"},
-    right={"bags","gear","repair","bagvalue","gold","latency","pet"},
+    right={"bags","gear","repair","bagvalue","bankvalue","gold","latency","pet"},
 }
-local dropPriority={"latency","time","pet","eta","rate","rested","gear","bagvalue","bags","repair","gold"}
+local dropPriority={"latency","time","pet","eta","rate","rested","gear","bagvalue","bankvalue","bags","repair","gold"}
 local displayed={}
 local lastLayout=""
 local editMode=false
 local backgroundOpacity=70
+local previewWidths={} -- preview only; persisted once a resize finishes
+local function RoundedWidth(value)
+    if type(value)~="number" or value~=value then return nil end
+    return math.floor(math.max(60,math.min(280,value))/4+0.5)*4
+end
+local function ModuleWidth(key)
+    if previewWidths[key] then return previewWidths[key] end
+    local saved=type(ChalkBox_BarLayoutWidthGet)=="function"
+        and ChalkBox_BarLayoutWidthGet(key) or nil
+    return saved or specs[key].width
+end
+local function CursorInBar()
+    if type(GetCursorPosition)~="function" or not bar then return nil end
+    local x=GetCursorPosition()
+    local scale=type(bar.GetEffectiveScale)=="function"
+        and bar:GetEffectiveScale() or 1
+    if not Public(x) or type(x)~="number" or
+        not Public(scale) or type(scale)~="number" or scale<=0 then
+        return nil
+    end
+    return x/scale
+end
 local function ApplyAppearance()
     if not db then return end
     local a=tonumber(db.barBackgroundOpacity)
@@ -253,6 +277,13 @@ local function EditDecorations()
             widget.editBackground:SetColorTexture(0.45,0.32,0.12,
                 editMode and 0.55 or 0)
         end
+        if widget.resizeGrip then
+            if editMode then widget.resizeGrip:Show()
+            else
+                widget.resizeGrip.dragging=false
+                widget.resizeGrip:Hide()
+            end
+        end
     end
 end
 function ChalkBox_BarEditStatus() return editMode end
@@ -261,7 +292,12 @@ function ChalkBox_BarEditSet(on)
         return false
     end
     editMode=(on==true)
+    if not editMode then
+        for key in pairs(previewWidths) do previewWidths[key]=nil end
+        lastLayout=""
+    end
     EditDecorations()
+    if Refresh then Refresh() end
     return true
 end
 function ChalkBox_BarBagValueModeGet()
@@ -310,6 +346,13 @@ local function ConfigureStats()
     for key,enabled in pairs(statDefaults) do
         if type(db.barStats[key])~="boolean" then db.barStats[key]=enabled end
     end
+    -- First Bank Value prerelease defaulted OFF, silently saving false for
+    -- everyone. One-time onboarding exposes the promised "Bank --" even
+    -- when no banker has been visited. Later user OFF remains persistent.
+    if db.bankValueOnboardV2~=true then
+        db.barStats.bankvalue=true
+        db.bankValueOnboardV2=true
+    end
 end
 local function StatEnabled(key)
     if key=="level" then return true end
@@ -335,12 +378,16 @@ local function Reflow()
     local chosen={}
     for key in pairs(specs) do
         chosen[key]=StatEnabled(key) and (key=="level" or
-            key=="rate" or key=="eta" or key=="time" or key=="gold" or latest[key]~=nil)
+            key=="rate" or key=="eta" or key=="time" or key=="gold" or
+            key=="bankvalue" or latest[key]~=nil)
     end
     local function Measure(group)
         local total,count=0,0
         for _,key in ipairs(groups[group]) do
-            if chosen[key] then total=total+specs[key].width+ (count>0 and 7 or 0);count=count+1 end
+            if chosen[key] then
+                total=total+ModuleWidth(key)+(count>0 and 7 or 0)
+                count=count+1
+            end
         end
         return total,count
     end
@@ -363,14 +410,19 @@ local function Reflow()
     local signature=math.floor(width+0.5)..":"
     for _,group in ipairs({"left","center","right"}) do
         for _,key in ipairs(groups[group]) do
-            if chosen[key] then signature=signature..key.."," end
+            if chosen[key] then
+                signature=signature..key.."="..ModuleWidth(key)..","
+            end
         end
     end
     if signature==lastLayout then return end
     lastLayout=signature
     displayed={}
     for key,widget in pairs(widgets) do
-        if chosen[key] then widget:Show();displayed[key]=true
+        if chosen[key] then
+            widget:SetSize(ModuleWidth(key),16)
+            widget:Show()
+            displayed[key]=true
         else widget:Hide() end
     end
     local _,leftWidth,centerWidth,rightWidth=Need()
@@ -387,12 +439,12 @@ local function Reflow()
                 if group=="left" then
                     widget:SetPoint("LEFT",bar,"LEFT",x,0)
                 elseif group=="center" then
-                    widget:SetPoint("CENTER",bar,"LEFT",x+specs[key].width/2,0)
+                    widget:SetPoint("CENTER",bar,"LEFT",x+ModuleWidth(key)/2,0)
                 else
                     widget:SetPoint("RIGHT",bar,"RIGHT",
-                        x+specs[key].width-width,0)
+                        x+ModuleWidth(key)-width,0)
                 end
-                x=x+specs[key].width+7
+                x=x+ModuleWidth(key)+7
             end
         end
     end
@@ -404,16 +456,45 @@ local function Reflow()
     Arrange("center",centerStart)
     Arrange("right",rightStart)
 end
+-- Cosmetic widths are per-character and never resize protected game UI.
+function ChalkBox_BarWidthGet(key)
+    return specs[key] and ModuleWidth(key) or nil
+end
+function ChalkBox_BarWidthSet(key,value)
+    local pixels=RoundedWidth(value)
+    if not specs[key] or not pixels then return false end
+    if type(InCombatLockdown)=="function" and InCombatLockdown() then
+        return false
+    end
+    if type(ChalkBox_BarLayoutWidthSet)~="function" or
+        not ChalkBox_BarLayoutWidthSet(key,pixels) then return false end
+    previewWidths[key]=nil
+    lastLayout=""
+    Reflow()
+    return true
+end
+function ChalkBox_BarWidthReset(key)
+    if not specs[key] or type(ChalkBox_BarLayoutWidthReset)~="function"
+        then return false end
+    if type(InCombatLockdown)=="function" and InCombatLockdown() then
+        return false
+    end
+    if not ChalkBox_BarLayoutWidthReset(key) then return false end
+    previewWidths[key]=nil
+    lastLayout=""
+    Reflow()
+    return true
+end
 
 -- The stat menu controls only that stat. Right-click empty bar space for
 -- global controls. WoW color codes also work with the legacy menu fallback.
 local menuNames={
     level="Level / XP",rate="XP/hr",bags="Bags",
-    bagvalue="Bag value",repair="Repair",gear="Durability",
+    bagvalue="Bag value",bankvalue="Bank value",repair="Repair",gear="Durability",
     eta="Level ETA",rested="Rested XP",pet="Pet",
     time="Session",latency="Latency",gold="Gold",
 }
-local menuOrder={"rate","bags","bagvalue","repair","gear","eta",
+local menuOrder={"rate","bags","bagvalue","bankvalue","repair","gear","eta",
     "rested","pet","time","latency","gold"}
 local menuColors={
     title="ffffd36a",    -- gold: headings
@@ -479,6 +560,18 @@ function ChalkBox_BarContextItems(key)
         local alignment=layout.align and layout.align[key] or section
         AddMenuEntry(result,"Move",nil,DirectionMenu(key,"move",section),"group")
         AddMenuEntry(result,"Align",nil,DirectionMenu(key,"align",alignment),"group")
+        local widths={}
+        local current=ChalkBox_BarWidthGet(key) or specs[key].width
+        for _,change in ipairs({-16,-8,8,16}) do
+            local step=change
+            AddMenuEntry(widths,(step>0 and "+" or "")..step.." px",
+                function() ChalkBox_BarWidthSet(key,current+step) end)
+        end
+        AddMenuEntry(widths,"Reset width",function()
+            ChalkBox_BarWidthReset(key)
+        end,nil,"warning")
+        AddMenuEntry(result,("Width (%d px)"):format(current),
+            nil,widths,"group")
         AddMenuEntry(result,"Bar settings",function()
             if type(ChalkBox_OpenSettings)=="function" then
                 ChalkBox_OpenSettings("barstats")
@@ -632,6 +725,24 @@ local function CreateBar()
             end
             return lines
         end},
+        {"bankvalue","Bank value",function()
+            local v=latest.bankvalue
+            if not v then return {"Open your bank to record its value"} end
+            local lines={
+                "Vendor: "..(v.vendorComplete and "" or "at least ")..
+                    Coins(v.vendorCopper),
+                "Last seen: "..(v.age or "bank visit")
+            }
+            lines[#lines+1]="AH asks: "..(v.ahPriced>0 and
+                ((v.ahComplete and "" or "at least ")..
+                Coins(v.ahCopper)) or "unavailable")
+            lines[#lines+1]=(v.ahPriced or 0).."/"..
+                (v.stacks or 0).." stacks AH-priced"
+            if (v.vendorUnknown or 0)>0 then
+                lines[#lines+1]=v.vendorUnknown.." vendor prices unavailable"
+            end
+            return lines
+        end},
         {"repair","Repair",function()
             local r=latest.repair
             if not r then return {"Unavailable"} end
@@ -704,9 +815,13 @@ local function CreateBar()
     for _,item in ipairs(blocks) do
         local key,name,details=unpack(item)
         local widget=CreateFrame("Frame",nil,bar)
-        widget:SetSize(specs[key].width,16)
+        widget:SetSize(ModuleWidth(key),16)
         local font=widget:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
         font:SetAllPoints(widget)
+        -- Narrow widths must clip to a single Bar line, never spill down
+        -- into the game UI or draw over a neighboring module.
+        if type(font.SetMaxLines)=="function" then font:SetMaxLines(1) end
+        if type(font.SetWordWrap)=="function" then font:SetWordWrap(false) end
         font:SetJustifyH(key=="gold" and "RIGHT" or
             (specs[key].group=="center" and "CENTER" or "LEFT"))
         widget.text=font
@@ -715,6 +830,68 @@ local function CreateBar()
         grab:SetAllPoints(widget)
         grab:SetColorTexture(0.45,0.32,0.12,0)
         widget.editBackground=grab
+        -- Only the tiny gold right-edge grip resizes. All other widget area
+        -- preserves the existing left-drag move interaction.
+        local grip=CreateFrame("Frame",nil,widget)
+        grip:SetSize(8,16)
+        grip:SetPoint("RIGHT",widget,"RIGHT",0,0)
+        if grip.EnableMouse then grip:EnableMouse(true) end
+        if grip.RegisterForDrag then grip:RegisterForDrag("LeftButton") end
+        local stroke=grip:CreateTexture(nil,"OVERLAY")
+        if stroke.SetWidth then stroke:SetWidth(2) end
+        if stroke.SetHeight then stroke:SetHeight(11) end
+        if stroke.SetPoint then
+            stroke:SetPoint("CENTER",grip,"CENTER",0,0)
+        end
+        if stroke.SetColorTexture then
+            stroke:SetColorTexture(.95,.76,.40,.95)
+        end
+        widget.resizeGrip=grip
+        local function Candidate()
+            if not grip.dragStartX or not grip.dragStartWidth then
+                return nil
+            end
+            local cursor=CursorInBar()
+            if not cursor then return nil end
+            return RoundedWidth(grip.dragStartWidth+
+                cursor-grip.dragStartX)
+        end
+        grip:SetScript("OnDragStart",function(self)
+            if not editMode or (type(InCombatLockdown)=="function"
+                and InCombatLockdown()) then return end
+            local cursor=CursorInBar()
+            if not cursor then return end
+            self.dragStartX=cursor
+            self.dragStartWidth=ModuleWidth(key)
+            self.dragging=true
+        end)
+        grip:SetScript("OnUpdate",function(self)
+            if not self.dragging then return end
+            if type(InCombatLockdown)=="function" and
+                InCombatLockdown() then
+                self.dragging=false
+                previewWidths[key]=nil
+                lastLayout=""
+                Reflow()
+                return
+            end
+            local newWidth=Candidate()
+            if newWidth and newWidth~=ModuleWidth(key) then
+                previewWidths[key]=newWidth
+                lastLayout=""
+                Reflow()
+            end
+        end)
+        grip:SetScript("OnDragStop",function(self)
+            if not self.dragging then return end
+            local newWidth=Candidate() or self.dragStartWidth
+            self.dragging=false
+            previewWidths[key]=nil
+            if not ChalkBox_BarWidthSet(key,newWidth) then
+                lastLayout=""
+                Reflow()
+            end
+        end)
         if widget.SetMovable then widget:SetMovable(true) end
         if widget.RegisterForDrag then widget:RegisterForDrag("LeftButton") end
         widget:SetScript("OnDragStart",function(self)
@@ -849,6 +1026,12 @@ Refresh=function()
             StatEnabled("bagvalue"),StatEnabled("repair"))
         if ok and type(value)=="table" then stats=value end
     end
+    if type(ChalkBox_BankValueStatus)=="function" then
+        local ok,value=pcall(ChalkBox_BankValueStatus)
+        if ok and type(value)=="table" then
+            stats.bankvalue=value
+        end
+    end
     latest=stats
     if session.level then
         if session.maxXP and session.maxXP>0 then
@@ -868,6 +1051,10 @@ Refresh=function()
             or nil,true)..")")
     widgets.time.text:SetText("Time "..Duration(elapsed))
     widgets.bagvalue.text:SetText(BagValueText(stats.bagvalue))
+    local bank=stats.bankvalue
+    widgets.bankvalue.text:SetText(bank and
+        ("Bank "..(bank.vendorComplete and "" or ">=")..
+        Money(bank.vendorCopper)) or "Bank --")
     local cost=stats.repair
     local repairText="Repair --"
     if cost and type(cost.copper)=="number" then
@@ -913,6 +1100,11 @@ Refresh=function()
     elseif bar.xpProgress then bar.xpProgress:Hide() end
 end
 
+-- The bank reader triggers this after a user actually opens a banker.
+-- It must never cause another bank scan or touch bank item buttons.
+function ChalkBox_BarBankValueRefresh()
+    if Refresh then Refresh() end
+end
 function ChalkBox_BarStatus()
     local chosen={}
     for _,group in ipairs({"left","center","right"}) do
@@ -955,6 +1147,17 @@ function ChalkBox_BarCommand(message)
             Reflow()
         end
         Note("Bar layout reset.")
+    elseif action:match("^width%s+(%a+)%s+reset$") then
+        local key=action:match("^width%s+(%a+)%s+reset$")
+        Note(ChalkBox_BarWidthReset(key)
+            and ((menuNames[key] or key).." width reset.")
+            or "Unknown module or cannot resize during combat.")
+    elseif action:match("^width%s+(%a+)%s+(%d+)$") then
+        local key,px=action:match("^width%s+(%a+)%s+(%d+)$")
+        Note(ChalkBox_BarWidthSet(key,tonumber(px))
+            and ((menuNames[key] or key).." width: "..
+                tostring(ChalkBox_BarWidthGet(key)).."px.")
+            or "Invalid module width or cannot resize during combat.")
     elseif action=="layout" or action=="layout status" then
         Note(type(ChalkBox_BarLayoutDescription)=="function"
             and ChalkBox_BarLayoutDescription() or "Layout module unavailable.")
@@ -974,7 +1177,29 @@ function ChalkBox_BarCommand(message)
         else Note("Unknown TrailBar module.") end
     else
         local stat,choice=action:match("^stat%s+(%a+)%s+(%a+)$")
-    if action=="repair status" then
+    if action=="bank status" or action=="bankvalue status" then
+        local diagnostic=type(ChalkBox_BankValueDebug)=="function"
+            and ChalkBox_BankValueDebug() or nil
+        local on=StatEnabled("bankvalue")
+        local shown=displayed.bankvalue==true
+        Note(("Bank Bar: %s, %s; first visit %s."):format(
+            on and "enabled" or "disabled",
+            shown and "visible" or "not visible at current width",
+            type(ChalkBox_BankValueStatus)=="function" and
+                ChalkBox_BankValueStatus() and "recorded" or "not recorded"))
+        if diagnostic then
+            Note(("Bank reader: %s, frame %s, panel %s; %d tabs from %s."):format(
+                diagnostic.open and "OPEN" or "closed",
+                tostring(diagnostic.bankFrame),
+                diagnostic.panel and "shown" or "not shown",
+                diagnostic.tabs or 0,tostring(diagnostic.tabSource)))
+            Note(("%d readable tabs, %d missing; %s."):format(
+                diagnostic.readable or 0,diagnostic.missing or 0,
+                tostring(diagnostic.reason)))
+        else
+            Note("Bank reader unavailable: confirm new build is installed.")
+        end
+    elseif action=="repair status" then
         local status=type(ChalkBox_RepairLearningStatus)=="function"
             and ChalkBox_RepairLearningStatus() or nil
         if status then
@@ -1052,9 +1277,11 @@ function ChalkBox_BarCommand(message)
     else
         Note("The Bar: /chalk bar top|bottom|off | reserve on/off | reset | status")
         Note("Stats: /chalk bar stat <module> on/off | stats all|balanced|minimal")
-        Note("Layout: /chalk bar edit on/off | layout reset | move <module> <left|center|right> [index]")
+        Note("Layout: /chalk bar edit on/off | drag right-edge gold grips | layout reset")
+        Note("Widths: /chalk bar width <module> 60-280 | width <module> reset | move <module> <left|center|right>")
         Note("Text alignment: /chalk bar align <module> <left|center|right> | opacity 0-100")
         Note("Vendor value: /chalk bar stat bagvalue on | bagvalue junk|total|toggle")
+        Note("Bank snapshot: /chalk bar stat bankvalue on/off | bank status for live diagnostics")
         Note("Repairs: /chalk bar stat repair on|off | repair status|reset. Right-click a module for a menu.")
     end
     end

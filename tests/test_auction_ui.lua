@@ -12,6 +12,7 @@ local function Element(kind,parent,name,template)
         self.points[#self.points+1]={...}
     end
     function f:SetWidth(w) self.w=w end
+    function f:SetHeight(h) self.h=h end
     function f:ClearAllPoints() self.points={};self.point=nil end
     function f:GetHeight()
         if self.name=="ChalkBoxAuctionSensePane" then
@@ -210,6 +211,18 @@ _G.ChalkBox_AuctionRows=function()
     return {{name="Linen Cloth",itemID=2589,low=1500,
         average=nil,listings=nil,quantity=24}}
 end
+-- Compact Market graph must use saved observations and never send AH queries.
+local chartReads,chartName,chartMixed=0,"Linen Cloth",false
+local history={{t=1700000000,low=1500},{t=1700086400,low=1800},
+    {t=1700259200,low=1350}}
+_G.ChalkBox_AuctionChartHistory=function(itemID)
+    chartReads=chartReads+1
+    if itemID~=2589 then return nil end
+    local copy={}
+    for i,p in ipairs(history) do copy[i]={t=p.t,low=p.low} end
+    return {itemID=itemID,name=chartName,mixed=chartMixed,realm="Whitemane",
+        faction="Alliance",source="browse",points=copy}
+end
 _G.ChalkBox_AuctionScan=function() browseScans=browseScans+1;return true end
 _G.ChalkBox_AuctionFullScan=function() fullScans=fullScans+1;return true end
 local bagsRead,salesRead=0,0
@@ -272,7 +285,7 @@ for _,f in ipairs(allFrames) do
         elseif f.text=="Next" then nextButton=f end
     end
     if f.parent==pane and f.kind=="Frame"
-        and f.w==735 and f.h==22 then rows[#rows+1]=f end
+        and f.w==459 and f.h==22 then rows[#rows+1]=f end
 end
 for _,font in ipairs(fonts) do
     if font.parent==pane and font.point and
@@ -282,16 +295,78 @@ for _,font in ipairs(fonts) do
 end
 assert(#rows==7 and footer and previousButton and nextButton,
     "rows, pager, and scan disclaimer all exist within the native pane")
-assert(rows[1].w==735 and rows[1].h==22
-    and nextButton.point[1]=="BOTTOMRIGHT",
-    "columns fill the native AH body; Next is aligned to the right edge")
+local listPanel=FindFrame("ChalkBoxAuctionMarketListPanel")
+assert(listPanel and listPanel.parent==pane and listPanel.w==469
+    and listPanel.points[1][1]=="TOPLEFT"
+    and listPanel.points[1][5]==-132
+    and listPanel.points[2][1]=="BOTTOMLEFT"
+    and listPanel.points[2][5]==27,
+    "matching list inset frames rows and pager with margin above footer")
+local function Textures(parent)
+    local result={}
+    for _,element in ipairs(allFrames) do
+        if element.kind=="Texture" and element.parent==parent then
+            result[#result+1]=element
+        end
+    end
+    return result
+end
+assert(#Textures(listPanel)>=8,
+    "item list uses bordered header, lower pager band and an inset backdrop")
+assert(#Textures(rows[2])>#Textures(rows[1]),
+    "alternate list rows have a subtle secondary background")
+assert(rows[1].w==459 and rows[1].h==22
+    and nextButton.point[1]=="BOTTOMLEFT"
+    and nextButton.point[4]==354,
+    "compact left price table makes room for chart; pager stays left of chart")
 assert(rows[1].point[5]==-157 and rows[7].point[5]==-301,
     "compact rows share a fixed 24px rhythm")
 assert(previousButton.point[1]=="BOTTOMLEFT"
-    and nextButton.point[1]=="BOTTOMRIGHT"
+    and nextButton.point[1]=="BOTTOMLEFT"
     and previousButton.point[5]==34 and nextButton.point[5]==34
     and footer.point[5]==12,
     "paging and notes anchor to the pane bottom, not a hard-coded height")
+-- Scan actions use unused upper-right space, while mode buttons and
+-- search share a separate toolbar line; no vertical collision is possible.
+local scan=Button("Scan Market")
+local fullscan=Button("Full listings (15m)")
+local mode=Button("Prices")
+local function OnRow(button)
+    return button.point and button.point[1]=="TOPLEFT"
+end
+assert(scan and fullscan and
+    fullscan.point[1]=="TOPRIGHT" and fullscan.point[5]==-29
+    and scan.point[1]=="RIGHT" and scan.point[2]==fullscan
+    and scan.point[4]==-8,
+    "existing two scan buttons are grouped in upper-right header space")
+assert(mode and OnRow(mode) and mode.point[5]==-87 and
+    Button("My Items").point[5]==-87 and
+    Button("Sales & Stats").point[5]==-87,
+    "mode buttons share a distinct aligned toolbar row")
+local search
+for _,element in ipairs(allFrames) do
+    if element.kind=="EditBox" and element.parent==pane then
+        search=element;break
+    end
+end
+assert(search and search.point[1]=="TOPRIGHT" and
+    search.point[5]==-87,
+    "search shares the toolbar with mode buttons instead of overlapping scans")
+local listDetails
+for _,font in ipairs(fonts) do
+    if font.parent==pane and font.point and
+        font.point[1]=="TOPLEFT" and font.point[4]==21 and
+        font.point[5]==-117 then listDetails=font end
+end
+assert(listDetails,
+    "market counts have their own quiet summary line above the table frame")
+assert(scan.scripts.OnClick and fullscan.scripts.OnClick,
+    "visual reanchoring preserves the working scan actions")
+-- Native Auction House width in the photographed UI is ~726 UI units.
+-- Panel edges must have breathing room, rather than overlapping by 25px.
+local nominalWidth=726
+assert(13+listPanel.w+7 <= nominalWidth-16-220,
+    "framed price table and chart have visible horizontal separation")
 local function VisibleRows()
     local n=0
     for _,row in ipairs(rows) do if row.shown then n=n+1 end end
@@ -325,7 +400,13 @@ assert(Text("24 units") and
                 font.text:find("Browse prices",1,true) then return true end
         end
     end)(),"browse summaries label their source clearly")
-assert(fullScans==0 and browseScans==0)
+assert(fullScans==0 and browseScans==0 and chartReads==1 and
+    Text("Linen Cloth") and Text("LOW 13s 50c  |  3 scans")
+    and rows[1].selectedBack and rows[1].selectedBack.shown,
+    "Market opens with a useful first-item price graph, not an empty prompt")
+assert(not FindFrame("ChalkBoxAuctionBrowserTab")
+    and not FindFrame("ChalkBoxAuctionBrowserPane"),
+    "there is exactly one custom Market tab; Browser never comes back")
 -- Size-aware pagination: the photographed 440px native AH leaves 316px
 -- for content after its title/footer; 4 result rows can fit without overlap.
 local items={}
@@ -349,10 +430,22 @@ pane.mockHeight=410
 pane.scripts.OnUpdate(pane,1.5)
 assert(VisibleRows()==7 and Text("Page 1 / 2"),
     "taller native AH uses seven rows without changing scan data")
+local largePreview=FindFrame("ChalkBoxAuctionPricePreview")
+assert(largePreview and largePreview.points[1][1]=="TOPLEFT" and
+    largePreview.points[1][2]==listPanel and
+    largePreview.points[1][3]=="TOPRIGHT" and
+    largePreview.points[1][4]==12 and
+    largePreview.points[1][5]==0 and
+    largePreview.points[2][1]=="BOTTOMRIGHT" and
+    largePreview.points[2][2]==pane and
+    largePreview.points[2][5]==27,
+    "framed graph is anchored to the EXACT top and bottom of the item list at every height")
 pane.mockHeight=316
 pane.scripts.OnUpdate(pane,1.5)
-assert(VisibleRows()==4 and Text("Page 1 / 3"),
-    "resizing smaller repaginates instead of clipping")
+assert(VisibleRows()==4 and Text("Page 1 / 3")
+    and largePreview.points[1][2]==listPanel and
+    largePreview.points[2][5]==listPanel.points[2][5],
+    "compact AH keeps exact matching chart/list vertical boundaries")
 -- Restore the familiar sample before verifying prices and mouseover hints.
 _G.ChalkBox_AuctionRows=function()
     reads=reads+1
@@ -386,10 +479,77 @@ assert(lowSeen and avgUnknown and unitsSeen and sourceSeen,
     "row hover shows color-coded low, unavailable average, units and source")
 hoverRow.scripts.OnLeave()
 assert(not tip.shown,"hover tooltip hides on mouse leave")
+assert(type(hoverRow.scripts.OnMouseDown)=="function",
+    "Market rows are explicitly selectable without native AH handlers")
+local readCount=chartReads
+hoverRow.scripts.OnMouseDown(hoverRow,"RightButton")
+assert(chartReads==readCount,"right-click does not select a history graph")
+hoverRow.scripts.OnMouseDown(hoverRow,"LeftButton")
+assert(chartReads==readCount+1 and Text("Linen Cloth")
+    and Text("LOW 13s 50c  |  3 scans") and
+    rows[1].selectedBack and rows[1].selectedBack.shown,
+    "click displays the latest real low ask, scan count and a subtle row highlight")
+local preview=FindFrame("ChalkBoxAuctionPricePreview")
+assert(preview and preview.parent==pane and #Textures(preview)>=10
+    and preview.points[1][1]=="TOPLEFT"
+    and preview.points[1][2]==listPanel
+    and preview.points[2][1]=="BOTTOMRIGHT",
+    "equal-height market graph is bounded by left list and uses framed header, plot and footer")
+preview.scripts.OnEnter(preview)
+assert(tip.shown and tip.lines[1].text=="Linen Cloth" and
+    tip.lines[2].text:find("Latest low ask: 13s 50c",1,true),
+    "hovering the chart explains the real low-ask samples and full item title")
+preview.scripts.OnLeave(preview)
+local dots,bars=0,0
+local sampleDot
+for _,widget in ipairs(allFrames) do
+    if widget.priceSample then
+        dots=dots+1
+        sampleDot=sampleDot or widget
+    end
+    if widget.kind=="Texture" and widget.parent and
+        widget.parent.parent==pane and widget.w==5 and widget.shown then
+        bars=bars+1
+    end
+end
+assert(dots==3 and bars==3,
+    "compact preview plots all three recorded samples with texture fallback")
+sampleDot.scripts.OnEnter(sampleDot)
+assert(tip.shown and tip.lines[2].text=="Lowest ask per unit: 15s 0c",
+    "price dots provide real scan price details on hover")
+sampleDot.scripts.OnLeave()
+assert(not tip.shown and browseScans==0 and fullScans==0 and
+    nativeModeWrites==modeWritesBeforeMarket,
+    "preview is read-only and does not taint auction trading state")
+local beforeNewScan=chartReads
+history[3].low=1400
+status.scannedAt=stamp+3
+pane.scripts.OnUpdate(pane,1.2)
+assert(chartReads==beforeNewScan+1 and Text("LOW 14s 0c  |  3 scans"),
+    "completed scan update redraws latest low ask without a new query")
+chartName="Amber Hoop of the Knight"
+chartMixed=true
+status.scannedAt=stamp+4
+pane.scripts.OnUpdate(pane,1.2)
+assert(Text("Amber Hoop of the Knight") and
+    Text("LOW 14s 0c  |  3 scans  |  MIXED"),
+    "compact chart displays full screenshot item name and visibly flags mixed variants")
+preview.scripts.OnEnter(preview)
+assert(tip.shown and tip.lines[1].text=="Amber Hoop of the Knight"
+    and tip.lines[3].text:find("not be comparable",1,true),
+    "mixed-variant tooltip prevents treating unlike gear as comparable prices")
+preview.scripts.OnLeave(preview)
+chartName="Linen Cloth";chartMixed=false
 -- My Items and Sales are subviews INSIDE Market; never touch secure
 -- native auction displayMode or Blizzard's native tab registry.
 local modeBefore=nativeModeWrites
 Button("My Items"):Click()
+assert(Text("Select a row to see its price history") and
+    rows[1].selectedBack and not rows[1].selectedBack.shown,
+    "changing subviews resets stale chart selection and its row background")
+rows[1].scripts.OnMouseDown(rows[1],"LeftButton")
+assert(Text("No saved scan for this item"),
+    "item without recorded market history has an honest empty state")
 assert(Text("DE / ITEM") and Text("IN BAG") and Text("My Test Green")
     and bagsRead>0 and rows[1].marketView=="bags",
     "My Items integrates bag/DE appraisal into native Market frame")

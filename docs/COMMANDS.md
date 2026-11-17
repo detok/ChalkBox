@@ -23,6 +23,8 @@
 | --- | --- |
 | `/chalk drops map` | Open Discoveries, attached to the World Map |
 | `/chalk drops map status` | Diagnose the Discoveries map button and attachment |
+| `/chalk drops map flights status` | Count character-confirmed flight paths, visible markers and native Map Filter integration |
+| `/chalk drops map flights on` / `off` | Fallback visibility switch for **Known Flight Paths** in Blizzard’s Map Filter dropdown |
 | `/chalk drops map reset` | Restore the draggable Discoveries map button |
 | `/chalk drops map on` / `off` | Show or hide the map button |
 | `/chalk drops on` / `off` | Start or stop sampling readable loot windows |
@@ -30,6 +32,8 @@
 | `/chalk drops status` | Show recorded item, loot and zone totals |
 | `/chalk drops chance 5 20` | Calculate probability of at least one success in 20 independent attempts at a supplied 5% chance |
 | `/chalk drops reference 123 3.5` | Mark a 3.5% reference for an already recorded item ID 123; it is explicitly unverified |
+
+**Known Flight Paths:** Discoveries extends the native World Map **Map Filter** checkbox with a single **Known Flight Paths (ChalkBox)** option. The addon marks only taxi-map nodes whose state was actually `CURRENT` or `REACHABLE` when that character visited a flight master. It never treats an unknown node as discovered, and never loads a public list of undiscovered nodes. Existing paths become visible after opening a flight master; nodes without verified map coordinates are intentionally omitted. Flight markers never change the native map or start travel.
 
 **Important:** DropSense observation counts are loot windows, not every enemy kill. Outdoor positions are where *you opened the loot window*, not exact spawn locations. Generic reference chances are user-supplied, not verified server odds.
 
@@ -53,7 +57,7 @@
 | `/chalk auction status` | Current scan state and market snapshot |
 | `/chalk auction tooltip on` / `off` | Show or hide AH asking-price annotations |
 
-**Quest compass (OFF by default):** `/chalk nav on|off|auto|next|prev|follow QUEST_ID|original|classic|hd|size 32-72|lock|unlock|reset|status`. The small outdoor arrow follows only accepted quests with verified waypoints. Auto honors Blizzard's super-tracked quest first, then the nearest known target. It never sets/clears your map pin or deletes other manual quest watches. It can add the selected accepted quest to Blizzard's native watch list, and never guesses an instance direction. See [Navigation](QUEST_NAVIGATION.md).
+**Quest compass (OFF by default):** `/chalk nav on|off|auto|pin|next|prev|follow QUEST_ID|original|classic|hd|size 32-72|lock|unlock|reset|status`. The small outdoor arrow follows only accepted quests with verified waypoints. Auto honors Blizzard's super-tracked quest first, then the nearest known target. Right-click the arrow to **Follow Map Pin** when a Blizzard World Map waypoint is placed; move the pin to update the arrow, or clear it to return to Auto. It never sets/clears your map pin or deletes other manual quest watches. It can add the selected accepted quest to Blizzard's native watch list, and never guesses an instance direction. See [Navigation](QUEST_NAVIGATION.md).
 
 **Native quick actions:** On compatible Forever builds, right-click Blizzard's objective-tracker header to access QuestSense Settings, Off, Smart, Nearby and the Navigation toggle. The native `/macro` window may show a MacroForge button beside Delete in the native bottom row; `/chalk macro` always remains available.
 
@@ -66,10 +70,14 @@
 | `/chalk bar status` | XP rate, Bar layout and safe display diagnostics |
 | `/chalk bar edit` or `edit on` / `off` | Toggle/finish Edit Mode; empty-Bar right-click also has **Done editing** |
 | `/chalk bar layout` | Show positions of Bar modules |
-| `/chalk bar layout reset` | Restore the release's default layout (does not reset other settings) |
+| `/chalk bar layout reset` | Restore default Bar positions, alignment **and module widths**, leaving other settings alone |
+| `/chalk bar width bags 112` | Set one module's width (60–280 px, snapped to 4); resize by dragging its right-hand gold grip in Edit Mode |
+| `/chalk bar width bags reset` | Reset the selected module to its original width |
 | `/chalk bar move gear right` | Move a recognized module to left / center / right |
 | `/chalk bar align gear left` | Change a recognized module's text alignment |
 | `/chalk bar stat bagvalue on` | Enable the bag valuation metric |
+| `/chalk bar stat bankvalue on` / `off` | Show or hide **Bank --** until a character bank has been observed; vendor total afterward |
+| `/chalk bar bank status` | Diagnose Bank Value initialization, native frame, tab discovery, cached value and whether the Bar is visible |
 | `/chalk bar stats balanced` | Apply Balanced, Minimal or All stat presets |
 | `/chalk bar bagvalue junk` / `total` | Select junk-only or all-item vendor resale value |
 | `/chalk bar repair status` | Check quote-learning sample count |
@@ -80,6 +88,8 @@
 | `/chalk bags offset -40` | Move separate bag windows 40px up (range -120 to +120) |
 | `/chalk bags reset` | Return bags to Blizzard's position |
 | `/chalk bags status` | Check bag offset, hook and deferred state |
+
+**Bank Value (LootSense):** Open your character bank to record a read-only snapshot of the visible character bank tabs, with a single **vendor resale total** in the lower-right utility strip **beside Purchase and above the bank coin bar**, where it does not overlap search or item slots. There is no background or border. Hover the text to see separate AH asking-price estimates and coverage. The Bar now displays **Bank --** before the first bank visit, and remembers the vendor total afterward; the tooltip labels it **last seen**. If the bank's contents are not yet available, the header shows **Bank --**, while the tooltip/diagnostics explain the waiting state. `/chalk bar bank status` explains which part of the client bank API is available. Within the bank readout's tooltip and Bar tooltip, AuctionSense's recent non-mixed **asking-price estimate** is separate from vendor value and shows coverage of priced stacks; missing prices do not silently become zero. Only per-character bank tabs are included; warband/account bank, guild bank, and carried bags are excluded. Uncached vendor prices make the total a stated lower bound. No items are moved or sold.
 
 The Bar's fresh layout differs from players' older saved layouts; upgrades do **not** forcibly overwrite customized positions. Repair numbers marked with a tilde are estimates.
 

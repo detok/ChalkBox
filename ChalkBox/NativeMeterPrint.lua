@@ -7,6 +7,7 @@ local lastAutoAt=-1000000000
 local lastAutoMessage=nil
 local combatStartedAt=nil
 local pendingDelay=nil
+local reportInProgress=false
 
 local function Safe(value)
     return value~=nil and
@@ -117,10 +118,11 @@ local function SelectedSources(frame)
     if not ok then return end
     return CombatSources(session)
 end
-local function BuildMessage(sources,label,title,perSecond,limit)
+local function BuildMessages(sources,label,title,perSecond,limit)
     if not sources or #sources==0 then return nil,"No completed fight values." end
-    local prefix="CB "..label.." ("..title.."): "
-    local parts={}
+    -- WoW chat does not accept newline characters or bare pipe separators.
+    -- The heading and each ranked player are separate ordinary chat sends.
+    local lines={"CB "..label.." ("..title.."):"}
     for i=1,math.min(#sources,limit) do
         local source=sources[i]
         if not Safe(source) or type(source)~="table" then
@@ -134,15 +136,11 @@ local function BuildMessage(sources,label,title,perSecond,limit)
         end
         name=name:gsub("[%c|]",""):sub(1,64)
         if name=="" then name="Unknown" end
-        parts[#parts+1]=string.format("%d %s %.0f",i,name,amount)
+        local line=string.format("%d. %s - %.0f",i,name,amount)
+        if #line>255 then return nil,"Report line exceeds chat limit." end
+        lines[#lines+1]=line
     end
-    local message=prefix..table.concat(parts," | ")
-    while #message>255 and #parts>1 do
-        table.remove(parts)
-        message=prefix..table.concat(parts," | ")
-    end
-    if #message>255 then return nil,"Report exceeds the chat limit." end
-    return message
+    return lines
 end
 local function MessagingRestricted()
     local api=C_ChatInfo
@@ -181,17 +179,13 @@ local function SendReport(frame,channel,auto)
         (type(IsInRaid)=="function" and IsInRaid())) then
         return Reject("PARTY requires a normal party. No message sent.")
     end
-    if frame and type(frame.IsEditing)=="function" then
-        local ok,editing=pcall(frame.IsEditing,frame)
-        if not ok or not Safe(editing) or editing then
-            return Reject("Exit Edit Mode before printing.")
-        end
-    end
     local now=Clock()
     if not now then return Reject("Combat report clock unavailable.") end
+    if reportInProgress then return Reject("A report is already being sent.") end
     if now-lastSentAt<3 then return Reject("Report just sent. Try again shortly.") end
     if auto and now-lastAutoAt<Settings().nativeAutoCooldown then return false end
-    local send=(C_ChatInfo and C_ChatInfo.SendChatMessage) or SendChatMessage
+    local send=type(SendChatMessage)=="function" and SendChatMessage or
+        (C_ChatInfo and C_ChatInfo.SendChatMessage)
     if type(send)~="function" then return Reject("Chat API unavailable.") end
     local kind,label,perSecond,title,sources
     if auto then
@@ -218,40 +212,49 @@ local function SendReport(frame,channel,auto)
         end
     end
     if not label then return Reject("Meter statistic unavailable.") end
-    local message,reason=BuildMessage(sources,label,title,perSecond,
+    local lines,reason=BuildMessages(sources,label,title,perSecond,
         Settings().nativeReportRows)
-    if not message then return Reject(reason) end
-    -- Avoid re-posting stale Expired data after a fight that created no new
-    -- Blizzard session. Identical consecutive summaries are deliberately
-    -- skipped rather than risking auto chat spam.
-    if auto and message==lastAutoMessage then return false end
-    if MessagingRestricted() then
-        if auto then return false end
-        if type(ChalkBox_MeterShowCopy)=="function" then
-            ChalkBox_MeterShowCopy(message,
-                "Forever restricts addon chat right now.")
-        else
-            Note("Forever restricts addon chat. Report: "..message)
-        end
-        return false
+    if not lines then return Reject(reason) end
+    -- Only the local fingerprint uses a newline; no newline goes to chat.
+    local fingerprint=table.concat(lines,"\n")
+    if auto and fingerprint==lastAutoMessage then return false end
+    if auto and MessagingRestricted() then return false end
+    -- As in Details!, send ordinary chat lines in order with small spacing.
+    -- Group chat permits deferred addon messages. For SAY, use the actual
+    -- user click for every line so hardware-event restrictions still apply.
+    -- Never combine lines with newlines, retry, or change destination.
+    local paced=(channel=="PARTY" and C_Timer and
+        type(C_Timer.After)=="function")
+    local function Finished()
+        reportInProgress=false
+        if auto then lastAutoAt=now;lastAutoMessage=fingerprint end
+        Note((auto and "Auto report" or "Report").." requested in "..channel..
+            " (delivery is controlled by the game).")
     end
-    local ok,result=pcall(send,message,channel)
-    if not ok or result==false then
-        if auto then return false end
-        if type(ChalkBox_MeterShowCopy)=="function" then
-            ChalkBox_MeterShowCopy(message,
-                "Forever rejected addon chat; no other channel tried.")
-        else
-            Note("Chat rejected the report. Copy manually: "..message)
+    local SendLine
+    SendLine=function(i)
+        local ok,result=pcall(send,lines[i],channel)
+        if not ok or (Safe(result) and result==false) then
+            reportInProgress=false
+            if not auto then
+                local detail=not ok and Safe(result) and type(result)=="string"
+                    and result:sub(1,180) or "chat API returned false"
+                Note(channel.." report stopped at line "..i..": "..detail)
+            end
+            return false
         end
-        return false
+        if i==1 then lastSentAt=now end
+        if i==#lines then
+            Finished()
+        elseif paced then
+            C_Timer.After(0.20,function() SendLine(i+1) end)
+        else
+            return SendLine(i+1)
+        end
+        return true
     end
-    lastSentAt=now
-    if auto then lastAutoAt=now;lastAutoMessage=message end
-    -- A successful API call is not a delivery acknowledgment.
-    Note((auto and "Auto report" or "Report").." requested in "..channel..
-        " (delivery is controlled by the game).")
-    return true
+    reportInProgress=true
+    return SendLine(1)
 end
 function ChalkBox_NativeMeterPrint(frame,channel)
     return SendReport(frame,channel or "PARTY",false)

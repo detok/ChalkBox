@@ -55,4 +55,4 @@ Run the matching diagnostic, such as `/chalk quests status`, `/chalk drops map s
 [Documentation home](README.md) · [User handbook](USER_GUIDE.md) · [Complete commands](COMMANDS.md)
 
 
-**2.2.24 beta candidate:** The compact Combat Meter has one shared reporting menu and auto-fitting rows; The Bar can toggle native bags and AuctionSense has a settings-only experimental charts page. **2.2.22 is still the stable version.** Use the [2.2.24 smoke checklist](RELEASE_CANDIDATE_TEST_2.2.24.md) for the GitHub prerelease.
+**2.2.25 GitHub beta:** The bank displays a compact vendor-value label and The Bar supports per-module width resizing. Combat reports send normal ranked PARTY/SAY lines without an escape-code or copy fallback; PARTY rows are paced 200ms apart. Auction charts, optional map-pin navigation and learned flight-master markers remain opt-in/read-only where appropriate. **2.2.22 is still the last fully accepted stable version.** See the [current release notes](RELEASE_NOTES.md).
