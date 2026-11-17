@@ -594,12 +594,27 @@ _G.ChalkBox_MapNativeLootSet=function(map,x,y)
     return true
 end
 _G.ChalkBox_MapNativeLootClear=function() cleared=true end
-first.OnEnter()
+local function RowNamed(name)
+    for _,candidate in ipairs(frames) do
+        if candidate.parent==journal and candidate.w==452 and
+            candidate.h==34 and candidate.OnEnter and
+            candidate:IsShown() then
+            for _,label in ipairs(fonts) do
+                if label.parent==candidate and label.text==name then
+                    return candidate
+                end
+            end
+        end
+    end
+end
+local linen=RowNamed("Linen Cloth")
+assert(linen,"fixture must select the item that has observed positions")
+linen.OnEnter()
 assert(offered and offered.map==1436
     and math.abs(offered.x-.673)<0.000001
     and math.abs(offered.y-.498)<0.000001,
     "subzone hover delegates original parent-zone coordinates to native pins")
-first.OnLeave()
+linen.OnLeave()
 assert(cleared,"mouse leave clears the native transient marker")
 _G.ChalkBox_MapNativeAvailable=nil
 _G.ChalkBox_MapNativeLootSet=nil
