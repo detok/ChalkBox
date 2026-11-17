@@ -160,22 +160,29 @@ local function PreviewDate(stamp)
     end
     return "Recorded scan "..tostring(stamp)
 end
-local function BuildPricePreview(parent)
+local function BuildPricePreview(parent,listPanel)
     local panel=CreateFrame("Frame","ChalkBoxAuctionPricePreview",parent)
     -- A dedicated right-hand sidebar next to the result rows. It grows
     -- when the native AH is taller, and always stops above the page footer.
     -- This avoids overlapping the mode buttons, search bar and scan controls.
     -- A narrow gutter separates this card from the framed price table
     -- on Forever's fixed-width Auction House.
-    local width=220
+    local width=248
+    -- Match the list panel's exact top and bottom; a 12px column gutter.
+    -- Anchor constraints, not guessed heights, keep this even at UI scales.
+    panel:SetSize(width,156)
+    panel:SetPoint("TOPLEFT",listPanel,"TOPRIGHT",12,0)
+    panel:SetPoint("BOTTOMRIGHT",parent,"BOTTOMRIGHT",-16,27)
     local function Height()
-        local h=type(parent.GetHeight)=="function" and parent:GetHeight() or 316
-        if type(h)~="number" or h~=h then h=316 end
-        return math.max(112,math.min(290,h-164))
+        local h=type(panel.GetHeight)=="function" and panel:GetHeight()
+        return type(h)=="number" and h==h and h>96 and h or 156
+    end
+    local function Width()
+        local w=type(panel.GetWidth)=="function" and panel:GetWidth()
+        return type(w)=="number" and w==w and w>140 and w or width
     end
     local lastHeight=Height()
-    panel:SetSize(width,lastHeight)
-    panel:SetPoint("TOPRIGHT",parent,"TOPRIGHT",-16,-136)
+    local lastWidth=Width()
     PanelSurface(panel,width,40,27)
     -- Inner chart field, below the item heading and above the summary strip.
     -- The anchors stretch automatically as the AH window's height changes.
@@ -271,11 +278,8 @@ local function BuildPricePreview(parent)
         end
     end
     return function(itemID)
-        local h=Height()
-        if h~=lastHeight then
-            lastHeight=h
-            panel:SetSize(width,h)
-        end
+        lastHeight=Height()
+        lastWidth=Width()
         Clear()
         hoverName,hoverSummary,hoverMixed=nil,nil,false
         if not itemID then
@@ -351,7 +355,7 @@ local function BuildPricePreview(parent)
             if #points==1 then xFraction=0.5
             elseif first==last then xFraction=(i-1)/(#points-1)
             else xFraction=(p.t-first)/(last-first) end
-            local x=16+xFraction*(width-32)
+            local x=16+xFraction*(lastWidth-32)
             -- Keep points between the framed plot's 43px header and
             -- 33px footer, with a few pixels of breathing room.
             local y=40+(p.low-floor)/scale*math.max(20,lastHeight-87)
@@ -565,7 +569,9 @@ local function Refresh()
             tostring(status.marketKey or "").."|"..
             tostring(status.scannedAt or 0).."|"..
             tostring(type(frame.GetHeight)=="function" and
-                frame:GetHeight() or 316)
+                frame:GetHeight() or 316).."|"..
+            tostring(type(frame.GetWidth)=="function" and
+                frame:GetWidth() or 784)
         if key~=pricePreviewKey then
             pricePreviewKey=key
             pricePreview(selectedItemID)
@@ -643,7 +649,6 @@ local function Ensure()
     labels.mode_sales=Button(f,"Sales & Stats",201,-87,114,function() Mode("sales") end)
     -- Scan results live under the view choices, not between buttons/search.
     labels.details=Font(f,"GameFontHighlightSmall",21,-117,446)
-    pricePreview=BuildPricePreview(f)
     labels.scan=Button(f,"Scan Market",21,-106,125,function()
         if type(ChalkBox_AuctionScan)=="function" then
             local ok,reason=ChalkBox_AuctionScan()
@@ -695,6 +700,7 @@ local function Ensure()
     listPanel:SetPoint("TOPLEFT",f,"TOPLEFT",13,-132)
     listPanel:SetPoint("BOTTOMLEFT",f,"BOTTOMLEFT",13,27)
     PanelSurface(listPanel,469,22,33)
+    pricePreview=BuildPricePreview(f,listPanel)
     Font(f,"GameFontNormal",21,-138,213):SetText("ITEM")
     labels.hdrLow=Font(f,"GameFontNormal",252,-138,82)
     Tint(labels.hdrLow,COLOR.low)
