@@ -531,12 +531,7 @@ local function PrintFight()
     if not ok or (Safe(result) and result==false) then
         local detail=not ok and Safe(result) and type(result)=="string"
             and result:sub(1,180) or "chat API returned false"
-        if type(ChalkBox_MeterShowCopy)=="function" then
-            ChalkBox_MeterShowCopy(message,
-                "PARTY send failed: "..detail)
-        else
-            Chat("PARTY send failed ("..detail.."). Copy manually: "..message)
-        end
+        Chat("PARTY report was not sent: "..detail)
         return false
     end
     if Safe(now) and type(now)=="number" then lastPartyReportAt=now end
@@ -552,7 +547,7 @@ function ChalkBox_MeterPrintFight()
     return PrintFight() -- legacy test/client fallback when native helper absent
 end
 -- Use the native report encoder, validation, configurable Top 3/5/10,
--- channels and manual copy fallback. Never maintain a second print path.
+-- channels. Never maintain a second print path.
 function ChalkBox_MeterReportAdapter()
     if not db then db=Settings() end
     if not IsAvailable() then return nil end
