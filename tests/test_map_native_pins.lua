@@ -133,6 +133,11 @@ assert(byName["Known Flight"] and byName["Known Flight"].position[1]==.3
     and byName["Known Flight"].glyph.atlas=="TaxiNode_Alliance"
     and byName["Known Flight"].levelType=="PIN_FRAME_LEVEL_TOPMOST",
     "native SetPosition and native map pin level used")
+assert(byName["Known Flight"].ring.shown==true
+    and byName["Known Flight"].ring.color
+    and byName["Known Flight"].ring.color[4]>.8
+    and byName["Known Flight"].ring.width==11,
+    "flight pin paints an amber backing even when atlas paints nothing")
 assert(byName["Visited Flight"] and
     byName["Visited Flight"].glyph.atlas=="TaxiNode_Neutral",
     "preserve Blizzard's flight icon")
