@@ -117,10 +117,11 @@ local function SelectedSources(frame)
     if not ok then return end
     return CombatSources(session)
 end
-local function BuildMessage(sources,label,title,perSecond,limit)
+local function BuildMessages(sources,label,title,perSecond,limit)
     if not sources or #sources==0 then return nil,"No completed fight values." end
-    local prefix="CB "..label.." ("..title.."): "
-    local parts={}
+    -- WoW chat does not accept newline characters or bare pipe separators.
+    -- The heading and each ranked player are separate ordinary chat sends.
+    local lines={"CB "..label.." ("..title.."):"}
     for i=1,math.min(#sources,limit) do
         local source=sources[i]
         if not Safe(source) or type(source)~="table" then
@@ -134,15 +135,11 @@ local function BuildMessage(sources,label,title,perSecond,limit)
         end
         name=name:gsub("[%c|]",""):sub(1,64)
         if name=="" then name="Unknown" end
-        parts[#parts+1]=string.format("%d %s %.0f",i,name,amount)
+        local line=string.format("%d %s %.0f",i,name,amount)
+        if #line>255 then return nil,"Report line exceeds chat limit." end
+        lines[#lines+1]=line
     end
-    local message=prefix..table.concat(parts,", ")
-    while #message>255 and #parts>1 do
-        table.remove(parts)
-        message=prefix..table.concat(parts,", ")
-    end
-    if #message>255 then return nil,"Report exceeds the chat limit." end
-    return message
+    return lines
 end
 local function MessagingRestricted()
     local api=C_ChatInfo
@@ -213,30 +210,28 @@ local function SendReport(frame,channel,auto)
         end
     end
     if not label then return Reject("Meter statistic unavailable.") end
-    local message,reason=BuildMessage(sources,label,title,perSecond,
+    local lines,reason=BuildMessages(sources,label,title,perSecond,
         Settings().nativeReportRows)
-    if not message then return Reject(reason) end
-    -- Avoid re-posting stale Expired data after a fight that created no new
-    -- Blizzard session. Identical consecutive summaries are deliberately
-    -- skipped rather than risking auto chat spam.
-    if auto and message==lastAutoMessage then return false end
-    -- A manual click is a player-initiated action. Some clients report a
-    -- general addon-chat lockdown even when that click may send PARTY/SAY.
-    -- Preserve the guard for timer-driven auto reports; manual sends must
-    -- be judged by the actual chat API result instead of the status flag.
+    if not lines then return Reject(reason) end
+    -- Only the local fingerprint uses a newline; no newline goes to chat.
+    local fingerprint=table.concat(lines,"\n")
+    if auto and fingerprint==lastAutoMessage then return false end
     if auto and MessagingRestricted() then return false end
-    -- One standard chat attempt to exactly the selected channel.
-    -- No copy dialog, no alternate destination, no retry.
-    local ok,result=pcall(send,message,channel)
-    if not ok or (Safe(result) and result==false) then
-        if auto then return false end
-        local detail=not ok and Safe(result) and type(result)=="string"
-            and result:sub(1,180) or "chat API returned false"
-        Note(channel.." report was not sent: "..detail)
-        return false
+    -- Send each visual line as its own normal PARTY/SAY message, directly
+    -- from the click rather than deferring to a timer that loses hardware context.
+    -- Never retry or redirect a failed line.
+    for i,line in ipairs(lines) do
+        local ok,result=pcall(send,line,channel)
+        if not ok or (Safe(result) and result==false) then
+            if auto then return false end
+            local detail=not ok and Safe(result) and type(result)=="string"
+                and result:sub(1,180) or "chat API returned false"
+            Note(channel.." report stopped at line "..i..": "..detail)
+            return false
+        end
+        if i==1 then lastSentAt=now end
     end
-    lastSentAt=now
-    if auto then lastAutoAt=now;lastAutoMessage=message end
+    if auto then lastAutoAt=now;lastAutoMessage=fingerprint end
     -- A successful API call is not a delivery acknowledgment.
     Note((auto and "Auto report" or "Report").." requested in "..channel..
         " (delivery is controlled by the game).")
