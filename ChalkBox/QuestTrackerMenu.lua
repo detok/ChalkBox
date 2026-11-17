@@ -61,10 +61,9 @@ local function AttachSort()
     return true
 end
 function ChalkBox_QuestTrackerSortRefresh()
-    if not (ChalkBoxZoneDB and ChalkBoxZoneDB.nativeOrder) then
-        return false
-    end
-    if not AttachSort() then return false end
+    local enabled=ChalkBoxZoneDB and ChalkBoxZoneDB.nativeOrder==true
+    if enabled and not AttachSort() then return false end
+    if not enabled and not sortAttached then return false end
     if type(InCombatLockdown)=="function" then
         local ok,locked=pcall(InCombatLockdown)
         if not ok or locked then return true end
