@@ -9,6 +9,7 @@ local transientLoot
 local markerCount,flightCount,lootCount=0,0,0
 local mapRetry=0
 local refreshBusy=false
+local nativeBroken=false
 local lastProblem="native map canvas not loaded"
 
 local function Public(v)
@@ -226,9 +227,17 @@ local function InitProvider(map)
         for i=1,math.min(#discovered,80) do
             local entry=discovered[i]
             if entry and Number(entry.x) and Number(entry.y) then
-                local good=pcall(owning.AcquirePin,owning,FLIGHT_TEMPLATE,
+                if nativeBroken then break end
+                local good,pin=pcall(owning.AcquirePin,owning,FLIGHT_TEMPLATE,
                     "flight",entry.x,entry.y,entry.name,entry.atlas)
-                if good then flightCount=flightCount+1 end
+                if good and pin then
+                    flightCount=flightCount+1
+                else
+                    nativeBroken=true
+                    lastProblem="native flight pin acquisition unsupported"
+                    owning:RemoveAllPinsByTemplate(FLIGHT_TEMPLATE)
+                    flightCount=0
+                end
             end
         end
         markerCount=flightCount+lootCount
@@ -243,9 +252,15 @@ local function InitProvider(map)
             local x,y=Project(transientLoot.mapID,viewed,
                 transientLoot.x,transientLoot.y)
             if x then
-                local good=pcall(owning.AcquirePin,owning,LOOT_TEMPLATE,
+                local good,pin=pcall(owning.AcquirePin,owning,LOOT_TEMPLATE,
                     "loot",x,y)
-                if good then lootCount=1 end
+                if good and pin then
+                    lootCount=1
+                else
+                    nativeBroken=true
+                    lastProblem="native loot pin acquisition unsupported"
+                    owning:RemoveAllPinsByTemplate(LOOT_TEMPLATE)
+                end
             end
         end
         markerCount=flightCount+lootCount
@@ -266,6 +281,7 @@ local function InitProvider(map)
     return true
 end
 local function Ensure()
+    if nativeBroken then return false end
     if provider then return true end
     local map=WorldMapFrame
     if not map then return false end
@@ -282,7 +298,7 @@ function ChalkBox_MapNativeRefresh()
     if not ok then
         lastProblem="native map marker refresh failed"
     end
-    return ok
+    return ok and not nativeBroken
 end
 function ChalkBox_MapNativeLootSet(mapID,x,y)
     if type(mapID)~="number" or not Number(x) or not Number(y) then
@@ -292,7 +308,7 @@ function ChalkBox_MapNativeLootSet(mapID,x,y)
     transientLoot={mapID=mapID,x=x,y=y}
     local ok=pcall(provider.RefreshLoot,provider)
     if not ok then lastProblem="native loot marker refresh failed" end
-    return ok
+    return ok and not nativeBroken
 end
 function ChalkBox_MapNativeLootClear()
     if not transientLoot then return end
@@ -300,7 +316,7 @@ function ChalkBox_MapNativeLootClear()
     if provider then pcall(provider.RefreshLoot,provider) end
 end
 function ChalkBox_MapNativeStatus()
-    return {available=provider~=nil,
+    return {available=provider~=nil and not nativeBroken,
         mapID=MapID(WorldMapFrame),pinCount=markerCount,
         flightPins=flightCount,lootPins=lootCount,
         problem=lastProblem,loot=transientLoot~=nil}
