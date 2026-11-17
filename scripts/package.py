@@ -37,6 +37,7 @@ FILES = (
     "Libs/LibProfessionDB-1.0/Data/Sources.lua",
     "Libs/LibProfessionDB-1.0/Data/SourceNames.lua",
     "Core.lua",
+    "QuestItemLinks.lua",
     "ProfessionSense.lua",
     "RecipeAdvisor.lua",
     "Theme.lua",
