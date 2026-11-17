@@ -120,7 +120,15 @@ _G.CreateFrame=Frame
 _G.C_Map={
     GetBestMapForUnit=function() return 1436 end,
     GetMapInfo=function(id)
-        return {name=({[1436]="Westfall",[1437]="Redridge Mountains"})[id]}
+        local names={[1436]="Westfall",[1437]="Redridge Mountains",
+            [999]="Westfall Subzone"}
+        if id==999 then
+            return {name=names[id],mapType=5,parentMapID=1436}
+        end
+        if id==1436 or id==1437 then
+            return {name=names[id],mapType=3,parentMapID=13}
+        end
+        return {name=names[id],mapType=2}
     end
 }
 _G.ChalkBox_DropOptions=function()
@@ -613,6 +621,45 @@ viewed=1436
 journal.OnUpdate(journal,0.8)
 assert(ChalkBox_DiscoveriesBrowserStatus().selectedArea=="z:1436",
     "following updates the selected zone when the map changes")
+-- Subzone follows its parent Zone; native hover receives original coordinates.
+viewed=999
+journal.OnUpdate(journal,0.8)
+assert(ChalkBox_DiscoveriesBrowserStatus().selectedArea=="z:1436",
+    "subzone map zoom must select the parent outdoor loot history")
+local offered,cleared=nil,false
+_G.ChalkBox_MapNativeAvailable=function() return true end
+_G.ChalkBox_MapNativeLootSet=function(map,x,y)
+    offered={map=map,x=x,y=y}
+    return true
+end
+_G.ChalkBox_MapNativeLootClear=function() cleared=true end
+local function RowNamed(name)
+    for _,candidate in ipairs(frames) do
+        if candidate.parent==journal and candidate.w==452 and
+            candidate.h==34 and candidate.OnEnter and
+            candidate:IsShown() then
+            for _,label in ipairs(fonts) do
+                if label.parent==candidate and label.text==name then
+                    return candidate
+                end
+            end
+        end
+    end
+end
+local linen=RowNamed("Linen Cloth")
+assert(linen,"fixture must select the item that has observed positions")
+linen.OnEnter()
+assert(offered and offered.map==1436
+    and math.abs(offered.x-.673)<0.000001
+    and math.abs(offered.y-.498)<0.000001,
+    "subzone hover delegates original parent-zone coordinates to native pins")
+linen.OnLeave()
+assert(cleared,"mouse leave clears the native transient marker")
+_G.ChalkBox_MapNativeAvailable=nil
+_G.ChalkBox_MapNativeLootSet=nil
+_G.ChalkBox_MapNativeLootClear=nil
+viewed=1436
+journal.OnUpdate(journal,0.8)
 ClickButton("Map sync: ON")
 browser=ChalkBox_DiscoveriesBrowserStatus()
 assert(not browser.followMap and browser.mode=="dungeon" and
