@@ -79,7 +79,9 @@ local function ReadLog()
                 quests[#quests+1]={
                     id=info.questID,title=Public(info.title) and info.title or
                         ("Quest #"..info.questID),
-                    header=header,localPOI=info.hasLocalPOI==true,
+                    header=header,level=type(info.level)=="number" and Public(info.level)
+                        and info.level or 0,
+                    localPOI=info.hasLocalPOI==true,
                     onMap=info.isOnMap==true,index=i,
                 }
             end
@@ -139,6 +141,53 @@ local function Relevant(quests,zoneID,zoneNames)
     -- No zone map and no matching quest header means the client hasn't
     -- supplied enough evidence to safely change existing watches.
     return marked,nearby,hasMapData or headerMatch
+end
+-- Prefer the actual Forever quest helper's squared-distance reading.
+-- Zero, secret, different-continent and missing results are not distances.
+-- These are measurements to the game's NEXT QUEST STEP (when available),
+-- not a claim of nearest enemy or an optimal multi-objective route.
+local function ObjectiveDistance(questID)
+    local fn=C_QuestLog and C_QuestLog.GetDistanceSqToQuest
+    if type(fn)~="function" then return nil end
+    local ok,distance,onContinent=pcall(fn,questID)
+    if not ok or not Public(distance) or type(distance)~="number"
+        or distance<0 or distance~=distance or distance==math.huge
+        or not Public(onContinent) or onContinent~=true then
+        return nil
+    end
+    return distance
+end
+local function SmartSortMode()
+    local value=settings and settings.smartSort
+    if value=="zone" or value=="level" or value=="name" or value=="log"
+        then return value end
+    return "nearest"
+end
+-- All sorting is deterministic. Distance orders only verified, same-region
+-- next steps; unknown distances never masquerade as close-by objectives.
+local function CompareCandidates(a,b,mode)
+    if mode=="nearest" then
+        if a.localZone~=b.localZone then return a.localZone end
+        if (a.distance~=nil)~=(b.distance~=nil) then
+            return a.distance~=nil
+        end
+        if a.distance and b.distance and a.distance~=b.distance then
+            return a.distance<b.distance
+        end
+    elseif mode=="zone" then
+        if a.localZone~=b.localZone then return a.localZone end
+        if a.header~=b.header then
+            return (a.header or "zzz")<(b.header or "zzz")
+        end
+    elseif mode=="level" then
+        if a.level~=b.level then return a.level<b.level end
+    elseif mode=="name" then
+        if a.title~=b.title then return a.title<b.title end
+    elseif mode=="log" then
+        return a.logIndex<b.logIndex
+    end
+    if a.score~=b.score then return a.score>b.score end
+    return a.logIndex<b.logIndex
 end
 -- Only the explicit Smart mode changes behavior in actual party dungeons.
 -- Do not treat every quest tagged "Dungeon" as belonging to this instance.
@@ -329,14 +378,24 @@ local function Reconcile()
         end
     end
     local prioritized={}
+    local sortMode=SmartSortMode()
+    local measurable=0
     for _,quest in ipairs(quests) do
         local score=mode=="all" and 0 or (scores[quest.id] or 0)
         if not focusOnly or localQuests[quest.id] then
-            prioritized[#prioritized+1]={id=quest.id,title=quest.title,score=score,
-                logIndex=quest.index}
+            local distance=mode=="smart" and not dungeon and
+                ObjectiveDistance(quest.id) or nil
+            if distance then measurable=measurable+1 end
+            prioritized[#prioritized+1]={id=quest.id,title=quest.title,
+                header=quest.header,level=quest.level,
+                localZone=localQuests[quest.id]==true,
+                distance=distance,score=score,logIndex=quest.index}
         end
     end
     table.sort(prioritized,function(a,b)
+        if mode=="smart" and not dungeon then
+            return CompareCandidates(a,b,sortMode)
+        end
         if a.score~=b.score then return a.score>b.score end
         return a.logIndex<b.logIndex
     end)
@@ -478,7 +537,8 @@ local function Reconcile()
         zone=name or "unknown",mode=mode,max=MaxWatches(),
         manual=manualNow,initialWatches=before,
         dungeon=dungeon and dungeon.name or nil,
-        dungeonMatches=dungeon and dungeonCount or nil}
+        dungeonMatches=dungeon and dungeonCount or nil,
+        smartSort=sortMode,measured=measurable}
 end
 QueueUpdate=function()
     if not settings or queued or busy then return end
@@ -527,7 +587,8 @@ function ChalkBox_QuestStatus()
         restored=lastStats.restored or 0,
         api=API(),pending=pending,
         dungeon=lastStats.dungeon,dungeonMatches=lastStats.dungeonMatches,
-        navigationWatch=navFocusID}
+        navigationWatch=navFocusID,
+        smartSort=SmartSortMode(),measured=lastStats.measured or 0}
 end
 function ChalkBox_QuestCommand(text)
     if not settings then return end
@@ -556,8 +617,20 @@ function ChalkBox_QuestCommand(text)
             Note("Dungeon "..st.dungeon.." | confirmed quests "..
                 tostring(st.dungeonMatches or 0))
         end
+        Note("Smart sort "..st.smartSort.." | measured next steps "..tostring(st.measured)..".")
         Note("Forever APIs "..(st.api and "ready" or "MISSING")..
             " | "..st.reason..(st.pending and " (retry pending)" or ""))
+    elseif cmd:match("^sort %a+$") then
+        local value=cmd:match("^sort (%a+)$")
+        if value=="nearest" or value=="zone" or value=="level"
+            or value=="name" or value=="log" then
+            settings.smartSort=value
+            QueueUpdate()
+            Note("Smart preference: "..value..
+                ". Selection order uses verified quest locations; native tracker ordering remains Blizzard-controlled.")
+        else
+            Note("Smart sorting: nearest, zone, level, name or log.")
+        end
     elseif cmd=="smart" or cmd=="zone" or cmd=="all" then
         settings.mode=cmd
         QueueUpdate()
@@ -573,7 +646,7 @@ function ChalkBox_QuestCommand(text)
             Note("Choose limit 5, 10, 15 or 20.")
         end
     else
-        Note("/chalk quests on|off|refresh|status|smart|zone|all|limit 5/10/15/20")
+        Note("/chalk quests on|off|refresh|status|smart|zone|all|sort nearest/zone/level/name/log|limit 5/10/15/20")
     end
 end
 local events=CreateFrame("Frame")
@@ -616,7 +689,8 @@ events:SetScript("OnEvent",function(_,event,arg1,arg2)
                 local watchDungeon=settings and settings.enabled and
                     settings.mode=="smart" and CurrentDungeon()~=nil
                 if pending or (settings and settings.enabled
-                    and (settings.mode=="zone" or watchDungeon)
+                    and (settings.mode=="zone" or watchDungeon or
+                        (settings.mode=="smart" and settings.smartSort~="log"))
                     and ticks%4==0) then
                     QueueUpdate()
                 end
