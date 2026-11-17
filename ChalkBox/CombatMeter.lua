@@ -492,8 +492,8 @@ local function PrintFight()
         Chat("No completed fight data to report.")
         return false
     end
-    -- Keep it to ONE group message, top three combatants only. Validate
-    -- everything before calling chat; partial secret rankings never leak.
+    -- Build a plain heading and one chat line per player (top three).
+    -- Validate all sources before sending anything; never leak secret data.
     local parts={}
     for i=1,math.min(#sources,3) do
         local source=sources[i]
@@ -513,28 +513,26 @@ local function PrintFight()
         if name=="" then name="Unknown" end
         parts[#parts+1]=string.format("%d %s %.0f",i,name,amount)
     end
-    local message="CB "..mode.label.." ("..title.."): "..table.concat(parts," | ")
-    if #message>255 then
-        -- Avoid truncation by the chat API: drop lower-ranked entries.
-        while #message>255 and #parts>1 do
-            table.remove(parts)
-            message="CB "..mode.label.." ("..title.."): "..table.concat(parts," | ")
+    local lines={"CB "..mode.label.." ("..title.."):"}
+    for _,part in ipairs(parts) do
+        if #part>255 then
+            Chat("Fight report line is too long; nothing sent.")
+            return false
         end
+        lines[#lines+1]=part
     end
-    if #message>255 then
-        Chat("Fight report is too long for party chat; nothing sent.")
-        return false
+    -- Each visual line is one normal PARTY chat message; no embedded
+    -- newlines, bare pipe escapes, fallback window, or alternate channel.
+    for i,line in ipairs(lines) do
+        local ok,result=pcall(send,line,"PARTY")
+        if not ok or (Safe(result) and result==false) then
+            local detail=not ok and Safe(result) and type(result)=="string"
+                and result:sub(1,180) or "chat API returned false"
+            Chat("PARTY report stopped at line "..i..": "..detail)
+            return false
+        end
+        if i==1 and Safe(now) and type(now)=="number" then lastPartyReportAt=now end
     end
-    -- A player-clicked PRINT may be permitted even while general addon
-    -- messaging lockdown is reported. Attempt the legitimate PARTY API.
-    local ok,result=pcall(send,message,"PARTY")
-    if not ok or (Safe(result) and result==false) then
-        local detail=not ok and Safe(result) and type(result)=="string"
-            and result:sub(1,180) or "chat API returned false"
-        Chat("PARTY report was not sent: "..detail)
-        return false
-    end
-    if Safe(now) and type(now)=="number" then lastPartyReportAt=now end
     Chat("Party report requested ("..#parts..
         " players); delivery is controlled by the game.")
     return true
