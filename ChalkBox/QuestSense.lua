@@ -422,7 +422,8 @@ local function Reconcile()
             if a.inArea~=b.inArea then return a.inArea end
             return a.header<b.header
         end
-        if sortMode=="title" and a.title~=b.title then
+        if sortMode=="title" and type(a.title)=="string" and
+            type(b.title)=="string" and a.title~=b.title then
             return a.title:lower()<b.title:lower()
         end
         if sortMode=="level" and type(a.level)=="number" and
