@@ -23,6 +23,8 @@ The **Global Appearance** page controls ChalkBox's palette and panel visibility.
 - **RecipeAdvisor / ProfessionSense** use observed character profession data plus a bundled Forever-only recipe catalog. A catalog entry does not mean your character has learned that recipe.
 - **LootSense Appearance** offers filters for extra ingredient insights. Quest protection and personal KEEP selections remain higher priority. Bag item-button decoration is intentionally conservative to avoid protected-action issues.
 
+For a difficult item, type **`/chalk loot quest`** followed by its shift-clicked item link (or item ID). The command prints exactly which accepted-quest or bundled reference records ChalkBox found. It's a read-only diagnostic—no addon or Internet connection required.
+
 **Does not:** Automatically sell, delete, move, equip, disenchant or declare an unknown item safe to discard.
 
 ## DropSense and Discoveries
