@@ -1,7 +1,5 @@
--- ChalkBox World Map drawing: let Blizzard's native MapCanvas position pins.
--- This module owns *rendering only*. DropSense owns recorded loot coordinates;
--- DiscoveriesFlights owns which flight paths were personally confirmed.
--- No external library, copied pin code, saved-variable migration or map writes.
+-- ChalkBox shared, map-owned flight and Discoveries markers.
+-- UI positions come only from saved player observations and taxi proof.
 local FLIGHT_TEMPLATE="ChalkBoxNativeFlightMarker"
 local LOOT_TEMPLATE="ChalkBoxNativeLootMarker"
 local provider,flightPool,lootPool
@@ -72,280 +70,266 @@ function ChalkBox_MapNativeProject(sourceMap,targetMap,x,y)
     return Project(sourceMap,targetMap,x,y)
 end
 
-local pinMixin
-local function BuildPinMixin()
-    if pinMixin or type(MapCanvasPinMixin)~="table" or
-        type(CreateFromMixins)~="function" then return pinMixin end
-    pinMixin=CreateFromMixins(MapCanvasPinMixin)
-    function pinMixin:OnLoad()
-        self:SetSize(24,24)
-        if type(self.UseFrameLevelType)=="function" then
-            self:UseFrameLevelType("PIN_FRAME_LEVEL_TOPMOST")
-        end
-        if type(self.SetScalingLimits)=="function" then
-            self:SetScalingLimits(1,1,1.2)
-        end
-        if type(self.SetMouseClickEnabled)=="function" then
-            self:SetMouseClickEnabled(false)
-        end
-        if type(self.SetMouseMotionEnabled)=="function" then
-            self:SetMouseMotionEnabled(true)
-        end
-        self.glyph=self:CreateTexture(nil,"OVERLAY")
-        self.glyph:SetAllPoints(self)
-        self.ring=self:CreateTexture(nil,"OVERLAY")
-        self.ring:SetSize(17,17)
-        self.ring:SetPoint("CENTER",self,"CENTER",0,0)
-        self.center=self:CreateTexture(nil,"OVERLAY")
-        self.center:SetSize(6,6)
-        self.center:SetPoint("CENTER",self,"CENTER",0,0)
-    end
-    function pinMixin:OnAcquired(kind,x,y,name,atlas)
-        self.kind,self.flightName=kind,name
-        self.clock=0
-        -- Native SetPosition routes through the map's zoom-aware canvas.
-        self:SetPosition(x,y)
-        if type(self.SetMouseMotionEnabled)=="function" then
-            self:SetMouseMotionEnabled(kind=="flight")
-        end
-        if kind=="flight" then
-            self:SetSize(24,24)
-            self.glyph:Show()
-            self.ring:Hide()
-            self.center:Hide()
-            local chosen=atlas or "TaxiNode_Neutral"
-            local atlasOK=false
-            if type(self.glyph.SetAtlas)=="function" then
-                local ok,result=pcall(self.glyph.SetAtlas,self.glyph,chosen,false)
-                atlasOK=ok and result~=false
-            end
-            if not atlasOK and type(self.glyph.SetTexture)=="function" then
-                self.glyph:SetTexture("Interface\\Minimap\\Tracking\\FlightMaster")
-            end
-            self:SetScript("OnUpdate",nil)
-        else
-            self:SetSize(20,20)
-            self.glyph:Hide()
-            self.ring:Show()
-            self.center:Show()
-            self.ring:SetColorTexture(1,0.70,0.27,0.66)
-            self.center:SetColorTexture(1,0.96,0.74,1)
-            self:SetScript("OnUpdate",function(pin,dt)
-                if type(dt)~="number" or dt<0 then return end
-                pin.clock=(pin.clock+dt)%1.3
-                if pin.ring and type(pin.ring.SetAlpha)=="function" then
-                    pin.ring:SetAlpha(0.24+0.64*math.abs(
-                        math.sin(pin.clock/1.3*math.pi)))
-                end
-            end)
-        end
-    end
-    function pinMixin:OnMouseEnter()
-        if self.kind~="flight" or not GameTooltip then return end
-        if type(GameTooltip.SetOwner)=="function" and
-            type(GameTooltip.AddLine)=="function" then
-            GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
-            GameTooltip:AddLine(self.flightName or "Flight master",1,0.81,0.45)
-            GameTooltip:AddLine("Known flight path",0.50,0.90,0.67)
-            GameTooltip:Show()
-        end
-    end
-    function pinMixin:OnMouseLeave()
-        if self.kind=="flight" and GameTooltip then GameTooltip:Hide() end
-    end
-    function pinMixin:OnReleased()
-        self.kind,self.flightName=nil,nil
-        self:SetScript("OnUpdate",nil)
-    end
-    return pinMixin
+
+-- Previously two independent renderers competed with Forever's map tiles:
+-- an XML-less MapCanvas pin pool (which fails acquisition on this client),
+-- and canvas-child textures which could be hovered while hidden by art.
+-- Both features now use one stable sibling of the map canvas, anchored to
+-- its coordinates and explicitly raised above the map detail artwork.
+local layer, layerCanvas, layerParent
+local flightMarkers, lootMarkers={},{}
+local lootRecords={}
+local activeFlights,activeLoot=0,0
+local lastView,lastW,lastH
+local tick=0
+local currentProblem="waiting for World Map"
+
+local function Safe(method,...)
+    if type(method)~="function" then return nil end
+    local ok,value=pcall(method,...)
+    if ok and Public(value) then return value end
 end
-local function InitProvider(map)
-    if provider then return true end
-    if type(CreateFromMixins)~="function" or
-        type(MapCanvasDataProviderMixin)~="table" or
-        not BuildPinMixin() or type(Mixin)~="function" or
-        type(CreateObjectPool)~="function" or type(map.GetCanvas)~="function"
-        or type(map.AddDataProvider)~="function" or
-        type(map.AcquirePin)~="function" or
-        type(map.RemoveAllPinsByTemplate)~="function" or
-        type(map.pinPools)~="table" then
-        lastProblem="native MapCanvas pin API unavailable"
-        return false
+local function State()
+    local map=WorldMapFrame
+    if not map or type(map.IsShown)~="function" or not map:IsShown()
+        then return nil end
+    local scroll=map.ScrollContainer
+    if not scroll then return nil end
+    local canvas=Safe(map.GetCanvas,map) or scroll.Child
+        or Safe(scroll.GetCanvas,scroll)
+    if not canvas then return nil end
+    local w,h=Safe(canvas.GetWidth,canvas),Safe(canvas.GetHeight,canvas)
+    local id=MapID(map) or Safe(scroll.GetMapID,scroll)
+    if not Number(0) or type(w)~="number" or type(h)~="number"
+        or w<=0 or h<=0 or type(id)~="number" or id<=0 then
+        return nil
     end
-    local canvas=Call(map.GetCanvas,map)
-    if not canvas then
-        lastProblem="native map canvas not ready"
-        return false
+    return map,scroll,canvas,id,w,h
+end
+local function SetColor(tex,r,g,b,a)
+    if type(tex.SetTexture)=="function" and
+        type(tex.SetVertexColor)=="function" then
+        tex:SetTexture("Interface\\Buttons\\WHITE8X8")
+        tex:SetVertexColor(r,g,b,a)
+    elseif type(tex.SetColorTexture)=="function" then
+        tex:SetColorTexture(r,g,b,a)
     end
-    -- Separate native pools prevent rapid loot-row hover from rebuilding
-    -- the flight markers or making their artwork flicker.
-    local function NewPool()
-        -- A standard FramePool captures its own frame factory during setup.
-        -- Replacing pool.createFunc / pool.creationFunc later does not
-        -- reliably change what it constructs on Forever clients. Construct
-        -- a genuine object pool with our mixin from the outset instead.
-        local function CreatePin()
-            local frame=CreateFrame("Frame",nil,canvas)
-            frame:SetSize(24,24)
-            if type(frame.SetMouseMotionEnabled)=="function" then
-                frame:SetMouseMotionEnabled(true)
-            end
-            if type(frame.SetMouseClickEnabled)=="function" then
-                frame:SetMouseClickEnabled(false)
-            end
-            return Mixin(frame,pinMixin)
-        end
-        local function ResetPin(_,pin)
-            pin:Hide()
-            pin:ClearAllPoints()
-            pin:OnReleased()
-            pin.pinTemplate=nil
-            if type(pin.SetOwningMap)=="function" then
-                pin:SetOwningMap(nil)
-            end
-        end
-        local ok,pool=pcall(CreateObjectPool,CreatePin,ResetPin)
-        if not ok or type(pool)~="table" or
-            type(pool.Acquire)~="function" or
-            type(pool.ReleaseAll)~="function" or
-            type(pool.EnumerateActive)~="function" then
-            return nil
-        end
-        return pool
+end
+local function Texture(frame,w,h,layerNo,r,g,b,a)
+    local tex=frame:CreateTexture(nil,"OVERLAY")
+    if type(tex.SetDrawLayer)=="function" then
+        tex:SetDrawLayer("OVERLAY",layerNo)
     end
-    local fp,lp=NewPool(),NewPool()
-    if not fp or not lp then
-        lastProblem="native frame pools unavailable"
-        return false
+    tex:SetSize(w,h)
+    tex:SetPoint("CENTER",frame,"CENTER",0,0)
+    SetColor(tex,r,g,b,a)
+    return tex
+end
+local function Raise(world,scroll,canvas)
+    if not layer then return end
+    local wanted=220
+    for _,f in ipairs({world,scroll,canvas}) do
+        local v=Safe(f.GetFrameLevel,f)
+        if type(v)=="number" then wanted=math.max(wanted,v+90) end
     end
-    local p=CreateFromMixins(MapCanvasDataProviderMixin)
-    function p:RemoveAllData()
-        local owning=self:GetMap()
-        if owning then
-            owning:RemoveAllPinsByTemplate(FLIGHT_TEMPLATE)
-            owning:RemoveAllPinsByTemplate(LOOT_TEMPLATE)
-        end
-        markerCount,flightCount,lootCount=0,0,0
+    wanted=math.min(9000,wanted)
+    if type(layer.SetFrameLevel)=="function" then
+        layer:SetFrameLevel(wanted)
     end
-    function p:RefreshFlights()
-        local owning=self:GetMap()
-        if not owning then return end
-        owning:RemoveAllPinsByTemplate(FLIGHT_TEMPLATE)
-        flightCount=0
-        local viewed=MapID(owning)
-        local discovered=viewed and
-            type(ChalkBox_DiscoveriesFlightCandidates)=="function"
-            and ChalkBox_DiscoveriesFlightCandidates(viewed) or {}
-        for i=1,math.min(#discovered,80) do
-            local entry=discovered[i]
-            if entry and Number(entry.x) and Number(entry.y) then
-                if nativeBroken then break end
-                local good,pin=pcall(owning.AcquirePin,owning,FLIGHT_TEMPLATE,
-                    "flight",entry.x,entry.y,entry.name,entry.atlas)
-                if good and pin then
-                    flightCount=flightCount+1
-                else
-                    nativeBroken=true
-                    lastProblem="flight pin error: "..tostring(pin):sub(1,170)
-                    owning:RemoveAllPinsByTemplate(FLIGHT_TEMPLATE)
-                    flightCount=0
-                end
-            end
-        end
-        markerCount=flightCount+lootCount
+    -- The scroll container can draw different zone tiles at a later stage.
+    -- This overlay is its sibling, not a child of an individual tile/canvas.
+    local strata=Safe(world.GetFrameStrata,world)
+    if type(strata)=="string" and type(layer.SetFrameStrata)=="function" then
+        layer:SetFrameStrata(strata)
     end
-    function p:RefreshLoot()
-        local owning=self:GetMap()
-        if not owning then return end
-        owning:RemoveAllPinsByTemplate(LOOT_TEMPLATE)
-        lootCount=0
-        local viewed=MapID(owning)
-        if viewed and transientLoot then
-            local x,y=Project(transientLoot.mapID,viewed,
-                transientLoot.x,transientLoot.y)
-            if x then
-                local good,pin=pcall(owning.AcquirePin,owning,LOOT_TEMPLATE,
-                    "loot",x,y)
-                if good and pin then
-                    lootCount=1
-                else
-                    nativeBroken=true
-                    lastProblem="loot pin error: "..tostring(pin):sub(1,170)
-                    owning:RemoveAllPinsByTemplate(LOOT_TEMPLATE)
-                end
-            end
-        end
-        markerCount=flightCount+lootCount
-    end
-    function p:RefreshAllData()
-        self:RefreshFlights()
-        self:RefreshLoot()
-    end
-    map.pinPools[FLIGHT_TEMPLATE],map.pinPools[LOOT_TEMPLATE]=fp,lp
-    local registered=pcall(map.AddDataProvider,map,p)
-    if not registered then
-        map.pinPools[FLIGHT_TEMPLATE],map.pinPools[LOOT_TEMPLATE]=nil,nil
-        lastProblem="native data provider registration failed"
-        return false
-    end
-    flightPool,lootPool,provider=fp,lp,p
-    lastProblem="native MapCanvas provider installed"
-    return true
 end
 local function Ensure()
-    if nativeBroken then return false end
-    if provider then return true end
-    local map=WorldMapFrame
-    if not map then return false end
-    return InitProvider(map)
+    local map,scroll,canvas,id,w,h=State()
+    if not map then
+        currentProblem="map canvas not displayed"
+        return nil
+    end
+    if not layer or layerCanvas~=canvas or layerParent~=scroll then
+        if layer then layer:Hide() end
+        layer=CreateFrame("Frame",nil,scroll)
+        layerCanvas,layerParent=canvas,scroll
+        layer:SetAllPoints(canvas)
+        if type(layer.EnableMouse)=="function" then
+            layer:EnableMouse(false)
+        end
+        flightMarkers,lootMarkers={},{}
+        activeFlights,activeLoot=0,0
+        lastView,lastW,lastH=nil,nil,nil
+    end
+    Raise(map,scroll,canvas)
+    layer:Show()
+    currentProblem="overlay attached to active map canvas"
+    return id,w,h
+end
+local function Make(kind,index)
+    local list=kind=="flight" and flightMarkers or lootMarkers
+    local marker=list[index]
+    if marker then return marker end
+    marker=CreateFrame("Frame",nil,layer)
+    marker:SetSize(kind=="flight" and 26 or 17,
+        kind=="flight" and 26 or 17)
+    if type(marker.EnableMouse)=="function" then
+        marker:EnableMouse(kind=="flight")
+    end
+    if kind=="flight" then
+        -- Real, opaque pixels even if Forever accepts a missing Taxi atlas.
+        marker.back=Texture(marker,19,19,5,0.14,0.08,0.02,0.94)
+        marker.face=Texture(marker,15,15,6,1,0.74,0.20,1)
+        local art=marker:CreateTexture(nil,"OVERLAY")
+        art:SetAllPoints(marker)
+        if type(art.SetDrawLayer)=="function" then
+            art:SetDrawLayer("OVERLAY",7)
+        end
+        marker.icon=art
+        marker:SetScript("OnEnter",function(self)
+            if GameTooltip and type(GameTooltip.SetOwner)=="function"
+                and type(GameTooltip.AddLine)=="function" then
+                GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
+                GameTooltip:AddLine(self.flightName or "Flight master",
+                    1,0.81,0.45)
+                GameTooltip:AddLine("Known flight path",0.50,0.90,0.67)
+                GameTooltip:Show()
+            end
+        end)
+        marker:SetScript("OnLeave",function()
+            if GameTooltip then GameTooltip:Hide() end
+        end)
+    else
+        marker.back=Texture(marker,17,17,5,0.12,0.08,0.02,0.9)
+        marker.face=Texture(marker,13,13,6,1,0.72,0.24,0.95)
+        marker.center=Texture(marker,5,5,7,1,0.96,0.73,1)
+    end
+    list[index]=marker
+    return marker
+end
+local function Place(pin,x,y,w,h)
+    pin:ClearAllPoints()
+    pin:SetPoint("CENTER",layer,"TOPLEFT",x*w,-y*h)
+    pin:Show()
+end
+local function HideAfter(list,count)
+    for i=count+1,#list do list[i]:Hide() end
+end
+local function SetFlightArtwork(pin,atlas)
+    if not pin.icon then return end
+    local name=type(atlas)=="string" and atlas or "TaxiNode_Neutral"
+    local usable=false
+    local info=C_Texture and C_Texture.GetAtlasInfo
+    if type(info)=="function" then
+        usable=Safe(info,name)~=nil
+    end
+    if usable and type(pin.icon.SetAtlas)=="function" then
+        local ok,result=pcall(pin.icon.SetAtlas,pin.icon,name,false)
+        usable=ok and result~=false
+    else
+        usable=false
+    end
+    if not usable and type(pin.icon.SetTexture)=="function" then
+        pin.icon:SetTexture("Interface\\Minimap\\Tracking\\FlightMaster")
+    end
+end
+local function RedrawFlights(id,w,h)
+    local get=ChalkBox_DiscoveriesFlightCandidates
+    local entries=type(get)=="function" and get(id) or {}
+    if type(entries)~="table" then entries={} end
+    local count=0
+    for _,entry in ipairs(entries) do
+        if type(entry)=="table" and Number(entry.x) and
+            Number(entry.y) and count<80 then
+            count=count+1
+            local pin=Make("flight",count)
+            pin.flightName=entry.name
+            SetFlightArtwork(pin,entry.atlas)
+            Place(pin,entry.x,entry.y,w,h)
+        end
+    end
+    HideAfter(flightMarkers,count)
+    activeFlights=count
+end
+local function RedrawLoot(id,w,h)
+    local count=0
+    for _,spot in ipairs(lootRecords) do
+        local x,y=Project(spot.mapID,id,spot.x,spot.y)
+        if x and count<20 then
+            count=count+1
+            local pin=Make("loot",count)
+            Place(pin,x,y,w,h)
+        end
+    end
+    HideAfter(lootMarkers,count)
+    activeLoot=count
 end
 function ChalkBox_MapNativeAvailable()
-    return Ensure()
+    return Ensure()~=nil
 end
 function ChalkBox_MapNativeRefresh()
-    if refreshBusy or not Ensure() then return false end
-    refreshBusy=true
-    local ok,reason=pcall(provider.RefreshFlights,provider)
-    refreshBusy=false
-    if not ok then
-        lastProblem="native refresh error: "..tostring(reason):sub(1,170)
-    end
-    return ok and not nativeBroken
-end
-function ChalkBox_MapNativeLootSet(mapID,x,y)
-    if type(mapID)~="number" or not Number(x) or not Number(y) then
+    local id,w,h=Ensure()
+    if not id then
+        activeFlights=0
         return false
     end
-    if not Ensure() then return false end
-    transientLoot={mapID=mapID,x=x,y=y}
-    local ok,reason=pcall(provider.RefreshLoot,provider)
-    if not ok then lastProblem="loot refresh error: "..tostring(reason):sub(1,170) end
-    return ok and not nativeBroken
+    RedrawFlights(id,w,h)
+    lastView,lastW,lastH=id,w,h
+    return true
+end
+-- Existing single-spot API remains supported. Multi-spot is preferred
+-- so hovering a Discoveries item reveals every saved nearby loot position.
+function ChalkBox_MapNativeLootSetMany(sourceMap,locations)
+    if type(sourceMap)~="number" or type(locations)~="table" then
+        return false
+    end
+    local accepted={}
+    for _,spot in ipairs(locations) do
+        if type(spot)=="table" and Number(spot.x) and
+            Number(spot.y) and #accepted<20 then
+            accepted[#accepted+1]={
+                mapID=sourceMap,x=spot.x,y=spot.y
+            }
+        end
+    end
+    lootRecords=accepted
+    local id,w,h=Ensure()
+    if not id then activeLoot=0;return false end
+    RedrawLoot(id,w,h)
+    return activeLoot>0
+end
+function ChalkBox_MapNativeLootSet(sourceMap,x,y)
+    return ChalkBox_MapNativeLootSetMany(sourceMap,{{x=x,y=y}})
 end
 function ChalkBox_MapNativeLootClear()
-    if not transientLoot then return end
-    transientLoot=nil
-    if provider then pcall(provider.RefreshLoot,provider) end
+    lootRecords={}
+    activeLoot=0
+    HideAfter(lootMarkers,0)
 end
 function ChalkBox_MapNativeStatus()
-    return {available=provider~=nil and not nativeBroken,
-        mapID=MapID(WorldMapFrame),pinCount=markerCount,
-        flightPins=flightCount,lootPins=lootCount,
-        problem=lastProblem,loot=transientLoot~=nil}
+    return {available=layer~=nil and State()~=nil,
+        renderer="map-owned overlay",
+        mapID=MapID(WorldMapFrame),
+        flightPins=activeFlights,lootPins=activeLoot,
+        pinCount=activeFlights+activeLoot,
+        problem=currentProblem,loot=#lootRecords>0}
 end
--- The MapCanvas provider handles map changes, panning and zoom natively.
--- Retry installation only while Blizzard's lazily loaded map is missing.
-local loader=CreateFrame("Frame")
-for _,event in ipairs({"PLAYER_LOGIN","ADDON_LOADED","PLAYER_ENTERING_WORLD"}) do
-    pcall(loader.RegisterEvent,loader,event)
-end
-loader:SetScript("OnEvent",function() Ensure() end)
-loader:SetScript("OnUpdate",function(_,elapsed)
-    if provider then
-        loader:SetScript("OnUpdate",nil)
+-- Follow zoom changes, late-created map artwork and map reopening.
+-- Reuse the same markers; do not repeatedly destroy/acquire frames.
+local driver=CreateFrame("Frame")
+driver:SetScript("OnUpdate",function(_,elapsed)
+    tick=tick+(type(elapsed)=="number" and elapsed or 0)
+    if tick<0.25 then return end
+    tick=0
+    local id,w,h=Ensure()
+    if not id then
+        activeFlights,activeLoot=0,0
+        lastView,lastW,lastH=nil,nil,nil
         return
     end
-    mapRetry=mapRetry+(type(elapsed)=="number" and elapsed or 0)
-    if mapRetry>=1 then mapRetry=0;Ensure() end
+    if id~=lastView or w~=lastW or h~=lastH then
+        RedrawFlights(id,w,h)
+        RedrawLoot(id,w,h)
+        lastView,lastW,lastH=id,w,h
+    end
 end)
-Ensure()
