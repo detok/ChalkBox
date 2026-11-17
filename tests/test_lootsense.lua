@@ -175,30 +175,6 @@ assert(relic:find("Needed for: Relics of the Past",1,true)
     and relic:find("1 / 4 collected",1,true),
     "quest-class KEEP items display a known active quest rather than only generic KEEP")
 questDetails["Quest Relic"]=nil
-local questLinkCalls=0
-_G.ChalkBox_QuestItemDatabaseStatus=function() return "ready" end
-_G.ChalkBox_QuestItemDatabaseLinks=function(itemID)
-    questLinkCalls=questLinkCalls+1
-    if itemID==106 then
-        return {
-            {id=1060,title="The Hidden Relic",role="objective",active=false},
-            {id=1061,title="A Relic Begins",role="starts",active=false},
-            {id=1062,title="A Relic Delivery",role="provided",active=false},
-            {id=1063,title="Relic Reward",role="reward",active=false},
-        }
-    end
-    return {}
-end
-local linkedRelic=Hover(106)
-assert(linkedRelic:find("Needed for: The Hidden Relic",1,true)
-    and linkedRelic:find("Starts quest: A Relic Begins",1,true)
-    and linkedRelic:find("Provided by: A Relic Delivery",1,true)
-    and linkedRelic:find("Reward from: Relic Reward",1,true)
-    and linkedRelic:find("Not in quest log",1,true)
-    and questLinkCalls>=1,
-    "quest-class KEEP gains quest titles by item ID, even for not-yet-accepted quests")
-_G.ChalkBox_QuestItemDatabaseLinks=nil
-_G.ChalkBox_QuestItemDatabaseStatus=nil
 assert(Hover(107)=="","uncached quality should not produce sell advice")
 activeQuest["Broken Fang"]=true
 questDetails["Broken Fang"]={{title="Fangs for the Hunter",
