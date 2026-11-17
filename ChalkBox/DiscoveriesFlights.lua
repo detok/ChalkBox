@@ -261,41 +261,27 @@ local function IndexedPositions(mapID,known)
     end
     return list
 end
-local function Refresh()
-    if not WorldMapFrame or type(WorldMapFrame.IsShown)~="function" or
-        not WorldMapFrame:IsShown() or not Enabled() then
-        HidePins();drawnKey=nil;return
-    end
-    local mapID,canvas=ViewedMap(),Canvas()
-    if not mapID or not canvas then
-        HidePins();drawnKey=nil;return
-    end
-    local w,h=Call(canvas.GetWidth,canvas),Call(canvas.GetHeight,canvas)
-    if not Number(w) or not Number(h) or w<=0 or h<=0 then
-        HidePins();drawnKey=nil;return
-    end
+-- This is the single source of flight-marker positions for both renderers.
+-- Only learned taxi node IDs in this character's DB may generate candidates.
+-- The native MapCanvas data provider consumes normalized map coordinates;
+-- legacy cosmetic frames are used only if this client's provider is absent.
+function ChalkBox_DiscoveriesFlightCandidates(mapID)
+    local result={}
     local db=DB()
-    if not db then return end
-    local key=tostring(mapID)..":"..db.revision..":"..w..":"..h
-    if key==drawnKey and lastCanvas==canvas then
-        -- The native zone canvas may change levels while textures load or
-        -- while a player switches map zoom without changing the map ID.
-        -- Repair draw order without rebuilding or adding any flight paths.
-        for i=1,lastCount do RaisePin(pins[i],canvas) end
-        return
+    if not db or not Enabled() or not Integer(mapID) then
+        positionSources={observed=0,direct=0,projected=0,unplaced=0}
+        lastCount=0
+        return result
     end
-    HidePins()
-    drawnKey,lastCanvas=key,canvas
     local indexed=IndexedPositions(mapID,db.nodes)
     positionSources={observed=0,direct=0,projected=0,unplaced=0}
     local ids={}
     for id in pairs(db.nodes) do ids[#ids+1]=id end
-    table.sort(ids) -- deterministic ordering without altering learned data
+    table.sort(ids)
     for _,id in ipairs(ids) do
         local node=db.nodes[id]
         if type(node)=="table" then
-            local x,y
-            local from
+            local x,y,from
             if node.zoneMapID==mapID then
                 x,y=node.zoneX and node.zoneX/10000,
                     node.zoneY and node.zoneY/10000
@@ -311,22 +297,79 @@ local function Refresh()
                 if x then from="projected" end
             end
             if ValidXY(x,y) then
-                local pin=MakePin(canvas,lastCount+1)
-                pin.flightName=type(node.name)=="string" and node.name or
-                    "Flight master"
-                SetPinArt(pin,TaxiAtlas(node,indexed[id]))
-                pin:ClearAllPoints()
-                pin:SetPoint("CENTER",canvas,"TOPLEFT",x*w,-y*h)
-                pin:Show()
+                result[#result+1]={x=x,y=y,
+                    name=type(node.name)=="string" and node.name
+                        or "Flight master",
+                    atlas=TaxiAtlas(node,indexed[id]),
+                    from=from or "projected"}
                 positionSources[from or "projected"]=
                     positionSources[from or "projected"]+1
-                lastCount=lastCount+1
-                if lastCount>=MAX_MARKERS then break end
+                if #result>=MAX_MARKERS then break end
             else
                 positionSources.unplaced=positionSources.unplaced+1
             end
         end
     end
+    lastCount=#result
+    return result
+end
+
+local function Refresh()
+    if not WorldMapFrame or type(WorldMapFrame.IsShown)~="function" or
+        not WorldMapFrame:IsShown() or not Enabled() then
+        local wasDrawn=drawnKey~=nil
+        HidePins();drawnKey=nil
+        if wasDrawn and
+            type(ChalkBox_MapNativeRefresh)=="function" then
+            ChalkBox_MapNativeRefresh()
+        end
+        return
+    end
+    local mapID,canvas=ViewedMap(),Canvas()
+    if not mapID or not canvas then
+        HidePins();drawnKey=nil;return
+    end
+    local w,h=Call(canvas.GetWidth,canvas),Call(canvas.GetHeight,canvas)
+    if not Number(w) or not Number(h) or w<=0 or h<=0 then
+        HidePins();drawnKey=nil;return
+    end
+    local db=DB()
+    if not db then return end
+    local key=tostring(mapID)..":"..db.revision..":"..w..":"..h
+    if type(ChalkBox_MapNativeAvailable)=="function" and
+        ChalkBox_MapNativeAvailable() then
+        -- The actual pin position and layer now belong to Blizzard's
+        -- MapCanvas, including its zoom/pan/map-change lifecycle.
+        if key==drawnKey and lastCanvas==canvas and
+            positionSources.unplaced==0 then return end
+        -- Do not cache missing positions as final. Forever's local taxi
+        -- coordinates can arrive after the visible map tiles.
+        HidePins()
+        drawnKey,lastCanvas=key,canvas
+        if type(ChalkBox_MapNativeRefresh)=="function" then
+            ChalkBox_MapNativeRefresh()
+        end
+        return
+    end
+    if key==drawnKey and lastCanvas==canvas and
+        positionSources.unplaced==0 then
+        for i=1,lastCount do RaisePin(pins[i],canvas) end
+        return
+    end
+    -- Compatibility-only fallback if this Forever build has no pin API.
+    -- Use the same candidates rather than duplicating coordinate rules.
+    HidePins()
+    drawnKey,lastCanvas=key,canvas
+    local candidates=ChalkBox_DiscoveriesFlightCandidates(mapID)
+    for i,entry in ipairs(candidates) do
+        local pin=MakePin(canvas,i)
+        pin.flightName=entry.name
+        SetPinArt(pin,entry.atlas)
+        pin:ClearAllPoints()
+        pin:SetPoint("CENTER",canvas,"TOPLEFT",entry.x*w,-entry.y*h)
+        pin:Show()
+    end
+    lastCount=#candidates
     for i=lastCount+1,#pins do pins[i]:Hide() end
 end
 local function Capture()
