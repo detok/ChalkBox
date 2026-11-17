@@ -123,7 +123,8 @@ local function Snapshot()
             for slot=1,count do
                 local ok,raw,qOld,_,_,_,_,linkOld,_,noValueOld,idOld=
                     pcall(infoFn,containerID,slot)
-                if not ok or (raw~=nil and not Public(raw)) then
+                if not ok or (type(issecretvalue)=="function" and
+                    issecretvalue(raw)) then
                     snapshot.vendorUnknown=snapshot.vendorUnknown+1
                     snapshot.ahUnknown=snapshot.ahUnknown+1
                 elseif raw~=nil then
