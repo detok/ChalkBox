@@ -102,6 +102,22 @@ local function Entries()
         {label=(off and "✓ " or "").."Off",run=function() SetMode("off") end},
         {label=(smart and "✓ " or "").."Smart",run=function() SetMode("smart") end},
         {label=(zone and "✓ " or "").."Nearby",run=function() SetMode("zone") end},
+        {label="Sort: "..(q.sort or "nearest").." (next)",
+            run=function()
+                local modes={"nearest","zone","level","log"}
+                local current=q.sort or "nearest"
+                for i,m in ipairs(modes) do
+                    if m==current then
+                        ChalkBox_QuestCommand("sort "..modes[i%#modes+1])
+                        break
+                    end
+                end
+            end},
+        {label="Tracker order: "..(q.nativeOrder and "Custom" or "Blizzard"),
+            run=function()
+                ChalkBox_QuestCommand(q.nativeOrder and
+                    "nativeorder off" or "nativeorder on")
+            end},
         {label="Navigation: "..(n.enabled and "On" or "Off"),
             run=function()
                 if type(ChalkBox_NavCommand)=="function" then
