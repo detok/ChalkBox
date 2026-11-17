@@ -7,7 +7,7 @@ local index={}
 local ready=false
 local started=false
 local errors=0
-local PRIORITY={objective=1,required=2,used=3,starts=4,provided=5,related=6}
+local PRIORITY={objective=1,required=2,used=3,starts=4,provided=5,related=6,reward=7}
 local function Public(v)
     return v~=nil and (type(issecretvalue)~="function" or not issecretvalue(v))
 end
@@ -129,6 +129,14 @@ function ChalkBox_QuestItemDatabaseLinks(itemID)
     if Table(related) then
         for _,questID in pairs(related) do
             AddCandidate(found,questID,"related")
+        end
+    end
+    -- Source information is useful even when an item is only a reward,
+    -- but a reward must never be mislabeled as a required collection.
+    local rewards=Read(provider.Item,itemID,"questRewards")
+    if Table(rewards) then
+        for _,questID in pairs(rewards) do
+            AddCandidate(found,questID,"reward")
         end
     end
     local quests={}
