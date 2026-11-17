@@ -30,7 +30,7 @@ ChalkBox installs as **one `ChalkBox` folder**. Its bundled recipe data needs no
 
 | Tool | What you use it for |
 | --- | --- |
-| [**LootSense & Professions**](docs/USER_GUIDE.md#lootsense-and-professions) | See why an item is worth keeping: quest objectives and progress, your personal KEEP list, confirmed learned recipes and possible crafting uses. No automatic selling. |
+| [**LootSense & Professions**](docs/USER_GUIDE.md#lootsense-and-professions) | See why an item is worth keeping: live quest objectives and progress, future quest references for individually researched item IDs (draft), your personal KEEP list, learned recipes and possible crafting uses. No automatic selling. |
 | [**DropSense & Discoveries**](docs/USER_GUIDE.md#dropsense-and-discoveries) | Record loot you actually observe; browse zones, dungeons and identified creatures from the World Map. Outdoor items can include a handful of observed loot-window coordinates. Rates are personal observations, not official drop odds. |
 | [**AuctionSense, AuctionInsights & DisenchantSense**](docs/USER_GUIDE.md#auction-tools-and-disenchanting) | Manually scan asking prices in the native Auction House, browse your own inventory values and observed mail receipts, and review clearly labeled disenchant estimates. No automated trading or disenchanting. |
 | [**QuestSense**](docs/USER_GUIDE.md#questsense) | Maintain Blizzard's accepted-quest tracker in Smart, Nearby or All mode. Smart focuses on verified current-dungeon quests when supported, and restores other watches on exit. **Optional Navigation:** a floating arrow with Auto/Next/Hide, yards underneath, and three artwork choices. Right-click Blizzard's quest tracker header for quick Off / Smart / Nearby and navigation controls. |
