@@ -21,7 +21,7 @@
 
 | Command | Purpose |
 | --- | --- |
-| `/chalk drops map` | Open Discoveries, attached to the World Map |
+| `/chalk drops map` | Open Blizzard's World Map and its Discoveries sidecar when the native map opener is available; otherwise open the World Map first |
 | `/chalk drops map status` | Diagnose the Discoveries map button and attachment |
 | `/chalk drops map flights status` | Count character-confirmed flight paths, visible markers and native Map Filter integration |
 | `/chalk drops map flights on` / `off` | Fallback visibility switch for **Known Flight Paths** in Blizzard’s Map Filter dropdown |
