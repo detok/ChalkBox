@@ -129,18 +129,10 @@ local function QuestComplete(id)
     local value=Call(fn,id)
     return value==true
 end
--- Bucketing prevents tiny movements from constantly swapping candidates.
--- Distances are only compared within the game's reported continent.
+-- Compare only actual client-provided squared distances. The tracker
+-- must not rank a 90-yard quest ahead of a 20-yard quest in the same bucket.
 local function DistanceRank(value)
-    if not value then return nil end
-    local yards=math.sqrt(value)
-    if yards<100 then return 1 end
-    if yards<250 then return 2 end
-    if yards<500 then return 3 end
-    if yards<1000 then return 4 end
-    if yards<2000 then return 5 end
-    if yards<4000 then return 6 end
-    return 7
+    return value
 end
 local function Relevant(quests,zoneID,zoneNames)
     local onMap,hasMapData={},false
@@ -548,6 +540,10 @@ local function Reconcile()
             seenManual[id]=true
         end
     end
+    if settings.nativeOrder and
+        type(ChalkBox_QuestTrackerSortRefresh)=="function" then
+        ChalkBox_QuestTrackerSortRefresh()
+    end
     lastStats={accepted=#quests,candidates=#prioritized,
         watched=Count(watched),auto=Count(settings.managed),added=added,
         removed=removed,restored=restored,hidden=Count(settings.suspendedManual),
@@ -735,7 +731,9 @@ events:SetScript("OnEvent",function(_,event,arg1,arg2)
                 local watchDungeon=settings and settings.enabled and
                     settings.mode=="smart" and CurrentDungeon()~=nil
                 if pending or (settings and settings.enabled
-                    and (settings.mode=="zone" or watchDungeon)
+                    and (settings.mode=="zone" or watchDungeon or
+                        (settings.mode=="smart" and
+                         settings.smartSort=="nearest"))
                     and ticks%4==0) then
                     QueueUpdate()
                 end
