@@ -6,12 +6,24 @@ local protected=true
 local grouped=true
 local raiding=false
 local now=1000
-local partyMessages={}
+local partyMessages,rawPartyMessages={},{}
+local function RecordParty(message,channel,legacy)
+    assert(not message:find("[|\r\n]"),"plain WoW chat line must not contain pipe or newline")
+    rawPartyMessages[#rawPartyMessages+1]={message=message,channel=channel,legacy=legacy}
+    if message:match("^CB .+%):$") then
+        partyMessages[#partyMessages+1]={message=message,channel=channel,legacy=legacy,lines={message}}
+    else
+        local report=partyMessages[#partyMessages]
+        assert(report and report.channel==channel,"player row must follow same-channel heading")
+        report.message=report.message..(#report.lines==1 and " " or ", ")..message
+        report.lines[#report.lines+1]=message
+    end
+end
 _G.IsInGroup=function() return grouped end
 _G.IsInRaid=function() return raiding end
 _G.GetTime=function() return now end
 _G.C_ChatInfo={SendChatMessage=function(message,channel)
-    partyMessages[#partyMessages+1]={message=message,channel=channel}
+    RecordParty(message,channel)
 end}
 local function Secret(v)
     return setmetatable({secret=true,raw=v},{
@@ -334,8 +346,10 @@ ChalkBox_MeterPrintFight()
 assert(#partyMessages==0,"strict party request must never broadcast to raid")
 raiding=false
 ChalkBox_MeterPrintFight()
-assert(#partyMessages==1 and partyMessages[1].channel=="PARTY",
-    "one click must submit EXACTLY one standard PARTY chat message")
+assert(#partyMessages==1 and partyMessages[1].channel=="PARTY"
+    and #partyMessages[1].lines==3 and #rawPartyMessages==3
+    and rawPartyMessages[1].message=="CB HEAL (Overall):",
+    "one click sends a heading and separate safe PARTY lines for each player")
 assert(partyMessages[1].message:find("CB HEAL (Overall):",1,true)
     and partyMessages[1].message:find("1 Detok 4400",1,true)
     and partyMessages[1].message:find("2 Other Player 2200",1,true)
@@ -366,14 +380,14 @@ assert(#copies==0 and #partyMessages==1,
 C_ChatInfo.InChatMessagingLockdown=nil
 C_ChatInfo.SendChatMessage=nil
 _G.SendChatMessage=function(message,channel)
-    partyMessages[#partyMessages+1]={message=message,channel=channel,legacy=true}
+    RecordParty(message,channel,true)
 end
 ChalkBox_MeterPrintFight()
 assert(#partyMessages==2 and partyMessages[2].legacy
     and partyMessages[2].channel=="PARTY",
     "old Classic API is a supported fallback when modern chat API is absent")
 C_ChatInfo.SendChatMessage=function(message,channel)
-    partyMessages[#partyMessages+1]={message=message,channel=channel}
+    RecordParty(message,channel)
 end
 _G.SendChatMessage=nil
 now=1010
