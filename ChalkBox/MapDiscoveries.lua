@@ -1191,11 +1191,39 @@ local function EnsurePanel()
         end
     end)
 end
+-- The settings button and /chalk drops map may be used while the World
+-- Map is closed. Use Blizzard's normal map toggle exactly once on that
+-- deliberate user action; do not open another standalone Discoveries window.
+-- Retry only briefly while Forever lazily constructs its native map.
+local mapOpenPending=false
 function ChalkBox_OpenMapDiscoveries()
     if not WorldMapFrame or
         (type(WorldMapFrame.IsShown)=="function" and
         not WorldMapFrame:IsShown()) then
-        return false -- Discoveries is not an independent standalone window.
+        if mapOpenPending or type(ToggleWorldMap)~="function"
+            or Call(InCombatLockdown)==true then return false end
+        mapOpenPending=true
+        local ok=pcall(ToggleWorldMap)
+        if not ok then mapOpenPending=false;return false end
+        local function Resume(attempt)
+            local world=WorldMapFrame
+            if world and type(world.IsShown)=="function" and
+                Call(world.IsShown,world)==true then
+                mapOpenPending=false
+                ChalkBox_OpenMapDiscoveries()
+            elseif attempt<5 and C_Timer and
+                type(C_Timer.After)=="function" then
+                C_Timer.After(0.15,function() Resume(attempt+1) end)
+            else
+                mapOpenPending=false
+            end
+        end
+        if C_Timer and type(C_Timer.After)=="function" then
+            C_Timer.After(0,function() Resume(0) end)
+        else
+            Resume(5)
+        end
+        return true -- requested; native map may still be loading
     end
     RestoreBrowser()
     if type(ChalkBox_MapDiscoveriesEnsure)=="function" then
