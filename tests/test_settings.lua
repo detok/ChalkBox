@@ -511,8 +511,14 @@ ChalkBox_OpenSettings("loothighlight")
 assert(opened[#opened]==categories["LootSense Appearance"].ID)
 categories["LootSense Appearance"].panel:Show()
 local lootCheck=FindCheckByParentTitle("LootSense Appearance")
-assert(#lootCheck==3,
-    "item insight filters remain; unsafe native bag button marker switch is retired")
+assert(#lootCheck==4,
+    "three original item filters plus a separate future-quest border toggle")
+lootCheck[4]:Click(false)
+assert(ChalkBoxDB.futureQuestGlow==false,
+    "future-quest marker toggle can be disabled without touching retired bag highlights")
+lootCheck[4]:Click(true)
+assert(ChalkBoxDB.futureQuestGlow==true,
+    "separate future-quest border can be restored independently")
 lootCheck[2]:Click(false)
 assert(ChalkBoxDB.lootCategories.potential==false,
     "potential use hints can be hidden without disabling verified recipe advice")
