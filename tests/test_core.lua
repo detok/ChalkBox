@@ -184,7 +184,8 @@ assert(matching and matching[1].have==3 and matching[1].required==8,
 -- Quest objective details can be unavailable on the first Forever API read.
 -- Retrying a missing cache must never invent a result or require /reload.
 local loading=true
-_G.GetTime=function() return 42 end
+local questClock=42
+_G.GetTime=function() return questClock end
 C_QuestLog.GetQuestObjectives=function()
     if loading then return nil end
     return {{type="item",text="0/8 Flintfire's Shipment",
@@ -194,6 +195,7 @@ eventCallback(nil,"QUEST_LOG_UPDATE")
 assert(ChalkBox_QuestItemDetails("Flintfire's Shipment")==nil,
     "unloaded quest objectives do not produce a guessed quest title")
 loading=false
+questClock=44.5
 matching=ChalkBox_QuestItemDetails("Flintfire's Shipment")
 assert(matching and matching[1].title=="A Special Delivery"
     and matching[1].have==2,
