@@ -422,6 +422,9 @@ local function Reconcile()
             if a.inArea~=b.inArea then return a.inArea end
             return a.header<b.header
         end
+        if sortMode=="title" and a.title~=b.title then
+            return a.title:lower()<b.title:lower()
+        end
         if sortMode=="level" and type(a.level)=="number" and
             type(b.level)=="number" and a.level~=b.level then
             return a.level<b.level
@@ -687,10 +690,10 @@ function ChalkBox_QuestCommand(text)
     elseif cmd:match("^sort %a+$") then
         local sort=cmd:match("^sort (%a+)$")
         if sort=="nearest" or sort=="zone" or sort=="level" or
-            sort=="log" then
+            sort=="title" or sort=="log" then
             settings.smartSort=sort;QueueUpdate()
             Note("Smart selection order: "..sort..".")
-        else Note("Choose sort nearest, zone, level or log.") end
+        else Note("Choose sort nearest, zone, level, title or log.") end
     elseif cmd:match("^range %d+$") then
         local range=tonumber(cmd:match("%d+"))
         if range==0 or range==500 or range==1000 or range==2000 then
@@ -728,7 +731,7 @@ function ChalkBox_QuestCommand(text)
             Note("Choose limit 5, 10, 15 or 20.")
         end
     else
-        Note("/chalk quests on|off|smart|zone|all|sort nearest/zone/level/log|nativeorder on/off|nearbyfirst on/off|range 0/500/1000/2000|completefirst on/off|limit 5/10/15/20|refresh|status")
+        Note("/chalk quests on|off|smart|zone|all|sort nearest/zone/level/title/log|nativeorder on/off|nearbyfirst on/off|range 0/500/1000/2000|completefirst on/off|limit 5/10/15/20|refresh|status")
     end
 end
 local events=CreateFrame("Frame")
@@ -758,7 +761,8 @@ events:SetScript("OnEvent",function(_,event,arg1,arg2)
             settings.limit=10
         end
         if settings.smartSort~="nearest" and settings.smartSort~="zone"
-            and settings.smartSort~="level" and settings.smartSort~="log" then
+            and settings.smartSort~="level" and settings.smartSort~="title" and
+            settings.smartSort~="log" then
             settings.smartSort="nearest"
         end
         if settings.smartNearbyFirst==nil then
