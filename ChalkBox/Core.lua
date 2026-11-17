@@ -194,7 +194,7 @@ end
 function ChalkBox_IsTrackedQuestItem(itemName)
     local key = ItemNameKey(itemName)
     if not key then return false end
-    if not questItems[key] then RetryPendingQuestData() end
+    if questDataPending then RetryPendingQuestData() end
     return questItems[key] ~= nil and questItems[key].protect ~= nil
 end
 
@@ -204,7 +204,7 @@ end
 function ChalkBox_QuestItemDetails(itemName)
     local key=ItemNameKey(itemName)
     if not key then return nil end
-    if not questItems[key] then RetryPendingQuestData() end
+    if questDataPending then RetryPendingQuestData() end
     local entry=questItems[key]
     if not entry or type(entry.quests)~="table" or #entry.quests==0 then
         return nil
