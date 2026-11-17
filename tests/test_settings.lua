@@ -80,7 +80,8 @@ _G.ChalkBox_MacroForgeCompartmentRefresh=function()
     shortcutRefreshes=shortcutRefreshes+1
 end
 local defaults={rate=true,eta=true,time=true,gold=true,bags=true,
-    gear=true,rested=true,latency=true,pet=false,bagvalue=true,repair=true}
+    gear=true,rested=true,latency=true,pet=false,bagvalue=true,
+    bankvalue=true,repair=true}
 _G.ChalkBoxDB.barStats={}
 for k,v in pairs(defaults) do ChalkBoxDB.barStats[k]=v end
 _G.ChalkBox_BarStatEnabled=function(key)
