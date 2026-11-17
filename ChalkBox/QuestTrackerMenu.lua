@@ -21,13 +21,17 @@ local function SortKey(info,rank)
 end
 local function AttachSort()
     if sortAttached then return true end
-    local mixin=QuestObjectiveTrackerMixin
-    if type(mixin)~="table" or
-        type(mixin.BuildQuestWatchInfos)~="function" then
+    -- WoW XML applies mixin methods to the live quest tracker frame.
+    -- Modifying the mixin prototype after construction need not change
+    -- that frame (the bug pattern that caused our map pin failures).
+    -- Hook the live module, NOT the prototype.
+    local module=QuestObjectiveTracker
+    if not module or
+        type(module.BuildQuestWatchInfos)~="function" then
         return false
     end
-    nativeBuilder=mixin.BuildQuestWatchInfos
-    mixin.BuildQuestWatchInfos=function(self,...)
+    nativeBuilder=module.BuildQuestWatchInfos
+    module.BuildQuestWatchInfos=function(self,...)
         local infos=nativeBuilder(self,...)
         local opts=ChalkBoxZoneDB
         if type(InCombatLockdown)=="function" then
