@@ -306,22 +306,18 @@ function ChalkBox_BankValueStatus()
     result.age=Age(v.at)
     return result
 end
+-- Bank Value is a single native-looking readout in the existing header.
+-- No painted background, border or panel below the search field. The
+-- invisible 16px mouse region only supports detailed tooltip information.
 local function Paint()
-    if not panel then return end
+    if not panel or not primary then return end
     local v=ChalkBox_BankValueStatus()
     if not v then
-        primary:SetText("Bank vendor value: --")
-        market:SetText("AH estimate: --")
-        note:SetText(lastReason)
+        primary:SetText("Bank --")
         return
     end
-    primary:SetText("Vendor value: "..
-        (v.vendorComplete and "" or "at least ")..Coin(v.vendorCopper))
-    market:SetText("Auction asks: "..
-        (v.ahPriced>0 and ((v.ahComplete and "" or "at least ")..
-            Coin(v.ahCopper)) or "no usable prices"))
-    note:SetText(("%d stacks  /  %d AH priced  /  %s"):format(
-        v.stacks or 0,v.ahPriced or 0,v.age or "last bank visit"))
+    primary:SetText("Bank "..(v.vendorComplete and "" or ">= ")..
+        Coin(v.vendorCopper))
 end
 local function EnsurePanel()
     local bank,where=BankParent()
@@ -329,33 +325,28 @@ local function EnsurePanel()
     if not bank then return end
     if not panel then
         panel=CreateFrame("Frame","ChalkBoxBankValuePanel",bank)
-        panel:SetSize(269,78)
-        if type(panel.EnableMouse)=="function" then panel:EnableMouse(true) end
-        local bg=panel:CreateTexture(nil,"BACKGROUND")
-        bg:SetAllPoints(panel)
-        if type(bg.SetColorTexture)=="function" then
-            bg:SetColorTexture(.035,.041,.05,.95)
-        elseif type(bg.SetTexture)=="function" then
-            bg:SetTexture("Interface\\Buttons\\WHITE8X8")
-            if bg.SetVertexColor then bg:SetVertexColor(.035,.041,.05,.95) end
+        panel:SetSize(160,17)
+        if type(panel.EnableMouse)=="function" then
+            panel:EnableMouse(true)
         end
-        local function Label(template,y,r,g,b)
-            local font=panel:CreateFontString(nil,"OVERLAY",template)
-            font:SetPoint("TOPLEFT",panel,"TOPLEFT",10,y)
-            font:SetWidth(251)
-            font:SetJustifyH("LEFT")
-            font:SetTextColor(r,g,b)
-            return font
+        -- There are NO textures: the bank slots must remain unobstructed.
+        primary=panel:CreateFontString(nil,"OVERLAY","GameFontNormal")
+        primary:SetPoint("RIGHT",panel,"RIGHT",-1,0)
+        primary:SetWidth(158)
+        if type(primary.SetHeight)=="function" then
+            primary:SetHeight(16)
         end
-        local headline=Label("GameFontNormal",-5,.95,.75,.38)
-        headline:SetText("ChalkBox  /  BANK VALUE")
-        primary=Label("GameFontNormal",-25,.94,.88,.66)
-        market=Label("GameFontHighlightSmall",-46,.59,.86,.79)
-        note=Label("GameFontHighlightSmall",-64,.71,.73,.73)
+        primary:SetJustifyH("RIGHT")
+        if type(primary.SetTextColor)=="function" then
+            primary:SetTextColor(.98,.83,.52)
+        end
         panel:SetScript("OnEnter",function(self)
             if not GameTooltip or type(GameTooltip.SetOwner)~="function"
                 then return end
             GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
+            if type(GameTooltip.ClearLines)=="function" then
+                GameTooltip:ClearLines()
+            end
             GameTooltip:AddLine("ChalkBox · Character Bank",1,.82,.4)
             local v=ChalkBox_BankValueStatus()
             if v then
@@ -363,10 +354,16 @@ local function EnsurePanel()
                     (v.vendorComplete and "" or "at least ")..
                     Coin(v.vendorCopper),1,1,1)
                 GameTooltip:AddLine("AH asks (not sales): "..
-                    (v.ahPriced>0 and Coin(v.ahCopper) or "unavailable"),
-                    .65,.84,.9)
+                    (v.ahPriced>0 and
+                        ((v.ahComplete and "" or "at least ")..
+                        Coin(v.ahCopper)) or "unavailable"),.65,.84,.9)
                 GameTooltip:AddLine(("%d/%d stacks with usable AH prices"):format(
                     v.ahPriced or 0,v.stacks or 0),.68,.71,.77)
+                if (v.vendorUnknown or 0)>0 or
+                    (v.missingTabs or 0)>0 then
+                    GameTooltip:AddLine("Incomplete: missing item prices or bank tabs",
+                        1,.69,.45,true)
+                end
                 GameTooltip:AddLine("Last snapshot: "..(v.age or "unknown"),
                     .68,.71,.77)
             else
@@ -383,18 +380,20 @@ local function EnsurePanel()
         if type(panel.ClearAllPoints)=="function" then
             panel:ClearAllPoints()
         end
-        -- Keep the summary inside the bank UI's own top-right corner.
         if where=="UIParent fallback" then
-            panel:SetPoint("TOPRIGHT",bank,"TOPRIGHT",-110,-135)
+            panel:SetPoint("TOPRIGHT",bank,"TOPRIGHT",-170,-135)
         else
-            panel:SetPoint("TOPRIGHT",bank,"TOPRIGHT",-18,-55)
+            -- Screenshot-verified bank header: search occupies the right
+            -- side at y~120 and first item row begins at y~140. This
+            -- places a single text line to LEFT of search at y~117.
+            panel:SetPoint("TOPRIGHT",bank,"TOPRIGHT",-145,-29)
         end
         panelParent=bank
     end
     if type(bank.GetFrameLevel)=="function" and
         type(panel.SetFrameLevel)=="function" then
         local level=Read(bank.GetFrameLevel,bank)
-        if Numeric(level) then panel:SetFrameLevel(level+35) end
+        if Numeric(level) then panel:SetFrameLevel(level+15) end
     end
 end
 local function Refresh()
