@@ -430,13 +430,21 @@ pane.scripts.OnUpdate(pane,1.5)
 assert(VisibleRows()==7 and Text("Page 1 / 2"),
     "taller native AH uses seven rows without changing scan data")
 local largePreview=FindFrame("ChalkBoxAuctionPricePreview")
-assert(largePreview and largePreview.w==220 and largePreview.h==246,
-    "framed graph uses available height on a taller native AH")
+assert(largePreview and largePreview.points[1][1]=="TOPLEFT" and
+    largePreview.points[1][2]==listPanel and
+    largePreview.points[1][3]=="TOPRIGHT" and
+    largePreview.points[1][4]==12 and
+    largePreview.points[1][5]==0 and
+    largePreview.points[2][1]=="BOTTOMRIGHT" and
+    largePreview.points[2][2]==pane and
+    largePreview.points[2][5]==27,
+    "framed graph is anchored to the EXACT top and bottom of the item list at every height")
 pane.mockHeight=316
 pane.scripts.OnUpdate(pane,1.5)
 assert(VisibleRows()==4 and Text("Page 1 / 3")
-    and largePreview.h==152,
-    "compact framed graph uses available height while staying clear of footer")
+    and largePreview.points[1][2]==listPanel and
+    largePreview.points[2][5]==listPanel.points[2][5],
+    "compact AH keeps exact matching chart/list vertical boundaries")
 -- Restore the familiar sample before verifying prices and mouseover hints.
 _G.ChalkBox_AuctionRows=function()
     reads=reads+1
@@ -481,10 +489,11 @@ assert(chartReads==readCount+1 and Text("Linen Cloth")
     rows[1].selectedBack and rows[1].selectedBack.shown,
     "click displays the latest real low ask, scan count and a subtle row highlight")
 local preview=FindFrame("ChalkBoxAuctionPricePreview")
-assert(preview and preview.w==220 and preview.h==152 and
-    preview.point[1]=="TOPRIGHT" and preview.point[5]==-136
-    and preview.parent==pane and #Textures(preview)>=10,
-    "price card is framed with a distinct header, plot field and footer")
+assert(preview and preview.parent==pane and #Textures(preview)>=10
+    and preview.points[1][1]=="TOPLEFT"
+    and preview.points[1][2]==listPanel
+    and preview.points[2][1]=="BOTTOMRIGHT",
+    "equal-height market graph is bounded by left list and uses framed header, plot and footer")
 preview.scripts.OnEnter(preview)
 assert(tip.shown and tip.lines[1].text=="Linen Cloth" and
     tip.lines[2].text:find("Latest low ask: 13s 50c",1,true),
