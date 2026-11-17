@@ -10,6 +10,24 @@ This distribution includes an embedded **Forever-only** copy of **LibProfessionD
 - Original library source Git blob: `f88a046c61bb4e3a3fda5172f2265639ee921d1d`.
 - The library and data retain their own original authorship; ChalkBox only supplies its independent item-relevance adapter.
 
+### DisenchantForever data — APGM82 / additional source review
+
+This distribution also includes three read-only data files from
+[DisenchantForever](https://github.com/APGM82/DisenchantForever), copyright
+(c) 2026 APGM82, published under the MIT license. Its unmodified license is
+shipped at `ChalkBox/Libs/ForeverDisenchantData/LICENSE`; the matching
+`README.md` in that folder records the pinned upstream commit and relevant
+Forever client builds.
+
+The source explicitly says its **material outcome odds** reference
+vMaNGOS/CMaNGOS Classic data; those projects are separate from the MIT
+distributor. The legal provenance and potential separate rights in the
+underlying numerical tables/compilation have **not been conclusively
+reviewed**. Do not interpret this notice as proof that the distributor's
+MIT label settles any upstream licensing question. This review is tracked
+as a stable-release gate in
+[Release readiness](docs/RELEASE_READINESS_AUDIT.md).
+
 ### LibStub — public domain
 
 Includes the original **LibStub v2** loader, placed in the **public domain** by its authors (Kaelten, Cladhaire, ckknight, Mikk, Ammo, Nevcairiel, joshbork). Original source notice remains in `ChalkBox/Libs/LibStub/LibStub.lua`.

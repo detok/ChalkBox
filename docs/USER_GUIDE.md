@@ -28,6 +28,8 @@ The **Global Appearance** page controls ChalkBox's palette and panel visibility.
 
 **Use it for:** Building your own observed loot journal.
 
+From settings or `/chalk drops map`, the native World Map opens first when the client exposes Blizzard's map-toggle API; Discoveries remains attached to the map and never becomes an independent window. If native map opening is restricted, open the World Map yourself and select **Discoveries**.
+
 1. Ensure **DropSense → Record drops automatically** is on, or type `/chalk drops on`.
 2. Open a readable loot window. Observed item appearances are recorded; re-opening the same corpse should not count as another loot attempt.
 3. Open the **World Map → Discoveries** button or type `/chalk drops map`. The journal docks beside the map; you can reposition the map button and reset it with `/chalk drops map reset`.

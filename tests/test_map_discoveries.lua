@@ -446,7 +446,47 @@ WorldMapFrame:Hide()
 if WorldMapFrame.HookOnHide then WorldMapFrame.HookOnHide(WorldMapFrame) end
 assert(not journal:IsShown(),"map close closes the sidecar")
 assert(not ChalkBox_OpenMapDiscoveries(),
-    "Discoveries cannot open while the World Map is hidden")
+    "with no native map opener, Discoveries remains hidden and safe")
+local mapToggleCalls=0
+_G.ToggleWorldMap=function()
+    mapToggleCalls=mapToggleCalls+1
+    WorldMapFrame:Show()
+    if WorldMapFrame.HookOnShow then
+        WorldMapFrame.HookOnShow(WorldMapFrame)
+    end
+end
+assert(ChalkBox_OpenMapDiscoveries() and journal:IsShown()
+    and mapToggleCalls==1,
+    "slash/settings request opens Blizzard's map, then its owned sidecar once")
+assert(ChalkBox_OpenMapDiscoveries() and mapToggleCalls==1,
+    "opening an already visible map never toggles it closed")
+WorldMapFrame:Hide()
+if WorldMapFrame.HookOnHide then WorldMapFrame.HookOnHide(WorldMapFrame) end
+_G.InCombatLockdown=function() return true end
+assert(not ChalkBox_OpenMapDiscoveries() and mapToggleCalls==1,
+    "combat restrictions must never invoke Blizzard's map toggle")
+_G.InCombatLockdown=nil
+local queued={}
+_G.C_Timer={After=function(_,callback) queued[#queued+1]=callback end}
+_G.ToggleWorldMap=function()
+    mapToggleCalls=mapToggleCalls+1
+    -- Simulate Forever lazily loading its map after ToggleWorldMap.
+end
+assert(ChalkBox_OpenMapDiscoveries() and mapToggleCalls==2
+    and #queued==1 and not journal:IsShown(),
+    "lazy native map opener requests one map toggle and defers sidecar")
+queued[1]()
+assert(#queued==2 and not journal:IsShown(),
+    "native map is allowed to remain unavailable for a bounded retry")
+WorldMapFrame:Show()
+if WorldMapFrame.HookOnShow then WorldMapFrame.HookOnShow(WorldMapFrame) end
+queued[2]()
+assert(journal:IsShown() and mapToggleCalls==2,
+    "deferred retry attaches sidecar after the native map loads")
+_G.C_Timer=nil
+_G.ToggleWorldMap=nil
+WorldMapFrame:Hide()
+if WorldMapFrame.HookOnHide then WorldMapFrame.HookOnHide(WorldMapFrame) end
 WorldMapFrame:Show()
 if WorldMapFrame.HookOnShow then WorldMapFrame.HookOnShow(WorldMapFrame) end
 assert(ChalkBox_OpenMapDiscoveries())

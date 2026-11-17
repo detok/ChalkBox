@@ -349,8 +349,12 @@ local function MakeDrops()
             s.watched or 0,s.windows or 0,s.areas or 0))
     end)
     Button(panel,"Open Map Discoveries",28,-267,224,function()
-        if ChalkBox_OpenMapDiscoveries then
-            ChalkBox_OpenMapDiscoveries()
+        if type(ChalkBox_OpenMapDiscoveries)=="function" then
+            if not ChalkBox_OpenMapDiscoveries() then
+                Note("Open the World Map, then click its Discoveries button.")
+            end
+        else
+            Note("Discoveries is unavailable in this client.")
         end
     end)
     Button(panel,"Reset Map Button",270,-267,224,function()
@@ -1411,7 +1415,7 @@ local function MakeMeter()
         if panel.OnRefresh then panel.OnRefresh() end
     end
     Toggle(panel,"Show compact DPS meter window",
-        "Appears by default; doesn't replace Blizzard's own meter.",-108,
+        "Starts hidden; doesn't replace Blizzard's own meter.",-108,
         function()
             local status=ChalkBox_MeterStatus and ChalkBox_MeterStatus()
             return status and status.shown==true
