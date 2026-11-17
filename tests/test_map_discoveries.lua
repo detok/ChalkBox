@@ -446,7 +446,23 @@ WorldMapFrame:Hide()
 if WorldMapFrame.HookOnHide then WorldMapFrame.HookOnHide(WorldMapFrame) end
 assert(not journal:IsShown(),"map close closes the sidecar")
 assert(not ChalkBox_OpenMapDiscoveries(),
-    "Discoveries cannot open while the World Map is hidden")
+    "with no native map opener, Discoveries remains hidden and safe")
+local mapToggleCalls=0
+_G.ToggleWorldMap=function()
+    mapToggleCalls=mapToggleCalls+1
+    WorldMapFrame:Show()
+    if WorldMapFrame.HookOnShow then
+        WorldMapFrame.HookOnShow(WorldMapFrame)
+    end
+end
+assert(ChalkBox_OpenMapDiscoveries() and journal:IsShown()
+    and mapToggleCalls==1,
+    "slash/settings request opens Blizzard's map, then its owned sidecar once")
+assert(ChalkBox_OpenMapDiscoveries() and mapToggleCalls==1,
+    "opening an already visible map never toggles it closed")
+_G.ToggleWorldMap=nil
+WorldMapFrame:Hide()
+if WorldMapFrame.HookOnHide then WorldMapFrame.HookOnHide(WorldMapFrame) end
 WorldMapFrame:Show()
 if WorldMapFrame.HookOnShow then WorldMapFrame.HookOnShow(WorldMapFrame) end
 assert(ChalkBox_OpenMapDiscoveries())
