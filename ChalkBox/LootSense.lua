@@ -222,10 +222,11 @@ local function OnItemTooltip(tooltip)
     if type(ChalkBox_AuctionTooltip)=="function" then
         pcall(ChalkBox_AuctionTooltip,tooltip,link)
     end
-    -- Read-only DE economics: never auto-cast, alter bag buttons, or suggest
-    -- destroying protected/quest items. The item tooltip owns the display.
+    local future=FutureUses(name,link)
+    -- Future-quest reference items should never receive an unqualified
+    -- recommendation to disenchant, even before their quest is accepted.
     if type(ChalkBox_DisenchantTooltip)=="function" then
-        local protected=IsProtected(name,link) or
+        local protected=IsProtected(name,link) or future~=nil or
             (type(ChalkBox_IsTrackedQuestItem)=="function" and
                 ChalkBox_IsTrackedQuestItem(name))
         pcall(ChalkBox_DisenchantTooltip,tooltip,link,protected)
@@ -249,7 +250,6 @@ local function OnItemTooltip(tooltip)
     end
     local message, r, g, b = Classify(name, link, quality, itemType, itemSubType,
         equipLoc, sellPrice, classID, bindType, isCraftingReagent)
-    local future=FutureUses(name,link)
     if not message then
         -- Ordinary trade goods such as Okra had no LootSense heading.
         -- Future-quest evidence is a standalone, additive note.
