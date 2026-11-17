@@ -12,6 +12,7 @@ local function Element(kind,parent,name,template)
         self.points[#self.points+1]={...}
     end
     function f:SetWidth(w) self.w=w end
+    function f:SetHeight(h) self.h=h end
     function f:ClearAllPoints() self.points={};self.point=nil end
     function f:GetHeight()
         if self.name=="ChalkBoxAuctionSensePane" then
