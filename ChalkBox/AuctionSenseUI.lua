@@ -352,7 +352,9 @@ local function BuildPricePreview(parent)
             elseif first==last then xFraction=(i-1)/(#points-1)
             else xFraction=(p.t-first)/(last-first) end
             local x=16+xFraction*(width-32)
-            local y=40+(p.low-floor)/scale*math.max(24,lastHeight-79)
+            -- Keep points between the framed plot's 43px header and
+            -- 33px footer, with a few pixels of breathing room.
+            local y=40+(p.low-floor)/scale*math.max(20,lastHeight-87)
             plotted[i]={x=x,y=y}
             local dot=dots[i]
             dot:ClearAllPoints()
