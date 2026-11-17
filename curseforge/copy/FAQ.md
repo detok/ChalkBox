@@ -9,8 +9,8 @@ Developed for **WoW Forever**. Retail / regular Classic support has not been ver
 **Does ChalkBox sell items, buy auctions or run combat automatically?**  
 No. LootSense is advisory, AuctionSense scans only when you ask, DE estimates are read-only, and MacroForge cannot automate a rotation or bypass Blizzard's GCD/key-press restrictions.
 
-**Why does a quest item say only KEEP — Quest Item?**  
-The game identified quest relevance, but ChalkBox did not find a reliable match to an accepted quest objective. When it can, it shows the quest name and collection progress.
+**How does ChalkBox identify which quest needs an item?**  
+It first reads the current character's accepted quest objectives and displays the actual quest title and progress. If that doesn't identify the item, ChalkBox has a bundled, offline MIT Classic quest-item reference that may name the related quest. Reference results are labeled accordingly and may differ in Forever. Neither Questie nor QuestieDB needs to be installed. If no exact link exists in either source, the item is marked as quest-class without guessing which quest it belongs to.
 
 **What does Smart QuestSense choose?**  
 It manages which *accepted quests* appear in Blizzard's tracker. It does not optimize leveling routes. In a party dungeon with verified quest-match data, it focuses on quests for that **specific instance**. If no match is reliable, it preserves the tracker rather than hide everything.
