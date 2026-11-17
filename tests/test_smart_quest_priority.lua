@@ -217,4 +217,34 @@ assert(watches[201] and ChalkBox_QuestStatus().nearbyRange==500,
     "optional Nearby native 500-yard radius includes legitimately close quest")
 ChalkBox_QuestCommand("range 0")
 Flush()
-print("PASS: Forever Smart proximity, zone priority, complete turn-ins, level sort, and optional native display sorting without watch writes")
+-- Simulate the full 40-quest Forever log. Unknown locations remain lower
+-- priority, and only native available watch slots may be filled.
+logs[#logs+1]={isHeader=true,title="Other"}
+for i=1,35 do
+    logs[#logs+1]={questID=1000+i,title="Later quest "..i,level=40}
+end
+ChalkBox_QuestCommand("smart")
+Flush()
+local st=ChalkBox_QuestStatus()
+assert(st.accepted==40 and st.tracked<=3,
+    "forty accepted quests remain bounded by Blizzard's real watch cap")
+assert(watches[101] and watches[102],
+    "known nearby objectives stay prioritized over 35 unlocated quests")
+-- Check that a real movement-driven distance change refreshes the top rank
+-- without requiring the player to re-open or modify the objective tracker.
+C_QuestLog.GetDistanceSqToQuest=function(id)
+    if id==101 then return 100,true end
+    if id==102 then return 50000,true end
+    if id==201 then return 90000,true end
+    return nil
+end
+for i=1,4 do tickers[1]() end
+Flush()
+assert(ChalkBox_QuestDisplayOrder()[101]<
+    ChalkBox_QuestDisplayOrder()[102],
+    "Smart reevaluates nearest objectives on its twelve-second update")
+ChalkBox_QuestCommand("sort title")
+Flush()
+assert(ChalkBox_QuestStatus().sort=="title",
+    "native Smart offers an alphabetical selection mode")
+print("PASS: 40-quest Smart ranking, micro-map Nearby POIs, waypoint evidence, radius controls, travel-time updates and native display order without watch writes")
