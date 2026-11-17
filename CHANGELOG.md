@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.2.26 — Adventure Tools & World Map
+
+- Discoveries: Display learned flight paths and recorded outdoor loot locations on local World Maps, with per-item map highlighting.
+- LootSense: Offer selected future-quest item context.
+- AuctionSense: Show observed asking-price history charts and connected item-value information.
+- The Bar: Adjustable stat module widths and remembered bank vendor value.
+- Combat Meter: Ranked PARTY/SAY reporting and compact display controls.
+- QuestSense & MacroForge: Optional map-pin navigation and native macro-editor workbench integration.
+- Emota: Optional Hunter pet interactions on supported Forever clients.
+
 ## 2.2.25 — Bank valuation, adjustable HUD, chat reporting and navigation (Beta)
 
 - Show the last observed per-character bank vendor value in The Bar and a small frameless label above the bank's coin bar; preserve missing/partial-value honesty and separate auction asking-price estimates.
