@@ -655,6 +655,26 @@ assert(offered and offered.map==1436
     "subzone hover delegates original parent-zone coordinates to native pins")
 linen.OnLeave()
 assert(cleared,"mouse leave clears the native transient marker")
+local allSpots
+_G.ChalkBox_MapNativeLootSetMany=function(map,locations)
+    allSpots={map=map,spots=locations}
+    return true
+end
+linen.OnEnter()
+assert(allSpots and allSpots.map==1436 and #allSpots.spots==4
+    and math.abs(allSpots.spots[1].x-.426)<.000001
+    and math.abs(allSpots.spots[4].y-.498)<.000001,
+    "hovering an item displays all four saved loot locations, not just last")
+linen.OnLeave()
+viewed=1437
+WorldMapFrame.SetMapID=function(_,id) viewed=id end
+linen.OnEnter()
+assert(viewed==1436 and allSpots and #allSpots.spots==4,
+    "manually browsed discovery item navigates the real World Map to its zone")
+linen.OnLeave()
+WorldMapFrame.SetMapID=nil
+viewed=999
+_G.ChalkBox_MapNativeLootSetMany=nil
 _G.ChalkBox_MapNativeAvailable=nil
 _G.ChalkBox_MapNativeLootSet=nil
 _G.ChalkBox_MapNativeLootClear=nil
