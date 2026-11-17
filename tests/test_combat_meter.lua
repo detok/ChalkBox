@@ -371,7 +371,7 @@ end
 oldChat=#chat
 ChalkBox_MeterPrintFight()
 assert(#partyMessages==1 and #copies==0
-    and chat[#chat]:find("report was not sent",1,true),
+    and chat[#chat]:find("report stopped at line",1,true),
     "failed PARTY report prints error without copy fallback")
 C_ChatInfo.InChatMessagingLockdown=function() return true end
 ChalkBox_MeterPrintFight()
