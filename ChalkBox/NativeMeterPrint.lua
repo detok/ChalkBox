@@ -225,18 +225,13 @@ local function SendReport(frame,channel,auto)
     -- Blizzard session. Identical consecutive summaries are deliberately
     -- skipped rather than risking auto chat spam.
     if auto and message==lastAutoMessage then return false end
-    if MessagingRestricted() then
-        if auto then return false end
-        if type(ChalkBox_MeterShowCopy)=="function" then
-            ChalkBox_MeterShowCopy(message,
-                "Forever restricts addon chat right now.")
-        else
-            Note("Forever restricts addon chat. Report: "..message)
-        end
-        return false
-    end
+    -- A manual click is a player-initiated action. Some clients report a
+    -- general addon-chat lockdown even when that click may send PARTY/SAY.
+    -- Preserve the guard for timer-driven auto reports; manual sends must
+    -- be judged by the actual chat API result instead of the status flag.
+    if auto and MessagingRestricted() then return false end
     local ok,result=pcall(send,message,channel)
-    if not ok or result==false then
+    if not ok or (Safe(result) and result==false) then
         if auto then return false end
         if type(ChalkBox_MeterShowCopy)=="function" then
             ChalkBox_MeterShowCopy(message,
