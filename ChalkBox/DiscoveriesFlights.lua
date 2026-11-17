@@ -229,6 +229,13 @@ local function FromObservedZone(node,mapID)
     local y=node.zoneY and node.zoneY/10000
     if not Integer(zone) or not ValidXY(x,y) then return end
     if zone==mapID then return x,y end
+    -- Use the same Forever world-coordinate translation as loot markers.
+    -- Saved learned-zone coordinates are real map positions, not guesses.
+    local translate=ChalkBox_MapNativeProject
+    if type(translate)=="function" then
+        local px,py=translate(zone,mapID,x,y)
+        if ValidXY(px,py) then return px,py end
+    end
     if IsAncestor(mapID,zone) then
         return ProjectOnZone(x,y,mapID,zone)
     end

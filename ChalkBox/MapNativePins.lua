@@ -27,14 +27,43 @@ local function MapID(map)
     local id=map and Call(map.GetMapID,map)
     return type(id)=="number" and id>0 and id or nil
 end
--- The source coordinates must belong to a *known* map. Projection into a
--- smaller local map uses Blizzard's own map rectangle, never a guess.
+-- Forever and DonMap-compatible clients expose world coordinates, which
+-- remain meaningful when the displayed zone changes or the map is stitched.
+-- Ask the game to convert the saved point; never transpose percentages.
+local function WorldProjection(sourceMap,targetMap,x,y)
+    local api=C_Map
+    if type(api)~="table" or
+        type(api.GetWorldPosFromMapPos)~="function" or
+        type(api.GetMapPosFromWorldPos)~="function" or
+        type(CreateVector2D)~="function" then return nil end
+    local vector=Call(CreateVector2D,x,y)
+    if not vector then return nil end
+    local good,continent,world=pcall(api.GetWorldPosFromMapPos,
+        sourceMap,vector)
+    if not good or type(continent)~="number" or not world then
+        return nil
+    end
+    local ok,_,point=pcall(api.GetMapPosFromWorldPos,
+        continent,world,targetMap)
+    if not ok or not point then return nil end
+    local read,mx,my=pcall(function()
+        if type(point.GetXY)=="function" then
+            return point:GetXY()
+        end
+        return point.x,point.y
+    end)
+    if read and Number(mx) and Number(my) then return mx,my end
+end
+-- Prefer the game's world coordinate transform when available; only use
+-- map-rectangle projection for clients without that capability.
 local function Project(sourceMap,targetMap,x,y)
     if not Number(x) or not Number(y)
         or type(sourceMap)~="number" or type(targetMap)~="number" then
         return nil
     end
     if sourceMap==targetMap then return x,y end
+    local px,py=WorldProjection(sourceMap,targetMap,x,y)
+    if px then return px,py end
     local info=Call(C_Map and C_Map.GetMapInfo,targetMap)
     if type(info)~="table" or not Public(info.parentMapID) then return nil end
     -- Walk only downward from source to child. No unrelated or sibling maps.
@@ -80,7 +109,7 @@ local layer, layerCanvas, layerParent
 local flightMarkers, lootMarkers={},{}
 local lootRecords={}
 local activeFlights,activeLoot=0,0
-local lastView,lastW,lastH
+local lastView,lastW,lastH,lastScale
 local tick=0
 local currentProblem="waiting for World Map"
 
@@ -95,12 +124,12 @@ local function State()
         then return nil end
     local scroll=map.ScrollContainer
     if not scroll then return nil end
-    local canvas=Safe(map.GetCanvas,map) or scroll.Child
+    local canvas=scroll.Child or Safe(map.GetCanvas,map)
         or Safe(scroll.GetCanvas,scroll)
     if not canvas then return nil end
     local w,h=Safe(canvas.GetWidth,canvas),Safe(canvas.GetHeight,canvas)
     local id=MapID(map) or Safe(scroll.GetMapID,scroll)
-    if not Number(0) or type(w)~="number" or type(h)~="number"
+    if type(w)~="number" or type(h)~="number"
         or w<=0 or h<=0 or type(id)~="number" or id<=0 then
         return nil
     end
@@ -109,7 +138,7 @@ end
 local function SetColor(tex,r,g,b,a)
     if type(tex.SetTexture)=="function" and
         type(tex.SetVertexColor)=="function" then
-        tex:SetTexture("Interface\\Buttons\\WHITE8X8")
+        tex:SetTexture("Interface\\Buttons\\WHITE8x8")
         tex:SetVertexColor(r,g,b,a)
     elseif type(tex.SetColorTexture)=="function" then
         tex:SetColorTexture(r,g,b,a)
@@ -125,23 +154,38 @@ local function Texture(frame,w,h,layerNo,r,g,b,a)
     SetColor(tex,r,g,b,a)
     return tex
 end
+-- Forever's existing map addons use the 2010+ map-layer range.
+-- A canvas+90 level (often ~220) can sit UNDER newer zone artwork while
+-- the mouse target remains active, exactly as seen in the user's screenshot.
 local function Raise(world,scroll,canvas)
     if not layer then return end
-    local wanted=220
-    for _,f in ipairs({world,scroll,canvas}) do
-        local v=Safe(f.GetFrameLevel,f)
-        if type(v)=="number" then wanted=math.max(wanted,v+90) end
+    local cv=Safe(canvas.GetFrameLevel,canvas)
+    local wanted=math.max(2012,type(cv)=="number" and cv+2 or 2012)
+    local om=rawget(_G,"OpenMapAPI")
+    if type(om)=="table" and type(om.IsStitched)=="function"
+        and type(om.ArtTopLevel)=="function" then
+        local stitched=Safe(om.IsStitched)
+        local top=stitched and Safe(om.ArtTopLevel)
+        if type(top)=="number" then wanted=math.max(wanted,top+2) end
     end
     wanted=math.min(9000,wanted)
     if type(layer.SetFrameLevel)=="function" then
+        if type(layer.SetFixedFrameLevel)=="function" then
+            pcall(layer.SetFixedFrameLevel,layer,false)
+        end
         layer:SetFrameLevel(wanted)
+        if type(layer.SetFixedFrameLevel)=="function" then
+            pcall(layer.SetFixedFrameLevel,layer,true)
+        end
     end
-    -- The scroll container can draw different zone tiles at a later stage.
-    -- This overlay is its sibling, not a child of an individual tile/canvas.
     local strata=Safe(world.GetFrameStrata,world)
     if type(strata)=="string" and type(layer.SetFrameStrata)=="function" then
         layer:SetFrameStrata(strata)
     end
+end
+local function CanvasScale(scroll)
+    local scale=scroll and Safe(scroll.GetCanvasScale,scroll)
+    return type(scale)=="number" and scale>0 and scale or 1
 end
 local function Ensure()
     local map,scroll,canvas,id,w,h=State()
@@ -149,28 +193,31 @@ local function Ensure()
         currentProblem="map canvas not displayed"
         return nil
     end
-    if not layer or layerCanvas~=canvas or layerParent~=scroll then
+    if not layer or layerCanvas~=canvas or layerParent~=canvas then
         if layer then layer:Hide() end
-        layer=CreateFrame("Frame",nil,scroll)
-        layerCanvas,layerParent=canvas,scroll
+        -- Parent to the canvas itself: pins inherit panning, clipping and
+        -- zoom exactly like tested Forever addons such as DonMap.
+        layer=CreateFrame("Frame",nil,canvas)
+        layerCanvas,layerParent=canvas,canvas
         layer:SetAllPoints(canvas)
         if type(layer.EnableMouse)=="function" then
             layer:EnableMouse(false)
         end
         flightMarkers,lootMarkers={},{}
         activeFlights,activeLoot=0,0
-        lastView,lastW,lastH=nil,nil,nil
+        lastView,lastW,lastH,lastScale=nil,nil,nil,nil
     end
     Raise(map,scroll,canvas)
     layer:Show()
     currentProblem="overlay attached to active map canvas"
-    return id,w,h
+    return id,w,h,CanvasScale(scroll)
 end
 local function Make(kind,index)
     local list=kind=="flight" and flightMarkers or lootMarkers
     local marker=list[index]
     if marker then return marker end
     marker=CreateFrame("Frame",nil,layer)
+    marker.isFlight=kind=="flight"
     marker:SetSize(kind=="flight" and 26 or 17,
         kind=="flight" and 26 or 17)
     if type(marker.EnableMouse)=="function" then
@@ -207,9 +254,21 @@ local function Make(kind,index)
     list[index]=marker
     return marker
 end
-local function Place(pin,x,y,w,h)
+local function Place(pin,x,y,w,h,scale)
+    -- Keep marker size in screen pixels at all canvas zoom levels.
+    scale=(type(scale)=="number" and scale>0) and scale or 1
+    local base=pin.isFlight and 26 or 17
+    pin:SetSize(base/scale,base/scale)
+    local backSize=pin.isFlight and 19 or 17
+    local faceSize=pin.isFlight and 15 or 13
+    if pin.back then pin.back:SetSize(backSize/scale,backSize/scale) end
+    if pin.face then pin.face:SetSize(faceSize/scale,faceSize/scale) end
+    if pin.center then pin.center:SetSize(5/scale,5/scale) end
+    local function Pixel(v)
+        return math.floor(v*scale+0.5)/scale
+    end
     pin:ClearAllPoints()
-    pin:SetPoint("CENTER",layer,"TOPLEFT",x*w,-y*h)
+    pin:SetPoint("CENTER",layer,"TOPLEFT",Pixel(x*w),-Pixel(y*h))
     pin:Show()
 end
 local function HideAfter(list,count)
@@ -233,7 +292,7 @@ local function SetFlightArtwork(pin,atlas)
         pin.icon:SetTexture("Interface\\Minimap\\Tracking\\FlightMaster")
     end
 end
-local function RedrawFlights(id,w,h)
+local function RedrawFlights(id,w,h,scale)
     local get=ChalkBox_DiscoveriesFlightCandidates
     local entries=type(get)=="function" and get(id) or {}
     if type(entries)~="table" then entries={} end
@@ -245,20 +304,20 @@ local function RedrawFlights(id,w,h)
             local pin=Make("flight",count)
             pin.flightName=entry.name
             SetFlightArtwork(pin,entry.atlas)
-            Place(pin,entry.x,entry.y,w,h)
+            Place(pin,entry.x,entry.y,w,h,scale)
         end
     end
     HideAfter(flightMarkers,count)
     activeFlights=count
 end
-local function RedrawLoot(id,w,h)
+local function RedrawLoot(id,w,h,scale)
     local count=0
     for _,spot in ipairs(lootRecords) do
         local x,y=Project(spot.mapID,id,spot.x,spot.y)
         if x and count<20 then
             count=count+1
             local pin=Make("loot",count)
-            Place(pin,x,y,w,h)
+            Place(pin,x,y,w,h,scale)
         end
     end
     HideAfter(lootMarkers,count)
@@ -268,13 +327,13 @@ function ChalkBox_MapNativeAvailable()
     return Ensure()~=nil
 end
 function ChalkBox_MapNativeRefresh()
-    local id,w,h=Ensure()
+    local id,w,h,scale=Ensure()
     if not id then
         activeFlights=0
         return false
     end
-    RedrawFlights(id,w,h)
-    lastView,lastW,lastH=id,w,h
+    RedrawFlights(id,w,h,scale)
+    lastView,lastW,lastH,lastScale=id,w,h,scale
     return true
 end
 -- Existing single-spot API remains supported. Multi-spot is preferred
@@ -293,9 +352,9 @@ function ChalkBox_MapNativeLootSetMany(sourceMap,locations)
         end
     end
     lootRecords=accepted
-    local id,w,h=Ensure()
+    local id,w,h,scale=Ensure()
     if not id then activeLoot=0;return false end
-    RedrawLoot(id,w,h)
+    RedrawLoot(id,w,h,scale)
     return activeLoot>0
 end
 function ChalkBox_MapNativeLootSet(sourceMap,x,y)
@@ -321,15 +380,15 @@ driver:SetScript("OnUpdate",function(_,elapsed)
     tick=tick+(type(elapsed)=="number" and elapsed or 0)
     if tick<0.25 then return end
     tick=0
-    local id,w,h=Ensure()
+    local id,w,h,scale=Ensure()
     if not id then
         activeFlights,activeLoot=0,0
-        lastView,lastW,lastH=nil,nil,nil
+        lastView,lastW,lastH,lastScale=nil,nil,nil,nil
         return
     end
-    if id~=lastView or w~=lastW or h~=lastH then
-        RedrawFlights(id,w,h)
-        RedrawLoot(id,w,h)
-        lastView,lastW,lastH=id,w,h
+    if id~=lastView or w~=lastW or h~=lastH or scale~=lastScale then
+        RedrawFlights(id,w,h,scale)
+        RedrawLoot(id,w,h,scale)
+        lastView,lastW,lastH,lastScale=id,w,h,scale
     end
 end)
