@@ -203,6 +203,6 @@ assert(not ChalkBox_MapNativeRefresh() and
     not ChalkBox_MapNativeAvailable() and
     not ChalkBox_MapNativeStatus().available,
     "unsupported native pin acquisition fails closed so flight fallback may draw")
-assert(ChalkBox_MapNativeStatus().problem:find("unsupported",1,true),
+assert(ChalkBox_MapNativeStatus().problem:find("native pin is not supported",1,true),
     "native fallback reason remains available to diagnostics")
 print("PASS: native MapCanvas flight/loot pins, zoom-aware positioning, child projection, no false coordinates, independent pools and safe fallback")
