@@ -212,6 +212,30 @@ eventCallback(nil,"QUEST_LOG_UPDATE")
 assert(ChalkBox_QuestItemDetails("Flintfire's Shipment")==nil,
     "non-item objectives cannot claim an item or quest title")
 
+-- Some Forever-compatible quest log variants omit isHeader on real
+-- entries. Do not mistake that for a failed header read.
+C_QuestLog.GetInfo=function()
+    return {title="A Special Delivery",questID=9901}
+end
+C_QuestLog.GetQuestObjectives=function()
+    return {{type="item",text="Flintfire's Shipment: 2/8",
+        numFulfilled=2,numRequired=8,finished=false}}
+end
+eventCallback(nil,"QUEST_LOG_UPDATE")
+matching=ChalkBox_QuestItemDetails("Flintfire's Shipment")
+assert(matching and matching[1].title=="A Special Delivery",
+    "missing isHeader flag should not invalidate a genuine accepted quest")
+-- If the quest APIs disappear temporarily, keep previously verified names.
+C_QuestLog.GetQuestObjectives=nil
+eventCallback(nil,"QUEST_LOG_UPDATE")
+matching=ChalkBox_QuestItemDetails("Flintfire's Shipment")
+assert(matching and matching[1].title=="A Special Delivery",
+    "transient objective API unavailability cannot clear known quest protection")
+C_QuestLog.GetNumQuestLogEntries=function() error("quest log not ready") end
+eventCallback(nil,"QUEST_LOG_UPDATE")
+matching=ChalkBox_QuestItemDetails("Flintfire's Shipment")
+assert(matching and matching[1].title=="A Special Delivery",
+    "transient quest count failure cannot wipe verified quest titles")
 C_QuestLog.GetNumQuestLogEntries=function() return 0 end
 eventCallback(nil,"QUEST_REMOVED")
 assert(ChalkBox_QuestItemDetails("Flask of Oil")==nil
