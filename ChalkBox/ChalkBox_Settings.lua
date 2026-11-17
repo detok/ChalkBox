@@ -16,6 +16,7 @@ local navigation = {
     {key="auction", title="AuctionSense", children={
         {key="auctioncharts", title="Charts (Experimental)"}}},
     {key="quests", title="QuestSense", children={
+        {key="questsmart", title="Smart Priorities"},
         {key="questnav", title="Navigation"}}},
     {key="journal", title="Session Journal"},
     {key="bar", title="The Bar", children={
@@ -745,7 +746,10 @@ local function MakeQuests()
     end
     Button(panel,"Refresh Quests",27,-348,198,function() Run("refresh") end)
     Button(panel,"Tracking Diagnostics",234,-348,210,function() Run("status") end)
-    Button(panel,"Navigation Arrow",27,-379,198,function()
+    Button(panel,"Smart Priorities",27,-379,198,function()
+        Activate("questsmart")
+    end)
+    Button(panel,"Navigation Arrow",234,-379,210,function()
         Activate("questnav")
     end)
     local info=Label(panel,"","GameFontHighlightSmall",28,-419,498)
@@ -759,6 +763,48 @@ local function MakeQuests()
             "  |  "..tostring(st.hidden or 0).." hidden"..
             "  |  limit "..tostring(st.limit)..
             (st.pending and "  |  updating when safe" or ""))
+    end)
+    return panel
+end
+
+local function MakeQuestSmart()
+    local panel=Panel("QuestSense / Smart Priorities",
+        "Choose which quests Smart selects for Blizzard's existing tracker.")
+    Label(panel,"Priority order","GameFontNormalLarge",28,-108,470)
+    Label(panel,"Nearest uses Forever's next-quest-step distance when known.",
+        "GameFontHighlightSmall",28,-138,490)
+    local function Run(which)
+        if type(ChalkBox_QuestCommand)=="function" then
+            ChalkBox_QuestCommand("sort "..which)
+        end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end
+    Button(panel,"Nearest Objective",27,-178,217,function() Run("nearest") end)
+    Button(panel,"Zone",256,-178,120,function() Run("zone") end)
+    Button(panel,"Level",385,-178,120,function() Run("level") end)
+    Button(panel,"Name",27,-215,142,function() Run("name") end)
+    Button(panel,"Quest Log Order",181,-215,196,function() Run("log") end)
+    Label(panel,"Unavailable distances are never guessed. Smart still preserves",
+        "GameFontHighlightSmall",28,-269,490)
+    Label(panel,"manual watches and the quest followed by Navigation.",
+        "GameFontHighlightSmall",28,-287,490)
+    Label(panel,"This sorts automatic quest selection. Blizzard controls",
+        "GameFontHighlightSmall",28,-313,490)
+    Label(panel,"the native tracker row order and zone section layout.",
+        "GameFontHighlightSmall",28,-331,490)
+    Button(panel,"Refresh Smart",27,-365,180,function()
+        if type(ChalkBox_QuestCommand)=="function" then
+            ChalkBox_QuestCommand("refresh")
+        end
+    end)
+    local status=Label(panel,"","GameFontHighlightSmall",28,-409,492)
+    panel:AddRefresh(function()
+        local st=type(ChalkBox_QuestStatus)=="function"
+            and ChalkBox_QuestStatus() or nil
+        if not st then status:SetText("QuestSense unavailable.");return end
+        status:SetText("Sort: "..(st.smartSort or "nearest")..
+            " | Measured next steps: "..tostring(st.measured or 0)..
+            " | Candidates: "..tostring(st.candidates or 0))
     end)
     return panel
 end
@@ -1495,6 +1541,7 @@ local function Register()
     panels.loot = MakeLoot()
     panels.loothighlight = MakeLootAppearance()
     panels.quests = MakeQuests()
+    panels.questsmart = MakeQuestSmart()
     panels.questnav = MakeQuestNavigation()
     panels.bar = MakeBar()
     panels.barstats = MakeBarStats()
