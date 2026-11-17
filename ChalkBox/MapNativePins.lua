@@ -93,7 +93,15 @@ local function BuildPinMixin()
         end
         self.glyph=self:CreateTexture(nil,"OVERLAY")
         self.glyph:SetAllPoints(self)
+        -- Flight marker artwork is optional in Forever forks; the backing
+        -- dot is an actual colored texture, not an assumed atlas.
+        if type(self.glyph.SetDrawLayer)=="function" then
+            self.glyph:SetDrawLayer("OVERLAY",7)
+        end
         self.ring=self:CreateTexture(nil,"OVERLAY")
+        if type(self.ring.SetDrawLayer)=="function" then
+            self.ring:SetDrawLayer("OVERLAY",5)
+        end
         self.ring:SetSize(17,17)
         self.ring:SetPoint("CENTER",self,"CENTER",0,0)
         self.center=self:CreateTexture(nil,"OVERLAY")
@@ -111,7 +119,12 @@ local function BuildPinMixin()
         if kind=="flight" then
             self:SetSize(24,24)
             self.glyph:Show()
-            self.ring:Hide()
+            -- Always render a small, unmistakable amber anchor behind the
+            -- flight boot. Some Forever clients accept SetAtlas but paint no
+            -- pixels; a successful API call is not a visibility guarantee.
+            self.ring:SetSize(11,11)
+            self.ring:SetColorTexture(1,0.70,0.16,0.95)
+            self.ring:Show()
             self.center:Hide()
             local chosen=atlas or "TaxiNode_Neutral"
             local atlasOK=false
@@ -126,6 +139,7 @@ local function BuildPinMixin()
         else
             self:SetSize(20,20)
             self.glyph:Hide()
+            self.ring:SetSize(17,17)
             self.ring:Show()
             self.center:Show()
             self.ring:SetColorTexture(1,0.70,0.27,0.66)
