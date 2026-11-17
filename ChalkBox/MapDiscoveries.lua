@@ -218,7 +218,20 @@ local function PulsePosition()
     if not lootPulse or not hoverSpot or
         not panel or (type(panel.IsShown)=="function" and
         not panel:IsShown()) or mode~="outdoor" then return false end
-    if selectedArea~="z:"..tostring(MapID() or "") then return false end
+    local viewed=MapID()
+    if selectedArea~="z:"..tostring(ZoneMapID(viewed) or "") then
+        return false
+    end
+    local source=tonumber(selectedArea:match("^z:(%d+)$"))
+    local x,y=hoverSpot.x/1000,hoverSpot.y/1000
+    if source~=viewed then
+        -- Fallback must apply the same parent-zone -> subzone coordinate
+        -- conversion as the native renderer. Never paint parent coordinates
+        -- directly on a different child map.
+        if type(ChalkBox_MapNativeProject)~="function" then return false end
+        x,y=ChalkBox_MapNativeProject(source,viewed,x,y)
+        if not x then return false end
+    end
     local canvas=PulseCanvas()
     if canvas~=lootPulse.canvas then return false end
     local w,h=Call(canvas.GetWidth,canvas),Call(canvas.GetHeight,canvas)
@@ -226,8 +239,7 @@ local function PulsePosition()
         return false
     end
     lootPulse:ClearAllPoints()
-    lootPulse:SetPoint("CENTER",canvas,"TOPLEFT",
-        hoverSpot.x*w/1000,-hoverSpot.y*h/1000)
+    lootPulse:SetPoint("CENTER",canvas,"TOPLEFT",x*w,-y*h)
     return true
 end
 local function PulseHover(item)
@@ -260,15 +272,15 @@ local function PulseHover(item)
         if type(dot.EnableMouse)=="function" then dot:EnableMouse(false) end
         if type(dot.SetFrameLevel)=="function" and
             type(canvas.GetFrameLevel)=="function" then
-            dot:SetFrameLevel(canvas:GetFrameLevel()+8)
+            dot:SetFrameLevel(math.max(200,canvas:GetFrameLevel()+60))
         end
-        local ring=dot:CreateTexture(nil,"ARTWORK")
+        local ring=dot:CreateTexture(nil,"OVERLAY")
         ring:SetAllPoints(dot)
-        ring:SetColorTexture(1,0.70,0.27,0.70)
+        Paint(ring,1,0.70,0.27,0.70)
         local center=dot:CreateTexture(nil,"OVERLAY")
         center:SetSize(6,6)
         center:SetPoint("CENTER",dot,"CENTER",0,0)
-        center:SetColorTexture(1,0.96,0.74,1)
+        Paint(center,1,0.96,0.74,1)
         dot.ring=ring;dot.clock=0
         dot:SetScript("OnUpdate",function(self,dt)
             if type(dt)~="number" or dt<0 then return end
