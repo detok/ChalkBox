@@ -9,6 +9,7 @@ local drawnKey,menuInstalled=nil,false
 local capturePending=0
 local lastCanvas=nil
 local tick=0
+local cachedRefreshTicks=0
 local lastCount=0
 local positionSources={observed=0,direct=0,projected=0,unplaced=0}
 local lastCapture={status="not seen",taxiMapID=nil,reachable=0}
@@ -277,7 +278,8 @@ local function Refresh()
     local db=DB()
     if not db then return end
     local key=tostring(mapID)..":"..db.revision..":"..w..":"..h
-    if key==drawnKey and lastCanvas==canvas then
+    if key==drawnKey and lastCanvas==canvas and cachedRefreshTicks>0 then
+        cachedRefreshTicks=cachedRefreshTicks-1
         -- The native zone canvas may change levels while textures load or
         -- while a player switches map zoom without changing the map ID.
         -- Repair draw order without rebuilding or adding any flight paths.
@@ -286,6 +288,10 @@ local function Refresh()
     end
     HidePins()
     drawnKey,lastCanvas=key,canvas
+    -- Forever may populate taxi nodes after the map canvas appears. A
+    -- map/revision/size-only cache can permanently preserve an empty draw.
+    -- Periodically re-query read-only positions without touching learned IDs.
+    cachedRefreshTicks=3
     local indexed=IndexedPositions(mapID,db.nodes)
     positionSources={observed=0,direct=0,projected=0,unplaced=0}
     local ids={}
