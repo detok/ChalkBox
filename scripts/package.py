@@ -53,6 +53,7 @@ FILES = (
     "Libs/ForeverDisenchantData/OwnLoot.lua",
     "DisenchantSense.lua",
     "AuctionInsights.lua",
+    "BankValue.lua",
     "MapDiscoveries.lua",
     "DiscoveriesFlights.lua",
     "UpdateCheck.lua",
