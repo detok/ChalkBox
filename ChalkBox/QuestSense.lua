@@ -81,6 +81,8 @@ local function ReadLog()
                         ("Quest #"..info.questID),
                     header=header,localPOI=info.hasLocalPOI==true,
                     onMap=info.isOnMap==true,index=i,
+                    level=Public(info.level) and type(info.level)=="number"
+                        and info.level or nil,
                 }
             end
         end
@@ -106,6 +108,36 @@ local function MaxWatches()
     local n=Constants and Constants.QuestWatchConsts
         and Constants.QuestWatchConsts.MAX_QUEST_WATCHES
     return type(n)=="number" and n>0 and n or 25
+end
+-- Forever's own quest-helper distance points toward the current quest
+-- objective/turn-in. No third-party quest database and no guessed spawn.
+local function NativeDistance(id)
+    local fn=C_QuestLog and C_QuestLog.GetDistanceSqToQuest
+    if type(fn)~="function" then return nil end
+    local ok,distance,onContinent=pcall(fn,id)
+    if ok and Public(distance) and type(distance)=="number"
+        and distance>=0 and distance<1e14
+        and Public(onContinent) and onContinent==true then
+        return distance
+    end
+end
+local function QuestComplete(id)
+    local fn=C_QuestLog and C_QuestLog.IsComplete
+    local value=Call(fn,id)
+    return value==true
+end
+-- Bucketing prevents tiny movements from constantly swapping candidates.
+-- Distances are only compared within the game's reported continent.
+local function DistanceRank(value)
+    if not value then return nil end
+    local yards=math.sqrt(value)
+    if yards<100 then return 1 end
+    if yards<250 then return 2 end
+    if yards<500 then return 3 end
+    if yards<1000 then return 4 end
+    if yards<2000 then return 5 end
+    if yards<4000 then return 6 end
+    return 7
 end
 local function Relevant(quests,zoneID,zoneNames)
     local onMap,hasMapData={},false
@@ -133,7 +165,7 @@ local function Relevant(quests,zoneID,zoneNames)
         -- A local POI flag does not identify the current zone, and a newly
         -- accepted quest may be far away. Neither bypasses Nearby-only.
         if quest.localPOI or quest.onMap then score=score+80 end
-        if recentlyAccepted[quest.id] then score=score+600 end
+        if recentlyAccepted[quest.id] then score=score+40 end
         marked[quest.id]=score
     end
     -- No zone map and no matching quest header means the client hasn't
@@ -329,17 +361,52 @@ local function Reconcile()
         end
     end
     local prioritized={}
+    local sortMode=(mode=="all") and "log" or
+        (settings.smartSort or "nearest")
     for _,quest in ipairs(quests) do
         local score=mode=="all" and 0 or (scores[quest.id] or 0)
         if not focusOnly or localQuests[quest.id] then
-            prioritized[#prioritized+1]={id=quest.id,title=quest.title,score=score,
-                logIndex=quest.index}
+            local d=NativeDistance(quest.id)
+            local nearbyQuest=localQuests[quest.id]==true
+            prioritized[#prioritized+1]={
+                id=quest.id,title=quest.title,score=score,
+                logIndex=quest.index,header=quest.header or "Other",
+                level=quest.level,complete=QuestComplete(quest.id),
+                distance=d,bucket=DistanceRank(d),
+                inArea=nearbyQuest,
+                recent=recentlyAccepted[quest.id]==true,
+            }
         end
     end
-    table.sort(prioritized,function(a,b)
-        if a.score~=b.score then return a.score>b.score end
+    -- Smart: local evidence before remote, then closest verified objective.
+    -- Nearby has already removed nonlocal quests. All remains log-order
+    -- compatible unless the player explicitly chooses another sort.
+    local function Compare(a,b)
+        if settings.smartCompleteFirst and a.complete~=b.complete then
+            return a.complete
+        end
+        if mode=="smart" and settings.smartNearbyFirst~=false and
+            a.inArea~=b.inArea then return a.inArea end
+        if sortMode=="zone" and a.header~=b.header then
+            if a.inArea~=b.inArea then return a.inArea end
+            return a.header<b.header
+        end
+        if sortMode=="level" and type(a.level)=="number" and
+            type(b.level)=="number" and a.level~=b.level then
+            return a.level<b.level
+        end
+        if sortMode=="nearest" then
+            if a.bucket~=b.bucket then
+                if not a.bucket then return false end
+                if not b.bucket then return true end
+                return a.bucket<b.bucket
+            end
+        end
+        if sortMode~="log" and sortMode~="level" and
+            a.score~=b.score then return a.score>b.score end
         return a.logIndex<b.logIndex
-    end)
+    end
+    table.sort(prioritized,Compare)
 
     -- Nearby is a strict current-zone filter, including previously MANUALLY
     -- watched non-local quests. Suspend those selections rather than losing
@@ -478,7 +545,8 @@ local function Reconcile()
         zone=name or "unknown",mode=mode,max=MaxWatches(),
         manual=manualNow,initialWatches=before,
         dungeon=dungeon and dungeon.name or nil,
-        dungeonMatches=dungeon and dungeonCount or nil}
+        dungeonMatches=dungeon and dungeonCount or nil,
+        sort=sortMode,nearest=prioritized[1] and prioritized[1].id or nil}
 end
 QueueUpdate=function()
     if not settings or queued or busy then return end
@@ -527,7 +595,11 @@ function ChalkBox_QuestStatus()
         restored=lastStats.restored or 0,
         api=API(),pending=pending,
         dungeon=lastStats.dungeon,dungeonMatches=lastStats.dungeonMatches,
-        navigationWatch=navFocusID}
+        navigationWatch=navFocusID,
+        sort=settings and settings.smartSort or "nearest",
+        nearbyFirst=settings and settings.smartNearbyFirst~=false,
+        completeFirst=settings and settings.smartCompleteFirst==true,
+        nearest=lastStats.nearest}
 end
 function ChalkBox_QuestCommand(text)
     if not settings then return end
@@ -564,6 +636,23 @@ function ChalkBox_QuestCommand(text)
         Note("QuestSense: "..(cmd=="zone" and
             "Nearby only (auto-updates; other watches saved)." or
             (cmd=="all" and "All accepted." or "Smart.")))
+    elseif cmd:match("^sort %a+$") then
+        local sort=cmd:match("^sort (%a+)$")
+        if sort=="nearest" or sort=="zone" or sort=="level" or
+            sort=="log" then
+            settings.smartSort=sort;QueueUpdate()
+            Note("Smart selection order: "..sort..".")
+        else Note("Choose sort nearest, zone, level or log.") end
+    elseif cmd=="nearbyfirst on" or cmd=="nearbyfirst off" then
+        settings.smartNearbyFirst=cmd=="nearbyfirst on"
+        QueueUpdate()
+        Note("Smart current-zone priority "..(settings.smartNearbyFirst and
+            "on." or "off."))
+    elseif cmd=="completefirst on" or cmd=="completefirst off" then
+        settings.smartCompleteFirst=cmd=="completefirst on"
+        QueueUpdate()
+        Note("Smart completed-quest priority "..(settings.smartCompleteFirst
+            and "on." or "off."))
     elseif cmd:match("^limit %d+$") then
         local n=tonumber(cmd:match("%d+"))
         if n==5 or n==10 or n==15 or n==20 then
@@ -573,7 +662,7 @@ function ChalkBox_QuestCommand(text)
             Note("Choose limit 5, 10, 15 or 20.")
         end
     else
-        Note("/chalk quests on|off|refresh|status|smart|zone|all|limit 5/10/15/20")
+        Note("/chalk quests on|off|smart|zone|all|sort nearest/zone/level/log|nearbyfirst on/off|completefirst on/off|limit 5/10/15/20|refresh|status")
     end
 end
 local events=CreateFrame("Frame")
@@ -601,6 +690,13 @@ events:SetScript("OnEvent",function(_,event,arg1,arg2)
         end
         if type(settings.limit)~="number" or settings.limit<5 or settings.limit>20 then
             settings.limit=10
+        end
+        if settings.smartSort~="nearest" and settings.smartSort~="zone"
+            and settings.smartSort~="level" and settings.smartSort~="log" then
+            settings.smartSort="nearest"
+        end
+        if settings.smartNearbyFirst==nil then
+            settings.smartNearbyFirst=true
         end
         -- Leave old per-character manual watch history alone.
     elseif event=="PLAYER_LOGIN" then
