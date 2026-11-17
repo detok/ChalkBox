@@ -818,6 +818,10 @@ local function CreateBar()
         widget:SetSize(ModuleWidth(key),16)
         local font=widget:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
         font:SetAllPoints(widget)
+        -- Narrow widths must clip to a single Bar line, never spill down
+        -- into the game UI or draw over a neighboring module.
+        if type(font.SetMaxLines)=="function" then font:SetMaxLines(1) end
+        if type(font.SetWordWrap)=="function" then font:SetWordWrap(false) end
         font:SetJustifyH(key=="gold" and "RIGHT" or
             (specs[key].group=="center" and "CENTER" or "LEFT"))
         widget.text=font
