@@ -187,4 +187,11 @@ assert(ChalkBox_MapNativeRefresh())
 assert(#pools[1].used==1,
     "new flight discovery state can rerender without stale cache")
 assert(ChalkBox_MapNativeStatus().problem=="native MapCanvas provider installed")
-print("PASS: native MapCanvas pin provider, zoom-aware SetPosition, zone/micro projection, no false positions, flight/loot lifecycle")
+world.AcquirePin=function() error("native pin is not supported on this fork") end
+assert(not ChalkBox_MapNativeRefresh() and
+    not ChalkBox_MapNativeAvailable() and
+    not ChalkBox_MapNativeStatus().available,
+    "unsupported native pin acquisition fails closed so flight fallback may draw")
+assert(ChalkBox_MapNativeStatus().problem:find("unsupported",1,true),
+    "native fallback reason remains available to diagnostics")
+print("PASS: native MapCanvas flight/loot pins, zoom-aware positioning, child projection, no false coordinates, independent pools and safe fallback")
