@@ -112,19 +112,24 @@ assert(info.open and info.bankFrame=="BankPanel" and
     info.panel and info.tabs==2 and info.tabSource:find("C_Bank"),
     "visible BankPanel initializes the card without a global bank enum/event")
 assert(ChalkBox_BankValueStatus()==nil and
-    Text("Bank --") and
+    Text("Value --") and
     ChalkBox_BankValueDebug().reason=="Bank tab contents not loaded yet",
-    "header shows a clean Bank -- while no item data is available")
+    "bottom-right bank value remains visible as Value -- while data loads")
 local valuePanel
 for _,frame in ipairs(frames) do
     if frame.name=="ChalkBoxBankValuePanel" then valuePanel=frame end
 end
 assert(valuePanel and valuePanel.parent==BankPanel and
-    valuePanel.w==160 and valuePanel.h==17 and
-    valuePanel.point[1]=="TOPRIGHT" and
-    valuePanel.point[4]==-145 and valuePanel.point[5]==-29 and
+    valuePanel.w==99 and valuePanel.h==16 and
+    valuePanel.point[1]=="BOTTOMRIGHT" and
+    valuePanel.point[3]=="BOTTOMRIGHT" and
+    valuePanel.point[4]==-19 and valuePanel.point[5]==27 and
     not valuePanel.textures,
-    "inline bank label sits left of search with NO painted box, border, or item-slot overlap")
+    "annotated BLUE lower-right gap: 99x16 unframed value beside Purchase above coin bar, not overlapping search or inventory")
+assert(valuePanel.point[2]==BankPanel and
+    valuePanel.point[1]=="BOTTOMRIGHT" and
+    valuePanel.point[3]=="BOTTOMRIGHT",
+    "bank value follows the native bank frame when dragged or rescaled")
 assert(accountReads==0,"no account bank API is ever queried")
 ready=1
 listener.script.OnEvent(listener,"BANK_TABS_CHANGED")
@@ -139,8 +144,8 @@ listener.script.OnUpdate(listener,.8)
 status=ChalkBox_BankValueStatus()
 assert(status.vendorCopper==1600 and status.vendorComplete and
     status.stacks==2 and status.ahCopper==3000 and status.ahPriced==1 and
-    Text("Bank 16s"),
-    "bank value appears as a single inline vendor total; AH prices remain tooltip-only")
+    Text("Value 16s"),
+    "bank value appears in the bottom-right utility gap; AH prices remain tooltip-only")
 local readCount=#reads
 BankPanel:Hide()
 listener.script.OnEvent(listener,"BANKFRAME_CLOSED")
