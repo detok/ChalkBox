@@ -350,24 +350,19 @@ now=1004
 local copies={}
 _G.ChalkBox_MeterShowCopy=function(message,reason)
     copies[#copies+1]={text=message,reason=reason}
-    return true
 end
 C_ChatInfo.SendChatMessage=function()
     error("Forever party chat restriction")
 end
 oldChat=#chat
 ChalkBox_MeterPrintFight()
-assert(#partyMessages==1 and #copies==1
-    and copies[1].text:find("CB HEAL (Overall):",1,true)
-    and copies[1].reason:find("failed",1,true),
-    "rejected report preserves a copyable summary without another chat send")
-C_ChatInfo.SendChatMessage=function()
-    error("Should not call chat while restricted")
-end
+assert(#partyMessages==1 and #copies==0
+    and chat[#chat]:find("report was not sent",1,true),
+    "failed PARTY report prints error without copy fallback")
 C_ChatInfo.InChatMessagingLockdown=function() return true end
 ChalkBox_MeterPrintFight()
-assert(#copies==2 and #partyMessages==1,
-    "manual click attempts the API and preserves copy text on actual rejection")
+assert(#copies==0 and #partyMessages==1,
+    "lockdown does not trigger copy dialogs or alternate sends")
 C_ChatInfo.InChatMessagingLockdown=nil
 C_ChatInfo.SendChatMessage=nil
 _G.SendChatMessage=function(message,channel)
