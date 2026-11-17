@@ -306,17 +306,18 @@ function ChalkBox_BankValueStatus()
     result.age=Age(v.at)
     return result
 end
--- Bank Value is a single native-looking readout in the existing header.
--- No painted background, border or panel below the search field. The
--- invisible 16px mouse region only supports detailed tooltip information.
+-- A single native-looking value line in the bank's lower-right utility
+-- strip, beside Purchase and ABOVE the bank's coin bar. The anchor follows
+-- BankFrame/BankPanel when moved or rescaled; never overlap bank slots or
+-- the search field. No painted background, border, or extra panel art.
 local function Paint()
     if not panel or not primary then return end
     local v=ChalkBox_BankValueStatus()
     if not v then
-        primary:SetText("Bank --")
+        primary:SetText("Value --")
         return
     end
-    primary:SetText("Bank "..(v.vendorComplete and "" or ">= ")..
+    primary:SetText("Value "..(v.vendorComplete and "" or ">= ")..
         Coin(v.vendorCopper))
 end
 local function EnsurePanel()
@@ -325,14 +326,14 @@ local function EnsurePanel()
     if not bank then return end
     if not panel then
         panel=CreateFrame("Frame","ChalkBoxBankValuePanel",bank)
-        panel:SetSize(160,17)
+        panel:SetSize(99,16)
         if type(panel.EnableMouse)=="function" then
             panel:EnableMouse(true)
         end
         -- There are NO textures: the bank slots must remain unobstructed.
         primary=panel:CreateFontString(nil,"OVERLAY","GameFontNormal")
         primary:SetPoint("RIGHT",panel,"RIGHT",-1,0)
-        primary:SetWidth(158)
+        primary:SetWidth(97)
         if type(primary.SetHeight)=="function" then
             primary:SetHeight(16)
         end
@@ -381,12 +382,14 @@ local function EnsurePanel()
             panel:ClearAllPoints()
         end
         if where=="UIParent fallback" then
+            -- Keep the legacy temporary fallback unchanged. Once the
+            -- native bank frame loads, the normal lower-right anchor wins.
             panel:SetPoint("TOPRIGHT",bank,"TOPRIGHT",-170,-135)
         else
-            -- Screenshot-verified bank header: search occupies the right
-            -- side at y~120 and first item row begins at y~140. This
-            -- places a single text line to LEFT of search at y~117.
-            panel:SetPoint("TOPRIGHT",bank,"TOPRIGHT",-145,-29)
+            -- Screenshot annotation: right-side free space immediately
+            -- after Purchase, 25px above the bottom bank border. The 99px
+            -- target ends before the coin bar and touches no item buttons.
+            panel:SetPoint("BOTTOMRIGHT",bank,"BOTTOMRIGHT",-19,27)
         end
         panelParent=bank
     end
