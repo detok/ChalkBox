@@ -3,6 +3,7 @@
 ## Notes: All-in-one Forever companion: loot discoveries, item insights, The Bar, quests, combat tools, camping, MacroForge and a framed Adventure Journal.
 ## Author: Detok Whitemaine
 ## Version: 2.2.25
+## OptionalDeps: QuestieDB
 ## SavedVariables: ChalkBoxDB
 ## SavedVariablesPerCharacter: ChalkBoxZoneDB, ChalkBoxProfessionDB
 ## IconTexture: Interface\AddOns\ChalkBox\assets\Icon
