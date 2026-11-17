@@ -715,6 +715,9 @@ function ChalkBox_DropCommand(input)
             Note(("Positions: %d observed, %d zone nodes, %d projected; %d missing."):format(
                 info.observedPositions or 0,info.directPositions or 0,
                 info.projectedPositions or 0,info.unplacedNodes or 0))
+            Note("Renderer: "..tostring(info.renderer or "unknown")..
+                (info.rendererProblem and
+                " ("..tostring(info.rendererProblem)..")." or "."))
             Note(("Last taxi read: %s (map %s, learned there %d)."):format(
                 tostring(info.captureStatus or "unknown"),
                 tostring(info.taxiMapID or "none"),info.taxiKnown or 0))
