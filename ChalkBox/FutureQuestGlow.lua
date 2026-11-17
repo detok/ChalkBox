@@ -98,11 +98,12 @@ local function IsActiveBagQuestItem(bag,slot,id)
         or GetContainerItemQuestInfo
     if type(getQuestInfo)=="function" then
         local ok,a,_,active=pcall(getQuestInfo,bag,slot)
-        if ok and Safe(a) then
-            if type(a)=="table" then
+        if ok then
+            if Safe(active) and active==true then return true end
+            if Safe(a) and type(a)=="table" then
                 local valid,state=pcall(function() return a.isActive end)
                 if valid and Safe(state) and state==true then return true end
-            elseif Safe(active) and active==true then return true end
+            end
         end
     end
     local getName=C_Item and C_Item.GetItemInfo or GetItemInfo
