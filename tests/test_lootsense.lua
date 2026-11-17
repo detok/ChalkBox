@@ -165,6 +165,16 @@ local unknownQuest=Hover(106)
 assert(unknownQuest:find("KEEP",1,true) and
     not unknownQuest:find("Needed for:",1,true),
     "quest-class items without matched accepted objectives get no fake quest")
+-- A quest-class item may carry generic KEEP metadata while the
+-- current accepted quest supplies a concrete title and progress. Prefer
+-- that verified quest context even when the tracking cache isn't yet synced.
+questDetails["Quest Relic"]={{title="Relics of the Past",
+    id=4532,have=1,required=4,complete=false}}
+local relic=Hover(106)
+assert(relic:find("Needed for: Relics of the Past",1,true)
+    and relic:find("1 / 4 collected",1,true),
+    "quest-class KEEP items display a known active quest rather than only generic KEEP")
+questDetails["Quest Relic"]=nil
 assert(Hover(107)=="","uncached quality should not produce sell advice")
 activeQuest["Broken Fang"]=true
 questDetails["Broken Fang"]={{title="Fangs for the Hunter",
