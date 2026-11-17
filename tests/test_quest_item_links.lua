@@ -19,10 +19,12 @@ local quests={
     [5]={name="Use The Medallion",objectives={[6]={{55,"Use",202}}}},
     [888]={name="A Connected Quest"},
     [909]={name="A Starting Quest"},
+    [910]={name="An Old Reward"},
 }
 local itemFields={
     [106]={relatedQuests={888}},
     [200]={startQuest=909},
+    [203]={questRewards={910}},
 }
 _G.LibQuestieDB={
     Quest={
@@ -76,6 +78,9 @@ assert(ChalkBox_QuestItemDatabaseLinks(201)[1].role=="provided",
     "quest-provided items are not wrongly called required")
 assert(ChalkBox_QuestItemDatabaseLinks(202)[1].role=="used",
     "spell use item metadata is handled separately from collection")
+assert(ChalkBox_QuestItemDatabaseLinks(203)[1].role=="reward" and
+    ChalkBox_QuestItemDatabaseLinks(203)[1].title=="An Old Reward",
+    "reward origin is shown by name but never mislabeled as needed for")
 assert(#ChalkBox_QuestItemDatabaseLinks(999)==0 and
     ChalkBox_QuestItemDatabaseLinks(0)==nil,
     "no random quest is invented for unknown item IDs or invalid zero IDs")
