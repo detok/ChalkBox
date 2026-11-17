@@ -13,14 +13,14 @@ end
 local first=ChalkBox_BarLayoutGet()
 assert(table.concat(first.left,",")=="level,rate"
     and table.concat(first.center,",")=="time,eta,rested"
-    and table.concat(first.right,",")=="bags,gear,repair,bagvalue,gold,latency,pet",
+    and table.concat(first.right,",")=="bags,gear,repair,bagvalue,bankvalue,gold,latency,pet",
     "new characters receive the approved left/center/right Bar arrangement")
 assert(ChalkBox_BarLayoutMove("gold","left",2),
     "users can move any module between groups")
 local result=ChalkBox_BarLayoutGet()
 assert(result.left[2]=="gold" and IsListed(result,"gold")==1,
     "moving gold into left must preserve one instance, at chosen index")
-assert(#result.right==6,"moving gold preserves every other metric on the right")
+assert(#result.right==7,"moving gold preserves every other metric on the right")
 assert(ChalkBox_BarLayoutMove("level","right",1),
     "even mandatory level can be placed in the right group")
 result=ChalkBox_BarLayoutGet()
@@ -46,7 +46,7 @@ ChalkBoxZoneDB.trailLayout={
 result=ChalkBox_BarLayoutGet()
 assert(IsListed(result,"bags")==1 and IsListed(result,"gold")==1
     and IsListed(result,"level")==1 and IsListed(result,"pet")==1 and IsListed(result,"bagvalue")==1 and
-    IsListed(result,"repair")==1,
+    IsListed(result,"repair")==1 and IsListed(result,"bankvalue")==1,
     "malformed SavedVariables must normalize all modules exactly once")
 assert(result.align.bags=="right" and result.align.gold==nil,
     "invalid text alignment is ignored")
@@ -61,7 +61,7 @@ ChalkBox_BarLayoutReset()
 result=ChalkBox_BarLayoutGet()
 assert(table.concat(result.left,",")=="level,rate"
     and table.concat(result.center,",")=="time,eta,rested"
-    and table.concat(result.right,",")=="bags,gear,repair,bagvalue,gold,latency,pet"
+    and table.concat(result.right,",")=="bags,gear,repair,bagvalue,bankvalue,gold,latency,pet"
     and next(result.align)==nil,
     "Reset Layout restores the new approved positions and alignments")
 print("PASS: TrailBar drag/drop ordering model, personal storage, alignment, corruption and resets")
