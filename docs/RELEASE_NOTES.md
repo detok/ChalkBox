@@ -1,23 +1,28 @@
-# ChalkBox 2.2.24 — Release Candidate (GitHub Prerelease)
+# ChalkBox 2.2.25 — Bank Value, Bar Resizing and Combat Report Polish (Beta)
 
-**WoW Forever playtest build. Not yet a stable release.** The verified **2.2.22 stable** remains available and unchanged. This candidate combines the 2.2.23 combat chat protection with subsequent usability fixes and has passed automated checks; real Forever UI behavior still needs a live test.
+**WoW Forever GitHub prerelease.** This is a new playable ZIP containing the full ChalkBox addon. The last verified stable baseline remains [2.2.22](https://github.com/detok/ChalkBox/releases/tag/v2.2.22). The combined feature branch passed Lua 5.1, documentation, packaging and publishing-kit checks, but every module has not been fully smoke-tested in the live client.
 
-## What's improved
+## What's new
 
-- **Combat Meter:** one small **Menu** button; right-click its header for the same controls. Adjust statistic, Current / Last / Overall, icon style, row cap, background opacity, and lock; reset still requires explicit confirmation.
-- **Unified fight reports:** compact reports use the **same validated native report engine** as Blizzard's meter. Manual **Top 3 / 5 / 10 → PARTY or SAY**, optional auto-report settings (default OFF), duration and cooldown are shared. When the game refuses manual addon chat, the manual copy dialog offers Ctrl+C. Never bypass chat protections, invent protected values, send to a surprise alternate channel, or claim API acceptance equals delivery.
-- **Compact layout:** fresh default maximum is five participants; with fewer contributors, empty rows collapse. 8/12 and manual-sized caps remain available for raids. Saved row/opacity preferences are retained, including manually resized intermediate row counts.
-- **The Bar:** left-click **Bags NN free** to invoke Blizzard's normal open/close-all-bags action outside combat and layout edit mode. Right-click menus and bag-value click behavior remain unchanged.
-- **Backgrounds:** Combat Meter opacity adjusts only the backdrop/row surfaces, like The Bar. Names, numbers, class icons and damage-bar values remain legible, and the same global theme palette is respected.
-- **AuctionSense:** Market highlights only when selected; the first native Buy/Sell/Auctions click should restore the proper native highlight, without replacing Blizzard's auction mode or trading controls.
-- **Auction charts lab (experimental):** tucked under **Options → AddOns → ChalkBox → AuctionSense → Charts (Experimental)**. Search a saved item and plot its **last seven authentic low asking-price observations**, with actual scan times and hover values. Uses native Line drawing if available; native texture columns otherwise. No extra scans, new historical storage, weekly compression, automatic trading, inferred sales prices or fake trend data.
+- **Bank Value:** Tracks the vendor value of bank contents when Blizzard's bank APIs provide enough information, remembers the last successful per-character snapshot, and exposes the value in The Bar. The bank itself displays a small frameless text label in the lower-right gap above its coin bar, without covering stored items. Unknown values stay unknown. AuctionSense comparisons are labeled separately; listing asks are not sales.
+- **The Bar:** Independently resize module widths using the right-edge grips in Bar Edit Mode, while body dragging still reorders modules. Widths persist per character, honor layout limits and can be reset from settings or slash commands.
+- **Combat reports:** Manual Top 3/5/10 reports go to the *selected* PARTY or SAY channel using normal plain-text chat. Each player gets a separate ranked line. PARTY lines are spaced 200 ms apart, following established meter patterns; SAY lines send directly from the button click. No raw pipe separators, embedded newline escape codes, copy popup, surprise channel change or retry. Fixed the incorrect native-meter `IsEditing()` check that falsely blocked reports. Automatic reporting remains OFF by default. Combat values are never invented or read while secret/protected.
+- **AuctionSense:** Experimental, read-only price-history chart under settings; it displays only real saved asks and timestamps, without launching scans or changing auction actions.
+- **Map and quests:** Discoveries can show learned flight-master markers; the optional QuestSense navigation beacon can follow the user's selected map pin when reliable coordinates are available.
+- **Emota:** Hunter idle behavior may include a native petting emote when the client exposes it and the feature is enabled; no emote is forced in combat.
 
-## Install for the playtest
+This release retains the 2.2.24 improvements to compact meter menus, populated-row sizing, The Bar's native bag toggle and AuctionSense native Buy/Sell/Auctions tab highlights.
 
-1. Get **ChalkBox-2.2.24.zip** from this release's Assets (not the media ZIP and not GitHub's auto-generated source archive).
-2. Close WoW Forever. Replace only your existing `Interface/AddOns/ChalkBox/` addon directory with the single `ChalkBox/` folder from the ZIP. **Do not delete SavedVariables.**
-3. Enter the game, check ChalkBox → Updates displays **2.2.24**, then test using [the release-candidate checklist](https://github.com/detok/ChalkBox/blob/main/docs/RELEASE_CANDIDATE_TEST_2.2.24.md).
+## Install
 
-**Known limits:** Every Lua test and the publishing/ZIP checks can pass without verifying Forever's protected UI at runtime. The experimental chart's native Line renderer and the chat-report copy dialog require your real-client test. A chart requires actual previously saved scans; a single observation is not a trend.
+1. Download **ChalkBox-2.2.25.zip** from this GitHub release's **Assets** (not Source code, and not the separate CurseForge media ZIP).
+2. Close WoW Forever. Extract its single `ChalkBox/` folder into `Interface/AddOns/`, replacing the existing addon folder.
+3. **Keep SavedVariables** to preserve character layouts, bank snapshots, auction data and histories. In-game, verify ChalkBox → Updates shows **2.2.25**.
 
-**Release channel:** Prerelease/beta, **not** CurseForge stable. Keep 2.2.22 for rollback if any game error appears.
+## Verify in Forever
+
+Check a bank readout, resize a Bar module and reload, switch Market back to native AH Buy, and manually print a completed DPS fight to PARTY/SAY while grouped/out of combat. Confirm rows display in order. Test optional map flight markers and navigation only where genuine learned data is present.
+
+**Known limits:** The client may restrict outgoing addon chat or withhold protected values. Successful chat API calls do not guarantee server delivery; native line renderer and bank placement still depend on client UI. Auction price history is based on observed asks, not completed sales.
+
+**Release channel:** GitHub beta/prerelease. A stable promotion should follow a full in-game smoke pass. CurseForge publication, when used, requires a matching real Forever flavor and its own publisher verification.
