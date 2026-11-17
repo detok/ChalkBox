@@ -233,12 +233,14 @@ local function SendReport(frame,channel,auto)
     if auto and MessagingRestricted() then return false end
     local ok,result=pcall(send,message,channel)
     if not ok or (Safe(result) and result==false) then
+        local detail=not ok and Safe(result) and type(result)=="string"
+            and result:sub(1,180) or "chat API returned false"
         if auto then return false end
         if type(ChalkBox_MeterShowCopy)=="function" then
             ChalkBox_MeterShowCopy(message,
-                "Forever rejected addon chat; no other channel tried.")
+                "Chat send failed: "..detail)
         else
-            Note("Chat rejected the report. Copy manually: "..message)
+            Note("Chat send failed ("..detail.."). Copy manually: "..message)
         end
         return false
     end
