@@ -1,6 +1,6 @@
 # Release and publishing runbook
 
-**Current stable release: 2.2.22.** Verify actual GitHub release assets before sharing links.
+**Current stable release: 2.2.26.** Verify actual GitHub release assets before sharing links.
 
 There are two different downloadable ZIPs. The playable addon ZIP and the CurseForge publishing/media ZIP are not interchangeable.
 

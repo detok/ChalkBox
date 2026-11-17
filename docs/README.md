@@ -2,7 +2,7 @@
 
 This is the **versioned documentation home** for ChalkBox. GitHub has a Wiki feature, but keeping the primary instructions here means user guides, tests and the actual Lua implementation can be reviewed in the same pull request. Release documentation lives with the code it describes.
 
-**Stable release: 2.2.22 · World of Warcraft: Forever · [Download the official playable ZIP](https://github.com/detok/ChalkBox/releases/download/v2.2.22/ChalkBox-2.2.22.zip). Retail and ordinary Classic are unverified.
+**Stable release: 2.2.26 · World of Warcraft: Forever · [Download the official playable ZIP](https://github.com/detok/ChalkBox/releases/latest). Retail and ordinary Classic are unverified.
 
 ## Player guides
 
@@ -45,5 +45,3 @@ A feature is not considered documented merely because it appears in a historical
 
 [Back to project README](../README.md) · [Report an issue](https://github.com/detok/ChalkBox/issues/new/choose)
 
-
-**2.2.25 GitHub beta:** Adds saved bank vendor value and a frameless bank readout, adjustable Trail Bar module widths, safe ranked PARTY/SAY combat reports, learned flight-master markers, map-pin navigation and a read-only AuctionSense chart. [Read the current 2.2.25 release notes](https://github.com/detok/ChalkBox/blob/main/docs/RELEASE_NOTES.md). **2.2.22 remains the last fully accepted stable version** until the combined beta passes a live-client smoke test.

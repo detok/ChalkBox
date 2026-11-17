@@ -1,8 +1,8 @@
 ## Interface: 16001
 ## Title: ChalkBox
-## Notes: All-in-one Forever companion: loot discoveries, item insights, The Bar, quests, combat tools, camping, MacroForge and a framed Adventure Journal.
+## Notes: Loot, quests, professions, auction insights and adventure tools in one lightweight WoW Forever addon.
 ## Author: Detok Whitemaine
-## Version: 2.2.25
+## Version: 2.2.26
 ## SavedVariables: ChalkBoxDB
 ## SavedVariablesPerCharacter: ChalkBoxZoneDB, ChalkBoxProfessionDB
 ## IconTexture: Interface\AddOns\ChalkBox\assets\Icon

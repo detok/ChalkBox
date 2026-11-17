@@ -1,6 +1,6 @@
 # ChalkBox player handbook
 
-**ChalkBox 2.2.22 (first stable release) · World of Warcraft: Forever**
+**ChalkBox 2.2.26 (release) · World of Warcraft: Forever**
 
 ChalkBox is a set of optional quality-of-life features inside **one addon**. Use Blizzard's **Options → AddOns → ChalkBox** pages or type `/chalk` (also `/cb`). Features that display observations are not proofs of unseen game data; ChalkBox should be conservative when Forever withholds information.
 
@@ -17,7 +17,7 @@ The **Global Appearance** page controls ChalkBox's palette and panel visibility.
 **Use it for:** Understanding why the item under your cursor might matter.
 
 - Quest items receive priority over general crafting hints. When the currently accepted quest objective can be matched to the item, a tooltip can show the **quest's title and collected/required progress**. Some items still simply say **KEEP — Quest Item** when a dependable objective match is unavailable; ChalkBox does not invent a quest title.
-- **Future quest items (new draft feature)** are a separate, hand-researched, small lookup by exact item ID. For Hops and other selected materials, a purple **FUTURE QUEST** note gives the *possible* quest, required amount and zone even when the quest is not accepted. It is labeled **Reference only**, filtered by known completion/faction, and never replaces the live accepted-quest name or progress above. See [the item-by-item research log](FUTURE_QUEST_DATA.md). Purple markers appear on supported **separate Blizzard bag windows**, without changing Blizzard's normal quest glow; they hide in combat and can be turned off under **LootSense → Appearance**. Combined bags/addon bags are not yet supported by the marker.
+- **Future quest items** are a separate, hand-researched, small lookup by exact item ID. For Hops and other selected materials, a purple **FUTURE QUEST** note gives the *possible* quest, required amount and zone even when the quest is not accepted. It is labeled **Reference only**, filtered by known completion/faction, and never replaces the live accepted-quest name or progress above. See [the item-by-item research log](FUTURE_QUEST_DATA.md). Purple markers appear on supported **separate Blizzard bag windows**, without changing Blizzard's normal quest glow; they hide in combat and can be turned off under **LootSense → Appearance**. Combined bags/addon bags are not yet supported by the marker.
 - **Personal KEEP** is a user decision. Shift-click an item into `/chalk keep [item]`, or use the LootSense settings page. Remove with `/chalk forget [item]` or the saved list controls.
 - **Learned-recipe ingredients** are distinguished from **potential reference-catalog uses**. Open your profession window and use **Scan Open Profession** or `/chalk loot scan` if current learned recipes are not reflected.
 - **RecipeAdvisor / ProfessionSense** use observed character profession data plus a bundled Forever-only recipe catalog. A catalog entry does not mean your character has learned that recipe.
