@@ -45,3 +45,6 @@ A feature is not considered documented merely because it appears in a historical
 
 [Back to project README](../README.md) · [Report an issue](https://github.com/detok/ChalkBox/issues/new/choose)
 
+
+
+**Developer beta:** ChalkBox 2.2.27 is a QuestSense Smart experiment; 2.2.26 remains the supported stable release. [Beta notes](https://github.com/detok/ChalkBox/blob/feature/smart-quest-native-priorities/docs/RELEASE_NOTES.md).
