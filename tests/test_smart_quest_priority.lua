@@ -188,4 +188,33 @@ ChalkBox_QuestCommand("nativeorder off")
 local restored=QuestObjectiveTrackerMixin.BuildQuestWatchInfos()
 assert(restored[1].quest:GetID()==101,
     "disabling visual sort restores Blizzard's regular watch order")
+-- Nearby can pick up objective map data attached to a current subzone
+-- rather than only inspecting the parent zone's map.
+local getQuestsOnMap=C_QuestLog.GetQuestsOnMap
+C_QuestLog.GetQuestsOnMap=function(id)
+    if id==3 then return {{questID=201}} end
+    return getQuestsOnMap(id)
+end
+ChalkBox_QuestCommand("zone")
+Flush()
+assert(watches[201],
+    "Nearby recognizes verified quest objective POIs on local micro-map")
+C_QuestLog.GetQuestsOnMap=getQuestsOnMap
+C_QuestLog.GetNextWaypointForMap=function(id,map)
+    if id==201 and map==1 then return .3,.4 end
+end
+Flush()
+assert(watches[201],
+    "Nearby accepts the client's actual map-scoped waypoint coordinates")
+C_QuestLog.GetNextWaypointForMap=nil
+ChalkBox_QuestCommand("range 0")
+Flush()
+assert(not watches[201],
+    "default Nearby does not infer remote quest relevance from distance alone")
+ChalkBox_QuestCommand("range 500")
+Flush()
+assert(watches[201] and ChalkBox_QuestStatus().nearbyRange==500,
+    "optional Nearby native 500-yard radius includes legitimately close quest")
+ChalkBox_QuestCommand("range 0")
+Flush()
 print("PASS: Forever Smart proximity, zone priority, complete turn-ins, level sort, and optional native display sorting without watch writes")
