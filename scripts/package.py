@@ -54,6 +54,7 @@ FILES = (
     "DisenchantSense.lua",
     "AuctionInsights.lua",
     "BankValue.lua",
+    "MapNativePins.lua",
     "MapDiscoveries.lua",
     "DiscoveriesFlights.lua",
     "UpdateCheck.lua",
