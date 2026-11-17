@@ -422,6 +422,16 @@ SlashCmdList.CHALKBOX = function(input)
             "; active profession: "..tostring(window)..".")
         Note("Scanner: "..tostring(scanSource).."; bundled recipe catalog: "..
             tostring(state).." ("..tostring(recipes).." indexed recipes).")
+        if type(ChalkBox_QuestItemDatabaseStatus)=="function" then
+            local ok,phase,done,total=pcall(ChalkBox_QuestItemDatabaseStatus)
+            if ok then
+                Note("Quest item links (QuestieDB): "..tostring(phase)..
+                    (type(done)=="number" and done>0 and
+                        ("; indexed "..done.." quests") or "")..
+                    (phase=="indexing" and type(total)=="number" and
+                        ("/"..total) or "")..".")
+            end
+        end
         if tonumber(learnedCount)==0 then
             Note("Open a crafting window, let its recipe list load, and /chalk loot scan. Then re-hover the item.")
         end
