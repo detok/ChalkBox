@@ -238,9 +238,8 @@ local function Make(kind,index)
         marker:EnableMouse(kind=="flight")
     end
     if kind=="flight" then
-        -- Real, opaque pixels even if Forever accepts a missing Taxi atlas.
-        marker.back=Texture(marker,19,19,5,0.14,0.08,0.02,0.94)
-        marker.face=Texture(marker,15,15,6,1,0.74,0.20,1)
+        -- No rectangular backing textures: the client paints only the
+        -- flight-master artwork on the working world-map layer.
         local art=marker:CreateTexture(nil,"OVERLAY")
         art:SetAllPoints(marker)
         if type(art.SetDrawLayer)=="function" then
@@ -275,10 +274,6 @@ local function Place(pin,x,y,w,h,scale)
     scale=(type(scale)=="number" and scale>0) and scale or 1
     local base=pin.isFlight and 26 or 17
     pin:SetSize(base/scale,base/scale)
-    local backSize=pin.isFlight and 19 or 17
-    local faceSize=pin.isFlight and 15 or 13
-    if pin.back then pin.back:SetSize(backSize/scale,backSize/scale) end
-    if pin.face then pin.face:SetSize(faceSize/scale,faceSize/scale) end
     if pin.horizontal then pin.horizontal:SetSize(13/scale,3/scale) end
     if pin.vertical then pin.vertical:SetSize(3/scale,13/scale) end
     if pin.center then pin.center:SetSize(5/scale,5/scale) end
@@ -309,15 +304,6 @@ local function SetFlightArtwork(pin,atlas)
     if not usable and type(pin.icon.SetTexture)=="function" then
         pcall(pin.icon.SetTexture,pin.icon,
             "Interface\\Minimap\\Tracking\\FlightMaster")
-        -- Keep the emergency underlay only if the atlas is unavailable.
-    end
-    -- The atlas has transparent edges and is now properly rendered by the
-    -- canvas. Only show the old squares on clients lacking this artwork.
-    if pin.back then
-        if usable then pin.back:Hide() else pin.back:Show() end
-    end
-    if pin.face then
-        if usable then pin.face:Hide() else pin.face:Show() end
     end
     if type(pin.icon.SetVertexColor)=="function" then
         pin.icon:SetVertexColor(1,1,1,1)
