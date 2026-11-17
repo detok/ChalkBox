@@ -177,6 +177,17 @@ assert(#nested==1 and nested[1].name=="Visited Hub"
     and math.abs(nested[1].x-.625)<.000001
     and math.abs(nested[1].y-.5)<.000001,
     "observed flight locations project into child maps using actual map rect")
+-- World-coordinate conversion is shared with item discoveries and takes
+-- precedence over the older rectangle path when Forever supplies it.
+_G.ChalkBox_MapNativeProject=function(source,target,x,y)
+    if source==1436 and target==999 then return .61,.53 end
+end
+local projectedWorld=ChalkBox_DiscoveriesFlightCandidates(999)
+assert(#projectedWorld==1
+    and math.abs(projectedWorld[1].x-.61)<.000001
+    and math.abs(projectedWorld[1].y-.53)<.000001,
+    "known flight paths use the shared client-world map translation")
+_G.ChalkBox_MapNativeProject=nil
 assert(before.nodes["7"].zoneMapID==1436
     and before.nodes["7"].zoneX==5000
     and before.nodes["7"].zoneY==5000,
