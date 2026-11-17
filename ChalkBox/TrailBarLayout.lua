@@ -3,9 +3,9 @@
 local DEFAULT={
     left={"level","rate"},
     center={"time","eta","rested"},
-    right={"bags","gear","repair","bagvalue","gold","latency","pet"},
+    right={"bags","gear","repair","bagvalue","bankvalue","gold","latency","pet"},
 }
-local orderedKeys={"level","rate","bags","gear","eta","rested","pet","time","latency","bagvalue","repair","gold"}
+local orderedKeys={"level","rate","bags","gear","eta","rested","pet","time","latency","bagvalue","bankvalue","repair","gold"}
 local valid={}
 for _,key in ipairs(orderedKeys) do valid[key]=true end
 local sectionNames={"left","center","right"}
