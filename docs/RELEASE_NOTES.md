@@ -1,19 +1,19 @@
-# ChalkBox 2.2.26 — Adventure Tools & World Map
+# ChalkBox 2.2.27 — QuestSense Smart (Beta)
 
-**Official WoW Forever release.** ChalkBox brings loot insights, quests, auction information, macros and an adjustable HUD into one addon.
+**WoW Forever prerelease for QuestSense testing.** Stable release **2.2.26** remains available.
 
 ## What's new
 
-- **Discoveries & World Map:** Learned flight paths on local zone maps and map markers for recorded outdoor loot locations. Hover an item in Discoveries to see where it was collected.
-- **LootSense:** Selected future quest-item hints alongside existing quest and profession information.
-- **AuctionSense:** Optional historical asking-price charts and connected bag-value insights.
-- **The Bar:** Adjustable module widths and a remembered bank vendor-value display.
-- **Combat Meter:** Ranked PARTY/SAY reports and streamlined display options.
-- **Navigation & MacroForge:** Follow a selected map pin and open the macro workbench beside Blizzard's editor where space allows.
-- **Emota:** Optional Hunter pet interactions on supported clients.
+- Smart prefers current-zone quests and the nearest objectives identified by Forever's own quest helper.
+- Configure sorting by nearest, zone, level, title or quest-log order, with optional completed-first priority.
+- Nearby recognizes more real local-map/subzone evidence and offers optional 500, 1000 or 2000-yard proximity thresholds.
+- Smart Rules is a child of QuestSense settings. Optional **Native Tracker Order** sorts the entries displayed by Blizzard's existing tracker, without removing and re-adding watches.
+- Tracker-header right-click menu offers quick sort and native-order controls.
 
-## Install
+## Test safely
 
-Download **ChalkBox-2.2.26.zip** from [GitHub Releases](https://github.com/detok/ChalkBox/releases) or the corresponding approved CurseForge addon file. Place its single `ChalkBox/` directory in `Interface/AddOns/`. Preserve SavedVariables to keep your history and settings. Open settings with `/chalk`.
+Download the playable ChalkBox-2.2.27 ZIP from this prerelease or the PR's Actions artifact; replace the addon folder, keeping SavedVariables. Type `/chalk` and open **QuestSense → Smart Rules**. Compare Native Tracker Order ON/OFF, current-zone and nearest sorting, Nearby radius and manually watched quests. Report any out-of-order or duplicate rows, protected-action messages, or missing dungeon objectives.
 
-Auction prices represent observed asking prices, not confirmed sales. Discoveries locations represent where your character opened loot windows. Compatibility is targeted at **WoW Forever**; ordinary Classic and Retail are not claimed.
+**Not yet included:** collapsible zone separator headings inside Blizzard's tracker. These require a separate visual/client compatibility test and are not claimed here.
+
+This beta does not change map flight paths, Discoveries, auction or other ChalkBox gameplay modules.
