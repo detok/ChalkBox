@@ -351,8 +351,8 @@ assert(loadfile("ChalkBox_Settings.lua"))("ChalkBox")
 local loader=frames[#frames]
 assert(loader.event=="PLAYER_LOGIN","must register settings when the client is ready")
 loader.script.OnEvent(loader,"PLAYER_LOGIN")
-assert(#registered==22,
-    "native settings include the optional AuctionSense Charts and QuestSense Navigation child pages")
+assert(#registered==23,
+    "native settings include AuctionSense Charts and both QuestSense child pages")
 for _,texture in ipairs(textures) do
     assert(not (texture.color and texture.color[1]==0.02
         and texture.color[2]==0.02 and texture.color[3]==0.025
@@ -373,6 +373,9 @@ assert(categories["LootSense Appearance"].parent==categories["LootSense"]
 assert(categories["QuestSense Navigation"] and
     categories["QuestSense Navigation"].parent==categories["QuestSense"],
     "navigation is an optional child of QuestSense, not a second root addon")
+assert(categories["QuestSense Smart Rules"] and
+    categories["QuestSense Smart Rules"].parent==categories["QuestSense"],
+    "Smart Rules remain nested in QuestSense, not a new tracker addon")
 assert(categories["Global Appearance"].parent==categories.home
     and categories["Updates"].parent==categories.home,
     "standalone modules remain accessible directly below ChalkBox")
