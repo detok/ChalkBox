@@ -74,6 +74,7 @@ Then run **all tests** and package validation before merge.
 - The Bar must not reposition UIParent or secure action frames; bag adjustments defer near bank setup and combat.
 - QuietGuard blocking defaults OFF and saved ON choices must be honored. Emota automatic actions remain optional.
 - Preserve third-party license notices and pinned bundled recipe data.
+- Quest-item references must remain fully bundled, MIT-attributed and read-only. Never add Questie or QuestieDB as a runtime dependency; never mislabel a Classic reference as verified Forever quest availability. Native accepted objectives take precedence.
 
 ## Docs-only PRs
 
