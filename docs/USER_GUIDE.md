@@ -16,7 +16,7 @@ The **Global Appearance** page controls ChalkBox's palette and panel visibility.
 
 **Use it for:** Understanding why the item under your cursor might matter.
 
-- Quest items receive priority over general crafting hints. When the currently accepted quest objective can be matched to the item, a tooltip can show the **quest's title and collected/required progress**. Some items still simply say **KEEP — Quest Item** when a dependable objective match is unavailable; ChalkBox does not invent a quest title.
+- Quest items receive priority over general crafting hints. When an **accepted quest** identifies that item in its collection objectives, LootSense shows **Needed for: [quest title]** and its collected/required progress. Matching handles the quest log's progress-first format and harmless case/spacing differences. If Forever hasn't loaded the objective yet, re-hover after a moment; ChalkBox retries missing quest data without adding scans to every tooltip. Generic **KEEP — Quest Item** remains when no accepted objective provides a dependable match—ChalkBox won't invent a quest.
 - **Personal KEEP** is a user decision. Shift-click an item into `/chalk keep [item]`, or use the LootSense settings page. Remove with `/chalk forget [item]` or the saved list controls.
 - **Learned-recipe ingredients** are distinguished from **potential reference-catalog uses**. Open your profession window and use **Scan Open Profession** or `/chalk loot scan` if current learned recipes are not reflected.
 - **RecipeAdvisor / ProfessionSense** use observed character profession data plus a bundled Forever-only recipe catalog. A catalog entry does not mean your character has learned that recipe.
