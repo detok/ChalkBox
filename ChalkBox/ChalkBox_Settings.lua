@@ -1411,7 +1411,7 @@ local function MakeMeter()
         if panel.OnRefresh then panel.OnRefresh() end
     end
     Toggle(panel,"Show compact DPS meter window",
-        "Appears by default; doesn't replace Blizzard's own meter.",-108,
+        "Starts hidden; doesn't replace Blizzard's own meter.",-108,
         function()
             local status=ChalkBox_MeterStatus and ChalkBox_MeterStatus()
             return status and status.shown==true
