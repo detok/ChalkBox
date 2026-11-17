@@ -560,6 +560,18 @@ function ChalkBox_BarContextItems(key)
         local alignment=layout.align and layout.align[key] or section
         AddMenuEntry(result,"Move",nil,DirectionMenu(key,"move",section),"group")
         AddMenuEntry(result,"Align",nil,DirectionMenu(key,"align",alignment),"group")
+        local widths={}
+        local current=ChalkBox_BarWidthGet(key) or specs[key].width
+        for _,change in ipairs({-16,-8,8,16}) do
+            local step=change
+            AddMenuEntry(widths,(step>0 and "+" or "")..step.." px",
+                function() ChalkBox_BarWidthSet(key,current+step) end)
+        end
+        AddMenuEntry(widths,"Reset width",function()
+            ChalkBox_BarWidthReset(key)
+        end,nil,"warning")
+        AddMenuEntry(result,("Width (%d px)"):format(current),
+            nil,widths,"group")
         AddMenuEntry(result,"Bar settings",function()
             if type(ChalkBox_OpenSettings)=="function" then
                 ChalkBox_OpenSettings("barstats")
@@ -803,7 +815,7 @@ local function CreateBar()
     for _,item in ipairs(blocks) do
         local key,name,details=unpack(item)
         local widget=CreateFrame("Frame",nil,bar)
-        widget:SetSize(specs[key].width,16)
+        widget:SetSize(ModuleWidth(key),16)
         local font=widget:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
         font:SetAllPoints(widget)
         font:SetJustifyH(key=="gold" and "RIGHT" or
@@ -814,6 +826,68 @@ local function CreateBar()
         grab:SetAllPoints(widget)
         grab:SetColorTexture(0.45,0.32,0.12,0)
         widget.editBackground=grab
+        -- Only the tiny gold right-edge grip resizes. All other widget area
+        -- preserves the existing left-drag move interaction.
+        local grip=CreateFrame("Frame",nil,widget)
+        grip:SetSize(8,16)
+        grip:SetPoint("RIGHT",widget,"RIGHT",0,0)
+        if grip.EnableMouse then grip:EnableMouse(true) end
+        if grip.RegisterForDrag then grip:RegisterForDrag("LeftButton") end
+        local stroke=grip:CreateTexture(nil,"OVERLAY")
+        if stroke.SetWidth then stroke:SetWidth(2) end
+        if stroke.SetHeight then stroke:SetHeight(11) end
+        if stroke.SetPoint then
+            stroke:SetPoint("CENTER",grip,"CENTER",0,0)
+        end
+        if stroke.SetColorTexture then
+            stroke:SetColorTexture(.95,.76,.40,.95)
+        end
+        widget.resizeGrip=grip
+        local function Candidate()
+            if not grip.dragStartX or not grip.dragStartWidth then
+                return nil
+            end
+            local cursor=CursorInBar()
+            if not cursor then return nil end
+            return RoundedWidth(grip.dragStartWidth+
+                cursor-grip.dragStartX)
+        end
+        grip:SetScript("OnDragStart",function(self)
+            if not editMode or (type(InCombatLockdown)=="function"
+                and InCombatLockdown()) then return end
+            local cursor=CursorInBar()
+            if not cursor then return end
+            self.dragStartX=cursor
+            self.dragStartWidth=ModuleWidth(key)
+            self.dragging=true
+        end)
+        grip:SetScript("OnUpdate",function(self)
+            if not self.dragging then return end
+            if type(InCombatLockdown)=="function" and
+                InCombatLockdown() then
+                self.dragging=false
+                previewWidths[key]=nil
+                lastLayout=""
+                Reflow()
+                return
+            end
+            local newWidth=Candidate()
+            if newWidth and newWidth~=ModuleWidth(key) then
+                previewWidths[key]=newWidth
+                lastLayout=""
+                Reflow()
+            end
+        end)
+        grip:SetScript("OnDragStop",function(self)
+            if not self.dragging then return end
+            local newWidth=Candidate() or self.dragStartWidth
+            self.dragging=false
+            previewWidths[key]=nil
+            if not ChalkBox_BarWidthSet(key,newWidth) then
+                lastLayout=""
+                Reflow()
+            end
+        end)
         if widget.SetMovable then widget:SetMovable(true) end
         if widget.RegisterForDrag then widget:RegisterForDrag("LeftButton") end
         widget:SetScript("OnDragStart",function(self)
@@ -1069,6 +1143,17 @@ function ChalkBox_BarCommand(message)
             Reflow()
         end
         Note("Bar layout reset.")
+    elseif action:match("^width%s+(%a+)%s+reset$") then
+        local key=action:match("^width%s+(%a+)%s+reset$")
+        Note(ChalkBox_BarWidthReset(key)
+            and ((menuNames[key] or key).." width reset.")
+            or "Unknown module or cannot resize during combat.")
+    elseif action:match("^width%s+(%a+)%s+(%d+)$") then
+        local key,px=action:match("^width%s+(%a+)%s+(%d+)$")
+        Note(ChalkBox_BarWidthSet(key,tonumber(px))
+            and ((menuNames[key] or key).." width: "..
+                tostring(ChalkBox_BarWidthGet(key)).."px.")
+            or "Invalid module width or cannot resize during combat.")
     elseif action=="layout" or action=="layout status" then
         Note(type(ChalkBox_BarLayoutDescription)=="function"
             and ChalkBox_BarLayoutDescription() or "Layout module unavailable.")
@@ -1188,7 +1273,8 @@ function ChalkBox_BarCommand(message)
     else
         Note("The Bar: /chalk bar top|bottom|off | reserve on/off | reset | status")
         Note("Stats: /chalk bar stat <module> on/off | stats all|balanced|minimal")
-        Note("Layout: /chalk bar edit on/off | layout reset | move <module> <left|center|right> [index]")
+        Note("Layout: /chalk bar edit on/off | drag right-edge gold grips | layout reset")
+        Note("Widths: /chalk bar width <module> 60-280 | width <module> reset | move <module> <left|center|right>")
         Note("Text alignment: /chalk bar align <module> <left|center|right> | opacity 0-100")
         Note("Vendor value: /chalk bar stat bagvalue on | bagvalue junk|total|toggle")
         Note("Bank snapshot: /chalk bar stat bankvalue on/off | bank status for live diagnostics")
