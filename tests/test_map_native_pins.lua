@@ -65,21 +65,30 @@ _G.Mixin=function(obj,mixin)
     for key,value in pairs(mixin) do obj[key]=value end
     return obj
 end
-_G.CreateFramePool=function(kind)
-    assert(kind=="FRAME")
+-- A real CreateFramePool captures its standard frame constructor at setup;
+-- replacing a field after construction does not produce mixed-in pins.
+_G.CreateFramePool=function() error("native code must not use FramePool for custom pins") end
+_G.CreateObjectPool=function(create,reset)
     local pool={used={},available={}}
     function pool:Acquire()
         local frame=table.remove(self.available)
         local isNew=frame==nil
-        frame=frame or self.createFunc()
+        frame=frame or create()
         self.used[#self.used+1]=frame
         return frame,isNew
     end
     function pool:ReleaseAll()
         while #self.used>0 do
             local frame=table.remove(self.used)
-            self.resetFunc(self,frame)
+            reset(self,frame)
             self.available[#self.available+1]=frame
+        end
+    end
+    function pool:EnumerateActive()
+        local i=0
+        return function()
+            i=i+1
+            return pool.used[i]
         end
     end
     pools[#pools+1]=pool
@@ -123,6 +132,8 @@ assert(loadfile("MapNativePins.lua"))("ChalkBox")
 assert(ChalkBox_MapNativeAvailable(),"native provider installs on available modern map")
 assert(world.provider and #pools==2 and
     ChalkBox_MapNativeStatus().available)
+assert(type(pools[1].used)=="table" and #pools[1].used==0,
+    "native pools initialized via explicit custom factories")
 assert(ChalkBox_MapNativeRefresh())
 assert(#pools[1].used==2 and #pools[2].used==0 and
     ChalkBox_MapNativeStatus().pinCount==2,
