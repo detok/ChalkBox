@@ -783,7 +783,9 @@ local function MakeQuestSmart()
         function() Run("sort zone") end)
     Button(panel,"Quest level",357,-137,155,
         function() Run("sort level") end)
-    Button(panel,"Quest log order",27,-178,190,
+    Button(panel,"Quest title",27,-178,190,
+        function() Run("sort title") end)
+    Button(panel,"Quest log",228,-178,160,
         function() Run("sort log") end)
     local rank=Label(panel,"","GameFontHighlightSmall",227,-182,285)
     Toggle(panel,"Prioritize quests in the current zone",
