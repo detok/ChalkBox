@@ -263,6 +263,19 @@ local function FindMetric(prefix)
     end
 end
 assert(FindText("Bags 12 free"),"free slots appear in the actual TrailBar widgets")
+assert(ChalkBoxDB.barStats.bankvalue and
+    FindMetric("Bank --") and FindMetric("Bank --").visible,
+    "Bank Value visibly shows Bank -- on first login before any bank snapshot")
+ChalkBox_BarCommand("stat bankvalue off")
+assert(ChalkBoxDB.barStats.bankvalue==false and
+    not FindMetric("Bank --").visible,
+    "explicit Bank Value OFF persists without breaking other modules")
+ChalkBox_BarCommand("stat bankvalue on")
+assert(FindMetric("Bank --").visible,
+    "Bank Value can be restored immediately without opening the bank")
+ChalkBox_BarCommand("bank status")
+assert(notes[#notes] and notes[#notes]:find("reader unavailable",1,true),
+    "bank diagnostics clearly distinguish a missing bank reader from no snapshot")
 assert(ChalkBoxDB.barStats.bagvalue and ChalkBoxDB.barStats.latency
     and not ChalkBoxDB.barStats.pet,
     "reference Bar shows Junk and World ping, with pet status opt-in")
@@ -463,10 +476,11 @@ for i,segment in ipairs(segments) do
     if i>1 then assert(segments[i-1].to<=segment.from,
         "adaptive modules must never overlap at narrow widths") end
 end
-bar.width=1440
+bar.width=1680
 bar.scripts.OnSizeChanged(bar)
-assert(FindMetric("World ").visible and FindMetric("Pet ").visible,
-    "wider UI restores all configured latency and Hunter status metrics")
+assert(FindMetric("World ").visible and FindMetric("Pet ").visible and
+    FindMetric("Bank --").visible,
+    "truly wide UI displays Bank --, latency, and Hunter status with no overlap")
 bar.width=1024
 bar.scripts.OnSizeChanged(bar)
 ChalkBox_BarCommand("stats balanced")
