@@ -150,7 +150,6 @@ local function Texture(frame,w,h,layerNo,r,g,b,a)
         tex:SetDrawLayer("OVERLAY",layerNo)
     end
     tex:SetSize(w,h)
-    tex.cbWidth,tex.cbHeight=w,h
     tex:SetPoint("CENTER",frame,"CENTER",0,0)
     SetColor(tex,r,g,b,a)
     return tex
@@ -260,11 +259,11 @@ local function Place(pin,x,y,w,h,scale)
     scale=(type(scale)=="number" and scale>0) and scale or 1
     local base=pin.isFlight and 26 or 17
     pin:SetSize(base/scale,base/scale)
-    for _,tex in ipairs({pin.back,pin.face,pin.center}) do
-        if tex and tex.cbWidth then
-            tex:SetSize(tex.cbWidth/scale,tex.cbHeight/scale)
-        end
-    end
+    local backSize=pin.isFlight and 19 or 17
+    local faceSize=pin.isFlight and 15 or 13
+    if pin.back then pin.back:SetSize(backSize/scale,backSize/scale) end
+    if pin.face then pin.face:SetSize(faceSize/scale,faceSize/scale) end
+    if pin.center then pin.center:SetSize(5/scale,5/scale) end
     local function Pixel(v)
         return math.floor(v*scale+0.5)/scale
     end
