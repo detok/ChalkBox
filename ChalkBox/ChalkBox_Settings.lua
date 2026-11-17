@@ -349,8 +349,12 @@ local function MakeDrops()
             s.watched or 0,s.windows or 0,s.areas or 0))
     end)
     Button(panel,"Open Map Discoveries",28,-267,224,function()
-        if ChalkBox_OpenMapDiscoveries then
-            ChalkBox_OpenMapDiscoveries()
+        if type(ChalkBox_OpenMapDiscoveries)=="function" then
+            if not ChalkBox_OpenMapDiscoveries() then
+                Note("Open the World Map, then click its Discoveries button.")
+            end
+        else
+            Note("Discoveries is unavailable in this client.")
         end
     end)
     Button(panel,"Reset Map Button",270,-267,224,function()
