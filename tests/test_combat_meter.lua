@@ -367,7 +367,7 @@ end
 C_ChatInfo.InChatMessagingLockdown=function() return true end
 ChalkBox_MeterPrintFight()
 assert(#copies==2 and #partyMessages==1,
-    "chat lockdown prepares local text without calling protected API")
+    "manual click attempts the API and preserves copy text on actual rejection")
 C_ChatInfo.InChatMessagingLockdown=nil
 C_ChatInfo.SendChatMessage=nil
 _G.SendChatMessage=function(message,channel)
