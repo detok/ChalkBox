@@ -136,17 +136,31 @@ local function DistanceRank(value)
 end
 local function Relevant(quests,zoneID,zoneNames)
     local onMap,hasMapData={},false
-    if ValidID(zoneID) and C_QuestLog and
-        type(C_QuestLog.GetQuestsOnMap)=="function" then
-        local list=Call(C_QuestLog.GetQuestsOnMap,zoneID)
-        if type(list)=="table" then
-            hasMapData=true
-            for _,q in ipairs(list) do
-                if type(q)=="table" and ValidID(q.questID) then
-                    onMap[q.questID]=true
+    -- Check the actual player subzone and its zone ancestors, stopping
+    -- before the continent. Forever can attach quest POIs to micro maps
+    -- that never appear in the top-level zone query.
+    local map=Call(C_Map and C_Map.GetBestMapForUnit,"player")
+    if not ValidID(map) then map=zoneID end
+    local seen={}
+    for _=1,10 do
+        if not ValidID(map) or seen[map] then break end
+        seen[map]=true
+        if C_QuestLog and type(C_QuestLog.GetQuestsOnMap)=="function" then
+            local list=Call(C_QuestLog.GetQuestsOnMap,map)
+            if type(list)=="table" then
+                hasMapData=true
+                for _,q in ipairs(list) do
+                    if type(q)=="table" and ValidID(q.questID) then
+                        onMap[q.questID]=true
+                    end
                 end
             end
         end
+        if map==zoneID then break end
+        local info=Call(C_Map and C_Map.GetMapInfo,map)
+        if type(info)~="table" or info.mapType==2 or
+            not ValidID(info.parentMapID) then break end
+        map=info.parentMapID
     end
     local marked,nearby={},{}
     local headerMatch=false
@@ -157,14 +171,36 @@ local function Relevant(quests,zoneID,zoneNames)
         if onMap[quest.id] then score=score+400 end
         if inZone then score=score+350;headerMatch=true end
         if inZone or onMap[quest.id] then nearby[quest.id]=true end
-        -- A local POI flag does not identify the current zone, and a newly
-        -- accepted quest may be far away. Neither bypasses Nearby-only.
+        -- A local POI flag doesn't identify the zone, but actual client
+        -- coordinates for THIS zone are valid local evidence.
+        local waypoint=C_QuestLog and C_QuestLog.GetNextWaypointForMap
+        if not nearby[quest.id] and ValidID(zoneID) and
+            type(waypoint)=="function" then
+            local ok,x,y=pcall(waypoint,quest.id,zoneID)
+            if ok and Public(x) and Public(y) and
+                type(x)=="number" and type(y)=="number" and
+                x>=0 and x<=1 and y>=0 and y<=1 then
+                nearby[quest.id]=true
+                score=score+375
+                hasMapData=true
+            end
+        end
+        -- Optional short-distance catchment. Never cross continents:
+        -- distance is the native quest helper's current objective/turn-in.
+        local radius=settings and settings.nearbyRange or 0
+        if not nearby[quest.id] and type(radius)=="number" and
+            radius>0 then
+            local d=NativeDistance(quest.id)
+            if d and d<=radius*radius then
+                nearby[quest.id]=true
+                score=score+300
+                hasMapData=true
+            end
+        end
         if quest.localPOI or quest.onMap then score=score+80 end
         if recentlyAccepted[quest.id] then score=score+40 end
         marked[quest.id]=score
     end
-    -- No zone map and no matching quest header means the client hasn't
-    -- supplied enough evidence to safely change existing watches.
     return marked,nearby,hasMapData or headerMatch
 end
 -- Only the explicit Smart mode changes behavior in actual party dungeons.
@@ -605,6 +641,7 @@ function ChalkBox_QuestStatus()
         nearbyFirst=settings and settings.smartNearbyFirst~=false,
         completeFirst=settings and settings.smartCompleteFirst==true,
         nativeOrder=settings and settings.nativeOrder==true,
+        nearbyRange=settings and settings.nearbyRange or 0,
         nearest=lastStats.nearest}
 end
 -- Read-only view of Smart's ranked candidates. The built-in tracker can
@@ -654,6 +691,16 @@ function ChalkBox_QuestCommand(text)
             settings.smartSort=sort;QueueUpdate()
             Note("Smart selection order: "..sort..".")
         else Note("Choose sort nearest, zone, level or log.") end
+    elseif cmd:match("^range %d+$") then
+        local range=tonumber(cmd:match("%d+"))
+        if range==0 or range==500 or range==1000 or range==2000 then
+            settings.nearbyRange=range
+            QueueUpdate()
+            Note("Nearby distance allowance: "..(range==0 and
+                "current zone only" or (range.." yards"))..".")
+        else
+            Note("Choose range 0, 500, 1000 or 2000.")
+        end
     elseif cmd=="nativeorder on" or cmd=="nativeorder off" then
         settings.nativeOrder=cmd=="nativeorder on"
         QueueUpdate()
@@ -681,7 +728,7 @@ function ChalkBox_QuestCommand(text)
             Note("Choose limit 5, 10, 15 or 20.")
         end
     else
-        Note("/chalk quests on|off|smart|zone|all|sort nearest/zone/level/log|nativeorder on/off|nearbyfirst on/off|completefirst on/off|limit 5/10/15/20|refresh|status")
+        Note("/chalk quests on|off|smart|zone|all|sort nearest/zone/level/log|nativeorder on/off|nearbyfirst on/off|range 0/500/1000/2000|completefirst on/off|limit 5/10/15/20|refresh|status")
     end
 end
 local events=CreateFrame("Frame")
@@ -716,6 +763,10 @@ events:SetScript("OnEvent",function(_,event,arg1,arg2)
         end
         if settings.smartNearbyFirst==nil then
             settings.smartNearbyFirst=true
+        end
+        if settings.nearbyRange~=0 and settings.nearbyRange~=500 and
+            settings.nearbyRange~=1000 and settings.nearbyRange~=2000 then
+            settings.nearbyRange=0
         end
         -- Leave old per-character manual watch history alone.
     elseif event=="PLAYER_LOGIN" then
