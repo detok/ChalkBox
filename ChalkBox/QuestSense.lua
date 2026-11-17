@@ -10,6 +10,9 @@ local lastStats={accepted=0,candidates=0,watched=0,auto=0,added=0,removed=0,mode
 local recentlyAccepted={}
 local seenManual,seenManualZone={},nil
 local hooksInstalled=false
+local displayRank={}
+local displayGroup={}
+local displayGeneration=0
 -- The compass delegates native watch writes to QuestSense.
 local navFocusID
 local function Public(value)
@@ -407,6 +410,12 @@ local function Reconcile()
         return a.logIndex<b.logIndex
     end
     table.sort(prioritized,Compare)
+    displayRank,displayGroup={},{}
+    for position,q in ipairs(prioritized) do
+        displayRank[q.id]=position
+        displayGroup[q.id]=q.header
+    end
+    displayGeneration=displayGeneration+1
 
     -- Nearby is a strict current-zone filter, including previously MANUALLY
     -- watched non-local quests. Suspend those selections rather than losing
@@ -599,7 +608,13 @@ function ChalkBox_QuestStatus()
         sort=settings and settings.smartSort or "nearest",
         nearbyFirst=settings and settings.smartNearbyFirst~=false,
         completeFirst=settings and settings.smartCompleteFirst==true,
+        nativeOrder=settings and settings.nativeOrder==true,
         nearest=lastStats.nearest}
+end
+-- Read-only view of Smart's ranked candidates. The built-in tracker can
+-- sort its display without altering Blizzard quest-watch ownership/order.
+function ChalkBox_QuestDisplayOrder()
+    return displayRank,displayGroup,displayGeneration
 end
 function ChalkBox_QuestCommand(text)
     if not settings then return end
@@ -643,6 +658,14 @@ function ChalkBox_QuestCommand(text)
             settings.smartSort=sort;QueueUpdate()
             Note("Smart selection order: "..sort..".")
         else Note("Choose sort nearest, zone, level or log.") end
+    elseif cmd=="nativeorder on" or cmd=="nativeorder off" then
+        settings.nativeOrder=cmd=="nativeorder on"
+        QueueUpdate()
+        if type(ChalkBox_QuestTrackerSortRefresh)=="function" then
+            ChalkBox_QuestTrackerSortRefresh()
+        end
+        Note("Native tracker custom order "..(settings.nativeOrder and
+            "enabled." or "disabled."))
     elseif cmd=="nearbyfirst on" or cmd=="nearbyfirst off" then
         settings.smartNearbyFirst=cmd=="nearbyfirst on"
         QueueUpdate()
@@ -662,7 +685,7 @@ function ChalkBox_QuestCommand(text)
             Note("Choose limit 5, 10, 15 or 20.")
         end
     else
-        Note("/chalk quests on|off|smart|zone|all|sort nearest/zone/level/log|nearbyfirst on/off|completefirst on/off|limit 5/10/15/20|refresh|status")
+        Note("/chalk quests on|off|smart|zone|all|sort nearest/zone/level/log|nativeorder on/off|nearbyfirst on/off|completefirst on/off|limit 5/10/15/20|refresh|status")
     end
 end
 local events=CreateFrame("Frame")
