@@ -164,7 +164,7 @@ local function InitProvider(map)
     if type(CreateFromMixins)~="function" or
         type(MapCanvasDataProviderMixin)~="table" or
         not BuildPinMixin() or type(Mixin)~="function" or
-        type(CreateFramePool)~="function" or type(map.GetCanvas)~="function"
+        type(CreateObjectPool)~="function" or type(map.GetCanvas)~="function"
         or type(map.AddDataProvider)~="function" or
         type(map.AcquirePin)~="function" or
         type(map.RemoveAllPinsByTemplate)~="function" or
@@ -180,14 +180,13 @@ local function InitProvider(map)
     -- Separate native pools prevent rapid loot-row hover from rebuilding
     -- the flight markers or making their artwork flicker.
     local function NewPool()
-        local ok,newPool=pcall(CreateFramePool,"FRAME")
-        if not ok or type(newPool)~="table" then return nil end
-        newPool.parent=canvas
-        newPool.createFunc=function()
+        -- A standard FramePool captures its own frame factory during setup.
+        -- Replacing pool.createFunc / pool.creationFunc later does not
+        -- reliably change what it constructs on Forever clients. Construct
+        -- a genuine object pool with our mixin from the outset instead.
+        local function CreatePin()
             local frame=CreateFrame("Frame",nil,canvas)
             frame:SetSize(24,24)
-            -- MapCanvas checks mouse capabilities before it calls OnLoad.
-            -- Mark motion-capable now so flight hover tooltips are wired.
             if type(frame.SetMouseMotionEnabled)=="function" then
                 frame:SetMouseMotionEnabled(true)
             end
@@ -196,8 +195,7 @@ local function InitProvider(map)
             end
             return Mixin(frame,pinMixin)
         end
-        newPool.creationFunc=newPool.createFunc
-        newPool.resetFunc=function(_,pin)
+        local function ResetPin(_,pin)
             pin:Hide()
             pin:ClearAllPoints()
             pin:OnReleased()
@@ -206,8 +204,14 @@ local function InitProvider(map)
                 pin:SetOwningMap(nil)
             end
         end
-        newPool.resetterFunc=newPool.resetFunc
-        return newPool
+        local ok,pool=pcall(CreateObjectPool,CreatePin,ResetPin)
+        if not ok or type(pool)~="table" or
+            type(pool.Acquire)~="function" or
+            type(pool.ReleaseAll)~="function" or
+            type(pool.EnumerateActive)~="function" then
+            return nil
+        end
+        return pool
     end
     local fp,lp=NewPool(),NewPool()
     if not fp or not lp then
@@ -242,7 +246,7 @@ local function InitProvider(map)
                     flightCount=flightCount+1
                 else
                     nativeBroken=true
-                    lastProblem="native flight pin acquisition unsupported"
+                    lastProblem="flight pin error: "..tostring(pin):sub(1,170)
                     owning:RemoveAllPinsByTemplate(FLIGHT_TEMPLATE)
                     flightCount=0
                 end
@@ -266,7 +270,7 @@ local function InitProvider(map)
                     lootCount=1
                 else
                     nativeBroken=true
-                    lastProblem="native loot pin acquisition unsupported"
+                    lastProblem="loot pin error: "..tostring(pin):sub(1,170)
                     owning:RemoveAllPinsByTemplate(LOOT_TEMPLATE)
                 end
             end
@@ -301,10 +305,10 @@ end
 function ChalkBox_MapNativeRefresh()
     if refreshBusy or not Ensure() then return false end
     refreshBusy=true
-    local ok=pcall(provider.RefreshFlights,provider)
+    local ok,reason=pcall(provider.RefreshFlights,provider)
     refreshBusy=false
     if not ok then
-        lastProblem="native map marker refresh failed"
+        lastProblem="native refresh error: "..tostring(reason):sub(1,170)
     end
     return ok and not nativeBroken
 end
@@ -314,8 +318,8 @@ function ChalkBox_MapNativeLootSet(mapID,x,y)
     end
     if not Ensure() then return false end
     transientLoot={mapID=mapID,x=x,y=y}
-    local ok=pcall(provider.RefreshLoot,provider)
-    if not ok then lastProblem="native loot marker refresh failed" end
+    local ok,reason=pcall(provider.RefreshLoot,provider)
+    if not ok then lastProblem="loot refresh error: "..tostring(reason):sub(1,170) end
     return ok and not nativeBroken
 end
 function ChalkBox_MapNativeLootClear()
