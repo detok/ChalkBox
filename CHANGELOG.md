@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.27 — QuestSense Smart priorities (Beta)
+
+- Prefer actual Forever quest-helper distances for Smart's nearest objectives, with current-zone priority and configurable completion/level/title/log ordering.
+- Improve Nearby's local subzone quest evidence and optional short-distance radius.
+- Add Smart Rules under QuestSense settings and optional native objective-tracker list ordering through the existing tracker-header menu.
+- Preserve manual watches, dungeon-only focus, navigation and protected quest-log behavior. Native collapsible zone headings are not part of this beta.
+
 ## 2.2.26 — Adventure Tools & World Map
 
 - Discoveries: Display learned flight paths and recorded outdoor loot locations on local World Maps, with per-item map highlighting.
