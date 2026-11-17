@@ -14,7 +14,7 @@ _G.C_Map={
 local world,allFrames,pools={}, {},{}
 local function Texture()
     return {
-        SetAllPoints=function() end,SetSize=function() end,
+        SetAllPoints=function() end,SetSize=function(self,w,h) self.width,self.height=w,h end,
         SetPoint=function() end,
         SetAtlas=function(self,atlas) self.atlas=atlas end,
         SetTexture=function(self,v) self.texture=v end,
