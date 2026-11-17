@@ -192,14 +192,16 @@ C_QuestLog.GetQuestObjectives=function()
         numFulfilled=2,numRequired=8,finished=false}}
 end
 eventCallback(nil,"QUEST_LOG_UPDATE")
-assert(ChalkBox_QuestItemDetails("Flintfire's Shipment")==nil,
-    "unloaded quest objectives do not produce a guessed quest title")
+matching=ChalkBox_QuestItemDetails("Flintfire's Shipment")
+assert(matching and matching[1].title=="A Special Delivery"
+    and matching[1].stale==true and matching[1].have==3,
+    "temporarily unreadable objectives retain the last verified quest title, with stale progress")
 loading=false
 questClock=44.5
 matching=ChalkBox_QuestItemDetails("Flintfire's Shipment")
 assert(matching and matching[1].title=="A Special Delivery"
-    and matching[1].have==2,
-    "next eligible tooltip lookup refreshes delayed Forever quest details")
+    and matching[1].have==2 and not matching[1].stale,
+    "next eligible tooltip lookup refreshes delayed Forever quest details and clears stale state")
 -- Identical wording from a non-item objective does not prove this item
 -- belongs to the quest.
 C_QuestLog.GetQuestObjectives=function()
