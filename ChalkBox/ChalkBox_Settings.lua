@@ -14,7 +14,8 @@ local navigation = {
         {key="loothighlight", title="Appearance"}}},
     {key="drops", title="DropSense"},
     {key="auction", title="AuctionSense", children={
-        {key="auctioncharts", title="Charts (Experimental)"}}},
+        {key="auctioncharts", title="Charts (Experimental)"},
+        {key="auctionintel", title="Intelligence (Experimental)"}}},
     {key="quests", title="QuestSense", children={
         {key="questnav", title="Navigation"}}},
     {key="journal", title="Session Journal"},
@@ -411,7 +412,10 @@ local function MakeAuction()
         end
     end)
     Label(panel,"AuctionSense is part of Blizzard's Auction House.",
-        "GameFontHighlightSmall",28,-287,490)
+        "GameFontHighlightSmall",28,-287,295)
+    Button(panel,"Intelligence Lab",334,-283,188,function()
+        Activate("auctionintel")
+    end)
     Toggle(panel,"Show auction prices on item tooltips",
         "Only when a market scan exists; always includes scan age.",
         -311,function()
@@ -445,6 +449,58 @@ local function MakeAuction()
             st.items or 0,st.source=="browse" and "Browse snapshot" or
             (st.source=="full" and "Full listing snapshot" or "Unscanned"),
             st.age and (math.floor(st.age/60).."m old") or "No scan"))
+    end)
+    return panel
+end
+
+local function MakeAuctionIntel()
+    local panel=Panel("AuctionSense / Intelligence (Experimental)",
+        "Private inventory advice. Read-only; disabled by default on each character.")
+    local function Status()
+        return type(ChalkBox_IntelStatus)=="function" and
+            ChalkBox_IntelStatus() or {enabled=false,mode="skill",
+            target=25,margin=25,learn=true,recipes=0}
+    end
+    local function Set(key,value)
+        if type(ChalkBox_IntelSet)=="function" then
+            ChalkBox_IntelSet(key,value)
+        end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end
+    Toggle(panel,"Enable Inventory Intelligence",
+        "Off by default. No automatic posting, crafting or selling.",
+        -112,function() return Status().enabled end,
+        function(on) Set("enabled",on) end)
+    Toggle(panel,"Use verified personal seller-mail outcomes",
+        "Only confirmed seller invoices; ambiguous item names stay qualified.",
+        -167,function() return Status().learn end,
+        function(on) Set("learn",on) end)
+    Label(panel,"OPTIMIZATION GOAL","GameFontNormalLarge",28,-230,480)
+    Button(panel,"Skill Up",28,-256,231,function() Set("mode","skill") end)
+    Button(panel,"Make Gold",273,-256,231,function() Set("mode","gold") end)
+    Label(panel,"Skill forecast: next points","GameFontNormal",28,-303,250)
+    for i,n in ipairs({10,25,50}) do
+        Button(panel,tostring(n),282+(i-1)*78,-297,70,function()
+            Set("target",n)
+        end)
+    end
+    Label(panel,"Minimum crafting / auction advantage","GameFontNormal",
+        28,-350,270)
+    for i,n in ipairs({15,25,50}) do
+        Button(panel,n.."%",282+(i-1)*78,-344,70,function()
+            Set("margin",n)
+        end)
+    end
+    local state=Label(panel,"Disabled","GameFontHighlightSmall",28,-396,490)
+    Label(panel,"For exact stock reserves: /chalk intel reserve ITEM_ID QUANTITY",
+        "GameFontHighlightSmall",28,-417,505)
+    panel:AddRefresh(function()
+        local st=Status()
+        state:SetText((st.enabled and "ON" or "OFF").."  |  "..
+            (st.mode=="gold" and "Make Gold" or "Skill Up")..
+            "  |  +"..tostring(st.target or 25).." skill target"..
+            "  |  "..tostring(st.margin or 25).."% advantage"..
+            "  |  "..tostring(st.recipes or 0).." learned recipe snapshots")
     end)
     return panel
 end
@@ -1489,6 +1545,7 @@ local function Register()
     panels.drops = MakeDrops()
     panels.auction = MakeAuction()
     panels.auctioncharts = MakeAuctionCharts()
+    panels.auctionintel = MakeAuctionIntel()
     panels.journal = MakeJournal()
     panels.forge = MakeForge()
     panels.updates = MakeUpdates()
