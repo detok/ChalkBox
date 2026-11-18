@@ -22,17 +22,17 @@ Commands:
 
 A learned recipe is proven only by live C_TradeSkillUI.GetRecipeInfo(recipeID) learned status from the player's profession window. The bundled LibProfessionDB can enrich that same observed recipe, but cannot declare unknown recipes learned. Exact required reagents and their quantities come from GetRecipeSchematic where possible. Unknown/alternative reagent slots, unknown crafted outputs, and variable yields are excluded from automatic craft planning rather than guessed.
 
-The optimizer uses the player's currently accessible bag items, their quantities and vendor values, observed realm/faction auction asking prices and scan ages, opt-in name-matched verified seller-mail receipts for ordinary trade goods, and explicitly set per-item reserves and ignored-item preferences. KEEP and bound protections override economic suggestions.
+The optimizer uses the player's currently accessible bag items, their quantities and vendor values, observed realm/faction auction asking prices and scan ages, name-matched verified seller-mail receipts for ordinary trade goods when learning is enabled, and explicitly set per-item reserves and ignored-item preferences. KEEP and bound protections override economic suggestions.
 
 ## Skill Up mode
 
-Forecasts a selected number of skill points using observed known recipes and supported difficulty thresholds. Skill cap is explicitly reported, and forecasted materials after a rank unlock are not claimed to provide immediate skill gains.
+Forecasts a selected number of skill points using observed known recipes and supported difficulty thresholds. **No AH price scan is required to build a skill material forecast**: currently held materials and known ingredient quantities are sufficient to establish a tentative reserve. Missing ingredient prices affect route cost confidence, not recipe eligibility. Skill cap is explicitly reported, and forecasted materials after a rank unlock are not claimed to provide immediate skill gains.
 
 The system uses orange/yellow/green difficulty weights for selecting *provisional* economical routes (1, 0.65, 0.25 respectively). These are **heuristic cost weights**, not tested success rates or promised skill points. Missing, mixed, borrowed, or inconsistent metadata marks the plan uncertain; if no credible route exists, the engine says so. Reserves reduce auction/craft availability.
 
 ## Make Gold mode
 
-Observed net ask = lowest recently observed asking price times (1 minus estimated auction cut). The default 5% cut is a labeled estimate; multiple verified seller invoices can inform a cut-rate estimate. Conservative additional risk buffers reduce the estimate and do not represent probabilities of selling.
+Observed net ask = lowest recently observed asking price times (1 minus estimated auction cut). The default 5% cut is a labeled estimate; multiple verified seller invoices can inform a cut-rate estimate. Conservative additional risk buffers reduce the estimate and do not represent probabilities of selling. If there is no fresh AH quote, **at least two recent exact-name confirmed seller invoices within 30 days** can provide qualified evidence for a trade-good auction recommendation; one invoice alone cannot. The no-quote fallback applies a separate 30% caution haircut, and does not invent a current market quote.
 
 All observed ingredient costs contribute to opportunity cost, including materials already owned. Missing reagent price information prevents a profit craft recommendation. Output must also have a fresh nonmixed price. Requires estimated gain at least 2,000 copper and the selected relative margin.
 
@@ -51,5 +51,7 @@ Settings are stored per character in ChalkBoxProfessionDB.intelligence; the engi
 ## Safety and QA
 
 ProfessionSense records live learned recipe information. AuctionIntelligence performs calculations. AuctionInsights supplies existing bag and mail evidence. AuctionSenseUI and LootSense display only optional text. No secure UI actions or new network requests. Lua 5.1 and all existing tests are part of GitHub Actions. Manual WoW Forever validation remains necessary before any stable release, especially for item variants, strange hides/pristine materials, skill caps, incomplete schematics, crafting outputs, and unexpected client taint.
+
+The engine produces actionable KEEP, HOLD, CRAFT, AUCTION, VENDOR, CHECK DE, or SCAN AH decisions, with the reason and evidence. It no longer defaults to a vague REVIEW label when a meaningful next action is known. **SCAN AH** is specifically for cases where neither current quotes nor trustworthy personal sales justify a sale; it is not a claim to know market demand that the client has never observed.
 
 The goal is a trustworthy decision aid, not a trading bot or guaranteed-profit calculator.
