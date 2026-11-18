@@ -752,6 +752,27 @@ local function Ensure()
         Tint(note,COLOR.muted)
         if type(row.EnableMouse)=="function" then row:EnableMouse(true) end
         row:SetScript("OnMouseDown",function(self,button)
+            if button=="RightButton" and self.marketView=="bags" then
+                local item=self.marketData
+                local status=type(ChalkBox_IntelStatus)=="function" and
+                    ChalkBox_IntelStatus() or nil
+                if status and status.enabled and item and
+                    type(item.itemID)=="number" and
+                    type(ChalkBox_IntelPreference)=="function" then
+                    local reserve,ignored=ChalkBox_IntelPreference(item.itemID)
+                    local shift=type(IsShiftKeyDown)=="function" and
+                        IsShiftKeyDown()==true
+                    if shift and type(ChalkBox_IntelIgnore)=="function" then
+                        ChalkBox_IntelIgnore(item.itemID,not ignored)
+                    elseif type(ChalkBox_IntelReserve)=="function" then
+                        ChalkBox_IntelReserve(item.itemID,
+                            reserve>=item.count and 0 or item.count)
+                    end
+                    HideTooltip()
+                    Refresh()
+                end
+                return
+            end
             if button and button~="LeftButton" then return end
             local item=self.marketData
             if not item or type(item.itemID)~="number" or
@@ -789,6 +810,8 @@ local function Ensure()
                             COLOR.warning[1],COLOR.warning[2],
                             COLOR.warning[3])
                     end
+                    tip:AddLine("Right-click: reserve stack; Shift-right-click: ignore",
+                        COLOR.muted[1],COLOR.muted[2],COLOR.muted[3])
                 elseif item.protected or item.bound then
                     tip:AddLine(item.protected and "KEEP: protected by you" or
                         "Bound item: check tradeability",
