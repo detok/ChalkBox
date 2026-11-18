@@ -370,27 +370,37 @@ local function EnsurePanel()
             if type(GameTooltip.ClearLines)=="function" then
                 GameTooltip:ClearLines()
             end
-            GameTooltip:AddLine("ChalkBox · Character Bank",1,.82,.4)
+            local function Line(message,role,r,g,b,wrap)
+                if type(ChalkBox_TipLine)=="function" then
+                    ChalkBox_TipLine(GameTooltip,message,role,wrap)
+                else
+                    GameTooltip:AddLine(message,r,g,b,wrap==true)
+                end
+            end
+            Line("Character Bank","title",1,.82,.4)
             local v=ChalkBox_BankValueStatus()
             if v then
-                GameTooltip:AddLine("Vendor (last seen): "..
+                Line("Vendor value: "..
                     (v.vendorComplete and "" or "at least ")..
-                    Coin(v.vendorCopper),1,1,1)
-                GameTooltip:AddLine("AH asks (not sales): "..
+                    Coin(v.vendorCopper),"value",0.98,0.79,0.39)
+                Line("AH asks (not sales): "..
                     (v.ahPriced>0 and
                         ((v.ahComplete and "" or "at least ")..
-                        Coin(v.ahCopper)) or "unavailable"),.65,.84,.9)
-                GameTooltip:AddLine(("%d/%d stacks with usable AH prices"):format(
-                    v.ahPriced or 0,v.stacks or 0),.68,.71,.77)
+                        Coin(v.ahCopper)) or "unavailable"),
+                    "info",.65,.84,.9)
+                Line(("%d/%d stacks with usable AH prices"):format(
+                    v.ahPriced or 0,v.stacks or 0),"count",.68,.71,.77)
                 if (v.vendorUnknown or 0)>0 or
                     (v.missingTabs or 0)>0 then
-                    GameTooltip:AddLine("Incomplete: missing item prices or bank tabs",
-                        1,.69,.45,true)
+                    Line("Incomplete: missing item prices or bank tabs",
+                        "warning",1,.69,.45,true)
                 end
-                GameTooltip:AddLine("Last snapshot: "..(v.age or "unknown"),
-                    .68,.71,.77)
+                Line("Last snapshot: "..(v.age or "unknown"),
+                    "muted",.68,.71,.77)
+                Line("Visible character-bank tabs  ·  last seen, not bags",
+                    "muted",.68,.71,.77,true)
             else
-                GameTooltip:AddLine(lastReason,.8,.72,.65)
+                Line(lastReason,"muted",.8,.72,.65)
             end
             GameTooltip:Show()
         end)

@@ -355,6 +355,18 @@ assert(ChalkBox_IntelTooltip(mockTip,"item:2319"))
 assert(displayed[1]:find("ChalkBox",1,true) and
     table.concat(displayed," | "):find("Personal reserve: 45",1,true),
     "normal item tooltip shows one understandable advice block and its evidence")
+assert(#displayed<=8 and
+    not table.concat(displayed," | "):find("Evidence:",1,true) and
+    table.concat(displayed," | "):find("Hold Shift",1,true),
+    "normal hover stays compact and reserves extended math for Shift")
+_G.IsShiftKeyDown=function() return true end
+displayed={}
+assert(ChalkBox_IntelTooltip(mockTip,"item:2319"))
+local fullText=table.concat(displayed," | ")
+assert(fullText:find("Evidence:",1,true) and
+    fullText:find("Lowest observed ask:",1,true),
+    "Shift explicitly reveals market provenance and uncertainty")
+_G.IsShiftKeyDown=nil
 assert(ChalkBox_IntelIgnore(2319,true))
 local ignored=Stock()
 ChalkBox_IntelAnnotate(ignored,{freeSlots=1})

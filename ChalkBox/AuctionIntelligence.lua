@@ -1261,35 +1261,53 @@ function ChalkBox_IntelTooltip(tooltip,link)
     end
     local p=lastPlan and lastPlan.rows[id]
     if p then
-        tooltip:AddLine("ChalkBox  |  "..(p.mode=="gold" and
-            "Make Gold" or "Skill Up"),0.42,0.89,0.73)
-        tooltip:AddLine(p.headline or "Hold for now",0.91,0.89,0.70,true)
-        tooltip:AddLine(p.reason or "Additional evidence needed",
-            0.78,0.82,0.84,true)
-        if p.goalDetail then
-            tooltip:AddLine(p.goalDetail,0.81,0.78,0.52,true)
+        -- Fast glance: action and reason first. Detailed math is visible
+        -- on Shift, so several modules can share the native item tooltip
+        -- without covering the whole game with overlapping explanations.
+        local detailed=type(IsShiftKeyDown)=="function" and IsShiftKeyDown()
+        local fallback={
+            info={0.40,0.83,0.78},good={0.39,0.94,0.62},
+            value={0.98,0.79,0.39},count={0.51,0.76,0.98},
+            warning={0.98,0.66,0.33},muted={0.65,0.70,0.73},
+            text={0.85,0.87,0.88}}
+        local function Line(message,role)
+            if type(ChalkBox_TipLine)=="function" then
+                ChalkBox_TipLine(tooltip,message,role,true)
+            else
+                local rgb=fallback[role] or fallback.text
+                tooltip:AddLine(message,rgb[1],rgb[2],rgb[3],true)
+            end
         end
+        Line("ChalkBox  |  "..(p.mode=="gold" and
+            "Make Gold" or "Skill Up"),"info")
+        local actionRole=p.kind=="KEEP" and "good" or
+            p.kind=="HOLD" and "warning" or
+            (p.kind=="AUCTION" or p.kind=="VENDOR") and "value" or
+            p.kind=="IGNORE" and "muted" or "info"
+        Line(p.headline or "Hold for now",actionRole)
+        Line(p.reason or "Additional evidence needed","text")
+        if p.goalDetail then Line(p.goalDetail,"value") end
         if p.shortfall and p.shortfall>0 then
-            tooltip:AddLine("Missing from bags: "..p.shortfall..
-                " to meet the reserve",0.91,0.65,0.38,true)
+            Line("Missing from bags: "..p.shortfall..
+                " to meet the reserve","warning")
         end
-        if p.trainingDetail then
-            tooltip:AddLine(p.trainingDetail,0.91,0.65,0.38,true)
+        if p.trainingDetail then Line(p.trainingDetail,"warning") end
+        local isSale=p.kind=="AUCTION" or p.kind=="VENDOR"
+        if isSale and p.comparisonDetail then
+            Line(p.comparisonDetail,"value")
         end
-        if p.comparisonDetail then
-            tooltip:AddLine(p.comparisonDetail,0.70,0.85,0.74,true)
+        if detailed then
+            if not isSale and p.comparisonDetail then
+                Line(p.comparisonDetail,"value")
+            end
+            if p.askDetail then Line(p.askDetail,"muted") end
+            if p.craftValueDetail then Line(p.craftValueDetail,"info") end
+            if p.bagDetail then Line(p.bagDetail,"count") end
+            if p.bankDetail then Line(p.bankDetail,"muted") end
+            Line(p.evidenceDetail or "Decision is an estimate","muted")
+        else
+            Line("Hold Shift for market evidence and details","muted")
         end
-        if p.craftValueDetail then
-            tooltip:AddLine(p.craftValueDetail,0.70,0.85,0.74,true)
-        end
-        if p.bagDetail then
-            tooltip:AddLine(p.bagDetail,0.72,0.78,0.92,true)
-        end
-        if p.bankDetail then
-            tooltip:AddLine(p.bankDetail,0.65,0.77,0.91,true)
-        end
-        tooltip:AddLine(p.evidenceDetail or "Decision is an estimate",
-            0.58,0.70,0.74,true)
         if type(tooltip.Show)=="function" then tooltip:Show() end
         return true
     end

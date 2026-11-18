@@ -172,7 +172,11 @@ local function Hint(widget,label,details,key)
         GameTooltip:SetOwner(self,db and db.bar=="bottom" and
             "ANCHOR_TOP" or "ANCHOR_BOTTOM")
         GameTooltip:ClearLines()
-        GameTooltip:AddLine(label,1,0.82,0.35)
+        local tr,tg,tb=1,0.82,0.35
+        if type(ChalkBox_TipColor)=="function" then
+            tr,tg,tb=ChalkBox_TipColor("title")
+        end
+        GameTooltip:AddLine(label,tr,tg,tb)
         for _,line in ipairs(details()) do
             local role=TipRole(key,line)
             local c=tipFallback[role] or tipFallback.text

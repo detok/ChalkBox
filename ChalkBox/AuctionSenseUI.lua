@@ -37,7 +37,11 @@ local function StartTooltip(owner,title)
         type(tip.AddLine)~="function" then return nil end
     tip:SetOwner(owner,"ANCHOR_RIGHT")
     if type(tip.ClearLines)=="function" then tip:ClearLines() end
-    tip:AddLine(title,0.95,0.95,0.93)
+    if type(ChalkBox_TipLine)=="function" then
+        ChalkBox_TipLine(tip,title,"title")
+    else
+        tip:AddLine(title,0.95,0.95,0.93)
+    end
     return tip
 end
 local function Metric(tip,label,value,rgb)
