@@ -8,8 +8,10 @@ local PROF_IDS={Alchemy=171,Blacksmithing=164,Leatherworking=165,
     Tailoring=197,Engineering=202,Enchanting=333,Cooking=185,
     ["First Aid"]=129,Jewelcrafting=755,Inscription=773}
 local lastPlan=nil
+local lastPlanToken=nil
 function ChalkBox_IntelInvalidate()
     lastPlan=nil
+    lastPlanToken=nil
 end
 
 local function Safe(v)
@@ -237,7 +239,7 @@ local function CatalogRecipeOwner(id)
             owner=profession
         end
     end
-    if owner then recipeOwnerCache[id]=owner end
+    recipeOwnerCache[id]=owner or false
     return owner
 end
 local function Reagents(schematic)
@@ -1067,12 +1069,59 @@ local function Analyze(rows,stats)
     lastPlan=plan
     return plan
 end
+-- Reusing a result matters: a bag/AH UI refresh must not re-run multi-recipe
+-- optimization or reread hundreds of seller invoices for unchanged bags.
+-- Rebuild on observations/settings changes or at the next minute boundary
+-- (the price-age / bank-age decisions can change without an item event).
+local function PlanToken(rows,stats)
+    local n=Call(time)
+    if not Int(n) then n=Call(GetServerTime) end
+    local parts={tostring(Int(n) and math.floor(n/60) or 0),
+        tostring(stats and stats.freeSlots or "?")}
+    for _,row in ipairs(rows) do
+        if Int(row.itemID) and Int(row.count) then
+            parts[#parts+1]=table.concat({
+                tostring(row.itemID),tostring(row.count),
+                tostring(row.stacks or 0),
+                tostring(row.vendor or 0),
+                tostring(row.protected==true),
+                tostring(row.bound==true),
+                tostring(row.boundKnown==true),
+                tostring(row.quality or "-"),
+                tostring(row.low or "-")
+            },":")
+        end
+    end
+    -- Input rows originate from a hash table, so normalize their order.
+    local first=2
+    if #parts>first then
+        local items={}
+        for i=first+1,#parts do items[#items+1]=parts[i] end
+        table.sort(items)
+        for i,value in ipairs(items) do parts[first+i]=value end
+    end
+    return table.concat(parts,"|")
+end
 function ChalkBox_IntelAnnotate(rows,stats)
     if not Enabled() or type(rows)~="table" then return nil end
+    local token=PlanToken(rows,stats)
+    if lastPlan and lastPlanToken==token then
+        for _,row in ipairs(rows) do
+            local advice=lastPlan.rows[row.itemID]
+            if advice then
+                row.intel=advice
+                row.note=advice.headline
+            end
+        end
+        return lastPlan
+    end
     local ok,result=pcall(Analyze,rows,stats)
-    if ok then return result end
+    if ok and result then
+        lastPlanToken=token
+        return result
+    end
     -- A failed optional planner must not break the existing My Items table.
-    lastPlan=nil
+    ChalkBox_IntelInvalidate()
     return nil
 end
 function ChalkBox_IntelActions(limit)
@@ -1098,7 +1147,10 @@ function ChalkBox_IntelTooltip(tooltip,link)
             local f=_G[name.."TextLeft"..i]
             local line=f and Call(f.GetText,f)
             if type(line)=="string" and
-                line:find("Intelligence  |  ",1,true) then return false end
+                (line:find("ChalkBox  |  ",1,true) or
+                 line:find("Intelligence  |  ",1,true)) then
+                return false
+            end
         end
     end
     -- Reuse the most recent bag appraisal. Rebuild only after a bag, recipe,
