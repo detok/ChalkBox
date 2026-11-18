@@ -572,6 +572,18 @@ local function ProfitCandidates(list,byID,valueFn,s)
     end)
     return candidates
 end
+local function UsedByGoal(id,name,profession)
+    if not profession or
+        type(ChalkBox_LearnedRecipeUses)~="function" then return false end
+    local uses=Call(ChalkBox_LearnedRecipeUses,id,name)
+    if type(uses)~="table" then return false end
+    for _,entry in ipairs(uses) do
+        if type(entry)=="table" and entry.profession==profession then
+            return true
+        end
+    end
+    return false
+end
 local function Analyze(rows,stats)
     if not Enabled() then return nil end
     local s=Settings()
@@ -665,24 +677,11 @@ local function Analyze(rows,stats)
         elseif suggestion then
             kind,qty,reason=suggestion.kind,suggestion.qty,suggestion.reason
         elseif (s.mode=="skill" or s.protectGoal) and
-            plan.incomplete and
-            type(ChalkBox_LearnedRecipeUses)=="function" and
-            reserve==0 then
-            local knownUses=Call(ChalkBox_LearnedRecipeUses,id,item.name)
-            local relevant=false
-            if type(knownUses)=="table" then
-                for _,entry in ipairs(knownUses) do
-                    if type(entry)=="table" and
-                        entry.profession==s.profession then
-                        relevant=true;break
-                    end
-                end
-            end
-            if relevant then
-                kind,qty,reason="HOLD",item.count,
-                    "Used by known "..tostring(s.profession)..
-                    " recipes; progression forecast is incomplete"
-            end
+            plan.incomplete and reserve==0 and
+            UsedByGoal(id,item.name,s.profession) then
+            kind,qty,reason="HOLD",item.count,
+                "Used by known "..tostring(s.profession)..
+                " recipes; progression forecast is incomplete"
         elseif reserve>=item.count and item.count>0 then
             kind,qty,reason="KEEP",item.count,
                 "Reserved for "..(s.mode=="skill" and "skill progression" or "your preference")
