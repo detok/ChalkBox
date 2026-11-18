@@ -899,19 +899,27 @@ function ChalkBox_IntelCommand(message)
     elseif cmd=="learn" and (arg=="on" or arg=="off") then
         ChalkBox_IntelSet("learn",arg=="on")
     elseif cmd=="profession" then
-        for profession in pairs(PROF_IDS) do
-            if profession:lower()==arg then
-                ChalkBox_IntelSet("profession",profession);break
+        if arg=="auto" then
+            ChalkBox_IntelSet("profession",nil)
+        else
+            for profession in pairs(PROF_IDS) do
+                if profession:lower()==arg then
+                    ChalkBox_IntelSet("profession",profession);break
+                end
             end
         end
+    elseif cmd=="protect" and (arg=="on" or arg=="off") then
+        ChalkBox_IntelSet("protectGoal",arg=="on")
     end
     local s=ChalkBox_IntelStatus()
     if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
         DEFAULT_CHAT_FRAME:AddMessage("|cff67c6b7ChalkBox Intelligence|r "..
             (s.enabled and "ON" or "OFF").." | "..s.mode..
             " | "..tostring(s.profession or "No profession scanned")..
+            (s.goalPinned and " (pinned)" or " (automatic)")..
+            " | goal protection "..(s.protectGoal and "ON" or "OFF")..
             " | "..s.summary..
-            " | commands: on/off, skill/gold, target 10/25/50, margin 15/25/50, reserve ID QTY, ignore ID, unignore ID")
+            " | commands: on/off, skill/gold, profession NAME/auto, protect on/off, target 10/25/50, margin 15/25/50, reserve ID QTY, ignore ID, unignore ID")
     end
     return s
 end
