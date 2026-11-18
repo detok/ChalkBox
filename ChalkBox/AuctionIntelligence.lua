@@ -646,10 +646,15 @@ local function Analyze(rows,stats)
                         budget[id]=budget[id]-n*qty
                         local row=plan.rows[id] or {}
                         row.kind="CRAFT"
-                        row.reason="Materials allocated to "..candidate.name..
-                            " (estimated added value, not confirmed sales)"
+                        row.reason="Use as ingredients for "..candidate.name..
+                            "; projected advantage is not guaranteed profit"
                         row.qty=(row.qty or 0)+n*qty
-                        row.advantage=benefit
+                        row.crafts=row.crafts or {}
+                        if #row.crafts<4 then
+                            row.crafts[#row.crafts+1]={name=candidate.name,
+                                count=qty}
+                        end
+                        row.advantage=(row.advantage or 0)+benefit
                         plan.rows[id]=row
                     end
                     AddAction(plan,"CRAFT",candidate.sourceID,qty,
@@ -732,15 +737,74 @@ local function Analyze(rows,stats)
         local p=plan.rows[id] or {}
         p.kind,p.qty,p.reason=kind,qty,reason
         p.reserve=reserve
+        p.stock=item.count
+        p.keep=math.min(item.count,reserve)
+        p.shortfall=math.max(0,reserve-item.count)
+        p.surplus=math.max(0,item.count-reserve)
+        p.goalReserve=plan.goalReserve and (plan.goalReserve[id] or 0) or 0
+        p.mode=s.mode
+        p.profession=s.profession
+        p.capped=plan.capped
+        p.skillRank,p.skillCap=plan.skillRank,plan.skillCap
+        p.incomplete=plan.incomplete==true
         p.confidence=(item.protected or item.bound or kind=="IGNORE" or
                 (kind=="VENDOR" and item.quality==0)) and "verified" or
             (kind=="AUCTION" or kind=="CRAFT" or reserve>0)
                 and "estimated" or "limited"
+        local neededBy=plan.goalUses and plan.goalUses[id]
+        if type(neededBy)=="table" then
+            local recipeID,most=0,0
+            for candidateID,amount in pairs(neededBy) do
+                if amount>most then recipeID,most=candidateID,amount end
+            end
+            local recipe=db.recipes[tostring(recipeID)]
+            if recipe and type(recipe.name)=="string" then
+                p.goalRecipe=recipe.name
+                p.goalRecipeCrafts=plan.forecastRecipes[recipeID]
+            end
+        end
+        local unit=tostring(qty or 0)
+        if kind=="AUCTION" then
+            p.headline="Auction "..unit..
+                (p.keep>0 and " | Keep "..p.keep or "")
+        elseif kind=="CRAFT" then
+            p.headline="Use "..unit.." in crafts"..
+                (p.keep>0 and " | Keep "..p.keep or "")
+        elseif kind=="VENDOR" then
+            p.headline="Vendor "..unit
+        elseif kind=="CHECK DE" then
+            p.headline="Compare disenchant | "..unit
+        elseif kind=="SCAN AH" then
+            p.headline="Check AH price | "..unit
+        elseif kind=="IGNORE" then
+            p.headline="Advice hidden by you"
+        elseif kind=="KEEP" then
+            p.headline="Keep "..tostring(item.count)
+        else
+            p.headline="Hold "..tostring(item.count)
+        end
+        if p.goalReserve>0 and p.goalRecipe then
+            p.goalDetail="Plan: "..tostring(p.goalRecipeCrafts or "?")..
+                " crafts of "..p.goalRecipe.."; needs "..
+                p.goalReserve.." of this material"
+        elseif p.goalReserve>0 then
+            p.goalDetail=tostring(s.profession or "Profession")..
+                " progression plan uses "..p.goalReserve.." units"
+        elseif reserve>0 then
+            p.goalDetail="Personal reserve: "..reserve.." units"
+        end
+        if p.capped and p.goalReserve>0 then
+            p.trainingDetail="Skill capped at "..tostring(p.skillRank)..
+                "; training required before further skill gains"
+        end
+        p.evidenceDetail=p.confidence=="verified" and
+            "Evidence: verified protection / item property" or
+            p.confidence=="estimated" and
+            "Evidence: provisional recipe or market calculation" or
+            "Evidence: incomplete; no guaranteed sale or skill gain"
         plan.rows[id]=p
         item.intel=p
-        item.note=kind.." "..tostring(qty)..
-            (kind=="KEEP" and reserve>0 and " | goal reserve" or
-            kind=="AUCTION" and " | observed asks" or "")
+        item.note=p.headline
         if kind=="AUCTION" or kind=="SCAN AH" then
             AddAction(plan,kind,id,qty,reason)
         elseif kind=="VENDOR" and stats and
@@ -795,18 +859,25 @@ function ChalkBox_IntelTooltip(tooltip,link)
     end
     local p=lastPlan and lastPlan.rows[id]
     if p then
-            tooltip:AddLine("Intelligence  |  "..p.kind.." "..tostring(p.qty),
-                0.42,0.89,0.73)
-            tooltip:AddLine(p.reason,0.68,0.73,0.78,true)
-            if p.reserve and p.reserve>0 then
-                tooltip:AddLine("Goal reserve: "..p.reserve..
-                    " (planning estimate / personal preference)",
-                    0.81,0.78,0.52,true)
-            end
-            tooltip:AddLine("Read-only estimate; no automatic trades",
-                0.58,0.63,0.67,true)
-            if type(tooltip.Show)=="function" then tooltip:Show() end
-            return true
+        tooltip:AddLine("ChalkBox  |  "..(p.mode=="gold" and
+            "Make Gold" or "Skill Up"),0.42,0.89,0.73)
+        tooltip:AddLine(p.headline or "Hold for now",0.91,0.89,0.70,true)
+        tooltip:AddLine(p.reason or "Additional evidence needed",
+            0.78,0.82,0.84,true)
+        if p.goalDetail then
+            tooltip:AddLine(p.goalDetail,0.81,0.78,0.52,true)
+        end
+        if p.shortfall and p.shortfall>0 then
+            tooltip:AddLine("Missing from bags: "..p.shortfall..
+                " to meet the reserve",0.91,0.65,0.38,true)
+        end
+        if p.trainingDetail then
+            tooltip:AddLine(p.trainingDetail,0.91,0.65,0.38,true)
+        end
+        tooltip:AddLine(p.evidenceDetail or "Decision is an estimate",
+            0.58,0.70,0.74,true)
+        if type(tooltip.Show)=="function" then tooltip:Show() end
+        return true
     end
     return false
 end
