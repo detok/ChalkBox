@@ -351,8 +351,8 @@ assert(loadfile("ChalkBox_Settings.lua"))("ChalkBox")
 local loader=frames[#frames]
 assert(loader.event=="PLAYER_LOGIN","must register settings when the client is ready")
 loader.script.OnEvent(loader,"PLAYER_LOGIN")
-assert(#registered==23,
-    "native settings include Charts, Intelligence and QuestSense Navigation child pages")
+assert(#registered==24,
+    "native settings include coordinated tooltips plus existing experimental child pages")
 for _,texture in ipairs(textures) do
     assert(not (texture.color and texture.color[1]==0.02
         and texture.color[2]==0.02 and texture.color[3]==0.025
@@ -404,6 +404,18 @@ local function FindCheckByParentTitle(title)
     end end
     return checks
 end
+assert(categories["LootSense Item Insights (Experimental)"]
+    and categories["LootSense Item Insights (Experimental)"].parent==
+        categories["LootSense"],
+    "coordinator is an optional child of LootSense, not a new root addon")
+categories["LootSense Item Insights (Experimental)"].panel:Show()
+local coordinatorChecks=FindCheckByParentTitle(
+    "LootSense Item Insights (Experimental)")
+assert(#coordinatorChecks==1 and not coordinatorChecks[1].checked,
+    "coordinator defaults OFF until this character explicitly opts in")
+assert(ControlIn("LootSense Item Insights (Experimental)",
+    "Restore Legacy Tooltips"),
+    "experimental item tips provide an immediate rollback control")
 assert(categories["AuctionSense"] and
     categories["AuctionSense"].parent==categories.home,
     "AuctionSense is an independent ChalkBox module, not a hidden submenu")
