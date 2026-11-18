@@ -453,8 +453,9 @@ local function Refresh()
         local active=intel and intel.enabled
         labels.details:SetText(("Bags: %d items  ·  %d priced"):format(
             extra.stacks or 0,extra.priced or 0)..
-            (active and "  ·  Intelligence "..(intel.mode=="gold" and
-                "Gold" or "Skill Up") or ""))
+            (active and ("  ·  "..(intel.mode=="gold" and
+                "Make Gold" or "Skill Up").." / "..
+                tostring(intel.profession or "No goal")) or ""))
         if active then
             labels.info:SetText((intel.summary or
                 "Read-only suggestions; asking prices are not sales"):sub(1,115))
@@ -547,7 +548,12 @@ local function Refresh()
                 row.average:SetText(Coin(item.de))
                 row.listings:SetText(tostring(item.count or 0).."x")
                 row.note:SetText(item.note or "Compare prices")
-                Tint(row.note,(item.protected or item.bound) and COLOR.warning or
+                Tint(row.note,(item.protected or item.bound or
+                    item.intel and (item.intel.kind=="HOLD" or
+                    item.intel.kind=="SCAN AH")) and COLOR.warning or
+                    item.intel and
+                        (item.intel.kind=="CRAFT" or
+                        item.intel.kind=="AUCTION") and COLOR.ready or
                     COLOR.muted)
             elseif view=="sales" then
                 row.low:SetText(Coin(item.gross))
@@ -800,18 +806,34 @@ local function Ensure()
                     item.de and COLOR.average or COLOR.muted)
                 if item.intel then
                     local advice=item.intel
-                    tip:AddLine("Intelligence  |  "..advice.kind.." "..
-                        tostring(advice.qty or 0),
+                    tip:AddLine("ChalkBox  |  "..(advice.mode=="gold" and
+                        "Make Gold" or "Skill Up"),
                         COLOR.ready[1],COLOR.ready[2],COLOR.ready[3])
-                    tip:AddLine(advice.reason or "Conservative estimate",
+                    tip:AddLine(advice.headline or "Hold for now",
+                        COLOR.neutral[1],COLOR.neutral[2],COLOR.neutral[3],true)
+                    tip:AddLine(advice.reason or "Insufficient evidence",
                         COLOR.muted[1],COLOR.muted[2],COLOR.muted[3],true)
-                    if advice.reserve and advice.reserve>0 then
-                        tip:AddLine("Reserved for goal: "..advice.reserve,
+                    if advice.goalDetail then
+                        tip:AddLine(advice.goalDetail,
                             COLOR.warning[1],COLOR.warning[2],
-                            COLOR.warning[3])
+                            COLOR.warning[3],true)
                     end
-                    tip:AddLine("Right-click: reserve stack; Shift-right-click: ignore",
-                        COLOR.muted[1],COLOR.muted[2],COLOR.muted[3])
+                    if advice.shortfall and advice.shortfall>0 then
+                        tip:AddLine("Missing from bags: "..advice.shortfall..
+                            " for planned reserve",
+                            COLOR.warning[1],COLOR.warning[2],
+                            COLOR.warning[3],true)
+                    end
+                    if advice.trainingDetail then
+                        tip:AddLine(advice.trainingDetail,
+                            COLOR.warning[1],COLOR.warning[2],
+                            COLOR.warning[3],true)
+                    end
+                    tip:AddLine(advice.evidenceDetail or
+                        "Evidence: limited",COLOR.muted[1],
+                        COLOR.muted[2],COLOR.muted[3],true)
+                    tip:AddLine("Right-click: reserve ALL in bags | Shift-right-click: ignore",
+                        COLOR.muted[1],COLOR.muted[2],COLOR.muted[3],true)
                 elseif item.protected or item.bound then
                     tip:AddLine(item.protected and "KEEP: protected by you" or
                         "Bound item: check tradeability",
