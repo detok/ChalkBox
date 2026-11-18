@@ -448,7 +448,9 @@ local function Refresh()
             entries,extra=ChalkBox_MarketBagRows(searchText,250)
         end
         extra=extra or {}
-        local intel=type(ChalkBox_IntelStatus)=="function" and
+        local intel=type(ChalkBox_IntelEnabled)=="function" and
+            ChalkBox_IntelEnabled() and
+            type(ChalkBox_IntelStatus)=="function" and
             ChalkBox_IntelStatus() or nil
         local active=intel and intel.enabled
         labels.details:SetText(("Bags: %d items  ·  %d priced"):format(
