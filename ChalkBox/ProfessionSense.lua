@@ -698,8 +698,10 @@ function ChalkBox_LearnedRecipeUses(itemID,itemName)
     table.sort(entries,function(a,b)
         -- Give actual required materials precedence in a tooltip over
         -- alternatives and optional reagents from other learned recipes.
-        if a.optional~=b.optional then return a.optional~=true end
-        if a.alternative~=b.alternative then return a.alternative~=true end
+        local aOptional,bOptional=a.optional==true,b.optional==true
+        if aOptional~=bOptional then return not aOptional end
+        local aAlternative,bAlternative=a.alternative==true,b.alternative==true
+        if aAlternative~=bAlternative then return not aAlternative end
         if a.profession~=b.profession then return a.profession<b.profession end
         return a.recipe<b.recipe
     end)

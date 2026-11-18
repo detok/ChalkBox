@@ -205,7 +205,26 @@ recipeIDs={2006}
 frame.callback(frame,"TRADE_SKILL_LIST_UPDATE")
 local altUses=ChalkBox_LearnedRecipeUses(2318,"Light Leather")
 local optUses=ChalkBox_LearnedRecipeUses(4470,"Simple Wood")
-assert(#altUses>0 and altUses[1].alternative==true and
-    #optUses>0 and optUses[1].optional==true,
+local foundAlternative=false
+for _,row in ipairs(altUses) do
+    if row.recipe=="Alternate Leather" and row.alternative==true then
+        foundAlternative=true
+    end
+end
+local foundOptional=false
+for _,row in ipairs(optUses) do
+    if row.recipe=="Alternate Leather" and row.optional==true then
+        foundOptional=true
+    end
+end
+assert(foundAlternative and foundOptional,
     "alternative and optional slot types must survive the live scan")
+-- Old saved rows have nil flags while new rows use explicit false.
+-- The comparator must remain a strict order across both representations.
+local stored=ChalkBoxProfessionDB.recipeUses["id:2318"]
+stored["legacy"]={profession="Leatherworking",recipe="Old Entry",quantity=1}
+local mixed=ChalkBox_LearnedRecipeUses(2318,"Light Leather")
+assert(#mixed>=3 and mixed[1].alternative~=true and
+    mixed[1].optional~=true,
+    "required recipes appear ahead of alternative or optional choices")
 print("PASS: Forever live recipe identity, fallback data, explicit unlearning, alternative/optional reagents and stale-heading safeguards")
