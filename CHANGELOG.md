@@ -4,8 +4,8 @@
 
 - Prefer actual Forever quest-helper distances for Smart's nearest objectives, with current-zone priority and configurable completion/level/title/log ordering.
 - Improve Nearby's local subzone quest evidence and optional short-distance radius.
-- Add Smart Rules under QuestSense settings and optional native objective-tracker list ordering through the existing tracker-header menu.
-- Preserve manual watches, dungeon-only focus, navigation and protected quest-log behavior. Native collapsible zone headings are not part of this beta.
+- Add Smart Rules under QuestSense settings through the existing tracker-header menu.
+- Preserve manual watches, dungeon-only focus, navigation and protected quest-log behavior. Native tracker visual sorting and collapsible zone headings are not part of this beta.
 
 ## 2.2.26 — Adventure Tools & World Map
 
