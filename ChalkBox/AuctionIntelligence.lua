@@ -34,7 +34,7 @@ local function DB(create)
     if type(db)~="table" then
         if not create then return nil end
         db={enabled=false,mode="skill",learn=true,target=25,
-            margin=25,reserves={},ignored={},recipes={},skills={},
+            margin=25,protectGoal=true,reserves={},ignored={},recipes={},skills={},
             progress={}}
         ChalkBoxProfessionDB.intelligence=db
     end
@@ -59,7 +59,10 @@ local function Settings()
             and db.target or 25,
         margin=db and (db.margin==15 or db.margin==25 or db.margin==50)
             and db.margin or 25,
-        profession=db and db.profession or nil,
+        profession=db and (db.goalProfession or db.primaryProfession or db.profession) or nil,
+        goalPinned=db and db.goalProfession~=nil or false,
+        lastObserved=db and db.profession or nil,
+        protectGoal=not db or db.protectGoal~=false,
         reserveCount=db and db.reserves and db.reserves or {},
         ignored=db and db.ignored and db.ignored or {}}
 end
@@ -81,15 +84,23 @@ function ChalkBox_IntelStatus()
 end
 function ChalkBox_IntelSet(key,value)
     if key~="enabled" and key~="mode" and key~="learn" and
-        key~="target" and key~="margin" and key~="profession" then return false end
+        key~="target" and key~="margin" and key~="profession" and
+        key~="protectGoal" then return false end
     if key=="enabled" and value~=true and value~=false then return false end
     if key=="mode" and value~="skill" and value~="gold" then return false end
     if key=="learn" and value~=true and value~=false then return false end
     if key=="target" and value~=10 and value~=25 and value~=50 then return false end
     if key=="margin" and value~=15 and value~=25 and value~=50 then return false end
     if key=="profession" and value~=nil and not PROF_IDS[value] then return false end
+    if key=="protectGoal" and value~=true and value~=false then return false end
     local db=DB(true)
-    db[key]=value
+    -- Explicit profession selection is a durable goal. Passive scans
+    -- still record every skill but never silently replace a pinned goal.
+    if key=="profession" then
+        db.goalProfession=value
+    else
+        db[key]=value
+    end
     lastPlan=nil
     if key=="enabled" and value and
         type(ChalkBox_ProfessionRefresh)=="function" then
@@ -142,6 +153,12 @@ function ChalkBox_IntelObserveSkill(profession,rank,cap)
     end
     db.skills[profession]={rank=rank,cap=cap}
     db.profession=profession
+    -- Favor the first observed primary trade over cooking/first aid.
+    -- A deliberate user goal in goalProfession always wins.
+    if not db.primaryProfession and
+        profession~="Cooking" and profession~="First Aid" then
+        db.primaryProfession=profession
+    end
     lastPlan=nil
     return true
 end
@@ -246,6 +263,10 @@ function ChalkBox_IntelObserveRecipe(profession,id,info,schematic)
             name=r.name,known=true,source=inputState or "incomplete"}
     end
     db.profession=profession
+    if not db.primaryProfession and
+        profession~="Cooking" and profession~="First Aid" then
+        db.primaryProfession=profession
+    end
     lastPlan=nil
     return true
 end
