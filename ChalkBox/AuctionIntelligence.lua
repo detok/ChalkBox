@@ -161,6 +161,24 @@ function ChalkBox_IntelObserveBankInventory(items,meta)
         count=count+1
     end
     local db=DB(true)
+    local old=db.bank
+    if type(old)=="table" and Int(old.at) and
+        meta.at>=old.at and meta.at-old.at<60 and
+        old.missingTabs==meta.missingTabs and
+        old.unknown==(meta.unknown or 0) and
+        old.containers==meta.containers and
+        type(old.items)=="table" then
+        local unchanged=true
+        for id,n in pairs(copy) do
+            if old.items[id]~=n then unchanged=false;break end
+        end
+        if unchanged then
+            for id,n in pairs(old.items) do
+                if copy[id]~=n then unchanged=false;break end
+            end
+        end
+        if unchanged then return true end
+    end
     db.bank={items=copy,at=meta.at,
         partial=meta.missingTabs~=0 or (meta.unknown or 0)>0,
         missingTabs=Int(meta.missingTabs) and meta.missingTabs or 0,
@@ -199,6 +217,7 @@ function ChalkBox_IntelObserveSkill(profession,rank,cap)
         while #history>24 do table.remove(history,1) end
         db.progress[profession]=history
     end
+    local changed=not old or old.rank~=rank or old.cap~=cap
     db.skills[profession]={rank=rank,cap=cap}
     db.profession=profession
     -- Favor the first observed primary trade over cooking/first aid.
@@ -206,8 +225,9 @@ function ChalkBox_IntelObserveSkill(profession,rank,cap)
     if not db.primaryProfession and
         profession~="Cooking" and profession~="First Aid" then
         db.primaryProfession=profession
+        changed=true
     end
-    lastPlan=nil
+    if changed then ChalkBox_IntelInvalidate() end
     return true
 end
 -- Legacy experimental builds could cache the right spell under the
@@ -335,21 +355,43 @@ function ChalkBox_IntelObserveRecipe(profession,id,info,schematic)
         canSkillUp=info.canSkillUp==true,
         observedRank=db.skills[profession] and db.skills[profession].rank,
         relativeDifficulty=info.relativeDifficulty}
+    local saved
     if r.inputs and next(r.inputs) and r.output and
         Int(r.yield) and r.yield>0 then
-        db.recipes[tostring(id)]=r
+        saved=r
     else
         -- Never keep previously complete assumptions when newer live
         -- schematic data reports ambiguity or an unknown output.
-        db.recipes[tostring(id)]={id=id,profession=profession,
+        saved={id=id,profession=profession,
             name=r.name,known=true,source=inputState or "incomplete"}
     end
+    local previous=db.recipes[tostring(id)]
+    local same=previous~=nil
+    for _,field in ipairs({"id","profession","name","source","output",
+        "yield","requiredSkill","canSkillUp","observedRank"}) do
+        if same and previous[field]~=saved[field] then same=false end
+    end
+    for _,field in ipairs({"inputs","tiers"}) do
+        if same then
+            local a,b=previous[field],saved[field]
+            if type(a)~=type(b) then
+                same=false
+            elseif type(a)=="table" then
+                for k,v in pairs(a) do if b[k]~=v then same=false;break end end
+                if same then
+                    for k,v in pairs(b) do if a[k]~=v then same=false;break end end
+                end
+            end
+        end
+    end
+    if not same then db.recipes[tostring(id)]=saved end
     db.profession=profession
     if not db.primaryProfession and
         profession~="Cooking" and profession~="First Aid" then
         db.primaryProfession=profession
+        same=false
     end
-    lastPlan=nil
+    if not same then ChalkBox_IntelInvalidate() end
     return true
 end
 
