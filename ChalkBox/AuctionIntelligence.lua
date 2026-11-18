@@ -838,9 +838,7 @@ function ChalkBox_IntelTooltip(tooltip,link)
     if not Enabled() or not tooltip or type(tooltip.AddLine)~="function"
         or type(link)~="string" then return false end
     local id=tonumber(link:match("item:(%d+)"))
-    if not Int(id) or type(ChalkBox_MarketBagRows)~="function" then
-        return false
-    end
+    if not Int(id) then return false end
     local name=Call(tooltip.GetName,tooltip)
     if type(name)=="string" and type(tooltip.NumLines)=="function" then
         local n=Call(tooltip.NumLines,tooltip) or 0
@@ -854,6 +852,7 @@ function ChalkBox_IntelTooltip(tooltip,link)
     -- Reuse the most recent bag appraisal. Rebuild only after a bag, recipe,
     -- preference or auction-snapshot change; never re-plan every hover.
     if not lastPlan or not lastPlan.rows[id] then
+        if type(ChalkBox_MarketBagRows)~="function" then return false end
         local rows=Call(ChalkBox_MarketBagRows,"",250)
         if type(rows)~="table" then return false end
     end
