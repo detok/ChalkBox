@@ -183,6 +183,8 @@ local assisted=ChalkBoxProfessionDB.intelligence.recipes["20011"]
 assert(assisted and assisted.inputs[2319]==2 and
     assisted.output==9001 and assisted.source=="database fallback",
     "function-valued bundled library can enrich a learned recipe safely")
+assert(ChalkBox_IntelForgetRecipe("Leatherworking",20011),
+    "synthetic library compatibility recipe must not leak into profit tests")
 LibStub=originalLibStub
 
 local skillRows=Stock()
