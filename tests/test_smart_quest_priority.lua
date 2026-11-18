@@ -178,23 +178,16 @@ assert(watches[101] and watches[102] and watches[301] and not watches[201],
 assert(loadfile("QuestTrackerMenu.lua"))("ChalkBox")
 local before=QuestObjectiveTracker:BuildQuestWatchInfos()
 assert(before[1].quest:GetID()==101,"native order unchanged by default")
+local originalMethod=QuestObjectiveTracker.BuildQuestWatchInfos
 local writes=#changes
 ChalkBox_QuestCommand("nativeorder on")
 Flush()
-local sorted=QuestObjectiveTracker:BuildQuestWatchInfos()
-assert(sorted[1].quest:GetID()==102,
-    "optional native display order puts closest local objective first")
-assert(QuestObjectiveTrackerMixin.BuildQuestWatchInfos==nativeBuilder,
-    "actual tracker frame is sorted, original mixin prototype untouched")
+assert(ChalkBoxZoneDB.nativeOrder==false
+    and QuestObjectiveTracker.BuildQuestWatchInfos==originalMethod
+    and QuestObjectiveTrackerMixin.BuildQuestWatchInfos==nativeBuilder,
+    "taint protection never patches native tracker frame or prototype")
 assert(#changes==writes,
-    "native visual sort never removes or re-adds Blizzard quest watches")
-QuestObjectiveTracker.updated=false
-ChalkBox_QuestCommand("nativeorder off")
-assert(QuestObjectiveTracker.updated,
-    "turning native order off immediately refreshes Blizzard's original list")
-local restored=QuestObjectiveTracker:BuildQuestWatchInfos()
-assert(restored[1].quest:GetID()==101,
-    "disabling visual sort restores Blizzard's regular watch order")
+    "blocked display-order toggle never rewrites watched quest list")
 -- Nearby can pick up objective map data attached to a current subzone
 -- rather than only inspecting the parent zone's map.
 local getQuestsOnMap=C_QuestLog.GetQuestsOnMap
