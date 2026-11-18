@@ -39,7 +39,7 @@ _G.LibStub=setmetatable({},{__call=function(_,key)
     if key=="LibProfessionDB-1.0" then return lib end
 end})
 local function Stock()
-    return {
+    local rows={
         {itemID=2319,name="Medium Leather",count=50,stacks=3,
             vendor=50,classID=7,note="Auction candidate"},
         {itemID=4234,name="Heavy Leather",count=3,stacks=1,
@@ -55,6 +55,8 @@ local function Stock()
         {itemID=9998,name="Bound Material",count=3,stacks=1,vendor=10,
             bound=true,note="BOUND"}
     }
+    for _,row in ipairs(rows) do row.boundKnown=true end
+    return rows
 end
 assert(loadfile("AuctionIntelligence.lua"))("ChalkBox")
 assert(ChalkBox_IntelStatus().enabled==false)
@@ -138,6 +140,11 @@ assert(goldRows[6].intel.kind=="KEEP" and
     goldRows[7].intel.kind=="KEEP")
 assert(goldRows[4].intel.kind~="AUCTION" and
     goldRows[5].intel.kind~="AUCTION")
+local unknown=Stock()
+unknown[1].boundKnown=false
+ChalkBox_IntelAnnotate(unknown,{freeSlots=1})
+assert(unknown[1].intel.kind=="REVIEW",
+    "missing game bind state must not become confident sell advice")
 assert(ChalkBox_IntelReserve(2319,45))
 local hold=Stock()
 local protectedPlan=ChalkBox_IntelAnnotate(hold,{freeSlots=1})
