@@ -30,6 +30,9 @@ local lib={GetRecipe=function(_,prof,id)
         green=245,grey=270},requiredSkill=180,craftedItemId=4234}
     elseif id==20002 then return {difficulty={orange=190,yellow=235,
         green=260,grey=275},requiredSkill=190,craftedItemId=9001}
+    elseif id==20003 then return {difficulty={orange=200,yellow=225,
+        green=250,grey=275},requiredSkill=200,craftedItemId=9002,
+        reagents={[2319]=5}}
     end
 end,IsBorrowed=function() return nil end}
 _G.LibStub=setmetatable({},{__call=function(_,key)
@@ -85,7 +88,14 @@ ChalkBox_IntelObserveRecipe("Leatherworking",20003,
      reagentSlotSchematics={{required=true,quantityRequired=5,
        reagents={{itemID=2319},{itemID=4234}}}}})
 assert(ChalkBoxProfessionDB.intelligence.recipes["20003"].inputs==nil,
-    "alternative-slot recipe excluded from optimization")
+    "ambiguous client recipe must not be revived by bundled database")
+ChalkBox_IntelObserveRecipe("Leatherworking",20004,
+    {learned=true,name="Uncertain Yield",canSkillUp=true},
+    {outputItemID=9001,quantityMin=1,quantityMax=3,
+     reagentSlotSchematics={{required=true,quantityRequired=2,
+       reagents={{itemID=2319}}}}})
+assert(ChalkBoxProfessionDB.intelligence.recipes["20004"].inputs==nil,
+    "variable-yield recipe must not acquire a fabricated one-item output")
 
 local skillRows=Stock()
 local skill=ChalkBox_IntelAnnotate(skillRows,{freeSlots=2,totalSlots=56})
@@ -103,6 +113,15 @@ assert(ChalkBox_IntelSet("mode","gold"))
 local goldRows=Stock()
 local gold=ChalkBox_IntelAnnotate(goldRows,{freeSlots=2})
 assert(gold.mode=="gold" and #gold.actions>0)
+local hasConnectedChain=false
+for _,action in ipairs(gold.actions) do
+    if action.kind=="CRAFT" and
+        action.reason:find(" > ",1,true) then
+        hasConnectedChain=true
+    end
+end
+assert(hasConnectedChain,
+    "two-step ingredient-to-product paths should be compared when supported")
 local allocated={}
 for _,action in ipairs(gold.actions) do
     if action.kind=="CRAFT" then
