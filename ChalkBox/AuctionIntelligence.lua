@@ -663,6 +663,98 @@ local function ProfitCandidates(list,byID,valueFn,s)
     end)
     return candidates
 end
+-- Explore *combinations* of crafts rather than greedily taking the
+-- highest margin recipe first. Each candidate consumes the same shared stock
+-- budget, including every intermediate in its two-step recipe path.
+-- Deliberately bounded for the game client (not a claim of global optimum).
+local function SelectProfitPlan(candidates,initialBudget)
+    local shortlist,usedIDs={},{}
+    local ranked={}
+    for _,candidate in ipairs(candidates) do
+        local max=math.min(20,InputsReady(candidate.inputs,initialBudget))
+        if max>0 then
+            ranked[#ranked+1]={craft=candidate,potential=candidate.gain*max}
+        end
+    end
+    table.sort(ranked,function(a,b)
+        if a.potential==b.potential then
+            return a.craft.rate>b.craft.rate
+        end
+        return a.potential>b.potential
+    end)
+    -- Preserve both high-total-value and high-efficiency opportunities.
+    for i=1,math.min(28,#ranked) do
+        local c=ranked[i].craft
+        shortlist[#shortlist+1]=c
+        usedIDs[c]=true
+    end
+    for _,c in ipairs(candidates) do
+        if #shortlist>=48 then break end
+        if not usedIDs[c] and InputsReady(c.inputs,initialBudget)>0 then
+            shortlist[#shortlist+1]=c
+            usedIDs[c]=true
+        end
+    end
+    if #shortlist==0 then return {},0 end
+
+    local function BudgetCopy(t)
+        local b={}
+        for id,count in pairs(t) do b[id]=count end
+        return b
+    end
+    local best={budget=initialBudget,picks={},total=0,index=1}
+    local beam={best}
+    local MAX_BEAM,MAX_DEPTH=18,5
+    for _=1,MAX_DEPTH do
+        local nextBeam={}
+        for _,state in ipairs(beam) do
+            nextBeam[#nextBeam+1]=state -- stopping is always permitted
+            for idx=state.index,#shortlist do
+                local c=shortlist[idx]
+                local max=math.min(20,InputsReady(c.inputs,state.budget))
+                if max>=1 then
+                    local choices={max,math.floor(max/2),1}
+                    local seen={}
+                    for _,qty in ipairs(choices) do
+                        if qty>0 and not seen[qty] then
+                            seen[qty]=true
+                            local b=BudgetCopy(state.budget)
+                            for id,n in pairs(c.inputs) do
+                                b[id]=b[id]-n*qty
+                            end
+                            local picks={}
+                            for i,entry in ipairs(state.picks) do
+                                picks[i]=entry
+                            end
+                            picks[#picks+1]={candidate=c,count=qty}
+                            local option={budget=b,picks=picks,
+                                index=idx,total=state.total+c.gain*qty}
+                            nextBeam[#nextBeam+1]=option
+                            if option.total>best.total or
+                                (option.total==best.total and
+                                 #option.picks<#best.picks) then
+                                best=option
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        table.sort(nextBeam,function(a,b)
+            if a.total==b.total then
+                return #a.picks<#b.picks
+            end
+            return a.total>b.total
+        end)
+        beam={}
+        for i=1,math.min(MAX_BEAM,#nextBeam) do
+            beam[i]=nextBeam[i]
+        end
+        if #beam==0 then break end
+    end
+    return best.picks,best.total
+end
+
 local function UsedByGoal(id,name,profession)
     if not profession or
         type(ChalkBox_LearnedRecipeUses)~="function" then return false end
@@ -726,13 +818,14 @@ local function Analyze(rows,stats)
     end
     if s.mode=="gold" then
         local proposals=ProfitCandidates(recipes,byID,Value,s)
-        local used=0
-        for _,candidate in ipairs(proposals) do
-            if used>=6 then break end
-            local qty=math.min(InputsReady(candidate.inputs,budget),20)
-            if qty>0 then
-                local benefit=math.floor(candidate.gain*qty)
-                if benefit>=2000 then
+        local picks,estimated=SelectProfitPlan(proposals,budget)
+        plan.optimization="bounded combination search"
+        plan.estimatedCraftAdvantage=math.floor(estimated)
+        plan.craftSuggestions=#picks
+        for _,pick in ipairs(picks) do
+            local candidate,qty=pick.candidate,pick.count
+            local benefit=math.floor(candidate.gain*qty)
+            if benefit>=2000 then
                     for id,n in pairs(candidate.inputs) do
                         budget[id]=budget[id]-n*qty
                         local row=plan.rows[id] or {}
@@ -750,8 +843,6 @@ local function Analyze(rows,stats)
                     end
                     AddAction(plan,"CRAFT",candidate.sourceID,qty,
                         candidate.name.." | risk-discounted extra value",benefit)
-                    used=used+1
-                end
             end
         end
     end
