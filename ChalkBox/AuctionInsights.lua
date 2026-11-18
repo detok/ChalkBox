@@ -122,8 +122,8 @@ local function ValidAsk(id)
 end
 local function BagItems(search)
     local results,all={},{}
-    local intelligence=type(ChalkBox_IntelStatus)=="function" and
-        ChalkBox_IntelStatus().enabled==true
+    local intelligence=type(ChalkBox_IntelEnabled)=="function" and
+        ChalkBox_IntelEnabled()==true
     local counters={stacks=0,units=0,priced=0,marketValue=0,
         vendorValue=0,unpriced=0,protected=0,freeSlots=0,
         totalSlots=0}
@@ -374,7 +374,9 @@ frame:SetScript("OnEvent",function(_,event,name)
     elseif event=="MAIL_INBOX_UPDATE" then
         if mailboxActive then ChalkBox_MarketCaptureSales() end
     elseif event=="BAG_UPDATE_DELAYED" then
-        if type(ChalkBox_IntelInvalidate)=="function" then
+        if type(ChalkBox_IntelEnabled)=="function" and
+            ChalkBox_IntelEnabled() and
+            type(ChalkBox_IntelInvalidate)=="function" then
             ChalkBox_IntelInvalidate()
         end
         if type(ChalkBox_AuctionRefreshUI)=="function" then
