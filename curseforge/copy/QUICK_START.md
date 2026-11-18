@@ -1,5 +1,8 @@
 # ChalkBox 2.2.26 stable guide — install and first use
 
+
+**Experimental 2.2.27-intel-beta (draft PR #107, not published):** Inventory Intelligence is disabled by default and offers optional Skill Up / Make Gold advice in the existing AuctionSense UI. See [technical details](../../docs/AUCTION_INTELLIGENCE.md). The official stable release remains 2.2.26.
+
 **Stable release: download the playable 2.2.26 addon ZIP from GitHub Releases, not an old test archive.
 
 1. Download the **`ChalkBox-2.2.26.zip`** game asset from [GitHub Releases](https://github.com/detok/ChalkBox/releases/tag/v2.2.26). **Not** the media kit or GitHub Source code ZIP.
