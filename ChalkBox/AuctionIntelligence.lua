@@ -107,6 +107,18 @@ function ChalkBox_IntelReserve(id,amount)
     lastPlan=nil
     return true
 end
+-- Read-only preference inspection for our own My Items row. Blizzard's
+-- item context menus and bags are never modified.
+function ChalkBox_IntelPreference(id)
+    if not Int(id) then return 0,false end
+    local db=DB(false)
+    if not db then return 0,false end
+    local reserve=type(db.reserves)=="table" and
+        db.reserves[tostring(id)] or nil
+    local ignored=type(db.ignored)=="table" and
+        db.ignored[tostring(id)] or nil
+    return Int(reserve) and reserve or 0,ignored==true
+end
 function ChalkBox_IntelIgnore(id,ignored)
     if not Int(id) or id<1 then return false end
     local db=DB(true)
