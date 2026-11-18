@@ -4,75 +4,13 @@
 local addonName=...
 local hooked=setmetatable({},{__mode="k"})
 local dropdown
--- Opt-in ordering of the EXISTING Blizzard objective tracker; no watch
--- mutations, quest-title replacement or custom tracker frames.
-local nativeBuilder,sortAttached=nil,false
-local function Valid(v)
-    return v~=nil and (type(issecretvalue)~="function" or not issecretvalue(v))
-end
-local function SortKey(info,rank)
-    if type(info)~="table" or not info.quest then return end
-    local obj=info.quest
-    if type(obj.GetID)~="function" then return end
-    local ok,id=pcall(obj.GetID,obj)
-    if ok and Valid(id) and type(id)=="number" then
-        return rank[id]
-    end
-end
-local function AttachSort()
-    if sortAttached then return true end
-    -- WoW XML applies mixin methods to the live quest tracker frame.
-    -- Modifying the mixin prototype after construction need not change
-    -- that frame (the bug pattern that caused our map pin failures).
-    -- Hook the live module, NOT the prototype.
-    local module=QuestObjectiveTracker
-    if not module or
-        type(module.BuildQuestWatchInfos)~="function" then
-        return false
-    end
-    nativeBuilder=module.BuildQuestWatchInfos
-    module.BuildQuestWatchInfos=function(self,...)
-        local infos=nativeBuilder(self,...)
-        local opts=ChalkBoxZoneDB
-        if type(InCombatLockdown)=="function" then
-            local ok,locked=pcall(InCombatLockdown)
-            if not ok or locked then return infos end
-        end
-        if type(infos)~="table" or type(opts)~="table" or
-            opts.nativeOrder~=true or opts.enabled==false or
-            type(ChalkBox_QuestDisplayOrder)~="function" then
-            return infos
-        end
-        local rank=ChalkBox_QuestDisplayOrder()
-        if type(rank)~="table" then return infos end
-        -- If Blizzard cannot expose a quest ID, preserve its original order.
-        -- Never replace or remove an entry from the native watch list.
-        local ok=pcall(table.sort,infos,function(a,b)
-            local ar,br=SortKey(a,rank),SortKey(b,rank)
-            if ar and br and ar~=br then return ar<br end
-            if ar and not br then return true end
-            if br and not ar then return false end
-            return (a.index or 0)<(b.index or 0)
-        end)
-        if not ok then return nativeBuilder(self,...) end
-        return infos
-    end
-    sortAttached=true
-    return true
-end
+-- Never override a Blizzard objective-tracker method. The tracker and
+-- MapCanvas share secure UI execution paths; replacing a live tracker method
+-- can taint map pin setup and surface as SetPassThroughButtons blocked.
+-- QuestSense still ranks candidates; native display sorting is intentionally
+-- disabled pending a verified non-tainting client-side implementation.
 function ChalkBox_QuestTrackerSortRefresh()
-    local enabled=ChalkBoxZoneDB and ChalkBoxZoneDB.nativeOrder==true
-    if enabled and not AttachSort() then return false end
-    if not enabled and not sortAttached then return false end
-    if type(InCombatLockdown)=="function" then
-        local ok,locked=pcall(InCombatLockdown)
-        if not ok or locked then return true end
-    end
-    local module=QuestObjectiveTracker
-    if module and type(module.Update)=="function" then
-        pcall(module.Update,module)
-    end
-    return true
+    return false
 end
 local function Busy()
     if type(InCombatLockdown)~="function" then return false end
@@ -119,11 +57,6 @@ local function Entries()
                         break
                     end
                 end
-            end},
-        {label="Tracker order: "..(q.nativeOrder and "Custom" or "Blizzard"),
-            run=function()
-                ChalkBox_QuestCommand(q.nativeOrder and
-                    "nativeorder off" or "nativeorder on")
             end},
         {label="Navigation: "..(n.enabled and "On" or "Off"),
             run=function()
@@ -217,15 +150,9 @@ end
 listener:SetScript("OnEvent",function(_,event,name)
     if event=="ADDON_LOADED" and name==addonName then
         Attach()
-        if ChalkBoxZoneDB and ChalkBoxZoneDB.nativeOrder==true then
-            AttachSort()
-        end
     elseif event=="ADDON_LOADED" or event=="PLAYER_ENTERING_WORLD" then
         -- The actual Blizzard tracker might appear after another addon loads.
         Attach()
-        if ChalkBoxZoneDB and ChalkBoxZoneDB.nativeOrder==true then
-            AttachSort()
-        end
     end
 end)
 Attach()
