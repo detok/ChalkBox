@@ -57,7 +57,13 @@ local function ReadProfessions()
                         pcall(GetProfessionInfo,idx)
                     if infoOK then
                         local normalized=Normalize(name,skillID)
-                        if normalized then found[normalized]=true end
+                        if normalized then
+                            found[normalized]=true
+                            if type(ChalkBox_IntelObserveSkill)=="function" then
+                                pcall(ChalkBox_IntelObserveSkill,
+                                    normalized,rank,maxRank)
+                            end
+                        end
                     end
                 end
             end
@@ -141,6 +147,9 @@ local function ReadLegacyTrade()
     available[profession]=true
     seenWindow[profession]=true
     scan.lastWindow=profession
+    if type(ChalkBox_IntelObserveSkill)=="function" then
+        pcall(ChalkBox_IntelObserveSkill,profession,rank,cap)
+    end
     local count = GetNumTradeSkills()
     if not Safe(count) or type(count) ~= "number" then return end
     for i=1,math.min(count,1200) do
@@ -213,7 +222,9 @@ local function OpenProfession(api)
                 child.professionID or child.skillLineID)
         end
     end
-    return profession
+    local baseRank=base.skillLevel or base.currentSkillLevel or base.skillRank
+    local baseCap=base.maxSkillLevel or base.maxRank or base.skillMaxRank
+    return profession,baseRank,baseCap
 end
 
 local function RecipeName(info,spellID)
@@ -234,7 +245,7 @@ local function ReadModernTrade()
     local api=C_TradeSkillUI
     if type(api)~="table" or type(api.GetAllRecipeIDs)~="function"
         or type(api.GetRecipeInfo)~="function" then return false end
-    local profession=OpenProfession(api)
+    local profession,rank,cap=OpenProfession(api)
     if not profession then
         scan.source="waiting for modern profession identity"
         return false
@@ -260,10 +271,12 @@ local function ReadModernTrade()
                 known=known+1
                 local recipeName=RecipeName(info,id)
                 local added=false
+                local intelSchematic=nil
                 if type(api.GetRecipeSchematic)=="function" then
                     local schematicOK,schematic=pcall(api.GetRecipeSchematic,id,false)
                     if schematicOK and type(schematic)=="table"
                         and type(schematic.reagentSlotSchematics)=="table" then
+                        intelSchematic=schematic
                         for _,slot in ipairs(schematic.reagentSlotSchematics) do
                             if type(slot)=="table" and type(slot.reagents)=="table" then
                                 for _,reagent in ipairs(slot.reagents) do
@@ -302,6 +315,10 @@ local function ReadModernTrade()
                             end
                         end
                     end
+                end
+                if type(ChalkBox_IntelObserveRecipe)=="function" then
+                    pcall(ChalkBox_IntelObserveRecipe,
+                        profession,id,info,intelSchematic)
                 end
             end
         end
