@@ -62,6 +62,7 @@ FILES = (
     "MacroForge.lua",
     "MacroForgeUI.lua",
     "FutureQuestItems.lua",
+    "TooltipCoordinator.lua",
     "LootSense.lua",
     "BagReagents.lua",
     "FutureQuestGlow.lua",

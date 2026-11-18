@@ -30,6 +30,11 @@ def test() -> None:
         SOURCE / "ChalkBox_Camelot.toc")
     listed = [line.strip().replace("\\", "/") for line in toc.splitlines()
               if line.strip() and not line.startswith("##")]
+    camelot_listed = [line.strip().replace("\\", "/") for line in camelot.splitlines()
+                      if line.strip() and not line.startswith("##")]
+    assert camelot_listed == listed, (
+        "Alternate-client TOC must load exactly the same modules in the same order"
+    )
     expected_lua = {name for name in FILES if name.endswith(".lua")}
     assert set(listed) == expected_lua, "Manifest and packaging disagree"
     assert listed == [name for name in FILES if name.endswith(".lua")], (
