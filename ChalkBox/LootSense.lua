@@ -222,6 +222,11 @@ local function OnItemTooltip(tooltip)
     if type(ChalkBox_AuctionTooltip)=="function" then
         pcall(ChalkBox_AuctionTooltip,tooltip,link)
     end
+    -- Experimental intelligence is off by default. It only reads bag and
+    -- market data and may annotate items physically in the player's bags.
+    if type(ChalkBox_IntelTooltip)=="function" then
+        pcall(ChalkBox_IntelTooltip,tooltip,link)
+    end
     local future=FutureUses(name,link)
     -- Future-quest reference items should never receive an unqualified
     -- recommendation to disenchant, even before their quest is accepted.
@@ -417,6 +422,10 @@ SlashCmdList.CHALKBOX = function(input)
         if type(ChalkBox_AuctionCommand)=="function" then
             ChalkBox_AuctionCommand(argument)
         else Note("AuctionSense isn't available on this client.") end
+    elseif command=="intel" or command=="intelligence" then
+        if type(ChalkBox_IntelCommand)=="function" then
+            ChalkBox_IntelCommand(argument)
+        else Note("Inventory Intelligence is unavailable.") end
     elseif command=="update" or command=="updates" then
         if type(ChalkBox_UpdateCommand)=="function" then
             ChalkBox_UpdateCommand()
