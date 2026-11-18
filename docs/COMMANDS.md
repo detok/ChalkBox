@@ -52,7 +52,6 @@
 | `/chalk quests nearbyfirst on` / `off` | Prefer proven current-zone objectives before distant quests |
 | `/chalk quests completefirst on` / `off` | Prioritize completed quests when choosing watches |
 | `/chalk quests range 0` / `500` / `1000` / `2000` | Nearby: strict zone-only by default, or include game-reported nearby quest goals within the chosen yard range |
-| `/chalk quests nativeorder on` / `off` | Opt-in rendering order inside Blizzard's existing quest tracker; never reshuffles native watch ownership |
 | `/chalk macro`, `/chalk forge` | Open MacroForge |
 | `/chalk forge rescan` | Rescan actually learned, active spells |
 | `/chalk forge status` | Spellbook/MacroForge diagnostics |
