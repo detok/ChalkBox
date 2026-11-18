@@ -804,14 +804,6 @@ local function MakeQuestSmart()
             return st and st.completeFirst
         end,
         function(on) Run("completefirst "..(on and "on" or "off")) end)
-    Toggle(panel,"Apply Smart order to Blizzard's tracker",
-        "Optional display sorting: changes no watched-quest choices.",
-        -362,
-        function()
-            local st=ChalkBox_QuestStatus and ChalkBox_QuestStatus()
-            return st and st.nativeOrder
-        end,
-        function(on) Run("nativeorder "..(on and "on" or "off")) end)
     Label(panel,"Nearby radius","GameFontNormal",28,-407,160)
     for i,radius in ipairs({0,500,1000,2000}) do
         Button(panel,radius==0 and "Zone" or (radius.."y"),
@@ -823,9 +815,9 @@ local function MakeQuestSmart()
     panel:AddRefresh(function()
         local st=ChalkBox_QuestStatus and ChalkBox_QuestStatus() or {}
         rank:SetText("Selected: "..tostring(st.sort or "nearest"))
-        explanation:SetText("Tracker sort "..(st.nativeOrder and "ON" or "OFF")..
-            " | Nearby radius "..tostring(st.nearbyRange or 0)..
-            "y | first quest #"..tostring(st.nearest or "unknown"))
+        explanation:SetText("Nearby radius "..tostring(st.nearbyRange or 0)..
+            "y | first quest #"..tostring(st.nearest or "unknown")..
+            " | Blizzard tracker display preserved")
     end)
     return panel
 end
