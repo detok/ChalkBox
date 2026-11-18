@@ -60,7 +60,7 @@ assert(#header.hooks==1,"late game events do not duplicate mouse hooks")
 header.hooks[1](header,"LeftButton")
 assert(#menus==0,"normal left-clicks still belong to Blizzard")
 header.hooks[1](header,"RightButton")
-assert(#menus==7 and menus[1].label=="QuestSense Settings",
+assert(#menus==6 and menus[1].label=="QuestSense Settings",
     "header right-click opens the small ChalkBox context menu")
 local function Click(needle)
     for _,e in ipairs(menus) do
@@ -93,10 +93,6 @@ Click("Sort: nearest")
 assert(calls[#calls]=="sort zone" and state.sort=="zone",
     "tracker context menu cycles Smart display sort")
 header.hooks[1](header,"RightButton")
-Click("Tracker order: Blizzard")
-assert(calls[#calls]=="nativeorder on" and state.nativeOrder,
-    "native display sorting is explicit and opt-in")
-header.hooks[1](header,"RightButton")
 Click("Navigation: Off")
 assert(nav.enabled and calls[#calls]=="nav:on",
     "navigation option shows the optional floating arrow")
@@ -111,7 +107,7 @@ _G.EasyMenu=function(entries,frame,anchor,x,y,kind)
         frame.name=="ChalkBoxQuestTrackerMenu")
     legacy=entries
 end
-assert(ChalkBox_QuestTrackerMenuOpen(header) and #legacy==8,
+assert(ChalkBox_QuestTrackerMenuOpen(header) and #legacy==7,
     "legacy EasyMenu path works without replacing Blizzard menus")
 legacy[4].func()
 assert(state.mode=="smart","legacy Smart acts on same QuestSense state")
