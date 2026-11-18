@@ -123,7 +123,8 @@ C_QuestLog.GetDistanceSqToQuest=function(id)
     if id==401 then return nil end -- unknown distance
     return nil
 end
-C_QuestLog.IsComplete=function(id) return id==401 end
+local completeID=nil
+C_QuestLog.IsComplete=function(id) return id==completeID end
 -- Explicitly simulate the native Forever tracker list and verify that visual
 -- sorting does NOT rewrite the watch list to reorder its rows.
 local nativeBuilder=function()
@@ -147,7 +148,9 @@ local function Fire(event,a,b)
 end
 Fire("ADDON_LOADED","ChalkBox")
 assert(ChalkBoxZoneDB.smartSort=="nearest" and
-    ChalkBoxZoneDB.smartNearbyFirst==true)
+    ChalkBoxZoneDB.smartNearbyFirst==true and
+    ChalkBoxZoneDB.smartCompleteFirst==true,
+    "fresh Smart enables completed-first by default")
 Fire("PLAYER_LOGIN")
 Flush()
 assert(watches[101] and watches[102] and watches[301] and
@@ -160,11 +163,30 @@ ChalkBox_QuestCommand("sort level")
 Flush()
 assert(ChalkBox_QuestDisplayOrder()[102]<ChalkBox_QuestDisplayOrder()[101],
     "level-order Smart can choose a lower-level local quest")
+-- Quest objective finishes during gameplay: Smart must keep the actual
+-- completed quest watched so Blizzard can show its native Complete state.
+completeID=401
+Fire("QUEST_LOG_UPDATE")
+Flush()
+assert(watches[401] and watches[102] and watches[301]
+    and not watches[101],
+    "newly complete accepted quest replaces lower-priority uncompleted watch")
+assert(ChalkBox_QuestDisplayOrder()[401] <
+    ChalkBox_QuestDisplayOrder()[102],
+    "newly complete quest ranks before nearby unfinished objectives")
+ChalkBox_QuestCommand("completefirst off")
+Flush()
+assert(watches[101] and watches[102] and not watches[401],
+    "explicit completed-first opt-out is preserved")
 ChalkBox_QuestCommand("completefirst on")
 Flush()
-assert(watches[401] and watches[102] and watches[301] and
-    not watches[101], "confirmed turn-ins win capacity when configured")
-ChalkBox_QuestCommand("completefirst off")
+assert(watches[401] and not watches[101],
+    "explicit completed-first toggle restores completed quest")
+completeID=nil
+Fire("QUEST_LOG_UPDATE")
+Flush()
+assert(watches[101] and watches[102] and not watches[401],
+    "when quest is no longer reported complete, Smart returns to proximity")
 ChalkBox_QuestCommand("sort nearest")
 ChalkBox_QuestCommand("nearbyfirst off")
 Flush()
