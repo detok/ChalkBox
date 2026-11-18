@@ -429,6 +429,16 @@ local function UnitValue(id,row,cut)
             p.quantity>=5 and "sampled" or "thin",
          risk=risk}
 end
+local function Money(copper)
+    if not Num(copper) then return "unknown" end
+    local n=math.floor(copper)
+    local g=math.floor(n/10000)
+    local silver=math.floor(n%10000/100)
+    local c=n%100
+    if g>0 then return ("%dg %02ds"):format(g,silver) end
+    if silver>0 then return ("%ds %02dc"):format(silver,c) end
+    return c.."c"
+end
 local function AddAction(plan,kind,id,qty,detail,advantage)
     if #plan.actions>=MAX_ACTIONS then return end
     plan.actions[#plan.actions+1]={kind=kind,itemID=id,
@@ -981,18 +991,63 @@ local function Analyze(rows,stats)
         elseif reserve>0 then
             p.goalDetail="Personal reserve: "..reserve.." units"
         end
-        if p.shortfall>0 and p.bankLastSeen then
-            p.bankDetail="Last seen in character bank: "..
-                p.bankLastSeen.." units"..
-                (p.bankPartial and " (partial bank scan)" or "")..
-                "; move to bags before crafting"
-        elseif p.bankLastSeen then
-            p.bankDetail="Bank (last seen): "..p.bankLastSeen..
-                " units; not counted as bag stock"
+        if p.bankLastSeen then
+            local seen=p.bankAge and
+                (p.bankAge<3600 and
+                    (math.floor(p.bankAge/60).."m ago") or
+                    (math.floor(p.bankAge/3600).."h ago")) or
+                "previous visit"
+            p.bankDetail="Bank: "..p.bankLastSeen.." last seen "..seen..
+                (p.bankPartial and " (partial scan)" or "")..
+                "; not craftable until moved to bags"
         end
         if p.capped and p.goalReserve>0 then
             p.trainingDetail="Skill capped at "..tostring(p.skillRank)..
                 "; training required before further skill gains"
+        end
+        -- Explain the opportunity cost with the same snapshot used to
+        -- choose the action. Risk discounts are heuristics, NOT measured
+        -- sale probabilities and never imply a guaranteed buyer.
+        if kind=="AUCTION" or kind=="VENDOR" or kind=="CRAFT" or
+            kind=="HOLD" or kind=="SCAN AH" then
+            local unitValue,net,evidence=Value(id)
+            local vendor=Int(item.vendor) and item.vendor or nil
+            if evidence and Num(net) then
+                local adjusted=evidence.source=="personal sales" and net or
+                    math.floor(net*(evidence.risk or 0.65))
+                p.estimatedAHUnit=adjusted
+                p.marketEvidence=evidence.source
+                if vendor then
+                    p.comparisonDetail="AH modeled "..Money(adjusted)..
+                        "/unit vs vendor "..Money(vendor).."/unit"
+                else
+                    p.comparisonDetail="AH modeled "..Money(adjusted)..
+                        "/unit; vendor price unavailable"
+                end
+                if evidence.ask then
+                    p.askDetail="Lowest observed ask: "..
+                        Money(evidence.ask).."/unit (not a sale)"
+                else
+                    p.askDetail="Based on your recent confirmed seller invoices"
+                end
+            elseif vendor then
+                p.comparisonDetail="Vendor "..Money(vendor)..
+                    "/unit; no reliable recent AH estimate"
+            end
+        end
+        if kind=="CRAFT" and Num(p.advantage) and p.advantage>0 then
+            p.craftValueDetail="Estimated added craft value for the whole "..
+                "selected route: +"..Money(p.advantage)..
+                " (subject to sale risk)"
+        end
+        if (kind=="AUCTION" or kind=="VENDOR") and
+            qty==item.count and Int(item.stacks) and
+            item.stacks>0 then
+            p.clearsSlots=item.stacks
+            p.bagDetail="If you complete this action on all units, "..
+                "up to "..item.stacks..
+                (item.stacks==1 and " bag slot may clear" or
+                    " bag slots may clear")
         end
         p.evidenceDetail=p.confidence=="verified" and
             "Evidence: verified protection / item property" or
@@ -1069,6 +1124,15 @@ function ChalkBox_IntelTooltip(tooltip,link)
         end
         if p.trainingDetail then
             tooltip:AddLine(p.trainingDetail,0.91,0.65,0.38,true)
+        end
+        if p.comparisonDetail then
+            tooltip:AddLine(p.comparisonDetail,0.70,0.85,0.74,true)
+        end
+        if p.craftValueDetail then
+            tooltip:AddLine(p.craftValueDetail,0.70,0.85,0.74,true)
+        end
+        if p.bagDetail then
+            tooltip:AddLine(p.bagDetail,0.72,0.78,0.92,true)
         end
         if p.bankDetail then
             tooltip:AddLine(p.bankDetail,0.65,0.77,0.91,true)
