@@ -7,7 +7,7 @@
 - Smart prefers current-zone quests and the nearest objectives identified by Forever's own quest helper.
 - Configure sorting by nearest, zone, level, title or quest-log order, with optional completed-first priority.
 - Nearby recognizes more real local-map/subzone evidence and offers optional 500, 1000 or 2000-yard proximity thresholds.
-- Smart Rules is a child of QuestSense settings. Optional **Native Tracker Order** sorts the entries displayed by Blizzard's existing tracker, without removing and re-adding watches.
+- Smart Rules is a child of QuestSense settings. Visual sorting of Blizzard's objective list is withheld for protected-UI compatibility.
 - Tracker-header right-click menu offers quick sort and native-order controls.
 
 ## Test safely
