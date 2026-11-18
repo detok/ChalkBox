@@ -171,8 +171,9 @@ assert(skillRows[1].intel.headline and
     skillRows[1].intel.headline:find("Keep",1,true),
     "rows use plain-English actions rather than opaque planner codes")
 assert(skillRows[1].intel.bankLastSeen==21 and
-    skillRows[1].intel.bankDetail,
-    "bank observation is labeled last seen rather than silently counted as bag stock")
+    skillRows[1].intel.bankDetail and
+    skillRows[1].intel.bankDetail:find("not craftable",1,true),
+    "bank observation is last-seen evidence, never silently credited to bags")
 -- The profession forecast is about known recipes and inventory. AH prices
 -- can rank viable choices but must NEVER gate whether a recipe is planned.
 local previousAsk=prices[2319]
@@ -229,8 +230,13 @@ assert(goldRows[6].intel.kind=="KEEP" and
     goldRows[7].intel.kind=="KEEP")
 assert(goldRows[4].intel.kind~="AUCTION" and
     goldRows[5].intel.kind~="AUCTION")
-assert(goldRows[8].intel.kind=="VENDOR",
-    "verified unprotected grey junk is vendored without a market scan")
+assert(goldRows[8].intel.kind=="VENDOR" and
+    goldRows[8].intel.clearsSlots==1 and
+    goldRows[8].intel.bagDetail,
+    "known grey junk should suggest vendoring and conditional bag-slot recovery")
+assert(goldRows[1].intel.comparisonDetail or
+    goldRows[2].intel.comparisonDetail,
+    "valuation must explain modeled AH net against vendor value")
 local priceMissing=prices[2319]
 prices[2319]=nil
 ChalkBox_IntelInvalidate()
@@ -316,6 +322,8 @@ local contested={{itemID=7770,name="Sample Raw Material",count=6,
     vendor=10,classID=7,stacks=1,boundKnown=true}}
 local combined=ChalkBox_IntelAnnotate(contested,{freeSlots=1})
 assert(combined and combined.optimization=="bounded combination search")
+assert(ChalkBox_IntelCommand("plan"),
+    "explicit diagnostic should show computed actionable plan without auctioning")
 local selectedB=false
 for _,action in ipairs(combined.actions) do
     if action.kind=="CRAFT" and action.itemID==20006 and
@@ -334,6 +342,7 @@ assert(ChalkBox_IntelStatus().target==50 and
 
 assert(ChalkBox_IntelSet("enabled",false))
 assert(ChalkBox_IntelEnabled()==false and
+    ChalkBox_IntelCommand("plan")==false and
     ChalkBox_IntelBankStatus(2319)==nil and
     not ChalkBox_IntelObserveBankInventory({[2319]=9000},
         {at=1000001,missingTabs=0,unknown=0,containers=2}),
