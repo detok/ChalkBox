@@ -115,7 +115,9 @@ local function ValidAsk(id)
     end
 end
 local function BagItems(search)
-    local results={}
+    local results,all={},{}
+    local intelligence=type(ChalkBox_IntelStatus)=="function" and
+        ChalkBox_IntelStatus().enabled==true
     local counters={stacks=0,units=0,priced=0,marketValue=0,
         vendorValue=0,unpriced=0,protected=0,freeSlots=0,
         totalSlots=0}
@@ -157,9 +159,11 @@ local function BagItems(search)
             end
         end
     end
+    if counters.totalSlots==0 then counters.freeSlots=nil end
     for _,item in pairs(byID) do
-        if search=="" or item.name:lower():find(search,1,true)
-            or tostring(item.itemID):find(search,1,true) then
+        local matches=search=="" or item.name:lower():find(search,1,true)
+            or tostring(item.itemID):find(search,1,true)
+        if matches or intelligence then
             local low,market=ValidAsk(item.itemID)
             local protected=Protect(item.name,item.itemID)
             local vendor=item.vendor
@@ -183,6 +187,12 @@ local function BagItems(search)
                 (denum and denum>low*1.15 and "DE candidate" or
                 (vendor and vendor>low*1.15 and "Vendor candidate" or
                 "Auction candidate")))
+            if intelligence then all[#all+1]=item end
+        end
+        if matches then
+            local vendorTotal=item.vendorTotal
+            local marketTotal=item.marketTotal
+            local protected=item.protected
             counters.stacks=counters.stacks+1
             counters.units=counters.units+item.count
             counters.vendorValue=counters.vendorValue+(vendorTotal or 0)
@@ -194,13 +204,33 @@ local function BagItems(search)
             results[#results+1]=item
         end
     end
+    if intelligence and type(ChalkBox_IntelAnnotate)=="function" then
+        -- Search filters the DISPLAY, never the shared ingredient budget.
+        -- Analyze the whole bag first, then display only matching rows.
+        pcall(ChalkBox_IntelAnnotate,all,counters)
+    end
+    local priority={["CRAFT"]=1,["AUCTION"]=2,["VENDOR"]=3,
+        ["CHECK DE"]=4,["REVIEW"]=5,["KEEP"]=6,["IGNORE"]=7}
     table.sort(results,function(a,b)
+        if intelligence and a.intel and b.intel then
+            local ap=priority[a.intel.kind] or 6
+            local bp=priority[b.intel.kind] or 6
+            if counters.freeSlots and counters.freeSlots<=4 then
+                -- A recommendation to clear an entire observed item group
+                -- may deserve attention ahead of a small value increase.
+                if a.intel.kind=="AUCTION" and
+                    a.intel.qty>=a.count then ap=0 end
+                if b.intel.kind=="AUCTION" and
+                    b.intel.qty>=b.count then bp=0 end
+            end
+            if ap~=bp then return ap<bp end
+            local aa=a.intel.advantage or 0
+            local ba=b.intel.advantage or 0
+            if aa~=ba then return aa>ba end
+        end
         if a.name:lower()==b.name:lower() then return a.itemID<b.itemID end
         return a.name:lower()<b.name:lower()
     end)
-    if type(ChalkBox_IntelAnnotate)=="function" then
-        pcall(ChalkBox_IntelAnnotate,results,counters)
-    end
     return results,counters
 end
 function ChalkBox_MarketBagRows(search,limit)
