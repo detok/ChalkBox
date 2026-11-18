@@ -117,7 +117,8 @@ end
 local function BagItems(search)
     local results={}
     local counters={stacks=0,units=0,priced=0,marketValue=0,
-        vendorValue=0,unpriced=0,protected=0}
+        vendorValue=0,unpriced=0,protected=0,freeSlots=0,
+        totalSlots=0}
     local container=C_Container
     local slotsFn=container and container.GetContainerNumSlots or
         GetContainerNumSlots
@@ -128,6 +129,13 @@ local function BagItems(search)
     for bag=0,last do
         local slots=Call(slotsFn,bag)
         if Int(slots) and slots>=0 and slots<=200 then
+            -- These are observations of current bags, not cached bank data.
+            local free=Call(container and container.GetContainerNumFreeSlots or
+                GetContainerNumFreeSlots,bag)
+            if Int(free) and free<=slots then
+                counters.freeSlots=counters.freeSlots+free
+                counters.totalSlots=counters.totalSlots+slots
+            end
             for slot=1,slots do
                 local link,count,bound=ContainerItem(bag,slot)
                 local id=ItemID(link)
@@ -137,11 +145,13 @@ local function BagItems(search)
                     local row=byID[id]
                     if not row then
                         row={itemID=id,name=name,count=0,bound=false,
-                            quality=data and data.quality or nil,
+                            stacks=0,quality=data and data.quality or nil,
+                            classID=data and data.classID or nil,
                             vendor=data and data.vendor or nil}
                         byID[id]=row
                     end
                     row.count=row.count+count
+                    row.stacks=row.stacks+1
                     row.bound=row.bound or bound
                 end
             end
@@ -188,6 +198,9 @@ local function BagItems(search)
         if a.name:lower()==b.name:lower() then return a.itemID<b.itemID end
         return a.name:lower()<b.name:lower()
     end)
+    if type(ChalkBox_IntelAnnotate)=="function" then
+        pcall(ChalkBox_IntelAnnotate,results,counters)
+    end
     return results,counters
 end
 function ChalkBox_MarketBagRows(search,limit)
@@ -317,6 +330,9 @@ frame:SetScript("OnEvent",function(_,event,name)
     elseif event=="MAIL_INBOX_UPDATE" then
         if mailboxActive then ChalkBox_MarketCaptureSales() end
     elseif event=="BAG_UPDATE_DELAYED" then
+        if type(ChalkBox_IntelInvalidate)=="function" then
+            ChalkBox_IntelInvalidate()
+        end
         if type(ChalkBox_AuctionRefreshUI)=="function" then
             Call(ChalkBox_AuctionRefreshUI)
         end
