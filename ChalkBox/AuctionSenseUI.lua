@@ -448,11 +448,21 @@ local function Refresh()
             entries,extra=ChalkBox_MarketBagRows(searchText,250)
         end
         extra=extra or {}
+        local intel=type(ChalkBox_IntelStatus)=="function" and
+            ChalkBox_IntelStatus() or nil
+        local active=intel and intel.enabled
         labels.details:SetText(("Bags: %d items  ·  %d priced"):format(
-            extra.stacks or 0,extra.priced or 0))
-        labels.info:SetText("Bag asks "..Coin(extra.marketValue or 0)..
-            "  ·  Vendor "..Coin(extra.vendorValue or 0)..
-            "  ·  Price is not a guaranteed sale")
+            extra.stacks or 0,extra.priced or 0)..
+            (active and "  ·  Intelligence "..(intel.mode=="gold" and
+                "Gold" or "Skill Up") or ""))
+        if active then
+            labels.info:SetText((intel.summary or
+                "Read-only suggestions; asking prices are not sales"):sub(1,115))
+        else
+            labels.info:SetText("Bag asks "..Coin(extra.marketValue or 0)..
+                "  ·  Vendor "..Coin(extra.vendorValue or 0)..
+                "  ·  Price is not a guaranteed sale")
+        end
     elseif view=="sales" then
         entries=type(ChalkBox_MarketSaleRows)=="function" and
             ChalkBox_MarketSaleRows(searchText,250) or {}
@@ -767,7 +777,19 @@ local function Ensure()
                     COLOR.neutral)
                 Metric(tip,"DE estimate / item",Coin(item.de),
                     item.de and COLOR.average or COLOR.muted)
-                if item.protected or item.bound then
+                if item.intel then
+                    local advice=item.intel
+                    tip:AddLine("Intelligence  |  "..advice.kind.." "..
+                        tostring(advice.qty or 0),
+                        COLOR.ready[1],COLOR.ready[2],COLOR.ready[3])
+                    tip:AddLine(advice.reason or "Conservative estimate",
+                        COLOR.muted[1],COLOR.muted[2],COLOR.muted[3],true)
+                    if advice.reserve and advice.reserve>0 then
+                        tip:AddLine("Reserved for goal: "..advice.reserve,
+                            COLOR.warning[1],COLOR.warning[2],
+                            COLOR.warning[3])
+                    end
+                elseif item.protected or item.bound then
                     tip:AddLine(item.protected and "KEEP: protected by you" or
                         "Bound item: check tradeability",
                         COLOR.warning[1],COLOR.warning[2],COLOR.warning[3])
