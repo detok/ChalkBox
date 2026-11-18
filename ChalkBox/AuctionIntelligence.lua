@@ -503,23 +503,25 @@ local function InputsReady(inputs,budget)
     end
     return maxCraft
 end
-local function ProfitCandidates(list,byID,cut,s)
+local function ProfitCandidates(list,byID,valueFn,s)
     local candidates={}
     local function Add(inputs,output,yield,name,sourceID,steps)
         if not Int(output) or not Int(yield) or yield<1 then return end
-        local price=Price(output)
-        if not price then return end
-        local revenue=UnitValue(output,byID[output],cut)*yield
+        local outputValue,_,outputEvidence=valueFn(output)
+        if not outputEvidence or not outputEvidence.ask then return end
+        local revenue=outputValue*yield
         local cost=0
         for id,qty in pairs(inputs) do
             if not byID[id] or byID[id].protected or byID[id].bound or
-                byID[id].boundKnown~=true or s.ignored[tostring(id)]
-                or not Price(id) then
+                byID[id].boundKnown~=true or s.ignored[tostring(id)] then
                 -- Never mistake an unpriced reagent's vendor value for its
                 -- market opportunity cost.
                 return
             end
-            local v=UnitValue(id,byID[id],cut)
+            local v,_,evidence=valueFn(id)
+            -- Never call a missing quote a free material. Confirmed
+            -- personal sales alone remain insufficient to value a craft.
+            if not v or not evidence or not evidence.ask then return end
             cost=cost+v*qty
         end
         if cost<=0 then return end
@@ -590,11 +592,26 @@ local function Analyze(rows,stats)
         if Int(key) and Int(n) then plan.reserved[key]=n end
     end
     local cut=Cut()
+    local cachedValues={}
+    local function Value(itemID)
+        local cached=cachedValues[itemID]
+        if not cached then
+            local v,net,evidence=UnitValue(itemID,byID[itemID],cut)
+            cached={v,net,evidence}
+            cachedValues[itemID]=cached
+        end
+        return cached[1],cached[2],cached[3]
+    end
     local recipes=RecipeList(db)
-    if s.mode=="skill" then
-        Forecast(plan,db,recipes,stock,byID,cut)
-    else
-        plan.summary="Profit comparison uses risk-discounted asking prices"
+    if s.mode=="skill" or s.protectGoal then
+        Forecast(plan,db,recipes,stock,Value)
+    end
+    if s.mode=="gold" then
+        plan.summary=s.protectGoal and
+            ("Gold opportunities; reserving for "..
+            tostring(s.profession or "profession")..
+            (plan.incomplete and " (incomplete forecast)" or "")) or
+            "Gold opportunities; profession reserves disabled"
     end
     local budget={}
     for id,count in pairs(stock) do
@@ -605,7 +622,7 @@ local function Analyze(rows,stats)
         end
     end
     if s.mode=="gold" then
-        local proposals=ProfitCandidates(recipes,byID,cut,s)
+        local proposals=ProfitCandidates(recipes,byID,Value,s)
         local used=0
         for _,candidate in ipairs(proposals) do
             if used>=6 then break end
@@ -647,17 +664,30 @@ local function Analyze(rows,stats)
                 "Tradeability unverified; do not auction or vendor yet"
         elseif suggestion then
             kind,qty,reason=suggestion.kind,suggestion.qty,suggestion.reason
-        elseif s.mode=="skill" and plan.uncertain and
+        elseif (s.mode=="skill" or s.protectGoal) and
+            plan.incomplete and
             type(ChalkBox_LearnedRecipeUses)=="function" and
-            #((Call(ChalkBox_LearnedRecipeUses,id,item.name)) or {})>0 and
             reserve==0 then
-            kind,qty,reason="HOLD",item.count,
-                "Known crafting use; keep until progression reserve is resolved"
+            local knownUses=Call(ChalkBox_LearnedRecipeUses,id,item.name)
+            local relevant=false
+            if type(knownUses)=="table" then
+                for _,entry in ipairs(knownUses) do
+                    if type(entry)=="table" and
+                        entry.profession==s.profession then
+                        relevant=true;break
+                    end
+                end
+            end
+            if relevant then
+                kind,qty,reason="HOLD",item.count,
+                    "Used by known "..tostring(s.profession)..
+                    " recipes; progression forecast is incomplete"
+            end
         elseif reserve>=item.count and item.count>0 then
             kind,qty,reason="KEEP",item.count,
                 "Reserved for "..(s.mode=="skill" and "skill progression" or "your preference")
         elseif remaining>0 then
-            local value,net,evidence=UnitValue(id,item,cut)
+            local value,net,evidence=Value(id)
             local vendor=Int(item.vendor) and item.vendor or 0
             local netGain=value and (value-vendor)*remaining or 0
             if evidence and netGain>=2000 and
