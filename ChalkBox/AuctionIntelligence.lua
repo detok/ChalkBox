@@ -372,15 +372,20 @@ local function Sold(name)
         type(ChalkBox_MarketSaleRows)~="function" then return 0,nil end
     local sales=Call(ChalkBox_MarketSaleRows,name,200)
     if type(sales)~="table" then return 0,nil end
+    local now=Call(time)
+    if not Int(now) then now=Call(GetServerTime) end
     local n,units,net,last=0,0,0,nil
     for _,row in ipairs(sales) do
+        -- Only independent seller invoices inside the SAME recent window
+        -- count as evidence. One recent and one ancient sale is NOT repeat
+        -- current demand. Name matches remain qualified (not item-ID proof).
         if type(row)=="table" and row.name==name and
+            Int(now) and Int(row.at) and now>=row.at and
+            now-row.at<=30*86400 and
             Int(row.count) and row.count>0 and
             Int(row.gross) and Int(row.cut) and row.gross>=row.cut then
             n=n+1;units=units+row.count;net=net+row.gross-row.cut
-            if Int(row.at) and (not last or row.at>last) then
-                last=row.at
-            end
+            if not last or row.at>last then last=row.at end
         end
     end
     return n,units>0 and math.floor(net/units) or nil,last
