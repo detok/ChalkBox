@@ -409,6 +409,9 @@ local function Commit(scan)
     end
     progress=100
     lastError=nil
+    if type(ChalkBox_IntelInvalidate)=="function" then
+        ChalkBox_IntelInvalidate()
+    end
     if scan.mode=="browse" then
         Finish(("Saved %d browse prices (low + units). Avg/listings require full data"):format(found))
     else
