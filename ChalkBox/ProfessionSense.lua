@@ -469,6 +469,11 @@ local function ReadModernTrade()
     available[profession]=true
     seenWindow[profession]=true
     scan.lastWindow=profession
+    -- On Forever, GetProfessions may be absent. The open modern window's
+    -- rank and cap are authoritative skill observations for the planner.
+    if type(ChalkBox_IntelObserveSkill)=="function" then
+        pcall(ChalkBox_IntelObserveSkill,profession,rank,cap)
+    end
     local known=0
     local before=scan.reagents
     for i=1,math.min(#recipes,2500) do
@@ -528,8 +533,21 @@ local function ReadModernTrade()
                                     itemID=tonumber(link:match("item:(%d+)"))
                                 end
                                 local qty=reagent.quantityRequired or reagent.quantity
+                                local optional=reagent.optional==true or
+                                    reagent.isOptional==true or
+                                    reagent.required==false
+                                local alternative=reagent.alternative==true or
+                                    reagent.isAlternative==true or
+                                    reagent.isChoice==true or
+                                    (type(reagent.choices)=="table" and
+                                     #reagent.choices>0)
                                 AddReagent(profession,itemID or link,reagent.name,
-                                    recipeName,qty,id)
+                                    recipeName,qty,id,alternative,optional)
+                                -- The older API sometimes returns a
+                                -- reagent list that includes choices.
+                                -- Neither a choice nor an optional slot
+                                -- proves an exact crafting bill of materials.
+                                if optional or alternative then complete=false end
                                 if type(itemID)=="number" and itemID>0 and
                                     itemID%1==0 and type(qty)=="number" and
                                     qty>=1 and qty<=1000 and qty%1==0 then

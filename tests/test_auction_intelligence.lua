@@ -162,6 +162,28 @@ assert(ChalkBox_IntelStatus().recipesComplete>=3 and
 assert(ChalkBox_IntelForgetRecipe("Leatherworking",20010) and
     ChalkBoxProfessionDB.intelligence.recipes["20010"]==nil,
     "explicit unlearned signal invalidates only the stale recipe")
+-- LibStub can be a normal function rather than a callable table. Its
+-- catalog is still permitted to fill genuinely missing ingredient metadata,
+-- but never to grant learned status by itself.
+local originalLibStub=LibStub
+LibStub=function(key)
+    if key=="LibProfessionDB-1.0" then return {
+        GetRecipe=function(_,prof,id)
+            if prof==165 and id==20011 then return {
+                reagents={[2319]=2},craftedItemId=9001,
+                difficulty={200,225,250,275},requiredSkill=200
+            } end
+        end
+    } end
+end
+assert(ChalkBox_IntelObserveRecipe("Leatherworking",20011,
+    {learned=true,name="Catalog Assisted Craft",
+     quantityMin=1,quantityMax=1},nil))
+local assisted=ChalkBoxProfessionDB.intelligence.recipes["20011"]
+assert(assisted and assisted.inputs[2319]==2 and
+    assisted.output==9001 and assisted.source=="database fallback",
+    "function-valued bundled library can enrich a learned recipe safely")
+LibStub=originalLibStub
 
 local skillRows=Stock()
 local skill=ChalkBox_IntelAnnotate(skillRows,{freeSlots=2,totalSlots=56})
@@ -321,6 +343,21 @@ local ignored=Stock()
 ChalkBox_IntelAnnotate(ignored,{freeSlots=1})
 assert(ignored[1].intel.kind=="IGNORE")
 assert(ChalkBox_IntelIgnore(2319,false))
+-- A malformed optional planning snapshot must never leave a partially
+-- rewritten AuctionSense table if one row fails during processing.
+local invalid=Stock()
+invalid[#invalid+1]={itemID=nil,name="Malformed optional item",
+    count=1,note="Native note must survive"}
+ChalkBox_IntelInvalidate()
+assert(ChalkBox_IntelAnnotate(invalid,{freeSlots=2})==nil,
+    "planner failures must be isolated from AuctionSense")
+for _,row in ipairs(invalid) do
+    assert(row.intel==nil,
+        "planner error restores every prior item annotation")
+end
+assert(invalid[1].note=="Auction candidate" and
+    invalid[#invalid].note=="Native note must survive",
+    "planner error preserves original notes after partial processing")
 -- Competing profitable recipes share the same six materials.
 -- The higher-margin craft A consumes four and strands two; making B
 -- twice yields more TOTAL extra value. A first-fit greedy sorter fails.

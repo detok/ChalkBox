@@ -2,6 +2,10 @@
 -- after SHOW, and some recipe schematic endpoints are incomplete.
 local seenFrame,timers=nil,{}
 local observedRecipes,forgotten={},0
+local observedSkills={}
+_G.ChalkBox_IntelObserveSkill=function(profession,rank,cap)
+    observedSkills[profession]={rank,cap}
+end
 _G.ChalkBox_IntelObserveRecipe=function(_,id,_,schematic)
     observedRecipes[id]=schematic
 end
@@ -62,7 +66,9 @@ _G.C_TradeSkillUI={
     GetBaseProfessionInfo=function()
         return {professionID=currentProfession,
             professionName=currentProfession==165 and "Leatherworking" or
-                currentProfession==185 and "Cooking" or "Alchemy"}
+                currentProfession==185 and "Cooking" or "Alchemy",
+            skillLevel=currentProfession==165 and 170 or 85,
+            maxSkillLevel=currentProfession==165 and 225 or 150}
     end,
     GetAllRecipeIDs=function() return recipeIDs end,
     GetProfessionInfoByRecipeID=function(recipeID)
@@ -128,6 +134,10 @@ recipeIDs={2001,2002}
 frame.callback(frame,"TRADE_SKILL_LIST_UPDATE")
 assert(ChalkBox_ProfessionHas("Leatherworking"),
     "active modern profession is legitimate evidence, even without classic APIs")
+assert(observedSkills.Leatherworking and
+    observedSkills.Leatherworking[1]==170 and
+    observedSkills.Leatherworking[2]==225,
+    "modern-only Forever profession window must send rank/cap to Intelligence")
 local items=ChalkBox_LearnedRecipeUses("2318","Light Leather")
 assert(#items==1 and items[1].recipe=="Camp Tent" and items[1].quantity==5,
     "modern learned recipe plus reagent quantity must be recorded")
@@ -155,6 +165,10 @@ schematic=false
 frame.callback(frame,"TRADE_SKILL_DATA_SOURCE_CHANGED")
 assert(ChalkBox_ProfessionHas("Alchemy"),"data source change detects next profession")
 local potion=ChalkBox_LearnedRecipeUses("3371","Empty Vial")
+assert(observedSkills.Alchemy and
+    observedSkills.Alchemy[1]==85 and
+    observedSkills.Alchemy[2]==150,
+    "switching modern profession refreshes the current skill observation")
 assert(#potion==1 and potion[1].profession=="Alchemy"
     and potion[1].quantity==2,
     "incomplete schematic must fall back to GetRecipeNumReagents")
@@ -164,6 +178,26 @@ assert(type(observedRecipes[2005])=="table" and
     observedRecipes[2005].outputItemID==9008 and
     observedRecipes[2005].quantityMin==1,
     "complete live fallback must reach Intelligence with known output and yield")
+-- If the old reader reports choice/optional metadata, the tooltip may
+-- describe it, but the planner must not treat it as a complete bill.
+local oldReagent=C_TradeSkillUI.GetRecipeReagentInfo
+C_TradeSkillUI.GetRecipeReagentInfo=function()
+    return {itemID=3371,quantityRequired=2,isAlternative=true}
+end
+observedRecipes[2005]=nil
+frame.callback(frame,"TRADE_SKILL_UPDATE")
+assert(observedRecipes[2005]==nil,
+    "choice materials in an old API are never assumed to be mandatory")
+local alternatives=ChalkBox_LearnedRecipeUses(3371,"Empty Vial")
+local foundChoice=false
+for _,entry in ipairs(alternatives) do
+    if entry.recipe=="Alchemy Potion" and entry.alternative==true then
+        foundChoice=true
+    end
+end
+assert(foundChoice,"choice metadata must survive old API reagent reading")
+C_TradeSkillUI.GetRecipeReagentInfo=oldReagent
+frame.callback(frame,"TRADE_SKILL_UPDATE")
 frame.callback(frame,"PLAYER_ENTERING_WORLD")
 assert(ChalkBox_ProfessionHas("Alchemy"),
     "on modern-only client, observed profession survives refresh")

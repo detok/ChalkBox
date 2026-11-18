@@ -317,11 +317,11 @@ function ChalkBox_IntelObserveRecipe(profession,id,info,schematic)
     local lib=nil
     -- LibStub is frequently a callable table, so handle it without
     -- depending on the client exposing a different library API shape.
-    if not lib and type(LibStub)=="table" then
+    if type(LibStub)=="table" or type(LibStub)=="function" then
         local ok,value=pcall(function()
             return LibStub("LibProfessionDB-1.0",true)
         end)
-        if ok then lib=value end
+        if ok and type(value)=="table" then lib=value end
     end
     local record=lib and type(lib.GetRecipe)=="function" and
         Call(lib.GetRecipe,lib,PROF_IDS[profession],id) or nil
@@ -1204,12 +1204,22 @@ function ChalkBox_IntelAnnotate(rows,stats)
         end
         return lastPlan
     end
+    -- Snapshot the two fields Intelligence is allowed to overlay. If a
+    -- malformed client item or third-party callback makes planning fail
+    -- halfway through, restore every ordinary AuctionSense row verbatim.
+    local before={}
+    for i,row in ipairs(rows) do
+        before[i]={note=row.note,intel=row.intel}
+    end
     local ok,result=pcall(Analyze,rows,stats)
     if ok and result then
         lastPlanToken=token
         return result
     end
-    -- A failed optional planner must not break the existing My Items table.
+    for i,row in ipairs(rows) do
+        row.note=before[i].note
+        row.intel=before[i].intel
+    end
     ChalkBox_IntelInvalidate()
     return nil
 end
