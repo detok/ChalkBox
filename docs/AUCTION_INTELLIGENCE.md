@@ -10,6 +10,7 @@ Select Skill Up or Make Gold. New suggestions appear inside the existing My Item
 
 Commands:
 - /chalk intel on or off
+- /chalk intel plan (read-only top action summary in chat; no automatic trades)
 - /chalk intel skill or gold
 - /chalk intel target 10, target 25, or target 50
 - /chalk intel margin 15, margin 25, or margin 50
@@ -26,6 +27,8 @@ A learned recipe is proven only by live C_TradeSkillUI.GetRecipeInfo(recipeID) l
 
 The optimizer uses the player's currently accessible bag items, their quantities and vendor values, observed realm/faction auction asking prices and scan ages, name-matched verified seller-mail receipts for ordinary trade goods when learning is enabled, and explicitly set per-item reserves and ignored-item preferences. KEEP and bound protections override economic suggestions.
 
+**Bank stock:** Only when Intelligence is enabled, the existing BankValue scan of **visible character bank tabs** optionally passes exact item IDs and observed quantities to the planner. It saves a bounded last-seen per-character snapshot and shows its age/partial-scan state beside affected materials; bank counts are never silently credited as craftable **bag** inventory. No additional bank queries occur while disabled. Guild/account banks are excluded.
+
 ## Skill Up mode
 
 Forecasts a selected number of skill points using observed known recipes and supported difficulty thresholds. **No AH price scan is required to build a skill material forecast**: currently held materials and known ingredient quantities are sufficient to establish a tentative reserve. Missing ingredient prices affect route cost confidence, not recipe eligibility. Skill cap is explicitly reported, and forecasted materials after a rank unlock are not claimed to provide immediate skill gains.
@@ -36,15 +39,15 @@ The system uses orange/yellow/green difficulty weights for selecting *provisiona
 
 ## Make Gold mode
 
-Observed net ask = lowest recently observed asking price times (1 minus estimated auction cut). The default 5% cut is a labeled estimate; multiple verified seller invoices can inform a cut-rate estimate. Conservative additional risk buffers reduce the estimate and do not represent probabilities of selling. If there is no fresh AH quote, **at least two recent exact-name confirmed seller invoices within 30 days** can provide qualified evidence for a trade-good auction recommendation; one invoice alone cannot. The no-quote fallback applies a separate 30% caution haircut, and does not invent a current market quote.
+Observed net ask = lowest recently observed asking price times (1 minus estimated auction cut). The default 5% cut is a labeled estimate; multiple verified seller invoices can inform a cut-rate estimate. Conservative additional risk buffers reduce the estimate and do not represent probabilities of selling. If there is no fresh AH quote, **at least two independently captured, recent exact-name seller invoices within the same 30-day window** can provide qualified evidence for a trade-good auction recommendation; one invoice (or one recent plus one ancient) cannot. The no-quote fallback applies a separate 30% caution haircut, and does not invent a current market quote.
 
 All observed ingredient costs contribute to opportunity cost, including materials already owned. Missing reagent price information prevents a profit craft recommendation. Output must also have a fresh nonmixed price. Requires estimated gain at least 2,000 copper and the selected relative margin.
 
-Compares selling as-is to direct known recipes and two-step known recipe transformations, linked by actual input/output item IDs. Allocates shared inventory conservatively: once ingredients are assigned to a proposed craft they are unavailable for other recommendations. **The suggestions remain a bounded greedy selection of economically promising actions, not a mathematically proven global optimum.** Auction and seller-mail evidence is cached within each appraisal so one comparison pass uses consistent data without repeatedly scanning invoices. No automatic purchases or trades.
+Compares selling as-is to direct known recipes and two-step known recipe transformations, linked by actual input/output item IDs. Allocates shared inventory conservatively: once ingredients are assigned to a proposed craft they are unavailable for other recommendations. **It now searches bounded combinations** (a limited-width, limited-depth lookahead) so competing recipes share the same stock budget and it can prefer a more valuable mix over the first/highest-margin recipe. This is **not** a mathematically proven global optimum: search and quantities are capped for game-client performance. Auction and seller-mail evidence is cached per appraisal, and unchanged inventory snapshots reuse their previous analysis to avoid doing the same work on every AH refresh. No automatic purchases or trades.
 
 ## Inventory pressure
 
-The bag scan also observes available slot counts when the client's container API exposes them. Suggestions still require explicit user action. Real slots freed depend on stack composition and where items go; the beta does not promise a specific number of slots freed. Gold-per-freed-slot optimization is a follow-up requiring stronger accounting and tests.
+The bag scan also observes available slot counts and the number of occupied stacks per exact item. When a proposed auction or vendor action would remove **every observed unit** of an item, the advice can show how many occupied bag slots that would *potentially* clear **if you complete the action**. The planner ranks full-group auctions ahead of other suggestions when only a few slots are free, but never assumes a partial sale clears a specific slot. Crafting outputs may consume slots; no automatic inventory moves occur. Gold-per-freed-slot as a fully optimized objective remains future work.
 
 ## Learning without invention
 
@@ -54,7 +57,7 @@ Settings are stored per character in ChalkBoxProfessionDB.intelligence; the engi
 
 ## Safety and QA
 
-ProfessionSense records live learned recipe information. AuctionIntelligence performs calculations. AuctionInsights supplies existing bag and mail evidence. AuctionSenseUI and LootSense display only optional text. No secure UI actions or new network requests. Lua 5.1 and all existing tests are part of GitHub Actions. Manual WoW Forever validation remains necessary before any stable release, especially for item variants, strange hides/pristine materials, skill caps, incomplete schematics, crafting outputs, and unexpected client taint.
+ProfessionSense records live learned recipe information. AuctionIntelligence performs calculations. AuctionInsights supplies existing bag and mail evidence; BankValue supplies only an already-accessible open character-bank snapshot when explicitly enabled. AuctionSenseUI and LootSense display only optional text. The OFF fast path gates bag analysis, tooltip writing, bank item observations, status lookups, and auction-receipt invalidation **before any Intelligence data work**. No secure UI actions or new network requests. Lua 5.1 and all existing tests are part of GitHub Actions. Manual WoW Forever validation remains necessary before any stable release, especially for item variants, strange hides/pristine materials, skill caps, incomplete schematics, crafting outputs, and unexpected client taint.
 
 The engine internally produces KEEP, HOLD, CRAFT, AUCTION, VENDOR, CHECK DE, or SCAN AH decisions. The UI instead uses plain English, e.g. **Keep 40**, **Auction 10 | Keep 40**, **Use 12 in crafts**, with a reason, main supporting recipe, required quantity, reserve shortfall and evidence qualifier where relevant. **"Use 12 in crafts" means twelve units of this ingredient, not twelve completed items.** Right-click on a My Items row reserves the *entire observed count of that item in your bags*, not only a stack. Shift-right-click ignores it. The tooltip can never guarantee that the auction will sell or that a green/yellow recipe yields a point.
 
