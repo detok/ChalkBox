@@ -108,13 +108,24 @@ onTooltip(tooltip)
 assert(#tooltip.lines==1 and tooltip.lines[1]=="DO NOT SELL  ·  Keeper of the Flame","bag should say DON'T SELL")
 tooltip.lines={}
 _G.ChalkBox_TipCoordinatorEnabled=function() return true end
+_G.ChalkBox_TipCoordinatorShow=function(_,ctx)
+    assert(ctx.name=="Flask of Oil" and ctx.vendorOffer==false)
+    return true
+end
 onTooltip(tooltip)
 assert(#tooltip.lines==0,
-    "Core defers legacy rendering when the experimental route is ON")
-ChalkBox_CoreQuestTooltipFallback(tooltip)
+    "Core lets the coordinator handle the verified quest when available")
+_G.ChalkBox_TipCoordinatorShow=nil
+onTooltip(tooltip)
 assert(#tooltip.lines==1 and tooltip.lines[1]:find("DO NOT SELL"),
-    "Core safety warning remains recoverable if the coordinator fails")
+    "Core still displays the quest warning if the coordinator is missing")
+tooltip.lines={}
+_G.ChalkBox_TipCoordinatorShow=function() error("simulated renderer failure") end
+onTooltip(tooltip)
+assert(#tooltip.lines==1 and tooltip.lines[1]:find("DO NOT SELL"),
+    "Core still protects an accepted quest if the renderer throws")
 _G.ChalkBox_TipCoordinatorEnabled=nil
+_G.ChalkBox_TipCoordinatorShow=nil
 quests={{type="item",text="Flask of Oil: 5/5",numFulfilled=5,numRequired=5,finished=true}}
 eventCallback(nil,"QUEST_LOG_UPDATE")
 assert(overlay.shown==false,"completed objective should hide merchant glow")

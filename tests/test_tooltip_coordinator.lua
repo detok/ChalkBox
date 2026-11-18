@@ -57,8 +57,16 @@ assert(compact:find("Item Insights",1,true) and
 assert(not compact:find("Other learned recipes:",1,true))
 assert(#lines<=10,"normal tooltip is bounded")
 local previous=#lines
-assert(ChalkBox_TipCoordinatorShow(tip,ctx) and #lines==previous,
-    "second tooltip callback never duplicates addon section")
+local calls=0
+local observed=ChalkBox_LootInsight
+_G.ChalkBox_LootInsight=function(...)
+    calls=calls+1
+    return observed(...)
+end
+assert(ChalkBox_TipCoordinatorShow(tip,ctx) and #lines==previous
+    and calls==0,
+    "duplicate native callbacks neither redraw nor recalculate facts")
+_G.ChalkBox_LootInsight=observed
 Clear()
 _G.IsShiftKeyDown=function() return true end
 assert(ChalkBox_TipCoordinatorShow(tip,ctx))
@@ -68,6 +76,11 @@ assert(expanded:find("Other learned recipes:",1,true) and
 assert(#lines>previous and not expanded:find("Shift + re-hover",1,true))
 -- Verified character protection overrides potentially profitable advice.
 Clear()
+_G.ChalkBox_DisenchantTooltipsEnabled=function() return true end
+_G.ChalkBox_DisenchantEvaluate=function()
+    return {complete=true,estimated=22000,
+        verdict="DE higher vs auction"}
+end
 _G.ChalkBox_LootInsight=function()
     return {label="KEEP",details="Required for an active quest",
         role="danger",protected=true,isQuest=true,
@@ -78,8 +91,10 @@ local protectedText=table.concat(lines," | ")
 assert(protectedText:find("KEEP",1,true) and
     protectedText:find("Quest: A Real Quest  ·  2/4",1,true) and
     not protectedText:find("Auction 8",1,true) and
-    not protectedText:find("AH low ask:",1,true),
-    "accepted quest overrides economic advice and suppresses sale summary")
+    not protectedText:find("AH low ask:",1,true) and
+    protectedText:find("DE materials:",1,true) and
+    not protectedText:find("DE higher vs auction",1,true),
+    "accepted quest overrides economic advice; DE numbers remain informational")
 -- A future-quest note is informational, not an automatic ban on sales.
 Clear()
 _G.ChalkBox_LootInsight=function()
@@ -90,8 +105,9 @@ end
 assert(ChalkBox_TipCoordinatorShow(tip,ctx))
 local later=table.concat(lines," | ")
 assert(later:find("Auction 8",1,true) and
-    later:find("Possible later quest:",1,true),
-    "possible future quests are reminders, not mandatory sale protection")
+    later:find("Possible later quest:",1,true) and
+    not later:find("DE higher vs auction",1,true),
+    "future quests are reminders, not sales bans, but DE stays informational")
 -- A stale/mixed AH observation cannot masquerade as a confident current bid.
 Clear()
 _G.ChalkBox_AuctionPrice=function()

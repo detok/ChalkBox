@@ -77,9 +77,9 @@ local function Read(context)
     if type(status)=="table" and status.tooltip~=false then
         out.price=Call(ChalkBox_AuctionPrice,id)
     end
-    local protected=type(out.loot)=="table" and
-        out.loot.protected==true
-    if not protected and Call(ChalkBox_DisenchantTooltipsEnabled)==true then
+    -- Legacy DE still displays the modeled outcome for protected gear,
+    -- but suppresses destructive comparisons. Keep that information.
+    if Call(ChalkBox_DisenchantTooltipsEnabled)==true then
         out.de=Call(ChalkBox_DisenchantEvaluate,context.link)
     end
     out.drop=Call(ChalkBox_DropTooltipInsight,
@@ -145,6 +145,12 @@ function ChalkBox_TipCoordinatorBuild(context)
         title,reason=loot.label,loot.details
         role=loot.role or "text"
     end
+    -- Qualifying a possible future quest is more important than a price
+    -- or DE comparison, but never silently converts it into a quest KEEP.
+    if not title and type(loot)=="table" and
+        type(loot.future)=="table" and #loot.future>0 then
+        title,role="FUTURE QUEST","future"
+    end
     if not title and type(drop)=="table" then
         title,role="PERSONAL DROP HISTORY","count"
     end
@@ -153,10 +159,6 @@ function ChalkBox_TipCoordinatorBuild(context)
     end
     if not title and type(de)=="table" then
         title,role="DISENCHANT ESTIMATE","info"
-    end
-    if not title and type(loot)=="table" and
-        type(loot.future)=="table" and #loot.future>0 then
-        title,role="FUTURE QUEST","future"
     end
     if not title then
         return {main=main,details=extra,facts=facts}
@@ -190,7 +192,11 @@ function ChalkBox_TipCoordinatorBuild(context)
         end
         Add(main,intel.trainingDetail,"warning",MAX_BASE)
         Add(extra,intel.comparisonDetail,"value",MAX_DETAILS)
-        Add(extra,intel.askDetail,"muted",MAX_DETAILS)
+        -- AuctionSense already supplies the raw lowest ask when its
+        -- market-tooltip switch is ON. Don't repeat it from Intelligence.
+        if type(price)~="table" then
+            Add(extra,intel.askDetail,"muted",MAX_DETAILS)
+        end
         Add(extra,intel.craftValueDetail,"value",MAX_DETAILS)
         Add(extra,intel.bankDetail,"muted",MAX_DETAILS)
         Add(extra,intel.evidenceDetail,"muted",MAX_DETAILS)
@@ -230,7 +236,12 @@ function ChalkBox_TipCoordinatorBuild(context)
         end
         Add(extra,"Disenchant model: Classic reference odds, not verified Forever yields",
             "muted",MAX_DETAILS)
-        Add(extra,de.verdict,"muted",MAX_DETAILS)
+        if not protected then
+            Add(extra,de.verdict,"muted",MAX_DETAILS)
+        else
+            Add(extra,"Protected item  ·  DE model is informational only",
+                "warning",MAX_DETAILS)
+        end
     end
     if type(drop)=="table" then
         if Num(drop.quantity) and Num(drop.windows) then
@@ -246,8 +257,13 @@ function ChalkBox_TipCoordinatorBuild(context)
         #loot.future>0 and not loot.isQuest then
         local first=loot.future[1]
         if type(first)=="table" and type(first.questName)=="string" then
-            Add(main,"Possible later quest: "..first.questName,
-                "future",MAX_BASE)
+            if title~="FUTURE QUEST" then
+                Add(main,"Possible later quest: "..first.questName,
+                    "future",MAX_BASE)
+            else
+                Add(main,"Reference: "..first.questName,
+                    "future",MAX_BASE)
+            end
         end
         for i,q in ipairs(loot.future) do
             if i>3 then break end
@@ -290,11 +306,15 @@ end
 function ChalkBox_TipCoordinatorShow(tooltip,context)
     if not ChalkBox_TipCoordinatorEnabled() or not tooltip or
         type(tooltip.AddLine)~="function" then return false end
+    -- Core and LootSense both receive native item-tooltip callbacks.
+    -- Once rendered, never ask providers to recalculate merely because
+    -- the second callback fired for the same shown item.
+    if AlreadyShown(tooltip) then return true end
     context=type(context)=="table" and context or {}
     context.tooltip=tooltip
     local ok,view=pcall(ChalkBox_TipCoordinatorBuild,context)
     if not ok or type(view)~="table" then return false end
-    if #view.main==0 or AlreadyShown(tooltip) then return true end
+    if #view.main==0 then return true end
     local shift=type(IsShiftKeyDown)=="function" and
         Call(IsShiftKeyDown)==true
     local written=false

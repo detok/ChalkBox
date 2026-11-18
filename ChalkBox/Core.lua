@@ -190,12 +190,24 @@ function ChalkBox_CoreQuestFact(tooltip)
     end
 end
 local function OnItemTooltip(tooltip,forceLegacy)
-    -- Core stops drawing ONLY when the optional, independent LootSense
-    -- coordinator hook is active; this prevents duplicate safety headings.
-    if not forceLegacy and type(ChalkBox_TipCoordinatorEnabled)=="function"
-        and ChalkBox_TipCoordinatorEnabled() then return end
     local fact=ChalkBox_CoreQuestFact(tooltip)
     if not fact then return end
+    if not forceLegacy and type(ChalkBox_TipCoordinatorEnabled)=="function"
+        and ChalkBox_TipCoordinatorEnabled() and
+        type(ChalkBox_TipCoordinatorShow)=="function" and
+        tooltip and type(tooltip.GetItem)=="function" then
+        -- Core's independent quest hook is the emergency safety owner.
+        -- When possible, let the coordinator render its normal section;
+        -- if LootSense is missing, Core still has the accepted-quest cache.
+        local name,link=tooltip:GetItem()
+        if Safe(name) and type(name)=="string" then
+            local slot=TooltipVendorSlot(tooltip)
+            local ok,handled=pcall(ChalkBox_TipCoordinatorShow,tooltip,{
+                name=name,link=link,vendorOffer=slot~=nil})
+            if ok and handled then return end
+        end
+    end
+    -- An absent/failing coordinator must never erase verified quest safety.
     local r,g,b=0.98,0.45,0.40
     if fact.kind=="buy" then r,g,b=0.39,0.94,0.62 end
     if type(ChalkBox_TipColor)=="function" then
