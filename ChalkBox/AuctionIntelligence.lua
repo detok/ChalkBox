@@ -1234,6 +1234,12 @@ function ChalkBox_IntelActions(limit)
     end
     return result
 end
+-- Read-only cached advice. Never trigger bag scanning or optimization on hover.
+function ChalkBox_IntelTooltipInsight(id)
+    if not Enabled() or not Int(id) or id<1 or not lastPlan or
+        type(lastPlan.rows)~="table" then return nil end
+    return lastPlan.rows[id]
+end
 function ChalkBox_IntelTooltip(tooltip,link)
     if not Enabled() or not tooltip or type(tooltip.AddLine)~="function"
         or type(link)~="string" then return false end

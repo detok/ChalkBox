@@ -77,6 +77,9 @@ end
 function tooltip:Show() end
 
 assert(loadfile("Core.lua"))()
+assert(type(ChalkBox_CoreQuestFact)=="function" and
+    type(ChalkBox_CoreQuestTooltipFallback)=="function",
+    "Core exposes read-only quest facts and legacy recovery")
 assert(type(onTooltip)=="function")
 eventCallback(nil,"PLAYER_ENTERING_WORLD")
 eventCallback(nil,"MERCHANT_SHOW")
@@ -94,13 +97,24 @@ assert(ChalkBox_QuestItemDetails("Not an objective")==nil,
     "unknown items do not receive guessed quest names")
 assert(overlay.shown==true,"merchant glow should appear for unfulfilled quest item")
 assert(edgeCount == 4 and markerText == "!","raised overlay needs four visible borders and quest marker")
+assert(ChalkBox_CoreQuestFact(tooltip).kind=="buy")
 onTooltip(tooltip)
 assert(#tooltip.lines==1 and tooltip.lines[1]=="BUY FOR QUEST  ·  Keeper of the Flame (4 more)","vendor should say BUY with remaining count")
 onTooltip(tooltip)
 assert(#tooltip.lines==1,"duplicate tooltip should not repeat a line")
 tooltip.lines={};tooltip.owner={}
+assert(ChalkBox_CoreQuestFact(tooltip).kind=="keep")
 onTooltip(tooltip)
 assert(#tooltip.lines==1 and tooltip.lines[1]=="DO NOT SELL  ·  Keeper of the Flame","bag should say DON'T SELL")
+tooltip.lines={}
+_G.ChalkBox_TipCoordinatorEnabled=function() return true end
+onTooltip(tooltip)
+assert(#tooltip.lines==0,
+    "Core defers legacy rendering when the experimental route is ON")
+ChalkBox_CoreQuestTooltipFallback(tooltip)
+assert(#tooltip.lines==1 and tooltip.lines[1]:find("DO NOT SELL"),
+    "Core safety warning remains recoverable if the coordinator fails")
+_G.ChalkBox_TipCoordinatorEnabled=nil
 quests={{type="item",text="Flask of Oil: 5/5",numFulfilled=5,numRequired=5,finished=true}}
 eventCallback(nil,"QUEST_LOG_UPDATE")
 assert(overlay.shown==false,"completed objective should hide merchant glow")

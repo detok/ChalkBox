@@ -11,7 +11,8 @@ local registered = false
 -- Existing keys stay stable so slash shortcuts and saved preferences work.
 local navigation = {
     {key="loot", title="LootSense", children={
-        {key="loothighlight", title="Appearance"}}},
+        {key="loothighlight", title="Appearance"},
+        {key="tooltipcoord", title="Item Insights (Experimental)"}}},
     {key="drops", title="DropSense"},
     {key="auction", title="AuctionSense", children={
         {key="auctioncharts", title="Charts (Experimental)"},
@@ -719,6 +720,44 @@ local function MakeLoot()
             row.label:SetText(entry and entry.label or "")
             if entry then row.button:Show() else row.button:Hide() end
         end
+    end)
+    return panel
+end
+
+local function MakeTooltipCoordinator()
+    local panel=Panel("LootSense / Item Insights (Experimental)",
+        "One read-only item tooltip. OFF by default; legacy tooltips are preserved.")
+    Toggle(panel,"Enable coordinated item tooltips",
+        "Combines quest safety, recipes, auction evidence and optional advice.",
+        -111,function()
+            return type(ChalkBox_TipCoordinatorEnabled)=="function" and
+                ChalkBox_TipCoordinatorEnabled()
+        end,function(on)
+            if type(ChalkBox_TipCoordinatorSet)=="function" then
+                ChalkBox_TipCoordinatorSet(on)
+            end
+        end)
+    Label(panel,"HOW IT WORKS","GameFontNormalLarge",28,-190,485)
+    Label(panel,"One priority-driven ChalkBox section replaces overlapping",
+        "GameFontHighlightSmall",28,-225,494)
+    Label(panel,"item notes. Quest and personal protection outrank sales.",
+        "GameFontHighlightSmall",28,-246,494)
+    Label(panel,"Hold Shift and re-hover for prices and more recipes.",
+        "GameFontHighlightSmall",28,-274,494)
+    Label(panel,"No automatic scans, transactions or protected UI changes.",
+        "GameFontHighlightSmall",28,-295,494)
+    Button(panel,"Restore Legacy Tooltips",28,-350,232,function()
+        if type(ChalkBox_TipCoordinatorSet)=="function" then
+            ChalkBox_TipCoordinatorSet(false)
+        end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    local status=Label(panel,"","GameFontHighlight",28,-406,490)
+    panel:AddRefresh(function()
+        status:SetText(type(ChalkBox_TipCoordinatorEnabled)=="function" and
+            ChalkBox_TipCoordinatorEnabled() and
+            "ACTIVE: coordinated tooltips for this character." or
+            "OFF: original tooltips remain in control.")
     end)
     return panel
 end
@@ -1565,6 +1604,7 @@ local function Register()
     panels.updates = MakeUpdates()
     panels.loot = MakeLoot()
     panels.loothighlight = MakeLootAppearance()
+    panels.tooltipcoord = MakeTooltipCoordinator()
     panels.quests = MakeQuests()
     panels.questnav = MakeQuestNavigation()
     panels.bar = MakeBar()
