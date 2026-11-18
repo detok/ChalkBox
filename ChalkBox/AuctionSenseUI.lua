@@ -820,6 +820,25 @@ local function Ensure()
                             COLOR.warning[1],COLOR.warning[2],
                             COLOR.warning[3],true)
                     end
+                    if advice.comparisonDetail then
+                        tip:AddLine(advice.comparisonDetail,
+                            COLOR.low[1],COLOR.low[2],COLOR.low[3],true)
+                    end
+                    if advice.craftValueDetail then
+                        tip:AddLine(advice.craftValueDetail,
+                            COLOR.average[1],COLOR.average[2],
+                            COLOR.average[3],true)
+                    end
+                    if advice.bankDetail then
+                        tip:AddLine(advice.bankDetail,
+                            COLOR.counts[1],COLOR.counts[2],
+                            COLOR.counts[3],true)
+                    end
+                    if advice.bagDetail then
+                        tip:AddLine(advice.bagDetail,
+                            COLOR.counts[1],COLOR.counts[2],
+                            COLOR.counts[3],true)
+                    end
                     if advice.shortfall and advice.shortfall>0 then
                         tip:AddLine("Missing from bags: "..advice.shortfall..
                             " for planned reserve",
