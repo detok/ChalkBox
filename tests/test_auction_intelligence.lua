@@ -148,6 +148,13 @@ assert(ChalkBoxProfessionDB.intelligence.recipes["20004"].inputs==nil,
 
 local skillRows=Stock()
 local skill=ChalkBox_IntelAnnotate(skillRows,{freeSlots=2,totalSlots=56})
+local same=Stock()
+local cached=ChalkBox_IntelAnnotate(same,{freeSlots=2,totalSlots=56})
+assert(cached==skill and same[1].intel==skillRows[1].intel,
+    "unchanged bag snapshots reuse a single planned result and tooltip advice")
+ChalkBox_IntelInvalidate()
+local rechecked=ChalkBox_IntelAnnotate(Stock(),{freeSlots=2,totalSlots=56})
+assert(rechecked~=skill,"explicit observation invalidation forces a new forecast")
 assert(skill and skill.mode=="skill" and skill.uncertain,
     "currently capped profession is not promised immediate gains")
 assert(skill.reserved[2319] and skill.reserved[2319]>0,
@@ -170,6 +177,7 @@ assert(skillRows[1].intel.bankLastSeen==21 and
 -- can rank viable choices but must NEVER gate whether a recipe is planned.
 local previousAsk=prices[2319]
 prices[2319]=nil
+ChalkBox_IntelInvalidate() -- model completed a new/changed AH scan
 local offlineRows=Stock()
 local offline=ChalkBox_IntelAnnotate(offlineRows,{freeSlots=1})
 assert(offline.forecastSteps>0 and offline.reserved[2319]>0,
@@ -177,6 +185,7 @@ assert(offline.forecastSteps>0 and offline.reserved[2319]>0,
 assert(offlineRows[1].intel.kind~="SCAN AH",
     "a missing AH scan cannot override known skill material protection")
 prices[2319]=previousAsk
+ChalkBox_IntelInvalidate()
 assert(skillRows[6].intel.kind=="KEEP" and
     skillRows[7].intel.kind=="KEEP",
     "quest-protected and bound items never auctioned")
@@ -224,6 +233,7 @@ assert(goldRows[8].intel.kind=="VENDOR",
     "verified unprotected grey junk is vendored without a market scan")
 local priceMissing=prices[2319]
 prices[2319]=nil
+ChalkBox_IntelInvalidate()
 local missingRows=Stock()
 ChalkBox_IntelAnnotate(missingRows,{freeSlots=1})
 assert(missingRows[1].intel.kind=="SCAN AH",
@@ -234,18 +244,32 @@ saleRows={
     {name="Medium Leather",count=10,gross=15000,cut=750,at=999000},
     {name="Medium Leather",count=10,gross=15000,cut=750,at=999500},
 }
+ChalkBox_IntelInvalidate() -- model received new confirmed seller invoices
 local historic=Stock()
 ChalkBox_IntelAnnotate(historic,{freeSlots=1})
 assert(historic[1].intel.kind=="AUCTION" and
     historic[1].intel.reason:find("seller invoices",1,true),
     "repeated recent real sales justify a qualified decision without a fresh scan")
 saleRows[2]=nil
+ChalkBox_IntelInvalidate()
 local onlyOne=Stock()
 ChalkBox_IntelAnnotate(onlyOne,{freeSlots=1})
 assert(onlyOne[1].intel.kind=="SCAN AH",
     "one past sale is insufficient evidence to infer repeat demand")
+saleRows={
+    {name="Medium Leather",count=10,gross=15000,cut=750,
+        at=1000000-41*86400},
+    {name="Medium Leather",count=10,gross=15000,cut=750,
+        at=999500},
+}
+ChalkBox_IntelInvalidate()
+local mixedAges=Stock()
+ChalkBox_IntelAnnotate(mixedAges,{freeSlots=1})
+assert(mixedAges[1].intel.kind=="SCAN AH",
+    "a single recent sale plus an ancient invoice cannot count as repeated demand")
 saleRows={}
 prices[2319]=priceMissing
+ChalkBox_IntelInvalidate()
 local unknown=Stock()
 unknown[1].boundKnown=false
 ChalkBox_IntelAnnotate(unknown,{freeSlots=1})
