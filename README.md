@@ -1,5 +1,8 @@
 <div align="center">
 
+
+**Experimental 2.2.27-intel-beta (draft PR #107, not published):** Inventory Intelligence is disabled by default and offers optional Skill Up / Make Gold advice in the existing AuctionSense UI. See [technical details](docs/AUCTION_INTELLIGENCE.md). The official stable release remains 2.2.26.
+
 <img src="curseforge/artwork/chalkbox-github-header-1600x470.svg" alt="ChalkBox for WoW Forever" width="100%" />
 
 # ChalkBox
