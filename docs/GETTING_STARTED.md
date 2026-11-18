@@ -1,5 +1,8 @@
 # Getting started with ChalkBox
 
+
+**Experimental 2.2.27-intel-beta (draft PR #107, not published):** Inventory Intelligence is disabled by default and offers optional Skill Up / Make Gold advice in the existing AuctionSense UI. See [technical details](AUCTION_INTELLIGENCE.md). The official stable release remains 2.2.26.
+
 **For WoW Forever · 2.2.26 stable release; use the actual playable release ZIP**
 
 ChalkBox is one addon folder. It contains the runtime modules and their bundled static recipe reference files. There is no second AddOn to install, no account to connect, and no third-party service to configure.
