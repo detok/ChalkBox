@@ -365,33 +365,44 @@ local function Forecast(plan,db,list,stock,rowsByID,cut)
     local planned=0
     for delta=0,steps-1 do
         local at=rank+delta
-        local best,bestWeight,bestCost
+        local best,bestWeight,bestCost,bestUnknown
         for _,r in ipairs(list) do
             if r.profession==prof then
                 local w=Weights(r,at)
                 if w then
-                    local cost,valid=0,true
+                    local cost,missing,unknown=0,0,false
+                    local crafts=math.ceil(1/w)
                     for id,qty in pairs(r.inputs) do
-                        local value=UnitValue(id,rowsByID[id],cut)
-                        -- A reagent with no price AND no observed vendor
-                        -- value is unknown, not a free ingredient.
+                        local row=rowsByID[id]
+                        local value=UnitValue(id,row,cut)
+                        -- Price influences WHICH eligible recipe is cheaper,
+                        -- never WHETHER its known reagents can be forecast.
+                        -- Stock on hand is known even without an AH scan.
                         if not Num(value) or value<=0 then
-                            valid=false;break
+                            unknown=true
+                            value=1000 -- scoring penalty, NOT a market value
                         end
                         cost=cost+value*qty
+                        local held=math.max(0,(stock[id] or 0)-
+                            (counts[id] or 0))
+                        missing=missing+math.max(0,qty*crafts-held)
                     end
                     local output=UnitValue(r.output,rowsByID[r.output],cut)
-                    if valid then
-                        cost=math.max(0,cost-output*r.yield)
-                        local rate=cost/w
-                        if not bestCost or rate<bestCost then
-                            best,bestWeight,bestCost=r,w,rate
-                        end
+                    cost=math.max(0,cost-
+                        (Num(output) and output or 0)*r.yield)
+                    -- Prefer routes using items actually carried, without
+                    -- treating absent price information as a free reagent.
+                    local rate=cost/w+missing*100000+
+                        (unknown and 10000 or 0)
+                    if not bestCost or rate<bestCost then
+                        best,bestWeight,bestCost,bestUnknown=
+                            r,w,rate,unknown or missing>0
                     end
                 end
             end
         end
         if not best then break end
+        if bestUnknown then plan.uncertain=true end
         local crafts=math.ceil(1/bestWeight)
         for id,qty in pairs(best.inputs) do
             counts[id]=(counts[id] or 0)+qty*crafts
@@ -561,16 +572,16 @@ local function Analyze(rows,stats)
         elseif item.bound then
             kind,qty,reason="KEEP",item.count,"Bound item; never recommend auction"
         elseif item.boundKnown~=true then
-            kind,qty,reason="REVIEW",item.count,
-                "Client has not verified this item's tradeability"
+            kind,qty,reason="HOLD",item.count,
+                "Tradeability unverified; do not auction or vendor yet"
         elseif suggestion then
             kind,qty,reason=suggestion.kind,suggestion.qty,suggestion.reason
         elseif s.mode=="skill" and plan.uncertain and
             type(ChalkBox_LearnedRecipeUses)=="function" and
             #((Call(ChalkBox_LearnedRecipeUses,id,item.name)) or {})>0 and
             reserve==0 then
-            kind,qty,reason="REVIEW",item.count,
-                "Recipe use known; skill forecast incomplete"
+            kind,qty,reason="HOLD",item.count,
+                "Known crafting use; keep until progression reserve is resolved"
         elseif reserve>=item.count and item.count>0 then
             kind,qty,reason="KEEP",item.count,
                 "Reserved for "..(s.mode=="skill" and "skill progression" or "your preference")
@@ -588,13 +599,25 @@ local function Analyze(rows,stats)
                 item.de>(value or 0)*1.25 and reserve==0 then
                 kind,qty,reason="CHECK DE",remaining,
                     "Modeled disenchant return may exceed sale alternatives"
-            elseif vendor>0 and evidence and net<=vendor then
+            elseif vendor>0 and item.quality==0 then
                 kind,qty,reason="VENDOR",remaining,
-                    "Vendor price meets/exceeds observed auction net estimate"
+                    "Junk quality; instant vendor value beats unknown AH effort"
+            elseif vendor>0 and evidence and value<=vendor then
+                kind,qty,reason="VENDOR",remaining,
+                    "Risk-adjusted auction return does not beat vendor value"
+            elseif evidence and vendor>0 and netGain<2000 then
+                kind,qty,reason="VENDOR",remaining,
+                    "Estimated auction premium too small for listing effort"
+            elseif not evidence and
+                s.mode=="skill" and reserve>0 then
+                kind,qty,reason="HOLD",remaining,
+                    "Keep unpriced surplus until progression needs are settled"
+            elseif not evidence then
+                kind,qty,reason="SCAN AH",remaining,
+                    "Price evidence missing; scan before choosing AH or vendor"
             else
-                kind,qty,reason="REVIEW",remaining,
-                    evidence and "Insufficient net advantage to auction" or
-                    "No fresh reliable market asking price"
+                kind,qty,reason="HOLD",remaining,
+                    "Small or uncertain auction advantage; retain for now"
             end
         else
             kind,qty,reason="KEEP",item.count,"Reserved or allocated to crafts"
@@ -602,14 +625,16 @@ local function Analyze(rows,stats)
         local p=plan.rows[id] or {}
         p.kind,p.qty,p.reason=kind,qty,reason
         p.reserve=reserve
-        p.confidence=kind=="KEEP" and "verified" or
-            (kind=="AUCTION" or kind=="CRAFT") and "estimate" or "uncertain"
+        p.confidence=(item.protected or item.bound or kind=="IGNORE" or
+                (kind=="VENDOR" and item.quality==0)) and "verified" or
+            (kind=="AUCTION" or kind=="CRAFT" or reserve>0)
+                and "estimated" or "limited"
         plan.rows[id]=p
         item.intel=p
         item.note=kind.." "..tostring(qty)..
             (kind=="KEEP" and reserve>0 and " | goal reserve" or
             kind=="AUCTION" and " | observed asks" or "")
-        if kind=="AUCTION" then
+        if kind=="AUCTION" or kind=="SCAN AH" then
             AddAction(plan,kind,id,qty,reason)
         elseif kind=="VENDOR" and stats and
             Num(stats.freeSlots) and stats.freeSlots<=4 then
