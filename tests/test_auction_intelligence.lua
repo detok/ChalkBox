@@ -18,6 +18,12 @@ local prices={
         source="full",quantity=20,listings=5},
     [9003]={low=50000,age=100,stale=false,mixed=true,
         source="full",quantity=20,listings=5},
+    [7770]={low=1000,age=100,stale=false,mixed=false,source="full",
+        quantity=20,listings=7},
+    [7771]={low=10000,age=100,stale=false,mixed=false,source="full",
+        quantity=20,listings=7},
+    [7772]={low=7200,age=100,stale=false,mixed=false,source="full",
+        quantity=20,listings=7},
 }
 _G.ChalkBox_AuctionPrice=function(id) return prices[id] end
 _G.ChalkBox_MarketSalesStatus=function()
@@ -34,6 +40,10 @@ local lib={GetRecipe=function(_,prof,id)
     elseif id==20003 then return {difficulty={orange=200,yellow=225,
         green=250,grey=275},requiredSkill=200,craftedItemId=9002,
         reagents={[2319]=5}}
+    elseif id==20005 then return {difficulty={200,225,250,275},
+        requiredSkill=200,craftedItemId=7771}
+    elseif id==20006 then return {difficulty={200,225,250,275},
+        requiredSkill=200,craftedItemId=7772}
     end
 end,IsBorrowed=function() return nil end}
 _G.LibStub=setmetatable({},{__call=function(_,key)
@@ -62,7 +72,12 @@ local function Stock()
     return rows
 end
 assert(loadfile("AuctionIntelligence.lua"))("ChalkBox")
-assert(ChalkBox_IntelStatus().enabled==false)
+assert(ChalkBox_IntelStatus().enabled==false and
+    ChalkBox_IntelEnabled()==false)
+assert(ChalkBox_IntelBankStatus(2319)==nil and
+    not ChalkBox_IntelObserveBankInventory({[2319]=30},{
+        at=1000000,missingTabs=0,unknown=0,containers=2}),
+    "bank recording must be impossible while Intelligence is off")
 assert(ChalkBoxProfessionDB.intelligence==nil,
     "disabled by default does not create saved data")
 local off=Stock()
@@ -73,7 +88,10 @@ assert(not ChalkBox_IntelObserveRecipe("Leatherworking",20001,
     {learned=true},{}),"off skips recipe capture")
 
 assert(ChalkBox_IntelSet("enabled",true) and refresh==1)
-assert(ChalkBox_IntelStatus().enabled)
+assert(ChalkBox_IntelStatus().enabled and ChalkBox_IntelEnabled())
+assert(ChalkBox_IntelObserveBankInventory({[2319]=21},
+    {at=999900,missingTabs=0,unknown=0,containers=2}))
+assert(ChalkBox_IntelBankStatus(2319).count==21)
 assert(ChalkBox_IntelObserveSkill("Leatherworking",225,225))
 assert(ChalkBox_IntelStatus().profession=="Leatherworking")
 assert(ChalkBox_IntelStatus().protectGoal==true,
@@ -145,6 +163,9 @@ assert(skillRows[1].intel.goalRecipe and
 assert(skillRows[1].intel.headline and
     skillRows[1].intel.headline:find("Keep",1,true),
     "rows use plain-English actions rather than opaque planner codes")
+assert(skillRows[1].intel.bankLastSeen==21 and
+    skillRows[1].intel.bankDetail,
+    "bank observation is labeled last seen rather than silently counted as bag stock")
 -- The profession forecast is about known recipes and inventory. AH prices
 -- can rank viable choices but must NEVER gate whether a recipe is planned.
 local previousAsk=prices[2319]
@@ -253,6 +274,32 @@ local ignored=Stock()
 ChalkBox_IntelAnnotate(ignored,{freeSlots=1})
 assert(ignored[1].intel.kind=="IGNORE")
 assert(ChalkBox_IntelIgnore(2319,false))
+-- Competing profitable recipes share the same six materials.
+-- The higher-margin craft A consumes four and strands two; making B
+-- twice yields more TOTAL extra value. A first-fit greedy sorter fails.
+assert(ChalkBox_IntelSet("protectGoal",false))
+assert(ChalkBox_IntelObserveRecipe("Leatherworking",20005,
+    {learned=true,name="Premium Craft A",canSkillUp=true},
+    {outputItemID=7771,quantityMin=1,quantityMax=1,
+     reagentSlotSchematics={{required=true,quantityRequired=4,
+         reagents={{itemID=7770}}}}}))
+assert(ChalkBox_IntelObserveRecipe("Leatherworking",20006,
+    {learned=true,name="Efficient Craft B",canSkillUp=true},
+    {outputItemID=7772,quantityMin=1,quantityMax=1,
+     reagentSlotSchematics={{required=true,quantityRequired=3,
+         reagents={{itemID=7770}}}}}))
+local contested={{itemID=7770,name="Sample Raw Material",count=6,
+    vendor=10,classID=7,stacks=1,boundKnown=true}}
+local combined=ChalkBox_IntelAnnotate(contested,{freeSlots=1})
+assert(combined and combined.optimization=="bounded combination search")
+local selectedB=false
+for _,action in ipairs(combined.actions) do
+    if action.kind=="CRAFT" and action.itemID==20006 and
+        action.count==2 then selectedB=true end
+end
+assert(selectedB and contested[1].intel.kind=="CRAFT" and
+    contested[1].intel.qty==6,
+    "bounded inventory search beats ratio-greedy when two smaller crafts pay more")
 assert(ChalkBox_IntelSet("learn",false))
 assert(ChalkBox_IntelSet("protectGoal",true))
 assert(ChalkBox_IntelSet("target",50))
@@ -262,6 +309,11 @@ assert(ChalkBox_IntelStatus().target==50 and
     ChalkBox_IntelStatus().learn==false)
 
 assert(ChalkBox_IntelSet("enabled",false))
+assert(ChalkBox_IntelEnabled()==false and
+    ChalkBox_IntelBankStatus(2319)==nil and
+    not ChalkBox_IntelObserveBankInventory({[2319]=9000},
+        {at=1000001,missingTabs=0,unknown=0,containers=2}),
+    "after disabling, even explicit bank callback cannot record changes")
 local fallback=Stock()
 assert(ChalkBox_IntelAnnotate(fallback,{freeSlots=2})==nil)
 assert(fallback[1].intel==nil and
