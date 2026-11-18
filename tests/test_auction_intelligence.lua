@@ -53,7 +53,9 @@ local function Stock()
         {itemID=9997,name="Quest Material",count=4,stacks=1,vendor=50,
             protected=true,note="KEEP"},
         {itemID=9998,name="Bound Material",count=3,stacks=1,vendor=10,
-            bound=true,note="BOUND"}
+            bound=true,note="BOUND"},
+        {itemID=9999,name="Broken Claw",count=3,stacks=1,vendor=22,
+            quality=0,note="No fresh ask"}
     }
     for _,row in ipairs(rows) do row.boundKnown=true end
     return rows
@@ -105,6 +107,17 @@ assert(skill and skill.mode=="skill" and skill.uncertain,
     "currently capped profession is not promised immediate gains")
 assert(skill.reserved[2319] and skill.reserved[2319]>0,
     "skill route reserves learned recipe reagents")
+-- The profession forecast is about known recipes and inventory. AH prices
+-- can rank viable choices but must NEVER gate whether a recipe is planned.
+local previousAsk=prices[2319]
+prices[2319]=nil
+local offlineRows=Stock()
+local offline=ChalkBox_IntelAnnotate(offlineRows,{freeSlots=1})
+assert(offline.forecastSteps>0 and offline.reserved[2319]>0,
+    "known skill materials are forecast even without ANY AH quote")
+assert(offlineRows[1].intel.kind~="SCAN AH",
+    "a missing AH scan cannot override known skill material protection")
+prices[2319]=previousAsk
 assert(skillRows[6].intel.kind=="KEEP" and
     skillRows[7].intel.kind=="KEEP",
     "quest-protected and bound items never auctioned")
@@ -140,11 +153,20 @@ assert(goldRows[6].intel.kind=="KEEP" and
     goldRows[7].intel.kind=="KEEP")
 assert(goldRows[4].intel.kind~="AUCTION" and
     goldRows[5].intel.kind~="AUCTION")
+assert(goldRows[8].intel.kind=="VENDOR",
+    "verified unprotected grey junk is vendored without a market scan")
+local priceMissing=prices[2319]
+prices[2319]=nil
+local missingRows=Stock()
+ChalkBox_IntelAnnotate(missingRows,{freeSlots=1})
+assert(missingRows[1].intel.kind=="SCAN AH",
+    "missing gold-market price requests the precise missing evidence")
+prices[2319]=priceMissing
 local unknown=Stock()
 unknown[1].boundKnown=false
 ChalkBox_IntelAnnotate(unknown,{freeSlots=1})
-assert(unknown[1].intel.kind=="REVIEW",
-    "missing game bind state must not become confident sell advice")
+assert(unknown[1].intel.kind=="HOLD",
+    "missing game bind state produces a clear safe holding action, not AH advice")
 assert(ChalkBox_IntelReserve(2319,45))
 local hold=Stock()
 local protectedPlan=ChalkBox_IntelAnnotate(hold,{freeSlots=1})
