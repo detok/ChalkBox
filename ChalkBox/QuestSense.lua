@@ -413,7 +413,8 @@ local function Reconcile()
     -- Nearby has already removed nonlocal quests. All remains log-order
     -- compatible unless the player explicitly chooses another sort.
     local function Compare(a,b)
-        if settings.smartCompleteFirst~=false and a.complete~=b.complete then
+        if mode~="all" and settings.smartCompleteFirst~=false and
+            a.complete~=b.complete then
             return a.complete
         end
         if mode=="smart" and settings.smartNearbyFirst~=false and
