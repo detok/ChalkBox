@@ -142,6 +142,47 @@ function ChalkBox_IntelIgnore(id,ignored)
     lastPlan=nil
     return true
 end
+-- Only BankValue's already-validated, open-character-bank scan can call
+-- this. Off never records bank items or creates a database. Bank values are
+-- last-seen evidence, NOT usable crafting inputs or an AH availability claim.
+function ChalkBox_IntelObserveBankInventory(items,meta)
+    if not Enabled() or type(items)~="table" or
+        type(meta)~="table" or not Int(meta.at) or meta.at<1 then
+        return false
+    end
+    local copy,count={},0
+    for rawID,qty in pairs(items) do
+        local id=tonumber(rawID)
+        if not Int(id) or id<1 or not Int(qty) or qty<1 or
+            qty>100000 or count>=500 then return false end
+        copy[id]=qty
+        count=count+1
+    end
+    local db=DB(true)
+    db.bank={items=copy,at=meta.at,
+        partial=meta.missingTabs~=0 or (meta.unknown or 0)>0,
+        missingTabs=Int(meta.missingTabs) and meta.missingTabs or 0,
+        unknown=Int(meta.unknown) and meta.unknown or 0,
+        containers=Int(meta.containers) and meta.containers or 0}
+    lastPlan=nil
+    return true
+end
+function ChalkBox_IntelBankStatus(id)
+    if not Enabled() then return nil end
+    local db=DB(false)
+    local bank=db and db.bank
+    if type(bank)~="table" or not Int(bank.at) then return nil end
+    local now=Call(time)
+    if not Int(now) then now=Call(GetServerTime) end
+    local age=Int(now) and now>=bank.at and now-bank.at or nil
+    local observed=Int(id) and type(bank.items)=="table" and
+        bank.items[id] or 0
+    return {at=bank.at,age=age,partial=bank.partial==true,
+        count=Int(observed) and observed or 0,
+        unknown=bank.unknown or 0,
+        current=age~=nil and age<=300 and bank.partial~=true,
+        recent=age~=nil and age<=86400}
+end
 -- Called from ProfessionSense only after real, successfully read skill data.
 -- A rank change is proof of progression, NOT proof of which craft caused it.
 function ChalkBox_IntelObserveSkill(profession,rank,cap)
@@ -787,6 +828,12 @@ local function Analyze(rows,stats)
         p.shortfall=math.max(0,reserve-item.count)
         p.surplus=math.max(0,item.count-reserve)
         p.goalReserve=plan.goalReserve and (plan.goalReserve[id] or 0) or 0
+        local bank=ChalkBox_IntelBankStatus(id)
+        if bank and bank.recent and bank.count>0 then
+            p.bankLastSeen=bank.count
+            p.bankPartial=bank.partial
+            p.bankAge=bank.age
+        end
         p.mode=s.mode
         p.profession=s.profession
         p.capped=plan.capped
@@ -837,6 +884,15 @@ local function Analyze(rows,stats)
                 " progression plan uses "..p.goalReserve.." units"
         elseif reserve>0 then
             p.goalDetail="Personal reserve: "..reserve.." units"
+        end
+        if p.shortfall>0 and p.bankLastSeen then
+            p.bankDetail="Last seen in character bank: "..
+                p.bankLastSeen.." units"..
+                (p.bankPartial and " (partial bank scan)" or "")..
+                "; move to bags before crafting"
+        elseif p.bankLastSeen then
+            p.bankDetail="Bank (last seen): "..p.bankLastSeen..
+                " units; not counted as bag stock"
         end
         if p.capped and p.goalReserve>0 then
             p.trainingDetail="Skill capped at "..tostring(p.skillRank)..
@@ -917,6 +973,9 @@ function ChalkBox_IntelTooltip(tooltip,link)
         end
         if p.trainingDetail then
             tooltip:AddLine(p.trainingDetail,0.91,0.65,0.38,true)
+        end
+        if p.bankDetail then
+            tooltip:AddLine(p.bankDetail,0.65,0.77,0.91,true)
         end
         tooltip:AddLine(p.evidenceDetail or "Decision is an estimate",
             0.58,0.70,0.74,true)
