@@ -96,6 +96,16 @@ local schem={outputItemID=4234,quantityMin=1,quantityMax=1,
     reagentSlotSchematics={{required=true,quantityRequired=5,
         reagents={{itemID=2319}}}}}
 assert(ChalkBox_IntelObserveRecipe("Leatherworking",20001,info,schem))
+-- Historical beta data may contain cross-profession learned snapshots.
+-- Discard only records where the real Forever catalog proves ownership.
+ChalkBoxProfessionDB.intelligence.recipes["20001"].profession="Cooking"
+ChalkBox_IntelAnnotate(Stock(),{freeSlots=1})
+assert(ChalkBoxProfessionDB.intelligence.recipes["20001"]==nil,
+    "wrong saved Cooking-owned Leatherworking recipe is pruned")
+assert(not ChalkBox_IntelObserveRecipe("Cooking",20001,info,schem),
+    "stale modern profession heading cannot repopulate false Cooking evidence")
+assert(ChalkBox_IntelObserveRecipe("Leatherworking",20001,info,schem),
+    "correct client observation can restore a previously corrupted recipe")
 assert(ChalkBox_IntelObserveRecipe("Leatherworking",20002,
     {learned=true,name="Leather Gloves",canSkillUp=true},
     {outputItemID=9001,quantityMin=1,quantityMax=1,
