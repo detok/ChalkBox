@@ -163,6 +163,8 @@ ChalkBox_QuestCommand("sort level")
 Flush()
 assert(ChalkBox_QuestDisplayOrder()[102]<ChalkBox_QuestDisplayOrder()[101],
     "level-order Smart can choose a lower-level local quest")
+ChalkBox_QuestCommand("sort nearest")
+Flush()
 -- Quest objective finishes during gameplay: Smart must keep the actual
 -- completed quest watched so Blizzard can show its native Complete state.
 completeID=401
