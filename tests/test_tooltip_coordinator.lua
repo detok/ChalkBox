@@ -115,7 +115,8 @@ _G.ChalkBox_IntelTooltipInsight=function()
     return {kind="AUCTION",headline="Auction 8 | Keep 12",
         reason="Surplus estimated",shortfall=4,
         trainingDetail="Train before more progress",
-        goalDetail="Recipe details"}
+        goalDetail="Recipe details",
+        comparisonDetail="AH modeled 20g/unit vs vendor 2g/unit"}
 end
 assert(ChalkBox_TipCoordinatorShow(tip,ctx))
 assert(table.concat(lines," | "):find("Possible later quest:",1,true),
@@ -130,8 +131,9 @@ local staleText=table.concat(lines," | ")
 assert(staleText:find("Old AH ask:",1,true) and
     not staleText:find("AH low ask:",1,true) and
     not staleText:find("Auction 8",1,true) and
-    staleText:find("CHECK AH PRICE",1,true),
-    "stale price also overrides an outdated auction action from My Items")
+    staleText:find("CHECK AH PRICE",1,true) and
+    not staleText:find("AH modeled 20g",1,true),
+    "stale price overrides an old auction action and its profit comparison")
 Clear()
 _G.ChalkBox_AuctionPrice=function()
     return {low=15000,age=100,stale=false,mixed=true}

@@ -127,14 +127,17 @@ function ChalkBox_TipCoordinatorBuild(context)
     local riskyIntel=type(intel)=="table" and
         (intel.kind=="AUCTION" or intel.kind=="VENDOR" or
          intel.kind=="CRAFT" or intel.kind=="CHECK DE")
-    if not title and type(intel)=="table" and intel.kind=="AUCTION"
-        and type(price)=="table" and (price.stale or price.mixed) then
+    local obsoleteSale=type(intel)=="table" and type(price)=="table"
+        and (price.stale or price.mixed) and
+        (intel.kind=="AUCTION" or
+         (intel.kind=="VENDOR" and intel.confidence~="verified"))
+    if not title and obsoleteSale then
         -- A scan can age or reveal mixed equipment variants AFTER My
         -- Items computed its plan. Never repeat an old sell directive.
         title,role="CHECK AH PRICE","warning"
         reason=price.mixed and
             "Mixed equipment variants; verify the exact item first" or
-            "Market snapshot aged; refresh before auctioning"
+            "Market snapshot aged; refresh before selling"
     end
     if not title and (saleProtected or facts.safetyUnknown) and riskyIntel then
         title="HOLD"
@@ -204,13 +207,17 @@ function ChalkBox_TipCoordinatorBuild(context)
             Add(main,"Missing from bags: "..intel.shortfall,"warning",MAX_BASE)
         end
         Add(main,intel.trainingDetail,"warning",MAX_BASE)
-        Add(extra,intel.comparisonDetail,"value",MAX_DETAILS)
-        -- AuctionSense already supplies the raw lowest ask when its
-        -- market-tooltip switch is ON. Don't repeat it from Intelligence.
-        if type(price)~="table" then
-            Add(extra,intel.askDetail,"muted",MAX_DETAILS)
+        if obsoleteSale then
+            Add(extra,"Earlier sale comparison may be outdated  ·  reopen My Items",
+                "warning",MAX_DETAILS)
+        else
+            Add(extra,intel.comparisonDetail,"value",MAX_DETAILS)
+            -- AuctionSense supplies the same raw ask when its switch is ON.
+            if type(price)~="table" then
+                Add(extra,intel.askDetail,"muted",MAX_DETAILS)
+            end
+            Add(extra,intel.craftValueDetail,"value",MAX_DETAILS)
         end
-        Add(extra,intel.craftValueDetail,"value",MAX_DETAILS)
         Add(extra,intel.bankDetail,"muted",MAX_DETAILS)
         Add(extra,intel.evidenceDetail,"muted",MAX_DETAILS)
     end

@@ -91,5 +91,6 @@ merchant or loot intelligence.
 
 **Automated regressions** cover standalone composition, protection priority,
 false-price warnings, duplicate events, provider failures, opt-in behavior,
-legacy Core merchant fallback and LootSense integration. These are not a
+real Core+LootSense combined callbacks in both modern/legacy client modes,
+Core merchant fallback and LootSense integration. These are not a
 substitute for actual Forever client playtesting.
