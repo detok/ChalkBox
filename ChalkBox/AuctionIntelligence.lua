@@ -1241,6 +1241,53 @@ end
 function ChalkBox_IntelCommand(message)
     message=type(message)=="string" and message:lower() or ""
     local cmd,arg=message:match("^(%S+)%s*(.-)%s*$")
+    if cmd=="plan" then
+        local out=DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage
+        if not Enabled() then
+            if out then DEFAULT_CHAT_FRAME:AddMessage(
+                "|cff67c6b7ChalkBox Intelligence|r OFF - enable it in AuctionSense settings.")
+            end
+            return false
+        end
+        if not lastPlan and type(ChalkBox_MarketBagRows)=="function" then
+            -- Explicit command: take one read-only bag snapshot, never
+            -- submit an auction query or touch Blizzard trading controls.
+            pcall(ChalkBox_MarketBagRows,"",250)
+        end
+        if out then
+            DEFAULT_CHAT_FRAME:AddMessage("|cff67c6b7Intelligence Plan|r "..
+                (lastPlan and lastPlan.summary or
+                    "No bag snapshot available yet"))
+            if lastPlan then
+                local shown=0
+                for _,a in ipairs(lastPlan.actions) do
+                    local description=a.reason or ""
+                    if a.kind=="CRAFT" then
+                        local db=DB(false)
+                        local recipe=db and db.recipes and
+                            db.recipes[tostring(a.itemID)]
+                        description="Craft "..a.count.." x "..
+                            (recipe and recipe.name or
+                                ("recipe #"..tostring(a.itemID)))..
+                            " | added modeled value +"..Money(a.advantage)..
+                            " | "..description
+                    else
+                        description=a.kind.." "..a.count..
+                            " of item #"..a.itemID.." | "..description
+                    end
+                    DEFAULT_CHAT_FRAME:AddMessage(
+                        "  "..description:sub(1,220))
+                    shown=shown+1
+                    if shown>=6 then break end
+                end
+                if shown==0 then
+                    DEFAULT_CHAT_FRAME:AddMessage(
+                        "  No confident actionable surplus; check your selected goal.")
+                end
+            end
+        end
+        return lastPlan~=nil
+    end
     if cmd=="on" or cmd=="off" then
         ChalkBox_IntelSet("enabled",cmd=="on")
     elseif cmd=="skill" or cmd=="gold" then
@@ -1276,7 +1323,7 @@ function ChalkBox_IntelCommand(message)
             (s.goalPinned and " (pinned)" or " (automatic)")..
             " | goal protection "..(s.protectGoal and "ON" or "OFF")..
             " | "..s.summary..
-            " | commands: on/off, skill/gold, profession NAME/auto, protect on/off, target 10/25/50, margin 15/25/50, reserve ID QTY, ignore ID, unignore ID")
+            " | commands: plan, on/off, skill/gold, profession NAME/auto, protect on/off, target 10/25/50, margin 15/25/50, reserve ID QTY, ignore ID, unignore ID")
     end
     return s
 end
