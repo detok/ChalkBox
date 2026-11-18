@@ -315,7 +315,7 @@ end
 local function ReadLegacyTrade()
     if type(GetTradeSkillLine) ~= "function" or type(GetNumTradeSkills) ~= "function"
         or type(GetTradeSkillInfo) ~= "function" then return end
-    local name = GetTradeSkillLine()
+    local name,rank,cap = GetTradeSkillLine()
     local profession = Normalize(name)
     if not profession or (authoritativeProfessions and not available[profession]) then return end
     available[profession]=true
