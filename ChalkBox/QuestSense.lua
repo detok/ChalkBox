@@ -413,7 +413,7 @@ local function Reconcile()
     -- Nearby has already removed nonlocal quests. All remains log-order
     -- compatible unless the player explicitly chooses another sort.
     local function Compare(a,b)
-        if settings.smartCompleteFirst and a.complete~=b.complete then
+        if settings.smartCompleteFirst~=false and a.complete~=b.complete then
             return a.complete
         end
         if mode=="smart" and settings.smartNearbyFirst~=false and
@@ -639,7 +639,7 @@ function ChalkBox_QuestStatus()
         navigationWatch=navFocusID,
         sort=settings and settings.smartSort or "nearest",
         nearbyFirst=settings and settings.smartNearbyFirst~=false,
-        completeFirst=settings and settings.smartCompleteFirst==true,
+        completeFirst=settings and settings.smartCompleteFirst~=false,
         nativeOrder=false,
         nearbyRange=settings and settings.nearbyRange or 0,
         nearest=lastStats.nearest}
@@ -672,6 +672,8 @@ function ChalkBox_QuestCommand(text)
         Note("Accepted "..st.accepted.." | candidates "..st.candidates..
             " | watched "..st.tracked.." | hidden "..st.hidden..
             " | last change +"..st.added.."/-"..st.removed)
+        Note("Smart completed-first "..(st.completeFirst and "ON" or
+            "OFF").." | sort "..st.sort.." | nearest #"..tostring(st.nearest or "-"))
         if st.dungeon then
             Note("Dungeon "..st.dungeon.." | confirmed quests "..
                 tostring(st.dungeonMatches or 0))
@@ -761,6 +763,12 @@ events:SetScript("OnEvent",function(_,event,arg1,arg2)
         end
         if settings.smartNearbyFirst==nil then
             settings.smartNearbyFirst=true
+        end
+        -- A quest that is ready to hand in must not silently disappear from
+        -- Smart just because another objective is closer. Preserve an
+        -- explicit saved opt-out instead of overriding the user's choice.
+        if settings.smartCompleteFirst==nil then
+            settings.smartCompleteFirst=true
         end
         settings.nativeOrder=false -- migrate unsafe beta opt-in to safe default
         if settings.nearbyRange~=0 and settings.nearbyRange~=500 and
