@@ -139,6 +139,22 @@ assert(#ChalkBox_LearnedRecipeUses(783,"Light Hide")==0,
     "stale cross-profession list must never become learned Cooking")
 assert(ChalkBoxProfessionDB.recipeUses["id:783"]==nil,
     "wrong new recipe must not be written to saved variables")
+-- The independent bundled catalog must catch the same contamination
+-- even on Forever builds without GetProfessionInfoByRecipeID.
+C_TradeSkillUI.GetProfessionInfoByRecipeID=nil
+frame.callback(frame,"TRADE_SKILL_DATA_SOURCE_CHANGED")
+assert(#ChalkBox_LearnedRecipeUses(783,"Light Hide")==0,
+    "offline recipe ID ownership rejects stale Cooking data")
+-- Legacy trade-skill APIs can also lag a profession/source switch.
+_G.GetTradeSkillLine=function() return "Cooking" end
+_G.GetNumTradeSkills=function() return 1 end
+_G.GetTradeSkillInfo=function() return "Cured Light Hide","optimal" end
+_G.GetTradeSkillNumReagents=function() return 1 end
+_G.GetTradeSkillReagentInfo=function() return "Light Hide",nil,1 end
+_G.GetTradeSkillReagentItemLink=function() return "item:783" end
+frame.callback(frame,"TRADE_SKILL_DATA_SOURCE_CHANGED")
+assert(#ChalkBox_LearnedRecipeUses(783,"Light Hide")==0,
+    "legacy stale Cooking recipe title cannot contaminate saved data")
 -- After the client settles on Leatherworking, the legitimate scan can
 -- re-establish the correct learned association.
 currentProfession=165
@@ -147,4 +163,4 @@ local hides=ChalkBox_LearnedRecipeUses(783,"Light Hide")
 assert(#hides==1 and hides[1].profession=="Leatherworking" and
     hides[1].recipe=="Cured Light Hide" and hides[1].recipeID==3816,
     "actual Leatherworking list restores the correct profession and recipe ID")
-print("PASS: Forever live recipe identity, stale heading mismatch, saved Cooking corruption migration, and normal modern/legacy scan behavior")
+print("PASS: Forever live recipe identity, stale modern and legacy headings, saved Cooking corruption migration and proper new recipe ownership")
