@@ -426,11 +426,17 @@ assert(opened[#opened]==categories["AuctionSense Intelligence (Experimental)"].I
     and auctionOpens==0 and auctionScans==0,
     "opening intelligence settings never opens or scans the AH")
 local intelChecks=FindCheckByParentTitle("AuctionSense Intelligence (Experimental)")
-assert(#intelChecks==2 and not intelChecks[1].checked,
-    "intelligence is off by default even in native settings")
+assert(#intelChecks==3 and not intelChecks[1].checked and
+    intelChecks[3].checked,
+    "Intelligence starts off while shared profession protection defaults on")
 assert(ControlIn("AuctionSense Intelligence (Experimental)","Skill Up") and
     ControlIn("AuctionSense Intelligence (Experimental)","Make Gold"),
     "both planners are selectable inside settings")
+assert(ControlIn("AuctionSense Intelligence (Experimental)",
+    "Pin last scanned profession") and
+    ControlIn("AuctionSense Intelligence (Experimental)",
+    "Use automatic profession"),
+    "experimental settings expose a stable selectable profession goal")
 assert(ControlIn("AuctionSense","Open AuctionSense Tab"),
     "settings directs the player to the native AH tab")
 ControlIn("AuctionSense","Open AuctionSense Tab"):Click()
