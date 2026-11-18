@@ -44,7 +44,7 @@ local function Scenario(mode)
         local frame={}
         function frame:RegisterEvent() end
         function frame:UnregisterEvent() end
-        function frame:SetScript(_,event,fn)
+        function frame:SetScript(event,fn)
             assert(event=="OnEvent")
             self.onEvent=fn
         end
