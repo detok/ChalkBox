@@ -580,10 +580,6 @@ local function Reconcile()
             seenManual[id]=true
         end
     end
-    if settings.nativeOrder and
-        type(ChalkBox_QuestTrackerSortRefresh)=="function" then
-        ChalkBox_QuestTrackerSortRefresh()
-    end
     lastStats={accepted=#quests,candidates=#prioritized,
         watched=Count(watched),auto=Count(settings.managed),added=added,
         removed=removed,restored=restored,hidden=Count(settings.suspendedManual),
@@ -644,7 +640,7 @@ function ChalkBox_QuestStatus()
         sort=settings and settings.smartSort or "nearest",
         nearbyFirst=settings and settings.smartNearbyFirst~=false,
         completeFirst=settings and settings.smartCompleteFirst==true,
-        nativeOrder=settings and settings.nativeOrder==true,
+        nativeOrder=false,
         nearbyRange=settings and settings.nearbyRange or 0,
         nearest=lastStats.nearest}
 end
@@ -706,13 +702,10 @@ function ChalkBox_QuestCommand(text)
             Note("Choose range 0, 500, 1000 or 2000.")
         end
     elseif cmd=="nativeorder on" or cmd=="nativeorder off" then
-        settings.nativeOrder=cmd=="nativeorder on"
-        QueueUpdate()
-        if type(ChalkBox_QuestTrackerSortRefresh)=="function" then
-            ChalkBox_QuestTrackerSortRefresh()
-        end
-        Note("Native tracker custom order "..(settings.nativeOrder and
-            "enabled." or "disabled."))
+        -- Never patch a live Blizzard ObjectiveTracker method: doing so can
+        -- taint secure MapCanvas pin pass-through configuration.
+        settings.nativeOrder=false
+        Note("Native tracker reordering is unavailable: protected UI safety.")
     elseif cmd=="nearbyfirst on" or cmd=="nearbyfirst off" then
         settings.smartNearbyFirst=cmd=="nearbyfirst on"
         QueueUpdate()
@@ -732,7 +725,7 @@ function ChalkBox_QuestCommand(text)
             Note("Choose limit 5, 10, 15 or 20.")
         end
     else
-        Note("/chalk quests on|off|smart|zone|all|sort nearest/zone/level/title/log|nativeorder on/off|nearbyfirst on/off|range 0/500/1000/2000|completefirst on/off|limit 5/10/15/20|refresh|status")
+        Note("/chalk quests on|off|smart|zone|all|sort nearest/zone/level/title/log|nearbyfirst on/off|range 0/500/1000/2000|completefirst on/off|limit 5/10/15/20|refresh|status")
     end
 end
 local events=CreateFrame("Frame")
@@ -769,6 +762,7 @@ events:SetScript("OnEvent",function(_,event,arg1,arg2)
         if settings.smartNearbyFirst==nil then
             settings.smartNearbyFirst=true
         end
+        settings.nativeOrder=false -- migrate unsafe beta opt-in to safe default
         if settings.nearbyRange~=0 and settings.nearbyRange~=500 and
             settings.nearbyRange~=1000 and settings.nearbyRange~=2000 then
             settings.nearbyRange=0
