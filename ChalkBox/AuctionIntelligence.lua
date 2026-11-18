@@ -8,6 +8,9 @@ local PROF_IDS={Alchemy=171,Blacksmithing=164,Leatherworking=165,
     Tailoring=197,Engineering=202,Enchanting=333,Cooking=185,
     ["First Aid"]=129,Jewelcrafting=755,Inscription=773}
 local lastPlan=nil
+function ChalkBox_IntelInvalidate()
+    lastPlan=nil
+end
 
 local function Safe(v)
     return v~=nil and (type(issecretvalue)~="function" or not issecretvalue(v))
@@ -164,8 +167,7 @@ function ChalkBox_IntelObserveRecipe(profession,id,info,schematic)
         not (info.learned==true or info.isLearned==true) then return false end
     local db=DB(true)
     local inputs=Reagents(schematic)
-    local lib=type(LibStub)=="table" and
-        Call(LibStub, "LibProfessionDB-1.0",true) or nil
+    local lib=nil
     -- LibStub is frequently a callable table, so handle it without
     -- depending on the client exposing a different library API shape.
     if not lib and type(LibStub)=="table" then
@@ -218,6 +220,7 @@ function ChalkBox_IntelObserveRecipe(profession,id,info,schematic)
         requiredSkill=type(record)=="table" and record.requiredSkill or nil,
         tiers=type(tiers)=="table" and tiers or nil,
         canSkillUp=info.canSkillUp==true,
+        observedRank=db.skills[profession] and db.skills[profession].rank,
         relativeDifficulty=info.relativeDifficulty}
     if r.inputs and next(r.inputs) and r.output then
         db.recipes[tostring(id)]=r
@@ -354,7 +357,11 @@ local function Forecast(plan,db,list,stock,rowsByID,cut)
                     local cost,valid=0,true
                     for id,qty in pairs(r.inputs) do
                         local value=UnitValue(id,rowsByID[id],cut)
-                        if not Num(value) then valid=false;break end
+                        -- A reagent with no price AND no observed vendor
+                        -- value is unknown, not a free ingredient.
+                        if not Num(value) or value<=0 then
+                            valid=false;break
+                        end
                         cost=cost+value*qty
                     end
                     local output=UnitValue(r.output,rowsByID[r.output],cut)
@@ -422,10 +429,19 @@ local function ProfitCandidates(list,byID,cut,s)
     for _,a in ipairs(list) do
         Add(a.inputs,a.output,a.yield,a.name,a.id,1)
     end
-    -- Two-step transformations; require a single exact intermediate input.
-    -- No free outputs, alternate reagents, loops, or shared-item double spend.
+    -- Index by intermediate ingredient to avoid quadratic all-recipe scans.
+    -- Bounded search: evaluate only actual connected recipe pairs.
+    local consumers={}
+    for _,b in ipairs(list) do
+        for id in pairs(b.inputs) do
+            consumers[id]=consumers[id] or {}
+            consumers[id][#consumers[id]+1]=b
+        end
+    end
+    -- Two-step transformations; require one exact intermediate input.
+    -- No free outputs, alternative reagents, loops, or double-counting.
     for _,a in ipairs(list) do
-        for _,b in ipairs(list) do
+        for _,b in ipairs(consumers[a.output] or {}) do
             if a.id~=b.id and a.output~=b.output and
                 b.inputs[a.output] and Int(b.inputs[a.output]) then
                 local multiplier=math.ceil(b.inputs[a.output]/a.yield)
@@ -615,11 +631,14 @@ function ChalkBox_IntelTooltip(tooltip,link)
                 line:find("Intelligence  |  ",1,true) then return false end
         end
     end
-    local rows=Call(ChalkBox_MarketBagRows,"",250)
-    if type(rows)~="table" then return false end
-    for _,row in ipairs(rows) do
-        if row.itemID==id and type(row.intel)=="table" then
-            local p=row.intel
+    -- Reuse the most recent bag appraisal. Rebuild only after a bag, recipe,
+    -- preference or auction-snapshot change; never re-plan every hover.
+    if not lastPlan or not lastPlan.rows[id] then
+        local rows=Call(ChalkBox_MarketBagRows,"",250)
+        if type(rows)~="table" then return false end
+    end
+    local p=lastPlan and lastPlan.rows[id]
+    if p then
             tooltip:AddLine("Intelligence  |  "..p.kind.." "..tostring(p.qty),
                 0.42,0.89,0.73)
             tooltip:AddLine(p.reason,0.68,0.73,0.78,true)
@@ -632,7 +651,6 @@ function ChalkBox_IntelTooltip(tooltip,link)
                 0.58,0.63,0.67,true)
             if type(tooltip.Show)=="function" then tooltip:Show() end
             return true
-        end
     end
     return false
 end
