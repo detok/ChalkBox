@@ -184,10 +184,18 @@ local function OnItemTooltip(tooltip)
         if entry.purchase.remaining and entry.purchase.remaining > 0 then
             message = message .. " (" .. entry.purchase.remaining .. " more)"
         end
-        r, g, b = 0.98, 0.45, 0.40
+        -- A required purchase is a positive instruction, not a danger
+        -- warning. Reserve red for actual 'do not sell' protection.
+        r, g, b = 0.39, 0.94, 0.62
+        if type(ChalkBox_TipColor) == "function" then
+            r, g, b = ChalkBox_TipColor("good")
+        end
     elseif entry.protect then
         message = "DO NOT SELL  ·  " .. entry.protect
         r, g, b = 0.98, 0.45, 0.40
+        if type(ChalkBox_TipColor) == "function" then
+            r, g, b = ChalkBox_TipColor("danger")
+        end
     else
         return
     end

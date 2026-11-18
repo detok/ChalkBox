@@ -51,4 +51,13 @@ end,AddLine=function(_,text) lines[#lines+1]={label=text} end}
 assert(ChalkBox_TipMetric(tip,"Low / unit","50s","good"))
 assert(lines[1].label=="Low / unit" and lines[1].value=="50s"
     and lines[1].g>lines[1].r,"metric columns use the same color rules")
+assert(ChalkBox_TipLine(tip,"A supporting detail","muted",true))
+assert(ChalkBox_TipSection(tip,"AuctionSense  |  Market",true))
+assert(lines[2].label=="A supporting detail" and
+    lines[3].label==" " and
+    lines[4].label=="AuctionSense  |  Market",
+    "shared tooltip line and section spacing use the same helper")
+assert(ChalkBox_TipLine(nil,"test","text")==false and
+    ChalkBox_TipSection(tip,"")==false,
+    "tooltip helpers quietly reject missing tooltips or empty headings")
 print("PASS: one global color system, safe custom RGB, local alpha multiplier, live refresh and reset")

@@ -175,9 +175,18 @@ local function MakePin(canvas,index)
             if GameTooltip and type(GameTooltip.SetOwner)=="function" and
                 type(GameTooltip.AddLine)=="function" then
                 GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
-                GameTooltip:AddLine(self.flightName or "Flight master",
-                    1,0.81,0.45)
-                GameTooltip:AddLine("Known flight path",0.50,0.90,0.67)
+                if type(GameTooltip.ClearLines)=="function" then
+                    GameTooltip:ClearLines()
+                end
+                if type(ChalkBox_TipLine)=="function" then
+                    ChalkBox_TipLine(GameTooltip,
+                        self.flightName or "Flight master","title")
+                    ChalkBox_TipLine(GameTooltip,"Known flight path","good")
+                else
+                    GameTooltip:AddLine(self.flightName or "Flight master",
+                        1,0.81,0.45)
+                    GameTooltip:AddLine("Known flight path",0.50,0.90,0.67)
+                end
                 GameTooltip:Show()
             end
         end)

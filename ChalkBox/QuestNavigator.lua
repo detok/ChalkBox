@@ -589,11 +589,21 @@ local function Build()
             type(GameTooltip.SetOwner)~="function" or
             type(GameTooltip.AddLine)~="function" then return end
         GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
-        GameTooltip:AddLine(target and target.name or "QuestSense Navigation",
-            1,0.82,0.48)
-        GameTooltip:AddLine(self.readout or reason,0.9,0.9,0.85)
-        GameTooltip:AddLine("Right-click: Auto / Map Pin / Next / Hide",
-            0.65,0.72,0.75)
+        if type(GameTooltip.ClearLines)=="function" then
+            GameTooltip:ClearLines()
+        end
+        local function Line(text,role,red,green,blue)
+            if type(ChalkBox_TipLine)=="function" then
+                ChalkBox_TipLine(GameTooltip,text,role,true)
+            else
+                GameTooltip:AddLine(text,red,green,blue,true)
+            end
+        end
+        Line(target and target.name or "QuestSense Navigation",
+            "title",1,0.82,0.48)
+        Line(self.readout or reason,"text",0.9,0.9,0.85)
+        Line("Right-click  ·  Navigation options",
+            "muted",0.65,0.72,0.75)
         if type(GameTooltip.Show)=="function" then GameTooltip:Show() end
     end)
     f:SetScript("OnLeave",function()

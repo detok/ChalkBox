@@ -113,9 +113,19 @@ function ChalkBox_AuctionChartsMount(panel)
                 type(tooltip.AddLine)~="function" then return end
             tooltip:SetOwner(self,"ANCHOR_RIGHT")
             if type(tooltip.ClearLines)=="function" then tooltip:ClearLines() end
-            tooltip:AddLine(DateLabel(sample.t),1,0.83,0.45)
-            tooltip:AddLine("Lowest asking price / unit: "..Money(sample.low),
-                0.90,0.93,0.95)
+            if type(ChalkBox_TipLine)=="function" then
+                ChalkBox_TipLine(tooltip,DateLabel(sample.t),"title")
+                ChalkBox_TipMetric(tooltip,"Lowest ask / unit",
+                    Money(sample.low),"value")
+                ChalkBox_TipLine(tooltip,
+                    "Observed asking price, not a completed sale","muted")
+            else
+                tooltip:AddLine(DateLabel(sample.t),1,0.83,0.45)
+                tooltip:AddLine("Lowest ask / unit: "..Money(sample.low),
+                    0.90,0.93,0.95)
+                tooltip:AddLine("Asking price, not a completed sale",
+                    0.65,0.70,0.73)
+            end
             if type(tooltip.Show)=="function" then tooltip:Show() end
         end)
         dot:SetScript("OnLeave",function()
