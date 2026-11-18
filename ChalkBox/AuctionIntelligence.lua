@@ -147,16 +147,20 @@ function ChalkBox_IntelObserveSkill(profession,rank,cap)
 end
 local function Reagents(schematic)
     if type(schematic)~="table" or
-        type(schematic.reagentSlotSchematics)~="table" then return nil end
+        type(schematic.reagentSlotSchematics)~="table" then
+        return nil,"unavailable"
+    end
     local inputs,slots={},0
     for _,slot in ipairs(schematic.reagentSlotSchematics) do
-        if type(slot)~="table" then return nil end
+        if type(slot)~="table" then return nil,"ambiguous" end
         if slot.required~=false then
             slots=slots+1
             -- Alternatives / optional or quality-choice slots are NOT additive.
             -- If we cannot prove one exact required reagent, omit the recipe.
-            if type(slot.reagents)~="table" or #slot.reagents~=1 then
-                return nil
+            if type(slot.reagents)~="table" or #slot.reagents~=1 or
+                (type(slot.variableQuantities)=="table" and
+                 next(slot.variableQuantities)) then
+                return nil,"ambiguous"
             end
             local reagent=slot.reagents[1]
             local id=type(reagent)=="table" and
@@ -164,11 +168,11 @@ local function Reagents(schematic)
             local qty=slot.quantityRequired or
                 (type(reagent)=="table" and reagent.quantityRequired)
             if not Int(id) or id<1 or not Int(qty) or qty<1 or
-                qty>1000 then return nil end
+                qty>1000 then return nil,"ambiguous" end
             inputs[id]=(inputs[id] or 0)+qty
         end
     end
-    if slots==0 then return nil end
+    if slots==0 then return nil,"unavailable" end
     return inputs
 end
 -- Input comes ONLY from C_TradeSkillUI for a genuinely learned recipe.
@@ -178,7 +182,7 @@ function ChalkBox_IntelObserveRecipe(profession,id,info,schematic)
         or id<1 or type(info)~="table" or
         not (info.learned==true or info.isLearned==true) then return false end
     local db=DB(true)
-    local inputs=Reagents(schematic)
+    local inputs,inputState=Reagents(schematic)
     local lib=nil
     -- LibStub is frequently a callable table, so handle it without
     -- depending on the client exposing a different library API shape.
@@ -191,8 +195,8 @@ function ChalkBox_IntelObserveRecipe(profession,id,info,schematic)
     local record=lib and type(lib.GetRecipe)=="function" and
         Call(lib.GetRecipe,lib,PROF_IDS[profession],id) or nil
     local source="client"
-    if not inputs and type(record)=="table" and
-        type(record.reagents)=="table" then
+    if not inputs and inputState=="unavailable" and
+        type(record)=="table" and type(record.reagents)=="table" then
         local valid,count={},0
         for rawID,rawQty in pairs(record.reagents) do
             local rid=tonumber(rawID)
@@ -214,12 +218,10 @@ function ChalkBox_IntelObserveRecipe(profession,id,info,schematic)
     local maxYield=type(schematic)=="table" and schematic.quantityMax or nil
     if not Int(yield) or yield<1 or not Int(maxYield) or
         maxYield~=yield then
-        -- Stable, single-item outputs can still be inferred from the
-        -- bundled catalog, but never claim an uncertain multiple yield.
-        yield=1
-        if source=="client" then source="output estimate" end
+        -- Unknown/variable outputs are never assumed to be one item.
+        -- A bad output count can reverse the economic comparison.
+        yield=nil
     end
-    local old=db.recipes[tostring(id)]
     local tiers=type(record)=="table" and record.difficulty or nil
     local borrowed=lib and type(lib.IsBorrowed)=="function" and
         Call(lib.IsBorrowed,lib,id,"difficulty")
@@ -234,12 +236,14 @@ function ChalkBox_IntelObserveRecipe(profession,id,info,schematic)
         canSkillUp=info.canSkillUp==true,
         observedRank=db.skills[profession] and db.skills[profession].rank,
         relativeDifficulty=info.relativeDifficulty}
-    if r.inputs and next(r.inputs) and r.output then
+    if r.inputs and next(r.inputs) and r.output and
+        Int(r.yield) and r.yield>0 then
         db.recipes[tostring(id)]=r
-    elseif not old then
-        -- Keep an incomplete marker for diagnostics, but never plan it.
+    else
+        -- Never keep previously complete assumptions when newer live
+        -- schematic data reports ambiguity or an unknown output.
         db.recipes[tostring(id)]={id=id,profession=profession,
-            name=r.name,known=true,source="incomplete"}
+            name=r.name,known=true,source=inputState or "incomplete"}
     end
     db.profession=profession
     lastPlan=nil
