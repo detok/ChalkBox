@@ -154,8 +154,10 @@ end
 -- remove the false evidence and let the next real Leatherworking scan rebuild it.
 -- Unknown Forever-only recipes remain untouched; only a proven contradiction
 -- is pruned. Both ID and name lookup keys must be corrected.
+local repairedSavedTable
 local function RepairSavedRecipes()
-    if type(recipeUses)~="table" or not RecipeCatalog() then return end
+    if type(recipeUses)~="table" or repairedSavedTable==recipeUses
+        or not RecipeCatalog() then return end
     local wrongPairs={}
     local affected={}
     for key,set in pairs(recipeUses) do
@@ -206,6 +208,7 @@ local function RepairSavedRecipes()
             recipeUses[key]=nil
         end
     end
+    repairedSavedTable=recipeUses
 end
 
 -- Professions in Forever can be visible through the modern trade UI even
@@ -437,10 +440,10 @@ local function ReadModernTrade()
         local id=recipes[i]
         if Safe(id) and type(id)=="number" then
             local infoOK,info=pcall(api.GetRecipeInfo,id)
+            local actual=ActualRecipeOwner(api,id)
             if infoOK and type(info)=="table"
                 and (info.learned==true or info.isLearned==true)
-                and (not ActualRecipeOwner(api,id) or
-                    ActualRecipeOwner(api,id)==profession) then
+                and (not actual or actual==profession) then
                 known=known+1
                 local recipeName=RecipeName(info,id)
                 local added=false
