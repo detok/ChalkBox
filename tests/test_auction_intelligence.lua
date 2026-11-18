@@ -23,7 +23,9 @@ _G.ChalkBox_AuctionPrice=function(id) return prices[id] end
 _G.ChalkBox_MarketSalesStatus=function()
     return {gross=100000,fees=5000,count=8}
 end
-_G.ChalkBox_MarketSaleRows=function() return {} end
+local saleRows={}
+_G.time=function() return 1000000 end
+_G.ChalkBox_MarketSaleRows=function() return saleRows end
 local lib={GetRecipe=function(_,prof,id)
     if prof~=165 then return nil end
     if id==20001 then return {difficulty={orange=180,yellow=225,
@@ -161,6 +163,23 @@ local missingRows=Stock()
 ChalkBox_IntelAnnotate(missingRows,{freeSlots=1})
 assert(missingRows[1].intel.kind=="SCAN AH",
     "missing gold-market price requests the precise missing evidence")
+-- Real, exact-name seller invoices provide evidence even when today's scan
+-- is missing. One old sale alone must never imply present demand.
+saleRows={
+    {name="Medium Leather",count=10,gross=15000,cut=750,at=999000},
+    {name="Medium Leather",count=10,gross=15000,cut=750,at=999500},
+}
+local historic=Stock()
+ChalkBox_IntelAnnotate(historic,{freeSlots=1})
+assert(historic[1].intel.kind=="AUCTION" and
+    historic[1].intel.reason:find("seller invoices",1,true),
+    "repeated recent real sales justify a qualified decision without a fresh scan")
+saleRows[2]=nil
+local onlyOne=Stock()
+ChalkBox_IntelAnnotate(onlyOne,{freeSlots=1})
+assert(onlyOne[1].intel.kind=="SCAN AH",
+    "one past sale is insufficient evidence to infer repeat demand")
+saleRows={}
 prices[2319]=priceMissing
 local unknown=Stock()
 unknown[1].boundKnown=false
