@@ -51,6 +51,11 @@ local function Enabled()
     local db=DB(false)
     return db~=nil and db.enabled==true
 end
+-- Fast, side-effect-free guard for other modules. Do not create SavedVariables,
+-- enumerate recipes, inspect banks or price anything while disabled.
+function ChalkBox_IntelEnabled()
+    return Enabled()
+end
 local function Settings()
     local db=DB(false)
     return {enabled=Enabled(),mode=db and db.mode=="gold" and "gold" or "skill",
