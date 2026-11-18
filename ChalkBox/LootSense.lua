@@ -257,6 +257,7 @@ function ChalkBox_LootInsight(name,link)
         personalProtect=personal and db.lootAdvice~=false,
         isQuest=(accepted or questClass) and db.lootAdvice~=false,
         protected=personal or accepted or questClass or future~=nil,
+        saleProtected=personal or accepted or questClass,
         future=future,quests=quests,recipeDetails=extra}
 end
 

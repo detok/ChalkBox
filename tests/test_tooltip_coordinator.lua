@@ -80,6 +80,39 @@ assert(protectedText:find("KEEP",1,true) and
     not protectedText:find("Auction 8",1,true) and
     not protectedText:find("AH low ask:",1,true),
     "accepted quest overrides economic advice and suppresses sale summary")
+-- A future-quest note is informational, not an automatic ban on sales.
+Clear()
+_G.ChalkBox_LootInsight=function()
+    return {label="FUTURE QUEST",details="Reference only",
+        future={{questName="A Later Quest",required=4}},
+        protected=true,saleProtected=false,isQuest=false}
+end
+assert(ChalkBox_TipCoordinatorShow(tip,ctx))
+local later=table.concat(lines," | ")
+assert(later:find("Auction 8",1,true) and
+    later:find("Possible later quest:",1,true),
+    "possible future quests are reminders, not mandatory sale protection")
+-- A stale/mixed AH observation cannot masquerade as a confident current bid.
+Clear()
+_G.ChalkBox_AuctionPrice=function()
+    return {low=15000,age=100000,stale=true,mixed=false}
+end
+assert(ChalkBox_TipCoordinatorShow(tip,ctx))
+local staleText=table.concat(lines," | ")
+assert(staleText:find("Old AH ask:",1,true) and
+    not staleText:find("AH low ask:",1,true),
+    "stale market evidence receives an explicit warning")
+Clear()
+_G.ChalkBox_AuctionPrice=function()
+    return {low=15000,age=100,stale=false,mixed=true}
+end
+assert(ChalkBox_TipCoordinatorShow(tip,ctx))
+assert(table.concat(lines," | "):find("Mixed variants",1,true),
+    "mixed equipment variants never get a normal market-price label")
+_G.ChalkBox_AuctionPrice=function()
+    return {low=12500,average=13000,age=180,market="Realm / Alliance",
+        stale=false,mixed=false}
+end
 -- Merchant offers use Core's own verified identity and never get a bag
 -- inventory recommendation even if the matching item is in bags.
 Clear()

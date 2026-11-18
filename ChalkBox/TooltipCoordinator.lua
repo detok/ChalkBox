@@ -63,6 +63,9 @@ local function Read(context)
     out.merchant=Call(ChalkBox_CoreQuestFact,context.tooltip)
     if vendor then return out end
     out.loot=Call(ChalkBox_LootInsight,context.name,context.link)
+    -- If the safety classifier failed, a price is still a fact, but an
+    -- economic action must not be presented as safe.
+    out.safetyUnknown=out.loot==nil
     local id=type(context.link)=="string" and
         tonumber(context.link:match("item:(%d+)"))
     if not id or id<=0 then return out end
@@ -99,6 +102,7 @@ function ChalkBox_TipCoordinatorBuild(context)
     local drop=facts.drop
     local title,reason,role
     local protected=false
+    local saleProtected=false
     if type(merchant)=="table" then
         title=merchant.message
         role=merchant.kind=="buy" and "good" or "danger"
@@ -108,12 +112,24 @@ function ChalkBox_TipCoordinatorBuild(context)
     end
     if type(loot)=="table" then
         protected=protected or loot.protected==true
+        saleProtected=saleProtected or loot.saleProtected==true or
+            loot.isQuest==true or loot.personalProtect==true
         if not title and loot.isQuest then
             title,reason,role="KEEP",loot.details or
                 "Quest item: do not sell or disenchant","danger"
         elseif not title and loot.personalProtect then
             title,reason,role="KEEP","Protected by you","good"
         end
+    end
+    local riskyIntel=type(intel)=="table" and
+        (intel.kind=="AUCTION" or intel.kind=="VENDOR" or
+         intel.kind=="CRAFT" or intel.kind=="CHECK DE")
+    if not title and (saleProtected or facts.safetyUnknown) and riskyIntel then
+        title="HOLD"
+        reason=facts.safetyUnknown and
+            "Protection data unavailable; no sale recommendation" or
+            "Quest or personal protection takes precedence"
+        role="warning"
     end
     if not title and type(intel)=="table" and
         intel.kind~="IGNORE" and type(intel.headline)=="string" then
@@ -180,11 +196,17 @@ function ChalkBox_TipCoordinatorBuild(context)
         Add(extra,intel.evidenceDetail,"muted",MAX_DETAILS)
     end
     if type(price)=="table" and Num(price.low) then
-        local suffix=price.mixed and "  ·  mixed variants" or
-            price.stale and "  ·  OLD SCAN" or ""
-        if not protected then
-            Add(main,"AH low ask: "..Money(price.low)..
-                "/unit"..suffix,"value",MAX_BASE)
+        if not saleProtected then
+            if price.mixed then
+                Add(main,"Mixed variants  ·  check exact item",
+                    "warning",MAX_BASE)
+            elseif price.stale then
+                Add(main,"Old AH ask: "..Money(price.low)..
+                    "/unit  ·  refresh scan","warning",MAX_BASE)
+            else
+                Add(main,"AH low ask: "..Money(price.low)..
+                    "/unit","value",MAX_BASE)
+            end
         end
         Add(extra,"Market: "..tostring(price.market or "unknown")..
             "  ·  "..Age(price.age),"muted",MAX_DETAILS)
@@ -275,18 +297,24 @@ function ChalkBox_TipCoordinatorShow(tooltip,context)
     if #view.main==0 or AlreadyShown(tooltip) then return true end
     local shift=type(IsShiftKeyDown)=="function" and
         Call(IsShiftKeyDown)==true
-    Paint(tooltip," ","muted")
-    for _,line in ipairs(view.main) do
-        Paint(tooltip,line.text,line.role)
-    end
-    if shift then
-        for i=1,math.min(MAX_DETAILS,#view.details) do
-            local line=view.details[i]
+    local written=false
+    local renderOK=pcall(function()
+        Paint(tooltip," ","muted")
+        written=true
+        for _,line in ipairs(view.main) do
             Paint(tooltip,line.text,line.role)
         end
-    elseif #view.details>0 then
-        Paint(tooltip,"Shift + re-hover for details","muted")
-    end
-    if type(tooltip.Show)=="function" then tooltip:Show() end
-    return true
+        if shift then
+            for i=1,math.min(MAX_DETAILS,#view.details) do
+                local line=view.details[i]
+                Paint(tooltip,line.text,line.role)
+            end
+        elseif #view.details>0 then
+            Paint(tooltip,"Shift + re-hover for details","muted")
+        end
+        if type(tooltip.Show)=="function" then tooltip:Show() end
+    end)
+    -- If an exotic tooltip rejects a line after some have already been
+    -- added, do not append the entire legacy renderer as a second block.
+    return renderOK or written
 end
