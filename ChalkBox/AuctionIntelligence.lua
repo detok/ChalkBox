@@ -162,6 +162,38 @@ function ChalkBox_IntelObserveSkill(profession,rank,cap)
     lastPlan=nil
     return true
 end
+-- Legacy experimental builds could cache the right spell under the
+-- wrong profession while Forever's trade-skill data source was switching.
+-- Cross-check against the actual bundled Forever catalog when available.
+-- A recipe absent from the catalog is UNKNOWN, not automatically wrong.
+local recipeOwnerCache={}
+local function CatalogRecipeOwner(id)
+    if not Int(id) then return nil end
+    if recipeOwnerCache[id]~=nil then
+        return recipeOwnerCache[id] or nil
+    end
+    if type(LibStub)~="table" and type(LibStub)~="function" then
+        return nil
+    end
+    local ok,lib=pcall(function()
+        return LibStub("LibProfessionDB-1.0",true)
+    end)
+    if not ok or type(lib)~="table" or
+        type(lib.GetRecipe)~="function" then return nil end
+    local owner
+    for profession,professionID in pairs(PROF_IDS) do
+        local record=Call(lib.GetRecipe,lib,professionID,id)
+        if type(record)=="table" then
+            if owner and owner~=profession then
+                recipeOwnerCache[id]=false
+                return nil
+            end
+            owner=profession
+        end
+    end
+    if owner then recipeOwnerCache[id]=owner end
+    return owner
+end
 local function Reagents(schematic)
     if type(schematic)~="table" or
         type(schematic.reagentSlotSchematics)~="table" then
@@ -198,6 +230,8 @@ function ChalkBox_IntelObserveRecipe(profession,id,info,schematic)
     if not Enabled() or not PROF_IDS[profession] or not Int(id)
         or id<1 or type(info)~="table" or
         not (info.learned==true or info.isLearned==true) then return false end
+    local actual=CatalogRecipeOwner(id)
+    if actual and actual~=profession then return false end
     local db=DB(true)
     local inputs,inputState=Reagents(schematic)
     local lib=nil
@@ -376,8 +410,14 @@ end
 local function RecipeList(db)
     local list={}
     if not db or type(db.recipes)~="table" then return list end
-    for _,r in pairs(db.recipes) do
-        if type(r)=="table" and type(r.inputs)=="table" and
+    for savedID,r in pairs(db.recipes) do
+        if type(r)=="table" and Int(r.id) and
+            CatalogRecipeOwner(r.id) and
+            CatalogRecipeOwner(r.id)~=r.profession then
+            -- The original data is demonstrably cross-profession; discard
+            -- it. Do not invent that the character knows the correct recipe.
+            db.recipes[savedID]=nil
+        elseif type(r)=="table" and type(r.inputs)=="table" and
             next(r.inputs) and Int(r.output) and Int(r.yield)
             and r.yield>=1 and r.yield<=100 then
             list[#list+1]=r
