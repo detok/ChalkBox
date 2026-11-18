@@ -425,6 +425,8 @@ ControlIn("AuctionSense","Intelligence Lab"):Click()
 assert(opened[#opened]==categories["AuctionSense Intelligence (Experimental)"].ID
     and auctionOpens==0 and auctionScans==0,
     "opening intelligence settings never opens or scans the AH")
+-- Native mock checkboxes populate checked state during panel OnShow.
+categories["AuctionSense Intelligence (Experimental)"].panel:Show()
 local intelChecks=FindCheckByParentTitle("AuctionSense Intelligence (Experimental)")
 assert(#intelChecks==3 and not intelChecks[1].checked and
     intelChecks[3].checked,
