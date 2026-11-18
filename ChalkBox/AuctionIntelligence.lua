@@ -271,35 +271,51 @@ local function Sold(name)
         type(ChalkBox_MarketSaleRows)~="function" then return 0,nil end
     local sales=Call(ChalkBox_MarketSaleRows,name,200)
     if type(sales)~="table" then return 0,nil end
-    local n,units,net=0,0,0
+    local n,units,net,last=0,0,0,nil
     for _,row in ipairs(sales) do
         if type(row)=="table" and row.name==name and
             Int(row.count) and row.count>0 and
             Int(row.gross) and Int(row.cut) and row.gross>=row.cut then
             n=n+1;units=units+row.count;net=net+row.gross-row.cut
+            if Int(row.at) and (not last or row.at>last) then
+                last=row.at
+            end
         end
     end
-    return n,units>0 and math.floor(net/units) or nil
+    return n,units>0 and math.floor(net/units) or nil,last
 end
 local function UnitValue(id,row,cut)
     local p=Price(id)
     local vendor=row and Int(row.vendor) and row.vendor or 0
-    if not p then return vendor,vendor,nil end
+    local sample,netSale,last=0,nil,nil
+    local db=DB(false)
+    if row and row.classID==7 and row.name and
+        (not db or db.learn~=false) then
+        sample,netSale,last=Sold(row.name)
+    end
+    local now=Call(time)
+    if not Int(now) then now=Call(GetServerTime) end
+    local provenRecent=sample>=2 and Int(last) and Int(now) and
+        now>=last and now-last<=30*86400 and
+        Num(netSale) and netSale>0
+    if not p then
+        if provenRecent then
+            -- Actual seller invoices can answer a missing market quote.
+            -- The 30% haircut is caution, not a measured sell chance.
+            local estimated=math.floor(netSale*0.70)
+            return math.max(vendor,estimated),estimated,
+                {age=now-last,sales=sample,source="personal sales",
+                 sample="confirmed",risk=0.70}
+        end
+        return vendor,vendor,nil
+    end
     local net=math.floor(p.low*(1-cut))
     -- 15-35% appraisal haircuts are risk buffers, NOT sale probabilities.
     local risk= p.listings and p.listings>=3 and
         p.quantity and p.quantity>=5 and 0.85 or 0.65
-    local sample=0
-    if row and row.classID==7 and row.name then
-        local db=DB(false)
-        if not db or db.learn~=false then
-            local observed,netSale=Sold(row.name)
-            sample=observed
-            if observed>=2 and netSale then
-                net=math.min(net,netSale)
-                risk=0.95
-            end
-        end
+    if provenRecent then
+        net=math.min(net,netSale)
+        risk=0.95
     end
     return math.max(vendor,math.floor(net*risk)),net,
         {ask=p.low,age=p.age,sales=sample,source=p.source,
@@ -588,13 +604,20 @@ local function Analyze(rows,stats)
         elseif remaining>0 then
             local value,net,evidence=UnitValue(id,item,cut)
             local vendor=Int(item.vendor) and item.vendor or 0
-            local netGain=net and (net-vendor)*remaining or 0
-            if evidence and netGain>=2000 and net>=vendor*(1+s.margin/100) then
+            local netGain=value and (value-vendor)*remaining or 0
+            if evidence and netGain>=2000 and
+                value>=vendor*(1+s.margin/100) then
                 kind,qty="AUCTION",remaining
-                reason="Surplus; "..evidence.source.." asking price "..
-                    (evidence.sample=="thin" and "has limited depth" or
-                    "has listing sample")..
-                    "; outcome not guaranteed"
+                if evidence.source=="personal sales" then
+                    reason="Surplus; repeated recent seller invoices "..
+                        "support value, but current asks are unknown"
+                else
+                    reason="Surplus; "..tostring(evidence.source)..
+                        " asking prices "..
+                        (evidence.sample=="thin" and
+                            "have limited depth" or "have listing samples")..
+                        "; outcome not guaranteed"
+                end
             elseif item.de and Num(item.de) and
                 item.de>(value or 0)*1.25 and reserve==0 then
                 kind,qty,reason="CHECK DE",remaining,
