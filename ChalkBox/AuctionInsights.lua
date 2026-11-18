@@ -61,11 +61,16 @@ end
 local function ItemInfo(link)
     local getter=C_Item and C_Item.GetItemInfo or GetItemInfo
     if type(getter)~="function" then return nil end
-    local name,_,quality,level,required,class,sub,stack,slot,icon,vendor,
-        classID,subclassID=Call(getter,link)
-    if not Safe(name) or type(name)~="string" then return nil end
-    return {name=name,quality=quality,vendor=Number(vendor) and vendor or nil,
-        classID=classID}
+    -- The common Call helper intentionally returns only 11 values.
+    -- Item class and bind type are positions 12 and 14 of GetItemInfo,
+    -- so read the tuple directly without changing other Call callers.
+    local ok,name,_,quality,level,required,class,sub,stack,slot,icon,
+        vendor,classID,subclassID,bindType=pcall(getter,link)
+    if not ok or not Safe(name) or type(name)~="string" then return nil end
+    return {name=name,quality=quality,
+        vendor=Number(vendor) and vendor or nil,
+        classID=Safe(classID) and classID or nil,
+        bindType=Safe(bindType) and bindType or nil}
 end
 local function ItemID(link)
     if Int(link) then return link end
@@ -92,7 +97,8 @@ local function ContainerItem(bag,slot)
         if type(info)=="table" then
             local link=Safe(info.hyperlink) and info.hyperlink or
                 Call(container.GetContainerItemLink,bag,slot)
-            return link,info.stackCount or 1,info.isBound==true
+            return link,info.stackCount or 1,info.isBound==true,
+                type(info.isBound)=="boolean" and Safe(info.isBound)
         end
     end
     local getter=container and container.GetContainerItemLink or GetContainerItemLink
@@ -104,7 +110,7 @@ local function ContainerItem(bag,slot)
         local _,n=Call(GetContainerItemInfo,bag,slot)
         if Int(n) then count=n end
     end
-    return link,count,false
+    return link,count,false,false
 end
 local function ValidAsk(id)
     if type(ChalkBox_AuctionPrice)~="function" then return nil end
@@ -139,7 +145,7 @@ local function BagItems(search)
                 counters.totalSlots=counters.totalSlots+slots
             end
             for slot=1,slots do
-                local link,count,bound=ContainerItem(bag,slot)
+                local link,count,bound,boundKnown=ContainerItem(bag,slot)
                 local id=ItemID(link)
                 if id and Int(count) and count>0 and count<=100000 then
                     local data=ItemInfo(link)
@@ -147,14 +153,21 @@ local function BagItems(search)
                     local row=byID[id]
                     if not row then
                         row={itemID=id,name=name,count=0,bound=false,
-                            stacks=0,quality=data and data.quality or nil,
+                            stacks=0,boundKnown=true,
+                            quality=data and data.quality or nil,
                             classID=data and data.classID or nil,
                             vendor=data and data.vendor or nil}
                         byID[id]=row
                     end
                     row.count=row.count+count
                     row.stacks=row.stacks+1
-                    row.bound=row.bound or bound
+                    -- Client-proven soulbound or bind-on-pickup never goes to AH.
+                    row.bound=row.bound or bound or
+                        (data and data.bindType==1) or false
+                    row.boundKnown=row.boundKnown and
+                        (boundKnown==true or
+                            (data and
+                             (data.bindType==0 or data.bindType==1)))
                 end
             end
         end
@@ -165,7 +178,8 @@ local function BagItems(search)
             or tostring(item.itemID):find(search,1,true)
         if matches or intelligence then
             local low,market=ValidAsk(item.itemID)
-            local protected=Protect(item.name,item.itemID)
+            local protected=Protect(item.name,item.itemID) or
+                item.classID==12 -- Native quest item class always wins
             local vendor=item.vendor
             local vendorTotal=vendor and vendor*item.count or nil
             local marketTotal=low and low*item.count or nil
