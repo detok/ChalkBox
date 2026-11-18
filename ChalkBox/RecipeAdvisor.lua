@@ -191,6 +191,21 @@ local function ChooseCandidate(itemID,known)
     return selected,also,#list
 end
 local function FormatKnown(entry,itemID,count)
+    -- A recipe can be learned without every displayed reagent being
+    -- mandatory. Never say every choice in an alternative group is needed.
+    if entry.optional then
+        return "OPTIONAL REAGENT: "..entry.recipe.." ("..
+            entry.profession..") - not required for the basic craft"
+    end
+    if entry.alternative then
+        local line="RECIPE ALTERNATIVE: "..entry.recipe.." ("..
+            entry.profession..") - one of several materials"
+        if entry.quantity then
+            line=line.."; "..entry.quantity.." if chosen"
+        end
+        if count~=nil then line=line.."; "..count.." in bags" end
+        return line
+    end
     local line="KNOWN RECIPE: "..entry.recipe.." ("..entry.profession..")"
     if entry.quantity and count then
         if count>=entry.quantity then

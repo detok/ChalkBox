@@ -268,7 +268,8 @@ local function ReadProfessions()
     available=found
 end
 
-local function AddReagent(profession, link, name, recipeName, quantity,spellID)
+local function AddReagent(profession, link, name, recipeName, quantity,spellID,
+    alternative,optional)
     if not profession then return end
     local itemID=type(link)=="number" and link or
         type(link)=="string" and tonumber(link:match("item:(%d+)"))
@@ -294,7 +295,9 @@ local function AddReagent(profession, link, name, recipeName, quantity,spellID)
                 profession=profession,recipe=recipeName,
                 recipeID=type(spellID)=="number" and spellID or nil,
                 quantity=Safe(quantity) and type(quantity)=="number" and
-                    quantity>0 and math.floor(quantity) or nil
+                    quantity>0 and math.floor(quantity) or nil,
+                alternative=alternative==true,
+                optional=optional==true
             }
         end
     end
@@ -497,7 +500,8 @@ local function ReadModernTrade()
                                         if Safe(itemID) and tonumber(itemID) then
                                             AddReagent(profession,tonumber(itemID),
                                                 reagent.name,recipeName,
-                                                slot.quantityRequired or reagent.quantityRequired,id)
+                                                slot.quantityRequired or reagent.quantityRequired,id,
+                                                #slot.reagents>1,slot.required==false)
                                             added=true
                                         end
                                     end
@@ -692,6 +696,10 @@ function ChalkBox_LearnedRecipeUses(itemID,itemName)
         Include("name:"..string.lower(itemName))
     end
     table.sort(entries,function(a,b)
+        -- Give actual required materials precedence in a tooltip over
+        -- alternatives and optional reagents from other learned recipes.
+        if a.optional~=b.optional then return a.optional~=true end
+        if a.alternative~=b.alternative then return a.alternative~=true end
         if a.profession~=b.profession then return a.profession<b.profession end
         return a.recipe<b.recipe
     end)

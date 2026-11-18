@@ -41,6 +41,7 @@ _G.GetTradeSkillLine=nil
 _G.GetSpellInfo=function(spell)
     if spell==3816 then return "Cured Light Hide" end
     if spell==5001 then return "Roast Test Fish" end
+    if spell==2006 then return "Alternate Leather" end
     return spell==2001 and "Camp Tent" or "Alchemy Potion"
 end
 _G.C_Timer={After=function(delay,callback)
@@ -73,7 +74,8 @@ _G.C_TradeSkillUI={
     end,
     GetRecipeInfo=function(id)
         return {name=id==3816 and "Cured Light Hide" or
-            id==2001 and "Camp Tent" or nil,
+            id==2001 and "Camp Tent" or
+            id==2006 and "Alternate Leather" or nil,
             learned=id~=2002 and (id~=2001 or learnedTent),
             outputItemID=id==2005 and 9008 or nil,
             quantityMin=id==2005 and 1 or nil,
@@ -81,6 +83,15 @@ _G.C_TradeSkillUI={
     end,
     GetRecipeSchematic=function(id)
         if schematic then
+            if id==2006 then
+                return {reagentSlotSchematics={{
+                    required=true,quantityRequired=2,
+                    reagents={{itemID=2318},{itemID=4234}}
+                },{
+                    required=false,quantityRequired=1,
+                    reagents={{itemID=4470}}
+                }}}
+            end
             if id==3816 then
                 return {reagentSlotSchematics={{
                     quantityRequired=1,reagents={{itemID=783}}
@@ -190,4 +201,11 @@ local hides=ChalkBox_LearnedRecipeUses(783,"Light Hide")
 assert(#hides==1 and hides[1].profession=="Leatherworking" and
     hides[1].recipe=="Cured Light Hide" and hides[1].recipeID==3816,
     "actual Leatherworking list restores the correct profession and recipe ID")
-print("PASS: Forever live recipe identity, stale modern and legacy headings, saved Cooking corruption migration and proper new recipe ownership")
+recipeIDs={2006}
+frame.callback(frame,"TRADE_SKILL_LIST_UPDATE")
+local altUses=ChalkBox_LearnedRecipeUses(2318,"Light Leather")
+local optUses=ChalkBox_LearnedRecipeUses(4470,"Simple Wood")
+assert(#altUses>0 and altUses[1].alternative==true and
+    #optUses>0 and optUses[1].optional==true,
+    "alternative and optional slot types must survive the live scan")
+print("PASS: Forever live recipe identity, fallback data, explicit unlearning, alternative/optional reagents and stale-heading safeguards")
