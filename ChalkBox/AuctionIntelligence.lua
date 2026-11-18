@@ -1321,6 +1321,57 @@ function ChalkBox_IntelCommand(message)
                 coverage.recipesIncomplete..
                 " missing details (excluded from craft math).")
             if lastPlan then
+                if lastPlan.mode=="skill" then
+                    local route=lastPlan.route or {}
+                    if #route>0 then
+                        for i=1,math.min(3,#route) do
+                            local r=route[i]
+                            DEFAULT_CHAT_FRAME:AddMessage(
+                                "  Craft plan: "..r.crafts.." x "..r.name..
+                                " | models up to "..r.predictedSteps..
+                                " skill point(s), not guaranteed")
+                        end
+                        -- Missing materials are measured against BAG counts,
+                        -- never last-seen bank totals.
+                        local deficits={}
+                        for id,required in pairs(lastPlan.goalReserve or {}) do
+                            local item=lastPlan.rows[id]
+                            local carried=item and item.stock or 0
+                            if required>carried then
+                                deficits[#deficits+1]={id=id,missing=required-carried}
+                            end
+                        end
+                        table.sort(deficits,function(x,y)
+                            if x.missing~=y.missing then
+                                return x.missing>y.missing
+                            end
+                            return x.id<y.id
+                        end)
+                        if #deficits==0 then
+                            DEFAULT_CHAT_FRAME:AddMessage(
+                                "  Materials: modeled route covered by bags")
+                        else
+                            for i=1,math.min(4,#deficits) do
+                                local d=deficits[i]
+                                DEFAULT_CHAT_FRAME:AddMessage(
+                                    "  Missing from bags: "..d.missing..
+                                    " x item #"..d.id)
+                            end
+                            if #deficits>4 then
+                                DEFAULT_CHAT_FRAME:AddMessage(
+                                    "  Plus "..(#deficits-4)..
+                                    " other missing materials")
+                            end
+                        end
+                        if lastPlan.capped then
+                            DEFAULT_CHAT_FRAME:AddMessage(
+                                "  Train your profession before expecting skill gains")
+                        end
+                    else
+                        DEFAULT_CHAT_FRAME:AddMessage(
+                            "  No verified skill route yet; open the selected profession")
+                    end
+                end
                 local shown=0
                 for _,a in ipairs(lastPlan.actions) do
                     local description=a.reason or ""
@@ -1342,7 +1393,7 @@ function ChalkBox_IntelCommand(message)
                     shown=shown+1
                     if shown>=6 then break end
                 end
-                if shown==0 then
+                if shown==0 and lastPlan.mode~="skill" then
                     DEFAULT_CHAT_FRAME:AddMessage(
                         "  No confident actionable surplus; check your selected goal.")
                 end

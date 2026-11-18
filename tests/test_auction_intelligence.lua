@@ -203,6 +203,21 @@ assert(skill.reserved[2319] and skill.reserved[2319]>0,
 assert(skill.forecastSteps>0 and #skill.route>0 and
     skill.route[1].crafts>0,
     "four-number Forever difficulty tiers produce a named, quantified recipe route")
+local skillMessages={}
+DEFAULT_CHAT_FRAME.AddMessage=function(_,line)
+    skillMessages[#skillMessages+1]=line
+end
+assert(ChalkBox_IntelCommand("plan"),
+    "plan command must work in Skill Up mode")
+local skillText=table.concat(skillMessages," | ")
+assert(skillText:find("Craft plan:",1,true) and
+    skillText:find("Convert Medium Leather",1,true) and
+    skillText:find("not guaranteed",1,true) and
+    skillText:find("Missing from bags:",1,true) and
+    skillText:find("Train your profession",1,true),
+    "skill plan shows named crafts, uncertainty, bag-only shortages and cap warning")
+assert(not skillText:find("No confident actionable surplus",1,true),
+    "an available skill plan must not be mislabeled as no useful action")
 assert(skillRows[1].intel.goalRecipe and
     skillRows[1].intel.goalRecipeCrafts and
     skillRows[1].intel.goalDetail and
