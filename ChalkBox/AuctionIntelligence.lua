@@ -49,7 +49,7 @@ local function DB(create)
 end
 local function Enabled()
     local db=DB(false)
-    return db and db.enabled==true
+    return db~=nil and db.enabled==true
 end
 local function Settings()
     local db=DB(false)
@@ -415,7 +415,11 @@ local function ProfitCandidates(list,byID,cut,s)
         local cost=0
         for id,qty in pairs(inputs) do
             if not byID[id] or byID[id].protected or byID[id].bound or
-                s.ignored[tostring(id)] then return end
+                s.ignored[tostring(id)] or not Price(id) then
+                -- Never mistake an unpriced reagent's vendor value for its
+                -- market opportunity cost.
+                return
+            end
             local v=UnitValue(id,byID[id],cut)
             cost=cost+v*qty
         end
