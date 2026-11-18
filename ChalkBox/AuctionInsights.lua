@@ -318,8 +318,15 @@ function ChalkBox_MarketCaptureSales()
     end)
     while #ledger.sales>MAX_RECEIPTS do table.remove(ledger.sales) end
     lastCapture=now
-    if added>0 and type(ChalkBox_AuctionRefreshUI)=="function" then
-        Call(ChalkBox_AuctionRefreshUI)
+    if added>0 then
+        if type(ChalkBox_IntelEnabled)=="function" and
+            ChalkBox_IntelEnabled() and
+            type(ChalkBox_IntelInvalidate)=="function" then
+            ChalkBox_IntelInvalidate()
+        end
+        if type(ChalkBox_AuctionRefreshUI)=="function" then
+            Call(ChalkBox_AuctionRefreshUI)
+        end
     end
     return added,("Captured %d new seller invoices"):format(added)
 end
