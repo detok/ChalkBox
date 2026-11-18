@@ -76,11 +76,23 @@ end
 function ChalkBox_IntelStatus()
     local s=Settings()
     local db=DB(false)
-    local n=0
+    local n,complete,incomplete=0,0,0
     if db and type(db.recipes)=="table" then
-        for _ in pairs(db.recipes) do n=n+1 end
+        for _,recipe in pairs(db.recipes) do
+            n=n+1
+            if type(recipe)=="table" and recipe.known==true and
+                type(recipe.inputs)=="table" and next(recipe.inputs) and
+                Int(recipe.output) and Int(recipe.yield) and
+                recipe.yield>0 then
+                complete=complete+1
+            else
+                incomplete=incomplete+1
+            end
+        end
     end
     s.recipes=n
+    s.recipesComplete=complete
+    s.recipesIncomplete=incomplete
     s.skill=db and db.skills and s.profession and db.skills[s.profession]
         or nil
     s.summary=lastPlan and lastPlan.summary or
@@ -313,7 +325,9 @@ function ChalkBox_IntelObserveRecipe(profession,id,info,schematic)
     end
     local record=lib and type(lib.GetRecipe)=="function" and
         Call(lib.GetRecipe,lib,PROF_IDS[profession],id) or nil
-    local source="client"
+    local source=type(schematic)=="table" and
+        schematic.chalkBoxReagentFallback==true and
+        "client reagent fallback" or "client"
     if not inputs and inputState=="unavailable" and
         type(record)=="table" and type(record.reagents)=="table" then
         local valid,count={},0
@@ -326,15 +340,21 @@ function ChalkBox_IntelObserveRecipe(profession,id,info,schematic)
         end
         if valid and count>0 then inputs=valid;source="database fallback" end
     end
-    local output=nil
-    if type(schematic)=="table" then
-        output=schematic.outputItemID
+    local output=type(schematic)=="table" and schematic.outputItemID or nil
+    if not Int(output) then
+        output=info.outputItemID or info.craftedItemID or info.craftedItemId
     end
     if not Int(output) and type(record)=="table" then
         output=record.craftedItemId
     end
     local yield=type(schematic)=="table" and schematic.quantityMin or nil
     local maxYield=type(schematic)=="table" and schematic.quantityMax or nil
+    -- Use live recipe-info yield fields only when the schematic supplies
+    -- no yield fields at all. Never override a variable/ambiguous yield.
+    if yield==nil and maxYield==nil then
+        yield=info.quantityMin
+        maxYield=info.quantityMax
+    end
     if not Int(yield) or yield<1 or not Int(maxYield) or
         maxYield~=yield then
         -- Unknown/variable outputs are never assumed to be one item.
@@ -392,6 +412,22 @@ function ChalkBox_IntelObserveRecipe(profession,id,info,schematic)
         same=false
     end
     if not same then ChalkBox_IntelInvalidate() end
+    return true
+end
+
+
+-- An explicit unlearned state revokes old recipe knowledge without touching
+-- the player's preference, market history, or any existing stable module.
+function ChalkBox_IntelForgetRecipe(profession,id)
+    if not Enabled() or not PROF_IDS[profession] or
+        not Int(id) or id<1 then return false end
+    local db=DB(false)
+    local recipe=db and type(db.recipes)=="table" and db.recipes[tostring(id)]
+    if type(recipe)~="table" or recipe.profession~=profession then
+        return false
+    end
+    db.recipes[tostring(id)]=nil
+    ChalkBox_IntelInvalidate()
     return true
 end
 
@@ -522,9 +558,12 @@ local function RecipeList(db)
             -- The original data is demonstrably cross-profession; discard
             -- it. Do not invent that the character knows the correct recipe.
             db.recipes[savedID]=nil
-        elseif type(r)=="table" and type(r.inputs)=="table" and
-            next(r.inputs) and Int(r.output) and Int(r.yield)
-            and r.yield>=1 and r.yield<=100 then
+        elseif type(r)=="table" and r.known==true and
+            type(r.inputs)=="table" and next(r.inputs) and
+            Int(r.output) and Int(r.yield) and
+            r.yield>=1 and r.yield<=100 and
+            (type(ChalkBox_ProfessionHas)~="function" or
+             Call(ChalkBox_ProfessionHas,r.profession)==true) then
             list[#list+1]=r
             if #list>=MAX_RECIPES then break end
         end
@@ -539,6 +578,14 @@ local function Forecast(plan,db,list,stock,valueFn)
     if not skill or not Int(skill.rank) or not Int(skill.cap) then
         plan.summary="Open "..tostring(prof or
             "your profession").." to record your skill and cap"
+        plan.incomplete=true
+        plan.uncertain=true
+        return
+    end
+    if type(ChalkBox_ProfessionHas)=="function" and
+        Call(ChalkBox_ProfessionHas,prof)~=true then
+        plan.summary="Open "..tostring(prof)..
+            " to verify your learned recipes before planning"
         plan.incomplete=true
         plan.uncertain=true
         return
@@ -1258,6 +1305,11 @@ function ChalkBox_IntelCommand(message)
             DEFAULT_CHAT_FRAME:AddMessage("|cff67c6b7Intelligence Plan|r "..
                 (lastPlan and lastPlan.summary or
                     "No bag snapshot available yet"))
+            local coverage=ChalkBox_IntelStatus()
+            DEFAULT_CHAT_FRAME:AddMessage(
+                "  Recipes: "..coverage.recipesComplete.." complete; "..
+                coverage.recipesIncomplete..
+                " missing details (excluded from craft math).")
             if lastPlan then
                 local shown=0
                 for _,a in ipairs(lastPlan.actions) do

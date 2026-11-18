@@ -1,6 +1,14 @@
 -- WoW Forever 1.60 test: legacy profession APIs absent, modern data loads
 -- after SHOW, and some recipe schematic endpoints are incomplete.
 local seenFrame,timers=nil,{}
+local observedRecipes,forgotten={},0
+_G.ChalkBox_IntelObserveRecipe=function(_,id,_,schematic)
+    observedRecipes[id]=schematic
+end
+_G.ChalkBox_IntelForgetRecipe=function()
+    forgotten=forgotten+1
+end
+local learnedTent=true
 _G.ChalkBoxProfessionDB={
     reagents={
         ["id:783"]={Cooking=true},
@@ -65,7 +73,11 @@ _G.C_TradeSkillUI={
     end,
     GetRecipeInfo=function(id)
         return {name=id==3816 and "Cured Light Hide" or
-            id==2001 and "Camp Tent" or nil,learned=id~=2002}
+            id==2001 and "Camp Tent" or nil,
+            learned=id~=2002 and (id~=2001 or learnedTent),
+            outputItemID=id==2005 and 9008 or nil,
+            quantityMin=id==2005 and 1 or nil,
+            quantityMax=id==2005 and 1 or nil}
     end,
     GetRecipeSchematic=function(id)
         if schematic then
@@ -117,6 +129,15 @@ for _,cb in ipairs(timers) do cb() end
 timers={}
 items=ChalkBox_LearnedRecipeUses("2318","Light Leather")
 assert(#items==1,"delayed scan after recipe data load must be idempotent")
+learnedTent=false
+frame.callback(frame,"TRADE_SKILL_LIST_UPDATE")
+assert(#ChalkBox_LearnedRecipeUses("2318","Light Leather")==0 and
+    forgotten>0,
+    "explicit unlearned state revokes stale known-recipe association")
+learnedTent=true
+frame.callback(frame,"TRADE_SKILL_LIST_UPDATE")
+assert(#ChalkBox_LearnedRecipeUses("2318","Light Leather")==1,
+    "relearning after a positive client observation restores the recipe")
 currentProfession=171
 recipeIDs={2005}
 schematic=false
@@ -126,6 +147,12 @@ local potion=ChalkBox_LearnedRecipeUses("3371","Empty Vial")
 assert(#potion==1 and potion[1].profession=="Alchemy"
     and potion[1].quantity==2,
     "incomplete schematic must fall back to GetRecipeNumReagents")
+assert(type(observedRecipes[2005])=="table" and
+    observedRecipes[2005].chalkBoxReagentFallback==true and
+    observedRecipes[2005].reagentSlotSchematics[1].quantityRequired==2 and
+    observedRecipes[2005].outputItemID==9008 and
+    observedRecipes[2005].quantityMin==1,
+    "complete live fallback must reach Intelligence with known output and yield")
 frame.callback(frame,"PLAYER_ENTERING_WORLD")
 assert(ChalkBox_ProfessionHas("Alchemy"),
     "on modern-only client, observed profession survives refresh")

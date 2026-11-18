@@ -312,6 +312,38 @@ local function AddReagent(profession, link, name, recipeName, quantity,spellID)
     end
 end
 
+
+-- Forget a recipe only when the live client explicitly reports it unlearned.
+-- A missing/empty recipe list may be transient and must NEVER erase saved data.
+local function ForgetLearnedRecipe(profession,spellID)
+    if type(recipeUses)~="table" then return end
+    for key,set in pairs(recipeUses) do
+        if type(set)=="table" then
+            local changed=false
+            for rowKey,entry in pairs(set) do
+                if type(entry)=="table" and entry.profession==profession and
+                    entry.recipeID==spellID then
+                    set[rowKey]=nil
+                    changed=true
+                end
+            end
+            if changed then
+                local stillUsed=false
+                for _,entry in pairs(set) do
+                    if type(entry)=="table" and entry.profession==profession then
+                        stillUsed=true;break
+                    end
+                end
+                if not stillUsed and type(learned[key])=="table" then
+                    learned[key][profession]=nil
+                    if next(learned[key])==nil then learned[key]=nil end
+                end
+                if next(set)==nil then recipeUses[key]=nil end
+            end
+        end
+    end
+end
+
 local function ReadLegacyTrade()
     if type(GetTradeSkillLine) ~= "function" or type(GetNumTradeSkills) ~= "function"
         or type(GetTradeSkillInfo) ~= "function" then return end
@@ -480,21 +512,58 @@ local function ReadModernTrade()
                 if not added and type(api.GetRecipeNumReagents)=="function"
                     and type(api.GetRecipeReagentInfo)=="function" then
                     local numberOK,n=pcall(api.GetRecipeNumReagents,id)
-                    if numberOK and type(n)=="number" then
-                        for j=1,math.min(n,25) do
+                    if numberOK and type(n)=="number" and n>=1 and
+                        n<=25 and n%1==0 then
+                        local fallbackSlots,complete={},true
+                        for j=1,n do
                             local reagentOK,reagent=pcall(api.GetRecipeReagentInfo,id,j)
                             if reagentOK and type(reagent)=="table" then
                                 local itemID=reagent.itemID or reagent.itemId
-                                AddReagent(profession,itemID or reagent.itemLink,
-                                    reagent.name,recipeName,
-                                    reagent.quantityRequired or reagent.quantity,id)
+                                local link=reagent.itemLink
+                                if not itemID and type(link)=="string" then
+                                    itemID=tonumber(link:match("item:(%d+)"))
+                                end
+                                local qty=reagent.quantityRequired or reagent.quantity
+                                AddReagent(profession,itemID or link,reagent.name,
+                                    recipeName,qty,id)
+                                if type(itemID)=="number" and itemID>0 and
+                                    itemID%1==0 and type(qty)=="number" and
+                                    qty>=1 and qty<=1000 and qty%1==0 then
+                                    fallbackSlots[#fallbackSlots+1]={
+                                        required=true,quantityRequired=qty,
+                                        reagents={{itemID=itemID}}}
+                                else
+                                    complete=false
+                                end
+                            else
+                                complete=false
                             end
+                        end
+                        -- Pass through exact legacy reagent data to the
+                        -- planner, not just tooltip labels. Never pass a
+                        -- partial ingredient list as a complete craft.
+                        if complete and #fallbackSlots==n and
+                            not intelSchematic then
+                            intelSchematic={
+                                chalkBoxReagentFallback=true,
+                                reagentSlotSchematics=fallbackSlots,
+                                outputItemID=info.outputItemID or
+                                    info.craftedItemID or info.craftedItemId,
+                                quantityMin=info.quantityMin,
+                                quantityMax=info.quantityMax}
                         end
                     end
                 end
                 if type(ChalkBox_IntelObserveRecipe)=="function" then
                     pcall(ChalkBox_IntelObserveRecipe,
                         profession,id,info,intelSchematic)
+                end
+            elseif infoOK and type(info)=="table" and
+                (info.learned==false or info.isLearned==false) and
+                (not actual or actual==profession) then
+                ForgetLearnedRecipe(profession,id)
+                if type(ChalkBox_IntelForgetRecipe)=="function" then
+                    pcall(ChalkBox_IntelForgetRecipe,profession,id)
                 end
             end
         end

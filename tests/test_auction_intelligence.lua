@@ -145,6 +145,23 @@ ChalkBox_IntelObserveRecipe("Leatherworking",20004,
        reagents={{itemID=2319}}}}})
 assert(ChalkBoxProfessionDB.intelligence.recipes["20004"].inputs==nil,
     "variable-yield recipe must not acquire a fabricated one-item output")
+-- The game can supply exact reagent details through the older reader while
+-- output ID and fixed yield come from GetRecipeInfo. No offline DB needed.
+assert(ChalkBox_IntelObserveRecipe("Leatherworking",20010,
+    {learned=true,name="Live Only Craft",outputItemID=9001,
+     quantityMin=1,quantityMax=1},
+    {chalkBoxReagentFallback=true,reagentSlotSchematics={{
+        required=true,quantityRequired=2,reagents={{itemID=2319}}}}}))
+local live=ChalkBoxProfessionDB.intelligence.recipes["20010"]
+assert(live and live.output==9001 and live.yield==1 and
+    live.inputs[2319]==2 and live.source=="client reagent fallback",
+    "live fallback materials and live recipe info must form a complete recipe")
+assert(ChalkBox_IntelStatus().recipesComplete>=3 and
+    ChalkBox_IntelStatus().recipesIncomplete>=1,
+    "coverage diagnostics distinguish usable from incomplete knowledge")
+assert(ChalkBox_IntelForgetRecipe("Leatherworking",20010) and
+    ChalkBoxProfessionDB.intelligence.recipes["20010"]==nil,
+    "explicit unlearned signal invalidates only the stale recipe")
 
 local skillRows=Stock()
 local skill=ChalkBox_IntelAnnotate(skillRows,{freeSlots=2,totalSlots=56})
@@ -332,6 +349,19 @@ end
 assert(selectedB and contested[1].intel.kind=="CRAFT" and
     contested[1].intel.qty==6,
     "bounded inventory search beats ratio-greedy when two smaller crafts pay more")
+_G.ChalkBox_ProfessionHas=function(profession)
+    return profession~="Leatherworking"
+end
+ChalkBox_IntelInvalidate()
+local stale=ChalkBox_IntelAnnotate({{
+    itemID=7770,name="Sample Raw Material",count=6,vendor=10,
+    classID=7,stacks=1,boundKnown=true}},{freeSlots=1})
+for _,action in ipairs(stale.actions) do
+    assert(action.kind~="CRAFT",
+        "a no-longer-owned profession must not offer cached crafting routes")
+end
+_G.ChalkBox_ProfessionHas=nil
+ChalkBox_IntelInvalidate()
 assert(ChalkBox_IntelSet("learn",false))
 assert(ChalkBox_IntelSet("protectGoal",true))
 assert(ChalkBox_IntelSet("target",50))
