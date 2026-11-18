@@ -224,7 +224,9 @@ local function OnItemTooltip(tooltip)
     end
     -- Experimental intelligence is off by default. It only reads bag and
     -- market data and may annotate items physically in the player's bags.
-    if type(ChalkBox_IntelTooltip)=="function" then
+    if type(ChalkBox_IntelEnabled)=="function" and
+        ChalkBox_IntelEnabled() and
+        type(ChalkBox_IntelTooltip)=="function" then
         pcall(ChalkBox_IntelTooltip,tooltip,link)
     end
     local future=FutureUses(name,link)
