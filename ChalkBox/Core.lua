@@ -167,14 +167,18 @@ end
 -- Read-only Core quest facts for Item Insights. These are the same
 -- cached accepted-quest objectives used by the legacy vendor warnings.
 function ChalkBox_CoreQuestFact(tooltip)
-    if not MerchantFrame or not MerchantFrame.IsShown or
-        not MerchantFrame:IsShown() or not tooltip or
-        type(tooltip.GetItem)~="function" then return nil end
+    if not tooltip or type(tooltip.GetItem)~="function" then return nil end
     local name=tooltip:GetItem()
     if not Safe(name) or type(name)~="string" then return nil end
     local entry=questItems[name]
     if not entry then return nil end
-    local slot,buyTab=TooltipVendorSlot(tooltip)
+    -- The accepted-quest cache can protect a bag item even when no
+    -- merchant is open. Keep the vendor-offer check for BUY/buyback only.
+    local slot,buyTab
+    if MerchantFrame and MerchantFrame.IsShown and
+        MerchantFrame:IsShown() then
+        slot,buyTab=TooltipVendorSlot(tooltip)
+    end
     if slot and not buyTab then return nil end
     if slot then
         if not entry.purchase or GetVendorName(slot)~=name then return nil end
@@ -190,10 +194,18 @@ function ChalkBox_CoreQuestFact(tooltip)
     end
 end
 local function OnItemTooltip(tooltip,forceLegacy)
+    local coordinatorOn=not forceLegacy and
+        type(ChalkBox_TipCoordinatorEnabled)=="function" and
+        ChalkBox_TipCoordinatorEnabled()
+    -- Retain the exact previous Core behavior when the experiment is OFF:
+    -- only merchant-open tooltips receive Core's own warning. With the
+    -- coordinator ON, Core can serve as a final safety owner even outside
+    -- merchants if LootSense's own callback fails to run.
+    if not coordinatorOn and not (MerchantFrame and
+        MerchantFrame.IsShown and MerchantFrame:IsShown()) then return end
     local fact=ChalkBox_CoreQuestFact(tooltip)
     if not fact then return end
-    if not forceLegacy and type(ChalkBox_TipCoordinatorEnabled)=="function"
-        and ChalkBox_TipCoordinatorEnabled() and
+    if coordinatorOn and
         type(ChalkBox_TipCoordinatorShow)=="function" and
         tooltip and type(tooltip.GetItem)=="function" then
         -- Core's independent quest hook is the emergency safety owner.

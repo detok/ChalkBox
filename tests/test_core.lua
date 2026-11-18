@@ -153,6 +153,19 @@ hooks.MerchantFrame_Update()
 assert(overlay.shown==true,"vendor glow should return on buy tab")
 eventCallback(nil,"MERCHANT_CLOSED")
 assert(overlay.shown==false,"closing merchant should clear glow")
+vendorOpen=false
+tooltip.lines={};tooltip.owner={}
+onTooltip(tooltip)
+assert(#tooltip.lines==0,
+    "legacy Core remains merchant-only while coordinator is OFF")
+_G.ChalkBox_TipCoordinatorEnabled=function() return true end
+_G.ChalkBox_TipCoordinatorShow=function() error("unavailable renderer") end
+onTooltip(tooltip)
+assert(#tooltip.lines==1 and tooltip.lines[1]:find("DO NOT SELL"),
+    "experimental Core preserves verified accepted-quest safety even outside a merchant")
+_G.ChalkBox_TipCoordinatorEnabled=nil
+_G.ChalkBox_TipCoordinatorShow=nil
+vendorOpen=true
 -- Two accepted quests may need the same item. Keep every real
 -- source quest, but never claim an unrelated quest needs the item.
 local byQuest={

@@ -52,7 +52,9 @@ redraw without re-hover is not promised; client behavior needs testing.
 
 The coordinator is enabled by the user's saved per-character flag. When OFF,
 LootSense and Core execute their previous rendering functions, and no
-coordinator facts are read. Each module's read-only provider is guarded.
+coordinator facts are read. When ON, Core can independently use its already
+cached accepted-quest item facts even outside a merchant, so a missing
+LootSense callback does not silently remove a critical warning. Each module's read-only provider is guarded.
 A failed coordinator call restores the Core warning and the old LootSense
 rendering path for that hover where possible. Repeated native callbacks
 look for the coordinated marker to avoid duplicate addon lines.

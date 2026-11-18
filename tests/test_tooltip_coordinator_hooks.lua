@@ -103,6 +103,14 @@ local function Scenario(mode)
     assert(Count(bag,"Item Insights")==1 and
         bag:find("Quest: Keeper of the Flame",1,true),
         "one combined item summary despite two callbacks: "..mode)
+    -- In the worst case LootSense's callback may not fire at all.
+    -- Core must still own a verified accepted quest warning.
+    lines={}
+    tip.owner={}
+    hooks[1](tip)
+    assert(Count(table.concat(lines," | "),"Item Insights")==1 and
+        table.concat(lines," | "):find("DO NOT SELL",1,true),
+        "Core alone protects an accepted quest outside a merchant: "..mode)
     -- With the merchant open, Core fires first. LootSense must detect the
     -- first already-rendered coordinator section and NOT append a second.
     vendorOpen=true
