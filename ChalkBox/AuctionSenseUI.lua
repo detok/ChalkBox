@@ -64,11 +64,16 @@ local function Hint(button,title,summary,extra)
     button:SetScript("OnEnter",function(self)
         local tip=StartTooltip(self,title)
         if not tip then return end
-        tip:AddLine(summary,COLOR.neutral[1],COLOR.neutral[2],
-            COLOR.neutral[3])
-        if extra then
-            tip:AddLine(extra,COLOR.muted[1],COLOR.muted[2],
-                COLOR.muted[3])
+        if type(ChalkBox_TipLine)=="function" then
+            ChalkBox_TipLine(tip,summary,"text",true)
+            if extra then ChalkBox_TipLine(tip,extra,"muted",true) end
+        else
+            tip:AddLine(summary,COLOR.neutral[1],COLOR.neutral[2],
+                COLOR.neutral[3])
+            if extra then
+                tip:AddLine(extra,COLOR.muted[1],COLOR.muted[2],
+                    COLOR.muted[3])
+            end
         end
         EndTooltip(tip)
     end)
