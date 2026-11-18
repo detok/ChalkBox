@@ -431,7 +431,8 @@ local function ProfitCandidates(list,byID,cut,s)
         local cost=0
         for id,qty in pairs(inputs) do
             if not byID[id] or byID[id].protected or byID[id].bound or
-                s.ignored[tostring(id)] or not Price(id) then
+                byID[id].boundKnown~=true or s.ignored[tostring(id)]
+                or not Price(id) then
                 -- Never mistake an unpriced reagent's vendor value for its
                 -- market opportunity cost.
                 return
@@ -559,6 +560,9 @@ local function Analyze(rows,stats)
             kind,qty,reason="KEEP",item.count,"Personal or quest protection"
         elseif item.bound then
             kind,qty,reason="KEEP",item.count,"Bound item; never recommend auction"
+        elseif item.boundKnown~=true then
+            kind,qty,reason="REVIEW",item.count,
+                "Client has not verified this item's tradeability"
         elseif suggestion then
             kind,qty,reason=suggestion.kind,suggestion.qty,suggestion.reason
         elseif s.mode=="skill" and plan.uncertain and
