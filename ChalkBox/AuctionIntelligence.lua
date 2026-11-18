@@ -9,9 +9,12 @@ local PROF_IDS={Alchemy=171,Blacksmithing=164,Leatherworking=165,
     ["First Aid"]=129,Jewelcrafting=755,Inscription=773}
 local lastPlan=nil
 local lastPlanToken=nil
+local lastPlanAt=nil
+local MAX_HOVER_PLAN_AGE=300 -- seconds; prevents outdated "Auction N" hints
 function ChalkBox_IntelInvalidate()
     lastPlan=nil
     lastPlanToken=nil
+    lastPlanAt=nil
 end
 
 local function Safe(v)
@@ -1214,6 +1217,9 @@ function ChalkBox_IntelAnnotate(rows,stats)
     local ok,result=pcall(Analyze,rows,stats)
     if ok and result then
         lastPlanToken=token
+        local now=Call(time)
+        if not Int(now) then now=Call(GetServerTime) end
+        lastPlanAt=Int(now) and now or nil
         return result
     end
     for i,row in ipairs(rows) do
@@ -1238,6 +1244,12 @@ end
 function ChalkBox_IntelTooltipInsight(id)
     if not Enabled() or not Int(id) or id<1 or not lastPlan or
         type(lastPlan.rows)~="table" then return nil end
+    local now=Call(time)
+    if not Int(now) then now=Call(GetServerTime) end
+    if not Int(now) or not Int(lastPlanAt) or now<lastPlanAt
+        or now-lastPlanAt>MAX_HOVER_PLAN_AGE then
+        return nil -- stale advice must not direct a transaction
+    end
     return lastPlan.rows[id]
 end
 function ChalkBox_IntelTooltip(tooltip,link)

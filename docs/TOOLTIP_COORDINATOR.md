@@ -27,10 +27,11 @@ item data, native colors, secure frames, inventory, auctions or combat state.
   objective progress.
 * AuctionSense's price and provenance only if the market-tooltip setting is
   enabled and a saved scan exists; old or variant-mixed prices carry warnings.
-* Intelligence's **last computed** action and explanations if Intelligence
-  itself is enabled. The hover does **not** trigger market scans, bag scans,
-  full recipe planning or profit optimization. Open AuctionSense → My Items
-  to prepare updated Inventory Intelligence advice.
+* Intelligence's **fresh last-computed** action and explanations if Intelligence
+  itself is enabled. Cached decisions older than five minutes are intentionally
+  omitted so an old bag allocation doesn't direct a sale. The hover does **not**
+  trigger market scans, bag scans, full recipe planning or profit optimization.
+  Open AuctionSense → My Items to prepare updated Inventory Intelligence advice.
 * DisenchantSense's read-only material model if its own tooltip option is
   enabled and the item is not protected.
 * DropSense's observed personal loot facts **only on native loot buttons**

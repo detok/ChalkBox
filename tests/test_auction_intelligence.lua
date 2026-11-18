@@ -193,6 +193,15 @@ local same=Stock()
 local cached=ChalkBox_IntelAnnotate(same,{freeSlots=2,totalSlots=56})
 assert(cached==skill and same[1].intel==skillRows[1].intel,
     "unchanged bag snapshots reuse a single planned result and tooltip advice")
+assert(ChalkBox_IntelTooltipInsight(2319)~=nil,
+    "fresh cached My Items decisions can inform a quick item hover")
+local originalClock=time
+_G.time=function() return 1000601 end
+assert(ChalkBox_IntelTooltipInsight(2319)==nil,
+    "coordinator must not repeat a sale or crafting action from an old bag snapshot")
+_G.time=originalClock
+assert(ChalkBox_IntelTooltipInsight(2319)~=nil,
+    "fresh cached snapshot recovers without a new auction scan")
 ChalkBox_IntelInvalidate()
 local rechecked=ChalkBox_IntelAnnotate(Stock(),{freeSlots=2,totalSlots=56})
 assert(rechecked~=skill,"explicit observation invalidation forces a new forecast")

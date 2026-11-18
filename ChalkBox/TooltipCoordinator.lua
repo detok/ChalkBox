@@ -44,6 +44,9 @@ end
 local function Add(list,message,role,limit)
     if type(message)~="string" or message=="" or #message>400 or
         #list>=limit then return end
+    for _,entry in ipairs(list) do
+        if entry.text==message then return end
+    end
     list[#list+1]={text=message,role=role or "text"}
 end
 -- Character-scoped switch; reading the OFF state creates no saved data.
@@ -74,7 +77,7 @@ local function Read(context)
         out.intel=Call(ChalkBox_IntelTooltipInsight,id)
     end
     local status=Call(ChalkBox_AuctionStatus)
-    if type(status)=="table" and status.tooltip~=false then
+    if type(status)=="table" and status.tooltip==true then
         out.price=Call(ChalkBox_AuctionPrice,id)
     end
     -- Legacy DE still displays the modeled outcome for protected gear,
@@ -124,6 +127,15 @@ function ChalkBox_TipCoordinatorBuild(context)
     local riskyIntel=type(intel)=="table" and
         (intel.kind=="AUCTION" or intel.kind=="VENDOR" or
          intel.kind=="CRAFT" or intel.kind=="CHECK DE")
+    if not title and type(intel)=="table" and intel.kind=="AUCTION"
+        and type(price)=="table" and (price.stale or price.mixed) then
+        -- A scan can age or reveal mixed equipment variants AFTER My
+        -- Items computed its plan. Never repeat an old sell directive.
+        title,role="CHECK AH PRICE","warning"
+        reason=price.mixed and
+            "Mixed equipment variants; verify the exact item first" or
+            "Market snapshot aged; refresh before auctioning"
+    end
     if not title and (saleProtected or facts.safetyUnknown) and riskyIntel then
         title="HOLD"
         reason=facts.safetyUnknown and
@@ -135,7 +147,8 @@ function ChalkBox_TipCoordinatorBuild(context)
         intel.kind~="IGNORE" and type(intel.headline)=="string" then
         title=intel.headline
         reason=intel.reason
-        role=intel.kind=="KEEP" and "good" or
+        role=intel.kind=="KEEP" and
+                (intel.confidence=="verified" and "good" or "info") or
             intel.kind=="HOLD" and "warning" or
             (intel.kind=="VENDOR" or intel.kind=="AUCTION") and "value" or
             "info"
@@ -201,6 +214,38 @@ function ChalkBox_TipCoordinatorBuild(context)
         Add(extra,intel.bankDetail,"muted",MAX_DETAILS)
         Add(extra,intel.evidenceDetail,"muted",MAX_DETAILS)
     end
+    if type(loot)=="table" and type(loot.future)=="table" and
+        #loot.future>0 and not loot.isQuest then
+        local first=loot.future[1]
+        if type(first)=="table" and type(first.questName)=="string" then
+            if title~="FUTURE QUEST" then
+                Add(main,"Possible later quest: "..first.questName,
+                    "future",MAX_BASE)
+            else
+                Add(main,"Reference: "..first.questName,
+                    "future",MAX_BASE)
+            end
+        end
+        for i,q in ipairs(loot.future) do
+            if i>3 then break end
+            if type(q)=="table" and type(q.questName)=="string" then
+                Add(extra,"Future quest: "..q.questName..
+                    (Num(q.required) and "  ·  Need "..q.required or ""),
+                    "future",MAX_DETAILS)
+            end
+        end
+        Add(extra,"Reference only; not an active quest","muted",MAX_DETAILS)
+    end
+    if type(drop)=="table" then
+        if Num(drop.quantity) and Num(drop.windows) then
+            Add(main,drop.quantity.." found in "..drop.windows..
+                " observed loots","count",MAX_BASE)
+        end
+        if Num(drop.rate) and Num(drop.hits) and Num(drop.attempts) then
+            Add(extra,("%.1f%% observed (%d/%d), not official odds"):format(
+                drop.rate,drop.hits,drop.attempts),"info",MAX_DETAILS)
+        end
+    end
     if type(price)=="table" and Num(price.low) then
         if not saleProtected then
             if price.mixed then
@@ -242,38 +287,6 @@ function ChalkBox_TipCoordinatorBuild(context)
             Add(extra,"Protected item  ·  DE model is informational only",
                 "warning",MAX_DETAILS)
         end
-    end
-    if type(drop)=="table" then
-        if Num(drop.quantity) and Num(drop.windows) then
-            Add(main,drop.quantity.." found in "..drop.windows..
-                " observed loots","count",MAX_BASE)
-        end
-        if Num(drop.rate) and Num(drop.hits) and Num(drop.attempts) then
-            Add(extra,("%.1f%% observed (%d/%d), not official odds"):format(
-                drop.rate,drop.hits,drop.attempts),"info",MAX_DETAILS)
-        end
-    end
-    if type(loot)=="table" and type(loot.future)=="table" and
-        #loot.future>0 and not loot.isQuest then
-        local first=loot.future[1]
-        if type(first)=="table" and type(first.questName)=="string" then
-            if title~="FUTURE QUEST" then
-                Add(main,"Possible later quest: "..first.questName,
-                    "future",MAX_BASE)
-            else
-                Add(main,"Reference: "..first.questName,
-                    "future",MAX_BASE)
-            end
-        end
-        for i,q in ipairs(loot.future) do
-            if i>3 then break end
-            if type(q)=="table" and type(q.questName)=="string" then
-                Add(extra,"Future quest: "..q.questName..
-                    (Num(q.required) and "  ·  Need "..q.required or ""),
-                    "future",MAX_DETAILS)
-            end
-        end
-        Add(extra,"Reference only; not an active quest","muted",MAX_DETAILS)
     end
     if type(loot)=="table" and
         type(loot.recipeDetails)=="string" then

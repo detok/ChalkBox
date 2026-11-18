@@ -108,6 +108,18 @@ assert(later:find("Auction 8",1,true) and
     later:find("Possible later quest:",1,true) and
     not later:find("DE higher vs auction",1,true),
     "future quests are reminders, not sales bans, but DE stays informational")
+-- When many modules have facts, possible quest use must not be clipped
+-- by a flood of market/DE lines in the default hover.
+Clear()
+_G.ChalkBox_IntelTooltipInsight=function()
+    return {kind="AUCTION",headline="Auction 8 | Keep 12",
+        reason="Surplus estimated",shortfall=4,
+        trainingDetail="Train before more progress",
+        goalDetail="Recipe details"}
+end
+assert(ChalkBox_TipCoordinatorShow(tip,ctx))
+assert(table.concat(lines," | "):find("Possible later quest:",1,true),
+    "possible quest warning stays visible ahead of lower-priority market data")
 -- A stale/mixed AH observation cannot masquerade as a confident current bid.
 Clear()
 _G.ChalkBox_AuctionPrice=function()
@@ -116,15 +128,34 @@ end
 assert(ChalkBox_TipCoordinatorShow(tip,ctx))
 local staleText=table.concat(lines," | ")
 assert(staleText:find("Old AH ask:",1,true) and
-    not staleText:find("AH low ask:",1,true),
-    "stale market evidence receives an explicit warning")
+    not staleText:find("AH low ask:",1,true) and
+    not staleText:find("Auction 8",1,true) and
+    staleText:find("CHECK AH PRICE",1,true),
+    "stale price also overrides an outdated auction action from My Items")
 Clear()
 _G.ChalkBox_AuctionPrice=function()
     return {low=15000,age=100,stale=false,mixed=true}
 end
 assert(ChalkBox_TipCoordinatorShow(tip,ctx))
-assert(table.concat(lines," | "):find("Mixed variants",1,true),
-    "mixed equipment variants never get a normal market-price label")
+assert(table.concat(lines," | "):find("Mixed variants",1,true)
+    and not table.concat(lines," | "):find("Auction 8",1,true),
+    "mixed variants do not retain a stale inventory auction directive")
+_G.ChalkBox_AuctionPrice=function()
+    return {low=12500,average=13000,age=180,market="Realm / Alliance",
+        stale=false,mixed=false}
+end
+Clear()
+local marketReads=0
+_G.ChalkBox_AuctionStatus=function() return {tooltip=false} end
+_G.ChalkBox_AuctionPrice=function()
+    marketReads=marketReads+1
+    return {low=12500,age=180}
+end
+assert(ChalkBox_TipCoordinatorShow(tip,ctx))
+assert(marketReads==0 and
+    not table.concat(lines," | "):find("AH low ask",1,true),
+    "AuctionSense tooltip OFF is authoritative, even inside Item Insights")
+_G.ChalkBox_AuctionStatus=function() return {tooltip=true} end
 _G.ChalkBox_AuctionPrice=function()
     return {low=12500,average=13000,age=180,market="Realm / Alliance",
         stale=false,mixed=false}
