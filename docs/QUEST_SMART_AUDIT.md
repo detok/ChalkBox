@@ -15,7 +15,7 @@ Status: **draft integration for live Forever verification**. The last stable rel
 - Prefer `C_QuestLog.GetDistanceSqToQuest(questID)` for the actual current objective/turn-in, **only** if it returns public numeric square distance and confirms the same continent. This is a native distance, not NPC spawn prediction.
 - For Nearby, merge accepted quest IDs from the player subzone and its current zone, plus valid native `GetNextWaypointForMap` coordinates. Optionally permit native distance evidence within a user-chosen short radius; default remains zone-only.
 - Sort by real distance, zone, quest level, title or original log order. Explicitly selected/accepted quest watches remain protected by the existing owner/reconciliation logic.
-- Apply optional native display sorting to the **instantiated QuestObjectiveTracker frame**, never just its original mixin prototype; do not remove/re-add quest watches to reorder them. Disable sorting in combat, and restore Blizzard's display order when switched off.
+- Native quest-tracker method replacement is disabled after a `SetPassThroughButtons()` protected-action report. Keep selection ranking and Nearby improvements while leaving Blizzard tracker methods untouched.
 - Keep manual watches, saved muted/suspended state, verified dungeon matching, the navigation target and safe map/quest-log/combat deferrals.
 
 ## Source comparisons
