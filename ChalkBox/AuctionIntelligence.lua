@@ -353,12 +353,21 @@ local function Weights(recipe,rank)
     if not Int(rank) then return nil end
     if Int(recipe.requiredSkill) and rank<recipe.requiredSkill then return nil end
     local t=recipe.tiers
-    if type(t)=="table" and Int(t.grey) and
-        Int(t.green) and Int(t.yellow) and Int(t.orange) then
-        if rank>=t.grey then return nil end
-        if rank>=t.green then return 0.25 end
-        if rank>=t.yellow then return 0.65 end
-        return 1
+    if type(t)=="table" then
+        -- Forever LibProfessionDB difficulty is {orange,yellow,green,grey};
+        -- keep named-field support for other clients/tests. Validate order
+        -- to avoid presenting malformed data as a reliable skill plan.
+        local orange=t.orange or t[1]
+        local yellow=t.yellow or t[2]
+        local green=t.green or t[3]
+        local grey=t.grey or t[4]
+        if Int(orange) and Int(yellow) and Int(green) and Int(grey)
+            and orange<=yellow and yellow<=green and green<=grey then
+            if rank>=grey then return nil end
+            if rank>=green then return 0.25 end
+            if rank>=yellow then return 0.65 end
+            return 1
+        end
     end
     -- Only the currently observed client result can support an otherwise
     -- undocumented skill-up. Do not extrapolate across future ranks.
@@ -378,18 +387,21 @@ local function RecipeList(db)
     table.sort(list,function(a,b) return a.id<b.id end)
     return list
 end
-local function Forecast(plan,db,list,stock,rowsByID,cut)
+local function Forecast(plan,db,list,stock,valueFn)
     local s=Settings()
     local prof=s.profession
     local skill=db.skills and db.skills[prof]
     if not skill or not Int(skill.rank) or not Int(skill.cap) then
-        plan.summary="Skill rank unavailable - open "..tostring(prof or
-            "your profession").." window"
+        plan.summary="Open "..tostring(prof or
+            "your profession").." to record your skill and cap"
+        plan.incomplete=true
         plan.uncertain=true
         return
     end
     local rank,cap=skill.rank,skill.cap
     local capped=rank>=cap
+    plan.skillRank,plan.skillCap,plan.skillGoal=rank,cap,prof
+    plan.capped=capped
     local steps=s.target
     if not capped then steps=math.min(steps,cap-rank) end
     if capped then
@@ -398,7 +410,7 @@ local function Forecast(plan,db,list,stock,rowsByID,cut)
     else
         plan.summary="Forecasting "..steps.." skill points for "..prof
     end
-    local counts,selected={},{}
+    local counts,selected,uses,routeDetails={},{},{},{}
     local planned=0
     for delta=0,steps-1 do
         local at=rank+delta
@@ -410,8 +422,7 @@ local function Forecast(plan,db,list,stock,rowsByID,cut)
                     local cost,missing,unknown=0,0,false
                     local crafts=math.ceil(1/w)
                     for id,qty in pairs(r.inputs) do
-                        local row=rowsByID[id]
-                        local value=UnitValue(id,row,cut)
+                        local value=valueFn(id)
                         -- Price influences WHICH eligible recipe is cheaper,
                         -- never WHETHER its known reagents can be forecast.
                         -- Stock on hand is known even without an AH scan.
@@ -424,7 +435,7 @@ local function Forecast(plan,db,list,stock,rowsByID,cut)
                             (counts[id] or 0))
                         missing=missing+math.max(0,qty*crafts-held)
                     end
-                    local output=UnitValue(r.output,rowsByID[r.output],cut)
+                    local output=valueFn(r.output)
                     cost=math.max(0,cost-
                         (Num(output) and output or 0)*r.yield)
                     -- Prefer routes using items actually carried, without
@@ -445,14 +456,37 @@ local function Forecast(plan,db,list,stock,rowsByID,cut)
             counts[id]=(counts[id] or 0)+qty*crafts
         end
         selected[best.id]=(selected[best.id] or 0)+crafts
+        local detail=routeDetails[best.id]
+        if not detail then
+            detail={recipeID=best.id,name=best.name,crafts=0,
+                predictedSteps=0,source=best.source}
+            routeDetails[best.id]=detail
+        end
+        detail.crafts=detail.crafts+crafts
+        detail.predictedSteps=detail.predictedSteps+1
+        for id,qty in pairs(best.inputs) do
+            local byRecipe=uses[id] or {}
+            byRecipe[best.id]=(byRecipe[best.id] or 0)+qty*crafts
+            uses[id]=byRecipe
+        end
         planned=planned+1
     end
     plan.forecastSteps=planned
     plan.forecastRecipes=selected
+    plan.goalReserve=counts
+    plan.goalUses=uses
+    local route={}
+    for _,r in pairs(routeDetails) do route[#route+1]=r end
+    table.sort(route,function(a,b)
+        if a.crafts==b.crafts then return a.recipeID<b.recipeID end
+        return a.crafts>b.crafts
+    end)
+    plan.route=route
     for id,qty in pairs(counts) do
         plan.reserved[id]=math.max(plan.reserved[id] or 0,qty)
     end
     if planned<steps then
+        plan.incomplete=true
         plan.uncertain=true
         plan.summary=plan.summary..
             " | incomplete recipe/difficulty coverage"
