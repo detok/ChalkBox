@@ -28,8 +28,7 @@ _G.time=function() return 1000000 end
 _G.ChalkBox_MarketSaleRows=function() return saleRows end
 local lib={GetRecipe=function(_,prof,id)
     if prof~=165 then return nil end
-    if id==20001 then return {difficulty={orange=180,yellow=225,
-        green=245,grey=270},requiredSkill=180,craftedItemId=4234}
+    if id==20001 then return {difficulty={180,225,245,270},requiredSkill=180,craftedItemId=4234}
     elseif id==20002 then return {difficulty={orange=190,yellow=235,
         green=260,grey=275},requiredSkill=190,craftedItemId=9001}
     elseif id==20003 then return {difficulty={orange=200,yellow=225,
@@ -76,6 +75,22 @@ assert(not ChalkBox_IntelObserveRecipe("Leatherworking",20001,
 assert(ChalkBox_IntelSet("enabled",true) and refresh==1)
 assert(ChalkBox_IntelStatus().enabled)
 assert(ChalkBox_IntelObserveSkill("Leatherworking",225,225))
+assert(ChalkBox_IntelStatus().profession=="Leatherworking")
+assert(ChalkBox_IntelStatus().protectGoal==true,
+    "profession protection must default on while Intelligence remains opt-in")
+assert(ChalkBox_IntelObserveSkill("Cooking",150,225))
+assert(ChalkBox_IntelStatus().profession=="Leatherworking",
+    "opening Cooking does not steal the primary Leatherworking goal")
+assert(ChalkBox_IntelSet("profession","Cooking"))
+assert(ChalkBox_IntelStatus().goalPinned and
+    ChalkBox_IntelStatus().profession=="Cooking")
+assert(ChalkBox_IntelObserveSkill("Leatherworking",225,225))
+assert(ChalkBox_IntelStatus().profession=="Cooking",
+    "passive skill scans never replace a user-pinned profession")
+assert(ChalkBox_IntelSet("profession",nil))
+assert(not ChalkBox_IntelStatus().goalPinned and
+    ChalkBox_IntelStatus().profession=="Leatherworking",
+    "unpin restores automatic primary profession choice")
 local info={learned=true,name="Convert Medium Leather",canSkillUp=true}
 local schem={outputItemID=4234,quantityMin=1,quantityMax=1,
     reagentSlotSchematics={{required=true,quantityRequired=5,
@@ -109,6 +124,17 @@ assert(skill and skill.mode=="skill" and skill.uncertain,
     "currently capped profession is not promised immediate gains")
 assert(skill.reserved[2319] and skill.reserved[2319]>0,
     "skill route reserves learned recipe reagents")
+assert(skill.forecastSteps>0 and #skill.route>0 and
+    skill.route[1].crafts>0,
+    "four-number Forever difficulty tiers produce a named, quantified recipe route")
+assert(skillRows[1].intel.goalRecipe and
+    skillRows[1].intel.goalRecipeCrafts and
+    skillRows[1].intel.goalDetail and
+    skillRows[1].intel.trainingDetail,
+    "skill tooltip explains craft recipe, required material and capped profession")
+assert(skillRows[1].intel.headline and
+    skillRows[1].intel.headline:find("Keep",1,true),
+    "rows use plain-English actions rather than opaque planner codes")
 -- The profession forecast is about known recipes and inventory. AH prices
 -- can rank viable choices but must NEVER gate whether a recipe is planned.
 local previousAsk=prices[2319]
@@ -127,9 +153,17 @@ assert(skillRows[4].intel.kind~="AUCTION" and
     skillRows[5].intel.kind~="AUCTION",
     "stale and mixed-variant auction prices excluded")
 assert(ChalkBox_IntelSet("mode","gold"))
+local protectedGoldRows=Stock()
+local protectedGold=ChalkBox_IntelAnnotate(protectedGoldRows,{freeSlots=2})
+assert(protectedGold.reserved[2319]>=skill.reserved[2319] and
+    protectedGoldRows[1].intel.keep==50,
+    "Make Gold also protects forecast materials by default")
+assert(ChalkBox_IntelSet("protectGoal",false))
 local goldRows=Stock()
 local gold=ChalkBox_IntelAnnotate(goldRows,{freeSlots=2})
-assert(gold.mode=="gold" and #gold.actions>0)
+assert(gold.mode=="gold" and #gold.actions>0 and
+    gold.reserved[2319]==nil,
+    "turning off progression protection permits explicit profit-mode exploration")
 local hasConnectedChain=false
 for _,action in ipairs(gold.actions) do
     if action.kind=="CRAFT" and
@@ -190,14 +224,27 @@ assert(ChalkBox_IntelReserve(2319,45))
 local hold=Stock()
 local protectedPlan=ChalkBox_IntelAnnotate(hold,{freeSlots=1})
 assert(protectedPlan.reserved[2319]==45 and
+    hold[1].intel.keep==45 and hold[1].intel.surplus==5 and
     (hold[1].intel.qty or 0)<=5,
-    "explicit reserve reduces craft/sale availability")
+    "explicit reserve splits stock into kept versus available, without double spend")
+local displayed={}
+local mockTip={
+    GetName=function() return "MockInventoryTip" end,
+    NumLines=function() return 0 end,
+    AddLine=function(_,line) displayed[#displayed+1]=line end,
+    Show=function() end
+}
+assert(ChalkBox_IntelTooltip(mockTip,"item:2319"))
+assert(displayed[1]:find("ChalkBox",1,true) and
+    table.concat(displayed," | "):find("Personal reserve: 45",1,true),
+    "normal item tooltip shows one understandable advice block and its evidence")
 assert(ChalkBox_IntelIgnore(2319,true))
 local ignored=Stock()
 ChalkBox_IntelAnnotate(ignored,{freeSlots=1})
 assert(ignored[1].intel.kind=="IGNORE")
 assert(ChalkBox_IntelIgnore(2319,false))
 assert(ChalkBox_IntelSet("learn",false))
+assert(ChalkBox_IntelSet("protectGoal",true))
 assert(ChalkBox_IntelSet("target",50))
 assert(ChalkBox_IntelSet("margin",50))
 assert(ChalkBox_IntelStatus().target==50 and
