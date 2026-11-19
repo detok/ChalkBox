@@ -2,6 +2,7 @@
 local now, playerXP, xpMax, playerLevel, money = 1000, 200, 1000, 25, 150000
 local standalone, moving, combat = false, true, false
 local frames, timers, emotes, notes = {}, {}, {}, {}
+local deferredPositions={}
 -- Model Blizzard-owned UIParent. The addon must never alter its anchors or size.
 _G.UIParent = {points={},width=1024,height=768}
 local function ScreenPoint(point,relative,relativePoint,x,y)
@@ -85,6 +86,10 @@ _G.C_AddOns = {IsAddOnLoaded=function(name) assert(name=="EmotaSpeak"); return s
 _G.C_Timer = {NewTicker=function(_,callback)
     timers[#timers+1]=callback
     return {Cancel=function() end}
+end, After=function(delay,callback)
+    if delay==0.25 or delay==1.5 then
+        deferredPositions[#deferredPositions+1]=callback
+    end
 end}
 
 local function NewTexture()
@@ -236,6 +241,14 @@ _G.C_UI={
     GetTopRightNotchSafeRegion=function() return 570,1024,768,740 end,
 }
 Fire("NOTCHED_DISPLAY_MODE_CHANGED")
+assert(#deferredPositions==2,
+    "character entry schedules two bounded reanchors after layout settles")
+-- Simulate macOS/Blizzard moving the UI after the first frame of login.
+bar.points[1][5]=0
+bar.points[2][5]=0
+for _,reanchor in ipairs(deferredPositions) do reanchor() end
+assert(bar.points[1][5]==36 and bar.points[2][5]==36,
+    "deferred character-login reanchor restores the saved notch height")
 local notch=ChalkBox_BarTopInsetStatus()
 assert(bar.points[1][5]==36 and bar.points[2][5]==36 and
     bar.points[1][2]==UIParent and bar.points[2][2]==UIParent
