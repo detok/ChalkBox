@@ -558,7 +558,8 @@ FindMenu(lastNativeMenu,"Hide").func()
 assert(not ChalkBoxDB.barStats.gear,"menu action hides clicked module")
 bar.scripts.OnMouseUp(bar,"RightButton")
 local allModules=FindMenu(lastNativeMenu,"Modules")
-assert(#lastNativeMenu==8 and allModules and
+assert(#lastNativeMenu==9 and allModules and
+    FindMenu(lastNativeMenu,"Hide module icons") and
     FindMenu(lastNativeMenu,"Top safe area (Auto)") and
     FindMenu(allModules.children,"OFF Durability"),
     "background menu has compact, categorized controls including notch safety")
