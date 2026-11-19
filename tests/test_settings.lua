@@ -365,7 +365,7 @@ assert(categories.home.name=="ChalkBox")
 assert(categories["The Bar"].parent==categories.home
     and categories["The Bar Appearance"].parent==categories["The Bar"]
     and categories["The Bar Stats"].parent==categories["The Bar"]
-    and categories["Top Safe Area"].parent==categories["The Bar"],
+    and categories["Mac / Notch Safe Area"].parent==categories["The Bar"],
     "Bar appearance, modules and notch-safe controls are nested under The Bar")
 assert(categories["LootSense Appearance"].parent==categories["LootSense"]
     and categories["Toast Appearance"].parent==categories["Adventure Prep"]
