@@ -50,18 +50,18 @@ local function Char(windows,node)
 end
 assert(loadfile("DataTransfer.lua"))("ChalkBox")
 -- Machine A: two observed loot windows and two verified sales.
-_G.ChalkBoxDB=Account(100,80,{Sale("a",10),Sale("b",20)})
+_G.ChalkBoxDB=Account(1770000100,80,{Sale("a",10),Sale("b",20)})
 _G.ChalkBoxZoneDB=Char(2,12)
 assert(ChalkBox_TransferExport())
 local a=ChalkBoxTransferDB
 assert(a.kind=="ChalkBoxData" and a.version==1 and
     a.drops.windows==2 and type(a.dropParts)=="table" and
-    a.auction.markets["whitemaine|alliance"].scannedAt==100)
+    a.auction.markets["whitemaine|alliance"].scannedAt==1770000100)
 local aChar=ChalkBoxZoneDB
 local aAccount=ChalkBoxDB
 -- Machine B already observed three other windows independently. It has a
 -- newer asking price and a seller invoice already present on machine A.
-_G.ChalkBoxDB=Account(200,75,{Sale("b",20),Sale("c",30)})
+_G.ChalkBoxDB=Account(1770000200,75,{Sale("b",20),Sale("c",30)})
 _G.ChalkBoxZoneDB=Char(3,13)
 _G.ChalkBoxTransferDB=a
 local ok,summary=ChalkBox_TransferImport()
@@ -71,11 +71,11 @@ assert(d.windows==5 and d.observedItems==10 and
     d.items["2589"].quantity==10 and
     d.areas["z:1"].sources["c:10"].windows==5,
     "independent computers must sum genuinely distinct loot windows")
-assert(ChalkBoxDB.auctionSense.markets["whitemaine|alliance"].scannedAt==200,
+assert(ChalkBoxDB.auctionSense.markets["whitemaine|alliance"].scannedAt==1770000200,
     "newer market snapshot wins")
 local history=ChalkBoxDB.auctionSense.markets[
     "whitemaine|alliance"].items[2589].history
-assert(#history==2 and history[1].t==100 and history[2].t==200,
+assert(#history==2 and history[1].t==1770000100 and history[2].t==1770000200,
     "distinct price scans retained in chronological order")
 assert(#ChalkBoxDB.auctionInsights.characters[
     "whitemaine|alliance|hunter"].sales==3,
