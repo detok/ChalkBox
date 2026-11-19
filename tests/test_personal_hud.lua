@@ -223,18 +223,20 @@ assert(bar.points[2] and bar.points[2][4]==0,
 assert(ChalkBox_BarTopInsetStatus().mode=="auto" and
     ChalkBox_BarTopInsetStatus().effective==0,
     "non-notched default keeps the entire original bar position")
+_G.WorldFrame={width=2048,GetWidth=function(self) return self.width end}
 _G.C_UI={
     DoesAnyDisplayHaveNotch=function() return true end,
-    ShouldUIParentAvoidNotch=function() return false end,
+    ShouldUIParentAvoidNotch=function() return true end,
     GetTopLeftNotchSafeRegion=function() return 0,450,768,740 end,
     GetTopRightNotchSafeRegion=function() return 570,1024,768,740 end,
 }
 Fire("NOTCHED_DISPLAY_MODE_CHANGED")
 local notch=ChalkBox_BarTopInsetStatus()
 assert(bar.points[1][5]==0 and bar.points[2][5]==0 and
-    notch.split and notch.source=="native notch split"
+    bar.points[1][2]==WorldFrame and bar.points[2][2]==WorldFrame
+    and notch.split and notch.source=="native notch split"
     and notch.gapStart==892 and notch.gapEnd==1148,
-    "Mac notch keeps Trail Bar top-aligned with a centered safe gap")
+    "shifted UIParent must not trap the split bar below the camera notch")
 assert(bar.backgroundRight.visible and
     bar.background.points[2][4]==notch.gapStart and
     bar.backgroundRight.points[1][4]==notch.gapEnd,
@@ -256,18 +258,30 @@ assert(firstSide>0 and secondSide>0,
     "center group is intentionally split across both usable top lanes")
 assert(UIParent:GetHeight()==768,
     "notch handling never changes native UIParent height")
+-- WoW intentionally shifts UIParent below the notch; we must KEEP
+-- splitting and anchor to WorldFrame instead of suppressing the mode.
 C_UI.ShouldUIParentAvoidNotch=function() return true end
 Fire("NOTCHED_DISPLAY_MODE_CHANGED")
-assert(bar.points[1][5]==0 and bar.points[2][5]==0 and
-    not ChalkBox_BarTopInsetStatus().split,
-    "when Blizzard avoids notch, the regular full-width layout returns")
+assert(bar.points[1][2]==WorldFrame and
+    ChalkBox_BarTopInsetStatus().split,
+    "ShouldUIParentAvoidNotch true must never disable a valid split")
 C_UI.ShouldUIParentAvoidNotch=function() return false end
+Fire("NOTCHED_DISPLAY_MODE_CHANGED")
+assert(bar.points[1][2]==WorldFrame and
+    ChalkBox_BarTopInsetStatus().split,
+    "the split also works when Blizzard does not shift UIParent")
+-- A Forever build without WorldFrame can still lift by native notch depth.
+_G.WorldFrame=nil
+Fire("NOTCHED_DISPLAY_MODE_CHANGED")
+assert(bar.points[1][2]==UIParent and bar.points[1][5]==28,
+    "when WorldFrame is unavailable, native safe height lifts the bar UP")
+_G.WorldFrame={width=2048,GetWidth=function(self) return self.width end}
 C_UI.DoesAnyDisplayHaveNotch=function() return false end
 Fire("DISPLAY_SIZE_CHANGED")
-assert(bar.points[1][5]==0 and
+assert(bar.points[1][5]==0 and bar.points[1][2]==UIParent and
     not ChalkBox_BarTopInsetStatus().split and
     not bar.backgroundRight.visible,
-    "external non-notched display restores a single uninterrupted Bar")
+    "external display returns to native UIParent with a single full bar")
 C_UI.DoesAnyDisplayHaveNotch=function() return true end
 C_UI.GetTopLeftNotchSafeRegion=function() return 0,450,768,100 end
 C_UI.GetTopRightNotchSafeRegion=function() return 570,1024,768,100 end
@@ -279,8 +293,8 @@ _G.C_UI=nil
 assert(ChalkBox_BarNotchGapSet(160)
     and ChalkBox_BarTopInsetStatus().split
     and ChalkBox_BarTopInsetStatus().mode=="split"
-    and bar.points[1][5]==0,
-    "Mac clients without notch API can manually split the top Bar")
+    and bar.points[1][2]==WorldFrame and bar.points[1][5]==0,
+    "manual split uses WorldFrame even when client notch API is unavailable")
 bar.width=280
 Fire("DISPLAY_SIZE_CHANGED")
 assert(not ChalkBox_BarTopInsetStatus().split and
@@ -296,6 +310,26 @@ ChalkBox_BarCommand("safe split 144")
 assert(ChalkBox_BarTopInsetStatus().manualGap==144 and
     ChalkBox_BarTopInsetStatus().split,
     "manual split-width command is wired to real layout preference")
+-- Height slider now moves UP, independently of the manual split gap.
+assert(ChalkBox_BarNotchRaiseSet(40)
+    and bar.points[1][2]==UIParent and bar.points[1][5]==40
+    and ChalkBox_BarTopInsetStatus().rise==40,
+    "positive raise slider offsets into the notch, never DOWN")
+assert(ChalkBox_BarNotchRaiseSet(80)
+    and bar.points[1][5]==80,
+    "increasing the height slider moves the bar further UP")
+combat=true
+assert(ChalkBox_BarNotchRaiseSet(48)
+    and bar.points[1][5]==80 and
+    ChalkBox_BarTopInsetStatus().pending,
+    "height slider postpones repositioning while in combat")
+combat=false
+Fire("PLAYER_REGEN_ENABLED")
+assert(bar.points[1][5]==48,
+    "deferred upward adjustment applies when combat ends")
+assert(ChalkBox_BarNotchRaiseSet("auto")
+    and bar.points[1][2]==WorldFrame and bar.points[1][5]==0,
+    "reselecting auto returns split to the world top")
 assert(ChalkBox_BarNotchGapSet("auto")
     and not ChalkBox_BarTopInsetStatus().split,
     "manual split is reversible without restarting or changing UIParent")

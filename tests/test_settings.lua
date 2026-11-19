@@ -118,6 +118,10 @@ _G.ChalkBox_BarAppearanceGet=function() return ChalkBoxDB.barBackgroundOpacity o
 _G.ChalkBox_BarAppearanceSet=function(value)
     ChalkBoxDB.barBackgroundOpacity=math.max(0,math.min(100,value))
 end
+_G.ChalkBox_BarNotchRaiseSet=function(value)
+    ChalkBoxDB.barNotchRise=value
+    return true
+end
 _G.ChalkBox_BarEditStatus=function() return editor end
 _G.ChalkBox_BarHighlightNotPresent=function() return nil end
 local originalBarCommand=ChalkBox_BarCommand
@@ -830,7 +834,10 @@ end
 assert(safeSlider and safeSlider.min==0 and safeSlider.max==120
     and safeSlider.step==2 and gapSlider and gapSlider.min==40
     and gapSlider.max==400 and gapSlider.step==4,
-    "native Mac notch page offers both manual split gap and down-inset fallback")
+    "notch page exposes manual split gap and upward-height slider")
+safeSlider:SetValue(48)
+assert(ChalkBoxDB.barNotchRise==48,
+    "increasing vertical slider requests a positive UP lift")
 assert(appearanceSlider and appearanceSlider.value==70,
     "native bar opacity slider defaults to original 70%")
 appearanceSlider:SetValue(0)

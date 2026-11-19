@@ -1045,7 +1045,7 @@ local function MakeBarSafeArea()
     local panel=Panel("Top Safe Area",
         "Use both sides of a MacBook notch while keeping Trail Bar at the top.")
     Label(panel,"NOTCH-SAFE TOP BAR","GameFontNormalLarge",28,-111,470)
-    Label(panel,"Auto splits the center modules around a detected camera notch.",
+    Label(panel,"Auto uses the full game edge, above Blizzard's shifted UI.",
         "GameFontHighlightSmall",28,-141,500)
     Label(panel,"Normal displays keep their current full-width layout.",
         "GameFontHighlightSmall",28,-164,500)
@@ -1082,19 +1082,21 @@ local function MakeBarSafeArea()
         gapText:SetText(width.."px")
         if panel.OnRefresh then panel.OnRefresh() end
     end)
-    Label(panel,"FALLBACK TOP INSET · 0–120 UI pixels",
+    Label(panel,"RAISE BAR INTO NOTCH · 0–120 UI pixels",
         "GameFontNormalLarge",28,-370,500)
-    local down=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
-    down:SetSize(353,18)
-    down:SetPoint("TOPLEFT",panel,"TOPLEFT",42,-408)
-    down:SetMinMaxValues(0,120)
-    if down.SetValueStep then down:SetValueStep(2) end
-    local downText=Label(panel,"0px","GameFontHighlight",412,-413,100)
-    down:SetScript("OnValueChanged",function(_,value)
+    local up=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
+    up:SetSize(353,18)
+    up:SetPoint("TOPLEFT",panel,"TOPLEFT",42,-408)
+    up:SetMinMaxValues(0,120)
+    if up.SetValueStep then up:SetValueStep(2) end
+    local upText=Label(panel,"AUTO","GameFontHighlight",412,-413,100)
+    up:SetScript("OnValueChanged",function(_,value)
         if loading or type(value)~="number" then return end
-        local inset=math.floor(math.max(0,math.min(120,value))/2+0.5)*2
-        if ChalkBox_BarTopInsetSet then ChalkBox_BarTopInsetSet(inset) end
-        downText:SetText(inset.."px")
+        -- Larger values are physically HIGHER. The previous beta wired
+        -- this control to a down-inset and did the opposite.
+        local rise=math.floor(math.max(0,math.min(120,value))/2+0.5)*2
+        if ChalkBox_BarNotchRaiseSet then ChalkBox_BarNotchRaiseSet(rise) end
+        upText:SetText("+"..rise.."px")
         if panel.OnRefresh then panel.OnRefresh() end
     end)
     panel:AddRefresh(function()
@@ -1102,13 +1104,13 @@ local function MakeBarSafeArea()
             ChalkBox_BarTopInsetStatus() or {}
         loading=true
         gap:SetValue(st.manualGap or 120)
-        down:SetValue(st.effective or 0)
+        up:SetValue(st.rise or 0)
         loading=false
         gapText:SetText(tostring(st.manualGap or 120).."px")
-        downText:SetText(tostring(st.effective or 0).."px")
+        upText:SetText(st.rise and ("+"..st.rise.."px") or "AUTO")
         local mode=st.mode=="split" and "Manual split" or
             (st.mode=="manual" and "Below notch" or "Auto")
-        current:SetText(mode.." · "..(st.source or "unavailable")..
+        current:SetText(mode.." · "..(st.anchor or st.source or "UIParent")..
             (st.split and " · gap protected" or "")..
             (st.pending and " · applies after combat" or ""))
     end)
