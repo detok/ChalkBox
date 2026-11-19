@@ -1814,6 +1814,14 @@ events:SetScript("OnEvent", function(_, event, name)
         CreateBar()
         PlaceBar()
         Refresh()
+        -- Character switches can finish restoring Blizzard's notch/UIParent
+        -- geometry AFTER PLAYER_ENTERING_WORLD. A slider click fixes it
+        -- because it calls PlaceBar again; repeat that same safe reanchor
+        -- once the display layout settles, without changing any preferences.
+        if C_Timer and type(C_Timer.After)=="function" then
+            C_Timer.After(0.25,function() if bar then PlaceBar() end end)
+            C_Timer.After(1.5,function() if bar then PlaceBar() end end)
+        end
         if not ticker and C_Timer and C_Timer.NewTicker then
             ticker = C_Timer.NewTicker(5, Refresh)
         end
