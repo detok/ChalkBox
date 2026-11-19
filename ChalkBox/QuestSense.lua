@@ -75,8 +75,11 @@ local function GroupReady()
     if type(members)=="number" and members>1 then return true end
     -- In a genuine party instance, some Forever builds do not expose
     -- normal group counters until after zone load.
-    local inside,kind=Call(IsInInstance)
-    return inside==true and kind=="party"
+    if type(IsInInstance)=="function" then
+        local ok,inside,kind=pcall(IsInInstance)
+        if ok and inside==true and kind=="party" then return true end
+    end
+    return false
 end
 local function GroupQuest(info,header)
     if type(info)~="table" then return false end
@@ -411,8 +414,9 @@ local function Reconcile()
     local manualRetained=0
     for id in pairs(watched) do
         if not settings.managed[id] then
-            if settings.enabled and focusOnly and accepted[id]
-                and (not localQuests[id] or excluded[id]) and id~=focusID then
+            if settings.enabled and accepted[id] and
+                ((focusOnly and not localQuests[id]) or excluded[id])
+                and id~=focusID then
                 toSuspend[id]=true
             else
                 manualRetained=manualRetained+1
