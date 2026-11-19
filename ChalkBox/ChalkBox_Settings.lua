@@ -1043,53 +1043,75 @@ end
 
 local function MakeBarSafeArea()
     local panel=Panel("Top Safe Area",
-        "Keep Trail Bar below a MacBook camera notch without moving Blizzard's UI.")
-    Label(panel,"TOP EDGE PROTECTION","GameFontNormalLarge",28,-113,470)
-    Label(panel,"Auto uses Blizzard's notch-safe region when Forever provides it.",
-        "GameFontHighlightSmall",28,-146,490)
-    Label(panel,"On external monitors or Windows the automatic inset is normally 0.",
-        "GameFontHighlightSmall",28,-170,490)
-    Button(panel,"Automatic",28,-210,157,function()
+        "Use both sides of a MacBook notch while keeping Trail Bar at the top.")
+    Label(panel,"NOTCH-SAFE TOP BAR","GameFontNormalLarge",28,-111,470)
+    Label(panel,"Auto splits the center modules around a detected camera notch.",
+        "GameFontHighlightSmall",28,-141,500)
+    Label(panel,"Normal displays keep their current full-width layout.",
+        "GameFontHighlightSmall",28,-164,500)
+    Button(panel,"Auto split",28,-200,152,function()
         if ChalkBox_BarTopInsetSet then ChalkBox_BarTopInsetSet("auto") end
         if panel.OnRefresh then panel.OnRefresh() end
     end)
-    Button(panel,"No offset (0)",205,-210,157,function()
-        if ChalkBox_BarTopInsetSet then ChalkBox_BarTopInsetSet(0) end
+    Button(panel,"Manual split",192,-200,152,function()
+        if ChalkBox_BarNotchGapSet then
+            local st=ChalkBox_BarTopInsetStatus and
+                ChalkBox_BarTopInsetStatus() or {}
+            ChalkBox_BarNotchGapSet(st.manualGap or 120)
+        end
         if panel.OnRefresh then panel.OnRefresh() end
     end)
-    local current=Label(panel,"","GameFontHighlight",28,-258,490)
-    Label(panel,"MANUAL TOP INSET  ·  0–120 UI pixels",
-        "GameFontNormalLarge",28,-300,490)
-    local slider=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
-    slider:SetSize(370,18)
-    slider:SetPoint("TOPLEFT",panel,"TOPLEFT",42,-351)
-    slider:SetMinMaxValues(0,120)
-    if slider.SetValueStep then slider:SetValueStep(2) end
-    local amount=Label(panel,"","GameFontHighlight",432,-356,80)
+    Button(panel,"Below notch",356,-200,152,function()
+        if ChalkBox_BarTopInsetSet then ChalkBox_BarTopInsetSet(32) end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    local current=Label(panel,"","GameFontHighlight",28,-251,500)
+    Label(panel,"MANUAL CAMERA GAP · 40–400 UI pixels",
+        "GameFontNormalLarge",28,-287,500)
+    local gap=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
+    gap:SetSize(353,18)
+    gap:SetPoint("TOPLEFT",panel,"TOPLEFT",42,-324)
+    gap:SetMinMaxValues(40,400)
+    if gap.SetValueStep then gap:SetValueStep(4) end
+    local gapText=Label(panel,"120px","GameFontHighlight",412,-329,100)
     local loading=false
-    slider:SetScript("OnValueChanged",function(_,value)
+    gap:SetScript("OnValueChanged",function(_,value)
+        if loading or type(value)~="number" then return end
+        local width=math.floor(math.max(40,math.min(400,value))/4+0.5)*4
+        if ChalkBox_BarNotchGapSet then ChalkBox_BarNotchGapSet(width) end
+        gapText:SetText(width.."px")
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    Label(panel,"FALLBACK TOP INSET · 0–120 UI pixels",
+        "GameFontNormalLarge",28,-370,500)
+    local down=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
+    down:SetSize(353,18)
+    down:SetPoint("TOPLEFT",panel,"TOPLEFT",42,-408)
+    down:SetMinMaxValues(0,120)
+    if down.SetValueStep then down:SetValueStep(2) end
+    local downText=Label(panel,"0px","GameFontHighlight",412,-413,100)
+    down:SetScript("OnValueChanged",function(_,value)
         if loading or type(value)~="number" then return end
         local inset=math.floor(math.max(0,math.min(120,value))/2+0.5)*2
         if ChalkBox_BarTopInsetSet then ChalkBox_BarTopInsetSet(inset) end
-        amount:SetText(inset.."px")
+        downText:SetText(inset.."px")
         if panel.OnRefresh then panel.OnRefresh() end
     end)
     panel:AddRefresh(function()
         local st=ChalkBox_BarTopInsetStatus and
             ChalkBox_BarTopInsetStatus() or {}
-        local effective=st.effective or 0
         loading=true
-        slider:SetValue(effective)
+        gap:SetValue(st.manualGap or 120)
+        down:SetValue(st.effective or 0)
         loading=false
-        amount:SetText(effective.."px")
-        current:SetText((st.mode=="auto" and "Auto" or "Manual")..
-            "  ·  "..effective.." UI px  ·  "..(st.source or "unavailable")..
-            (st.pending and "  ·  after combat" or ""))
+        gapText:SetText(tostring(st.manualGap or 120).."px")
+        downText:SetText(tostring(st.effective or 0).."px")
+        local mode=st.mode=="split" and "Manual split" or
+            (st.mode=="manual" and "Below notch" or "Auto")
+        current:SetText(mode.." · "..(st.source or "unavailable")..
+            (st.split and " · gap protected" or "")..
+            (st.pending and " · applies after combat" or ""))
     end)
-    Label(panel,"Only Trail Bar and safely adjustable top chrome are moved.",
-        "GameFontHighlightSmall",28,-402,485)
-    Label(panel,"If the game API is missing, adjust until all controls clear the notch.",
-        "GameFontHighlightSmall",28,-425,490)
     return panel
 end
 

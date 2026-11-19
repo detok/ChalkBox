@@ -812,12 +812,13 @@ local sliders={}
 for _,frame in ipairs(frames) do
     if frame.kind=="Slider" then sliders[#sliders+1]=frame end
 end
-assert(#sliders==12,
-    "Mac notch inset adds one slider without removing existing controls")
-local appearanceSlider,highlightSlider,safeSlider
+assert(#sliders==13,
+    "Mac notch split-width and top-inset controls add two sliders")
+local appearanceSlider,highlightSlider,safeSlider,gapSlider
 for _,frame in ipairs(sliders) do
     if frame.parent==categories["Mac / Notch Safe Area"].panel then
-        safeSlider=frame
+        if frame.min==40 then gapSlider=frame
+        else safeSlider=frame end
     end
     if frame.parent==categories["The Bar Appearance"].panel then
         appearanceSlider=frame
@@ -827,8 +828,9 @@ for _,frame in ipairs(sliders) do
     end
 end
 assert(safeSlider and safeSlider.min==0 and safeSlider.max==120
-    and safeSlider.step==2,
-    "native Mac notch page exposes a bounded manual top inset")
+    and safeSlider.step==2 and gapSlider and gapSlider.min==40
+    and gapSlider.max==400 and gapSlider.step==4,
+    "native Mac notch page offers both manual split gap and down-inset fallback")
 assert(appearanceSlider and appearanceSlider.value==70,
     "native bar opacity slider defaults to original 70%")
 appearanceSlider:SetValue(0)

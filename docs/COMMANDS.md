@@ -68,7 +68,7 @@
 | Command | Purpose |
 | --- | --- |
 | `/chalk bar status` | XP rate, Bar layout and safe display diagnostics |
-| `/chalk bar safe auto` / `safe 0-120` | Automatic notch-safe top inset when the client supports it; manual UI-pixel override for Mac camera cutouts. In The Bar → Mac / Notch Safe Area. |
+| `/chalk bar safe auto` / `safe split 40-400` / `safe 0-120` | On notched Macs, automatically split the top bar's **center modules to either side of the camera cutout**. Use `safe split 120` for a manual center gap if the client does not report a notch, or `safe 32` to lower the bar instead. Settings: The Bar → Mac / Notch Safe Area. |
 | `/chalk bar edit` or `edit on` / `off` | Toggle/finish Edit Mode; empty-Bar right-click also has **Done editing** |
 | `/chalk bar layout` | Show positions of Bar modules |
 | `/chalk bar layout reset` | Restore default Bar positions, alignment **and module widths**, leaving other settings alone |

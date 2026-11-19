@@ -86,10 +86,17 @@ _G.C_Timer = {NewTicker=function(_,callback)
 end}
 
 local function NewTexture()
-    return {SetAllPoints=function() end,
+    return {points={},
+        ClearAllPoints=function(self) self.points={} end,
+        SetAllPoints=function(self,owner) self.allPoints=owner end,
         SetColorTexture=function(self,r,g,b,a) self.rgba={r,g,b,a} end,
-        SetPoint=function() end, SetHeight=function() end, SetWidth=function() end,
-        Show=function(self) self.visible=true end, Hide=function(self) self.visible=false end}
+        SetPoint=function(self,...)
+            self.points[#self.points+1]={...}
+        end,
+        SetHeight=function(self,v) self.height=v end,
+        SetWidth=function(self,v) self.width=v end,
+        Show=function(self) self.visible=true end,
+        Hide=function(self) self.visible=false end}
 end
 local function NewFont()
     return {SetAllPoints=function() end,SetJustifyH=function() end,
@@ -211,8 +218,8 @@ assert(bar and bar.visible and bar.anchor=="TOPRIGHT",
     "top bar must stay visible as its own combat-safe overlay")
 assert(bar.points[2] and bar.points[2][4]==0,
     "the full-width Bar reaches both screen edges")
--- Real native notch APIs exist on compatible WoW builds. Preserve UIParent
--- and position only the Bar below the known top safe-area cutout.
+-- Split the bar around real native notch coordinates. Do not lower the
+-- entire bar or move UIParent, and never overlap the physical camera cutout.
 assert(ChalkBox_BarTopInsetStatus().mode=="auto" and
     ChalkBox_BarTopInsetStatus().effective==0,
     "non-notched default keeps the entire original bar position")
@@ -223,27 +230,60 @@ _G.C_UI={
     GetTopRightNotchSafeRegion=function() return 570,1024,768,740 end,
 }
 Fire("NOTCHED_DISPLAY_MODE_CHANGED")
-assert(bar.points[1][5]==-32 and bar.points[2][5]==-32
-    and ChalkBox_BarTopInsetStatus().source=="native notch safe region",
-    "Mac notched fullscreen positions the full-width bar below 28px cutout")
+local notch=ChalkBox_BarTopInsetStatus()
+assert(bar.points[1][5]==0 and bar.points[2][5]==0 and
+    notch.split and notch.source=="native notch split"
+    and notch.gapStart==892 and notch.gapEnd==1148,
+    "Mac notch keeps Trail Bar top-aligned with a centered safe gap")
+assert(bar.backgroundRight.visible and
+    bar.background.points[2][4]==notch.gapStart and
+    bar.backgroundRight.points[1][4]==notch.gapEnd,
+    "two background strips have a genuine transparent camera gap")
+local firstSide,secondSide=0,0
+for _,frame in ipairs(frames) do
+    if frame.parent==bar and frame.font and frame.visible and
+        frame.anchor=="CENTER" then
+        local x=frame.points[1][4]
+        local from=x-frame.width/2
+        local to=from+frame.width
+        assert(to<=notch.gapStart or from>=notch.gapEnd,
+            "center widgets must never cross behind the camera notch")
+        if to<=notch.gapStart then firstSide=firstSide+1
+        else secondSide=secondSide+1 end
+    end
+end
+assert(firstSide>0 and secondSide>0,
+    "center group is intentionally split across both usable top lanes")
 assert(UIParent:GetHeight()==768,
     "notch handling never changes native UIParent height")
 C_UI.ShouldUIParentAvoidNotch=function() return true end
 Fire("NOTCHED_DISPLAY_MODE_CHANGED")
-assert(bar.points[1][5]==0 and bar.points[2][5]==0,
-    "when Blizzard already avoids notch, do not shift the bar twice")
+assert(bar.points[1][5]==0 and bar.points[2][5]==0 and
+    not ChalkBox_BarTopInsetStatus().split,
+    "when Blizzard avoids notch, the regular full-width layout returns")
 C_UI.ShouldUIParentAvoidNotch=function() return false end
 C_UI.DoesAnyDisplayHaveNotch=function() return false end
 Fire("DISPLAY_SIZE_CHANGED")
-assert(bar.points[1][5]==0,
-    "moving game to an external non-notched display resets automatic inset")
+assert(bar.points[1][5]==0 and
+    not ChalkBox_BarTopInsetStatus().split and
+    not bar.backgroundRight.visible,
+    "external non-notched display restores a single uninterrupted Bar")
 C_UI.DoesAnyDisplayHaveNotch=function() return true end
 C_UI.GetTopLeftNotchSafeRegion=function() return 0,450,768,100 end
 C_UI.GetTopRightNotchSafeRegion=function() return 570,1024,768,100 end
 Fire("UI_SCALE_CHANGED")
-assert(bar.points[1][5]==0,
-    "invalid oversized safe-region measurement never pushes bar down blindly")
+assert(bar.points[1][5]==0 and
+    not ChalkBox_BarTopInsetStatus().split,
+    "invalid oversized notch rectangles never create an unsafe split")
 _G.C_UI=nil
+assert(ChalkBox_BarNotchGapSet(160)
+    and ChalkBox_BarTopInsetStatus().split
+    and ChalkBox_BarTopInsetStatus().mode=="split"
+    and bar.points[1][5]==0,
+    "Mac clients without notch API can manually split the top Bar")
+assert(ChalkBox_BarNotchGapSet("auto")
+    and not ChalkBox_BarTopInsetStatus().split,
+    "manual split is reversible without restarting or changing UIParent")
 assert(ChalkBox_BarTopInsetSet(50) and
     ChalkBox_BarTopInsetStatus().mode=="manual" and
     bar.points[1][5]==-50 and bar.points[2][5]==-50,
