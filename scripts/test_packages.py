@@ -6,7 +6,8 @@ import hashlib
 from pathlib import Path
 from zipfile import ZipFile
 
-from package import ROOT, SOURCE, DIST, FILES, build, version_of
+from package import (ROOT, SOURCE, TRANSFER_SOURCE, TRANSFER_FILES,
+                     DIST, FILES, build, version_of)
 
 
 def test() -> None:
@@ -24,6 +25,9 @@ def test() -> None:
     assert "## Interface: 11509" in toc
     assert "## Interface: 16001" in camelot
     assert "ChalkBoxDB" in toc and "ChalkBoxProfessionDB" in toc
+    assert (TRANSFER_SOURCE / "ChalkBoxTransfer.toc").is_file()
+    assert "## SavedVariables: ChalkBoxTransferDB" in (
+        TRANSFER_SOURCE / "ChalkBoxTransfer.toc").read_text(encoding="utf-8")
     assert "## IconTexture: Interface\\AddOns\\ChalkBox\\assets\\Icon" in toc
     assert "## IconTexture: Interface\\AddOns\\ChalkBox\\assets\\Icon" in camelot
     assert version_of(SOURCE / "ChalkBox.toc") == version_of(
@@ -42,9 +46,10 @@ def test() -> None:
     )
     output = build()
     assert output.name == f"ChalkBox-{version_of(SOURCE / 'ChalkBox.toc')}.zip"
-    assert len(list(DIST.glob("*.zip"))) == 1, "Only one addon should be packaged"
+    assert len(list(DIST.glob("*.zip"))) == 1, "Only one install ZIP should be packaged"
     with ZipFile(output) as archive:
         expected = {f"ChalkBox/{name}" for name in FILES}
+        expected.update(f"ChalkBoxTransfer/{name}" for name in TRANSFER_FILES)
         assert set(archive.namelist()) == expected, "Wrong ZIP install tree"
         assert archive.testzip() is None, "Corrupt ZIP"
         icon = archive.read("ChalkBox/assets/Icon.tga")
@@ -73,6 +78,10 @@ def test() -> None:
         for relative in FILES:
             assert archive.read(f"ChalkBox/{relative}") == (
                 SOURCE / relative).read_bytes(), f"Source mismatch: {relative}"
+        for relative in TRANSFER_FILES:
+            assert archive.read(f"ChalkBoxTransfer/{relative}") == (
+                TRANSFER_SOURCE / relative).read_bytes(), (
+                f"Transfer companion source mismatch: {relative}")
         assert not any("DontSellThat" in x or "EmotaSpeak" in x
                        for x in archive.namelist()), (
                            "Old standalone addons must not reappear")
