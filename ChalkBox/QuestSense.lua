@@ -395,6 +395,7 @@ local function Reconcile()
         and next(settings.suspendedManual)==nil and not navFocusID then return end
     local mode=settings.mode or "smart"
     local soloFilter=settings.enabled and not GroupReady()
+    local limit=math.max(1,math.min(settings.limit or 10,10,MaxWatches()))
     local dungeon=settings.enabled and mode=="smart" and CurrentDungeon() or nil
     local allowed,why=CanEdit(dungeon~=nil)
     if not allowed then pending=true;lastReason=why;return end
@@ -425,6 +426,14 @@ local function Reconcile()
     for _,quest in ipairs(quests) do accepted[quest.id]=true end
     local focusID=ValidID(navFocusID) and accepted[navFocusID] and
         navFocusID or nil
+    if soloFilter and focusID then
+        for _,q in ipairs(quests) do
+            if q.id==focusID and q.groupQuest then
+                focusID=nil
+                break
+            end
+        end
+    end
     local navigationBlocked=false
     -- Keep the chosen quest inside Blizzard's existing objective tracker.
     -- Treat it as a manual watch: never auto-trim or suspend it.
@@ -433,7 +442,7 @@ local function Reconcile()
         settings.managed[focusID]=nil
         settings.suspendedManual[focusID]=nil
         if not watched[focusID] then
-            if Count(watched)<MaxWatches() then
+            if Count(watched)<limit then
                 local ok=pcall(C_QuestLog.AddQuestWatch,focusID)
                 if ok then
                     local after=Watches()
@@ -526,20 +535,13 @@ local function Reconcile()
     -- Nearby has already removed nonlocal quests. All remains log-order
     -- compatible unless the player explicitly chooses another sort.
     local function Compare(a,b)
-        if mode~="all" and settings.smartCompleteFirst~=false and
-            a.complete~=b.complete then
-            return a.complete
+        if mode~="all" and a.complete~=b.complete then
+            -- Completed are last by default; Completed First remains opt-in.
+            return settings.smartCompleteFirst==true and a.complete or
+                not a.complete
         end
         if mode=="smart" and settings.smartNearbyFirst~=false and
             a.inArea~=b.inArea then return a.inArea end
-        if sortMode=="zone" and a.header~=b.header then
-            if a.inArea~=b.inArea then return a.inArea end
-            return a.header<b.header
-        end
-        if sortMode=="title" and type(a.title)=="string" and
-            type(b.title)=="string" and a.title~=b.title then
-            return a.title:lower()<b.title:lower()
-        end
         if sortMode=="level" then
             local aKnown=type(a.level)=="number" and a.level>0
             local bKnown=type(b.level)=="number" and b.level>0
@@ -594,10 +596,26 @@ local function Reconcile()
             end
         end
     end
-    local reservedManual=manualRetained+Count(restoreManual)
-    -- One total tracker budget, including the already-watched manual quests.
-    local limit=math.max(1,math.min(settings.limit or 10,10,MaxWatches()))
-    local capacity=math.max(0,limit-reservedManual)
+    -- Restoring manual watches in hash-table iteration order looked random.
+    -- Use the exact same priority order as automatic selection.
+    local restoreOrder,restoreSeen={},{}
+    for _,quest in ipairs(prioritized) do
+        if restoreManual[quest.id] then
+            restoreOrder[#restoreOrder+1]=quest.id
+            restoreSeen[quest.id]=true
+        end
+    end
+    local extras={}
+    for id in pairs(restoreManual) do
+        if not restoreSeen[id] then extras[#extras+1]=id end
+    end
+    table.sort(extras)
+    for _,id in ipairs(extras) do restoreOrder[#restoreOrder+1]=id end
+    -- Budget manual watches alongside automatic watches, not on top of them.
+    -- When disabled, restore the player's own watches regardless of budget.
+    local reservedRestores=settings.enabled and
+        math.min(#restoreOrder,math.max(0,limit-manualRetained)) or #restoreOrder
+    local capacity=math.max(0,limit-manualRetained-reservedRestores)
     local desired={}
     local autoSlots=0
     local function Consider(quest)
@@ -660,9 +678,11 @@ local function Reconcile()
             else failed=failed+1 end
         end
     end
-    for id in pairs(restoreManual) do
+    for _,id in ipairs(restoreOrder) do
         if not watched[id] then
-            if Count(watched)>=MaxWatches() then
+            if settings.enabled and Count(watched)>=limit then
+                -- Keep it suspended; do not overfill the chosen total.
+            elseif Count(watched)>=MaxWatches() then
                 failed=failed+1
             else
                 local ok=pcall(C_QuestLog.AddQuestWatch,id)
@@ -681,7 +701,7 @@ local function Reconcile()
         for _,quest in ipairs(prioritized) do
             local id=quest.id
             if desired[id] and not watched[id] then
-                if Count(watched)>=MaxWatches() then
+                if Count(watched)>=limit or Count(watched)>=MaxWatches() then
                     failed=failed+1
                 else
                     local ok=pcall(C_QuestLog.AddQuestWatch,id)
