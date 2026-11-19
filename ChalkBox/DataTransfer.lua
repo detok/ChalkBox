@@ -302,7 +302,7 @@ local function ApplyTotals(d,parts)
         end
     end
 end
-local function MergeDrops(foreign,foreignParts)
+local function MergeDrops(foreign,foreignParts,foreignOrigin)
     local t=Tracking()
     local d=ChalkBoxZoneDB.dropSense
     if type(d)~="table" or d.version~=2 then
@@ -323,9 +323,15 @@ local function MergeDrops(foreign,foreignParts)
     -- A later import from a copied installation starts a NEW local branch.
     -- Historical contributions keep their original IDs and are not doubled.
     ApplyTotals(d,t.parts)
-    t.localID=NewSourceID()
-    while t.parts[t.localID] do t.localID=NewSourceID() end
-    t.parts[t.localID]={windows=0,observedItems=0,items={},areas={}}
+    -- Fork only when the source FILE was exported by this same source ID
+    -- (e.g. a cloned SavedVariables directory). Reimporting a remote file
+    -- must not leave a trail of empty origins that eventually exhaust caps.
+    if foreignOrigin==t.localID then
+        t.localID=NewSourceID()
+        while t.parts[t.localID] do t.localID=NewSourceID() end
+        t.parts[t.localID]={windows=0,observedItems=0,
+            items={},areas={}}
+    end
 end
 local function MergeHistory(a,b)
     local found,items={},{}
@@ -495,7 +501,7 @@ function ChalkBox_TransferExport()
     local now=type(time)=="function" and time() or 0
     _G.ChalkBoxTransferDB={
         kind="ChalkBoxData",version=1,exportedAt=Int(now) and now or 0,
-        character=character,
+        character=character,origin=parts.localID,
         auction=Snapshot(ChalkBoxDB and ChalkBoxDB.auctionSense),
         sales=Snapshot(ChalkBoxDB and ChalkBoxDB.auctionInsights),
         drops=Snapshot(ChalkBoxZoneDB and ChalkBoxZoneDB.dropSense),
@@ -524,7 +530,7 @@ function ChalkBox_TransferImport()
     local sales=MergeSales(copied.sales)
     local dropStatus="discovery data skipped (different character)"
     if Character() and copied.character==Character() then
-        MergeDrops(copied.drops,copied.dropParts)
+        MergeDrops(copied.drops,copied.dropParts,copied.origin)
         local flights=MergeFlights(copied.flights)
         dropStatus="discoveries merged; "..flights.." new flight nodes"
     end
