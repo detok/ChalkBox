@@ -63,6 +63,54 @@ local function CurrentZone()
     if type(zoneText)=="string" then normalized[string.lower(zoneText)]=true end
     return best,zoneName,normalized
 end
+-- A normal solo tracker should not advertise dungeon/elite work as if it
+-- were ordinary outdoor questing. Trust Blizzard's metadata where provided;
+-- do not guess from item names or quest titles.
+local function GroupReady()
+    local group=Call(IsInGroup)
+    if group==true then return true end
+    local raid=Call(IsInRaid)
+    if raid==true then return true end
+    local members=Call(GetNumGroupMembers)
+    if type(members)=="number" and members>1 then return true end
+    -- In a genuine party instance, some Forever builds do not expose
+    -- normal group counters until after zone load.
+    local inside,kind=Call(IsInInstance)
+    return inside==true and kind=="party"
+end
+local function GroupQuest(info,header)
+    if type(info)~="table" then return false end
+    if info.isElite==true or info.isDungeon==true or info.isRaid==true or
+        (type(info.suggestedGroup)=="number" and info.suggestedGroup>1) then
+        return true
+    end
+    local tag=Call(C_QuestLog and C_QuestLog.GetQuestTagInfo,info.questID)
+    if type(tag)=="table" then
+        if tag.isElite==true or tag.isDungeon==true or tag.isRaid==true then
+            return true
+        end
+        local label=type(tag.tagName)=="string" and
+            tag.tagName:lower() or ""
+        if label:find("dungeon",1,true) or
+            label:find("elite",1,true) or
+            label:find("raid",1,true) then return true end
+        local id=tag.tagID
+        local tags=Enum and Enum.QuestTag
+        if type(tags)=="table" and type(id)=="number" and
+            (id==tags.Dungeon or id==tags.Raid or
+             id==tags.Elite or id==tags.Raid10 or id==tags.Raid25) then
+            return true
+        end
+    end
+    if type(header)=="string" then
+        local heading=header:lower()
+        if heading=="dungeon" or heading=="dungeons" or
+            heading=="elite" or heading=="raids" or heading=="raid" then
+            return true
+        end
+    end
+    return false
+end
 local function ReadLog()
     local num=Call(C_QuestLog.GetNumQuestLogEntries)
     if type(num)~="number" or num<0 then return nil,"quest log isn't ready" end
@@ -81,6 +129,7 @@ local function ReadLog()
                         ("Quest #"..info.questID),
                     header=header,localPOI=info.hasLocalPOI==true,
                     onMap=info.isOnMap==true,index=i,
+                    groupQuest=GroupQuest(info,header),
                 }
             end
         end
@@ -226,6 +275,7 @@ local function Reconcile()
     if not settings.enabled and not settings.cleanup
         and next(settings.suspendedManual)==nil and not navFocusID then return end
     local mode=settings.mode or "smart"
+    local soloFilter=settings.enabled and mode~="all" and not GroupReady()
     local dungeon=settings.enabled and mode=="smart" and CurrentDungeon() or nil
     local allowed,why=CanEdit(dungeon~=nil)
     if not allowed then pending=true;lastReason=why;return end
@@ -277,6 +327,12 @@ local function Reconcile()
                 navigationBlocked=true
                 lastReason="watch list full; selected quest not added"
             end
+        end
+    end
+    local excluded={}
+    if soloFilter then
+        for _,quest in ipairs(quests) do
+            if quest.groupQuest then excluded[quest.id]=true end
         end
     end
     local scores,nearby,zoneReady=Relevant(quests,zoneID,names)
@@ -331,7 +387,8 @@ local function Reconcile()
     local prioritized={}
     for _,quest in ipairs(quests) do
         local score=mode=="all" and 0 or (scores[quest.id] or 0)
-        if not focusOnly or localQuests[quest.id] then
+        if (not focusOnly or localQuests[quest.id]) and
+            not excluded[quest.id] then
             prioritized[#prioritized+1]={id=quest.id,title=quest.title,score=score,
                 logIndex=quest.index}
         end
@@ -346,7 +403,8 @@ local function Reconcile()
     -- them; restore them when relevant again or when Nearby is turned off.
     local toSuspend,restoreManual={},{}
     for id in pairs(settings.suspendedManual) do
-        if not focusOnly or not settings.enabled or localQuests[id] then
+        if not focusOnly and not excluded[id] or not settings.enabled
+            or (localQuests[id] and not excluded[id]) then
             restoreManual[id]=true
         end
     end
@@ -354,7 +412,7 @@ local function Reconcile()
     for id in pairs(watched) do
         if not settings.managed[id] then
             if settings.enabled and focusOnly and accepted[id]
-                and not localQuests[id] and id~=focusID then
+                and (not localQuests[id] or excluded[id]) and id~=focusID then
                 toSuspend[id]=true
             else
                 manualRetained=manualRetained+1
@@ -582,6 +640,7 @@ for _,event in ipairs({
     "ZONE_CHANGED","ZONE_CHANGED_INDOORS","ZONE_CHANGED_NEW_AREA",
     "QUEST_LOG_UPDATE","QUEST_ACCEPTED","QUEST_REMOVED","QUEST_TURNED_IN",
     "QUEST_WATCH_LIST_CHANGED","PLAYER_REGEN_ENABLED",
+    "GROUP_ROSTER_UPDATE","PARTY_MEMBERS_CHANGED",
 }) do
     pcall(events.RegisterEvent,events,event)
 end
