@@ -1154,8 +1154,15 @@ NotchLayout=function(width)
                 local l=SafeRegion(api.GetTopLeftNotchSafeRegion)
                 local r=SafeRegion(api.GetTopRightNotchSafeRegion)
                 if l and r and r.left>l.right then
-                    manual=152
-                    calibrated=true
+                    local height=math.min(l.top-l.bottom,r.top-r.bottom)
+                    local span=r.right-l.left
+                    local notchWidth=r.left-l.right
+                    if height>0 and height<=TOP_INSET_MAX and span>0
+                        and notchWidth/span>=0.02
+                        and notchWidth/span<=0.45 then
+                        manual=152
+                        calibrated=true
+                    end
                 end
             end
         end
