@@ -554,16 +554,6 @@ assert(Text("No saved scan for this item"),
 assert(Text("DE / ITEM") and Text("IN BAG") and Text("My Test Green")
     and bagsRead>0 and rows[1].marketView=="bags",
     "My Items integrates bag/DE appraisal into native Market frame")
-local prepare=Button("Prepare Auction")
-assert(prepare and prepare.shown and prepare.enabled==true,
-    "selected verified tradeable owned item enables Prepare Auction")
-prepare:Click()
-assert(not pane.shown and
-    AuctionHouseFrame:GetDisplayMode()==AuctionHouseFrameDisplayMode.Sell,
-    "Prepare Auction opens Blizzard's Sell tab only after a click")
-tab:Click()
-assert(pane.shown and rows[1].marketView=="bags",
-    "returning to Market keeps My Items and never posts an auction")
 rows[1].scripts.OnEnter(rows[1])
 local hasBag,hasDE=false,false
 for _,entry in ipairs(tip.lines) do
@@ -676,4 +666,18 @@ ChalkBox_AuctionHide()
 assert(not pane.shown and AuctionHouseFrame.AuctionsFrame.shown,
     "closing Market restores Blizzard native subframes without changing mode")
 assert(nativeRegistryEdits==0,"no protected PanelTemplates mutations")
-print("PASS: Market never writes AH displayMode; Cozy Sleeping Bag item-use path safe, native tabs restore, real AH artwork, market scans and responsive table")
+-- The handoff is an explicit separate user workflow: don't contaminate
+-- the preceding read-only Market/tab-state invariants with native Sell.
+tab:Click()
+Button("My Items"):Click()
+rows[1].scripts.OnMouseDown(rows[1],"LeftButton")
+local prepare=Button("Prepare Auction")
+assert(prepare and prepare.shown and prepare.enabled==true,
+    "selected verified tradeable bag item enables Prepare Auction")
+prepare:Click()
+assert(not pane.shown and
+    AuctionHouseFrame:GetDisplayMode()==AuctionHouseFrameDisplayMode.Sell,
+    "Prepare Auction opens native Sell only on deliberate user click")
+assert(nativeRegistryEdits==0,
+    "auction preparation never changes protected native tab registry")
+print("PASS: Market read-only state, owned-item Prepare Auction navigation, native tab recovery and responsive table")
