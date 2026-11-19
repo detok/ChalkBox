@@ -33,6 +33,7 @@ local navigation = {
         {key="races", title="Race Behavior"},
         {key="catalog", title="Emote Catalog"}}},
     {key="guard", title="QuietGuard"},
+    {key="transfer", title="Data Transfer"},
     {key="updates", title="Updates"},
 }
 local parentPage = {}
@@ -179,7 +180,7 @@ local function MakeHome()
         {title="COMBAT & HUD",
             keys={"bar","meter","forge","prep"}},
         {title="PERSONALIZE & MANAGE",
-            keys={"theme","emota","guard","updates"}},
+            keys={"theme","emota","guard","transfer"}},
     }
     local pageByKey={}
     for _,entry in ipairs(navigation) do pageByKey[entry.key]=entry end
@@ -204,6 +205,56 @@ end
 
 -- Global appearance is a shared, optional surface layer. Local opacity
 -- controls on the Bar/toast/meter are preserved and apply independently.
+local function MakeTransfer()
+    local panel=Panel("Data Transfer",
+        "Copy one file between PCs. Only AuctionSense and Discoveries are transferred.")
+    Label(panel,"AUCTION DATA + DISCOVERIES","GameFontNormalLarge",28,-109,490)
+    Label(panel,"Includes saved price scans, confirmed sale receipts, recorded drops",
+        "GameFontHighlightSmall",28,-139,490)
+    Label(panel,"and known flight paths. Does NOT transfer settings or session data.",
+        "GameFontHighlightSmall",28,-156,490)
+    Button(panel,"Export Data",28,-192,210,function()
+        if type(ChalkBox_TransferExport)~="function" then
+            Note("Transfer module is unavailable.");return
+        end
+        local ok,msg=ChalkBox_TransferExport()
+        Note(msg or (ok and "Export prepared." or "Export failed."))
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    Button(panel,"Import & Merge",260,-192,210,function()
+        if type(ChalkBox_TransferImport)~="function" then
+            Note("Transfer module is unavailable.");return
+        end
+        local ok,msg=ChalkBox_TransferImport()
+        Note(msg or (ok and "Data merged." or "Import failed."))
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    Label(panel,"EXPORT: Click Export Data, then /reload or log out to save the file.",
+        "GameFontHighlightSmall",28,-246,495)
+    Label(panel,"COPY: While WoW is closed on both PCs, transfer this file:",
+        "GameFontHighlightSmall",28,-269,495)
+    Label(panel,"WTF/Account/<account>/SavedVariables/ChalkBoxTransfer.lua",
+        "GameFontHighlightSmall",28,-292,495)
+    Label(panel,"IMPORT: Start WoW on the second PC, then click Import & Merge.",
+        "GameFontHighlightSmall",28,-315,495)
+    local info=Label(panel,"","GameFontHighlightSmall",28,-354,495)
+    local state=Label(panel,"","GameFontHighlightSmall",28,-386,495)
+    panel:AddRefresh(function()
+        local s=type(ChalkBox_TransferStatus)=="function" and
+            ChalkBox_TransferStatus() or nil
+        if not s or not s.companion then
+            info:SetText("Transfer companion not enabled: reinstall the full ChalkBox ZIP.")
+        elseif not s.file then
+            info:SetText("No transfer file loaded. Export here, or copy one from the other PC.")
+        else
+            info:SetText(("File ready: %d markets · %d sale ledgers · %d discovery areas"):format(
+                s.marketCount or 0,s.saleCharacters or 0,s.discoveryAreas or 0))
+        end
+        state:SetText(s and s.message or "Only explicit imports change local records.")
+    end)
+    return panel
+end
+
 local function MakeTheme()
     local panel=Panel("Global Appearance",
         "One background and accent palette for ChalkBox windows, The Bar and camp alerts.")
@@ -1672,6 +1723,7 @@ local function Register()
     if registered then return end
     panels.home = MakeHome()
     panels.theme = MakeTheme()
+    panels.transfer = MakeTransfer()
     panels.drops = MakeDrops()
     panels.auction = MakeAuction()
     panels.auctioncharts = MakeAuctionCharts()
