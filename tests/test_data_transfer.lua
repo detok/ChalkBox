@@ -57,6 +57,10 @@ local a=ChalkBoxTransferDB
 assert(a.kind=="ChalkBoxData" and a.version==1 and
     a.drops.windows==2 and type(a.dropParts)=="table" and
     a.auction.markets["whitemaine|alliance"].scannedAt==1770000100)
+assert(a.drops.enabled==nil and a.drops.tooltip==nil and
+    a.auction.nextAllowed==nil and a.auction.tooltip==nil and
+    a.flights.enabled==nil,
+    "transfer file contains only evidence, not preferences or scan cooldowns")
 local aChar=ChalkBoxZoneDB
 local aAccount=ChalkBoxDB
 -- Machine B already observed three other windows independently. It has a
