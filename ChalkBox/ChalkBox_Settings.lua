@@ -943,10 +943,8 @@ local function MakeQuestSmart()
     Button(panel,"Lowest level first",266,-143,234,
         function() Run("sort lowest") end)
     local rank=Label(panel,"","GameFontHighlightSmall",28,-185,470)
-    Label(panel,"These prioritize which quests to track; Blizzard still",
+    Label(panel,"Selects watched quests; Blizzard controls row order.",
         "GameFontHighlightSmall",28,-207,480)
-    Label(panel,"controls the on-screen order of its built-in tracker.",
-        "GameFontHighlightSmall",28,-223,480)
     Toggle(panel,"Prioritize quests in the current zone",
         "Zone match is stronger than distant quest distance.",
         -230,
