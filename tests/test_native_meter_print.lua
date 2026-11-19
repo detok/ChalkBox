@@ -230,9 +230,16 @@ Fire("PLAYER_REGEN_ENABLED")
 Tick(1)
 assert(#sends==9,"auto report waits for completed native session")
 Tick(1.5)
+assert(#sends==9 and ChalkBox_NativeMeterStatus().ready and
+    ChalkBox_NativeMeterStatus().readyChannel=="SAY",
+    "automatic SAY prepares a report without a protected chat send")
+MenuOpen()
+assert(Button("Send ready report to SAY"))
+Button("Send ready report to SAY")()
 assert(#sends==10 and sends[10].channel=="SAY"
-    and sends[10].text=="CB DPS (Last): 1. Previous - 201",
-    "after-combat auto report uses selected auto stat and explicit channel")
+    and sends[10].text=="CB DPS (Last): 1. Previous - 201"
+    and not ChalkBox_NativeMeterStatus().ready,
+    "manual click sends the sanitized report without new data reads")
 -- Cooldown prevents a second rapid report even if another fight ends.
 now=330;Fire("PLAYER_REGEN_DISABLED")
 now=344;old={combatSources={{name="Previous",amountPerSecond=301,totalAmount=3001}}}
@@ -246,9 +253,13 @@ assert(#sends==10,"identical old auto summary is not repeated")
 now=500;Fire("PLAYER_REGEN_DISABLED");now=512
 old={combatSources={{name="Previous",amountPerSecond=405,totalAmount=4050}}}
 Fire("PLAYER_REGEN_ENABLED");Tick(3)
+assert(#sends==10 and ChalkBox_NativeMeterStatus().ready,
+    "new completed fight produces a fresh ready report")
+MenuOpen()
+Button("Send ready report to SAY")()
 assert(#sends==11 and sends[11].channel=="SAY" and
     sends[11].text:find("405",1,true),
-    "new completed result can be posted once cooldown clears")
+    "manual post-fight report is sent through the native sender")
 MenuOpen()
 Button("After combat: ")()
 assert(not ChalkBox_NativeMeterStatus().auto)
@@ -323,4 +334,52 @@ assert(ChalkBox_NativeMeterPrint(compactAdapter,"SAY")
     and #rawLines==before+4 and #pending==0
     and #sends==15 and sends[15].channel=="SAY",
     "SAY sends all lines from direct click without delayed hardware actions")
-print("PASS: native and compact PARTY/SAY reports, safe separated rows, 200ms PARTY pacing, instant-click SAY, Top 3/5/10, auto opt-in and no spam")
+-- PARTY auto may send where client chat permits it; otherwise a
+-- real click can send the prepared payload without any protected hacks.
+_G.C_Timer=nil
+now=720
+ChalkBox_NativeMeterCommand("auto on")
+ChalkBox_NativeMeterCommand("channel party")
+C_ChatInfo.InChatMessagingLockdown=function() return true end
+old={combatSources={{name="New Party Result",amountPerSecond=777,totalAmount=7770}}}
+Fire("PLAYER_REGEN_DISABLED")
+now=735
+Fire("PLAYER_REGEN_ENABLED")
+Tick(2.1)
+assert(#sends==15 and ChalkBox_NativeMeterStatus().ready and
+    ChalkBox_NativeMeterStatus().readyChannel=="PARTY",
+    "chat lockdown never attempts automatic PARTY communication")
+C_ChatInfo.InChatMessagingLockdown=nil
+MenuOpen()
+Button("Send ready report to PARTY")()
+assert(#sends==16 and not ChalkBox_NativeMeterStatus().ready,
+    "one genuine click sends a formerly blocked PARTY report")
+now=810
+old={combatSources={{name="New Auto Result",amountPerSecond=833,totalAmount=8330}}}
+Fire("PLAYER_REGEN_DISABLED")
+now=826
+Fire("PLAYER_REGEN_ENABLED")
+Tick(2.5)
+assert(#sends==17 and sends[17].channel=="PARTY" and
+    sends[17].text:find("833",1,true),
+    "eligible PARTY auto reporting keeps working through native sender")
+-- Forever's server may populate the last fight a little later.
+now=920
+local missed=0
+local normal=C_DamageMeter.GetCombatSessionFromType
+C_DamageMeter.GetCombatSessionFromType=function(kind,stat)
+    missed=missed+1
+    if missed<=2 then return {combatSources={}} end
+    return normal(kind,stat)
+end
+old={combatSources={{name="Late Result",amountPerSecond=918,totalAmount=9180}}}
+Fire("PLAYER_REGEN_DISABLED")
+now=938
+Fire("PLAYER_REGEN_ENABLED")
+Tick(2.1);Tick(1.6);Tick(1.6)
+assert(#sends==18 and sends[18].text:find("918",1,true),
+    "auto retry waits for the server-completed snapshot, without spamming")
+C_DamageMeter.GetCombatSessionFromType=normal
+ChalkBox_NativeMeterCommand("auto off")
+assert(not ChalkBox_NativeMeterStatus().ready)
+print("PASS: native PARTY/SAY, late fight retry, restricted-chat click fallback, no background SAY, Top 3/5/10 and no spam")

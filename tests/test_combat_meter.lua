@@ -314,6 +314,7 @@ assert(ChalkBoxDB.meter.width==422 and ChalkBoxDB.meter.rows==10,
 assert(window.w==422 and window.h==316,"resized meter keeps dimensions")
 -- No combat-session event was fired: the visible-only heartbeat still
 -- repaints one bounded native sample instead of leaving values stale.
+Flush()
 local beforeHeartbeat=callCount
 event.script.OnUpdate(event,0.50)
 assert(callCount==beforeHeartbeat,
