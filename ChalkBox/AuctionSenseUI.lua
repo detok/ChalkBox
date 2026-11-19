@@ -833,6 +833,21 @@ local function Ensure()
                         tip:AddLine(advice.comparisonDetail,
                             COLOR.low[1],COLOR.low[2],COLOR.low[3],true)
                     end
+                    if advice.feeDetail then
+                        tip:AddLine(advice.feeDetail,
+                            COLOR.warning[1],COLOR.warning[2],
+                            COLOR.warning[3],true)
+                    end
+                    if advice.riskDetail then
+                        tip:AddLine(advice.riskDetail,
+                            COLOR.muted[1],COLOR.muted[2],
+                            COLOR.muted[3],true)
+                    end
+                    if advice.vendorDecisionDetail then
+                        tip:AddLine(advice.vendorDecisionDetail,
+                            COLOR.low[1],COLOR.low[2],
+                            COLOR.low[3],true)
+                    end
                     if advice.craftValueDetail then
                         tip:AddLine(advice.craftValueDetail,
                             COLOR.average[1],COLOR.average[2],
