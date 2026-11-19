@@ -812,10 +812,13 @@ local sliders={}
 for _,frame in ipairs(frames) do
     if frame.kind=="Slider" then sliders[#sliders+1]=frame end
 end
-assert(#sliders==11,
-    "QuestSense arrow size joins the existing ten sliders without removing any")
-local appearanceSlider,highlightSlider
+assert(#sliders==12,
+    "Mac notch inset adds one slider without removing existing controls")
+local appearanceSlider,highlightSlider,safeSlider
 for _,frame in ipairs(sliders) do
+    if frame.parent==categories["Mac / Notch Safe Area"].panel then
+        safeSlider=frame
+    end
     if frame.parent==categories["The Bar Appearance"].panel then
         appearanceSlider=frame
     end
@@ -823,6 +826,9 @@ for _,frame in ipairs(sliders) do
         highlightSlider=frame
     end
 end
+assert(safeSlider and safeSlider.min==0 and safeSlider.max==120
+    and safeSlider.step==2,
+    "native Mac notch page exposes a bounded manual top inset")
 assert(appearanceSlider and appearanceSlider.value==70,
     "native bar opacity slider defaults to original 70%")
 appearanceSlider:SetValue(0)
