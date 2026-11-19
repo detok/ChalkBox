@@ -620,6 +620,26 @@ local function Refresh()
         labels.fullscan:SetEnabled(status.open and status.fullAvailable
             and not status.busy and cooldown==0)
     end
+    -- A market listing alone is not inventory. Only offer preparation for
+    -- an explicitly selected item currently observed in the player's bags.
+    local ownedSelection=false
+    if view=="bags" and selectedItemID then
+        for _,item in ipairs(entries) do
+            if item.itemID==selectedItemID and (item.count or 0)>0 and
+                not item.protected and not item.bound and
+                item.boundKnown==true then
+                ownedSelection=true;break
+            end
+        end
+    end
+    if labels.prepare then
+        if labels.prepare.SetEnabled then
+            labels.prepare:SetEnabled(ownedSelection and status.open)
+        end
+        if ownedSelection then labels.prepare:Show()
+        elseif view=="bags" then labels.prepare:Show()
+        else labels.prepare:Hide() end
+    end
 end
 function ChalkBox_AuctionRefreshUI() Refresh() end
 -- The journal is mounted INSIDE Blizzard's AH, not a detached window.
@@ -681,6 +701,34 @@ local function Ensure()
     labels.mode_market=Button(f,"Prices",21,-87,78,function() Mode("market") end)
     labels.mode_bags=Button(f,"My Items",104,-87,92,function() Mode("bags") end)
     labels.mode_sales=Button(f,"Sales & Stats",201,-87,114,function() Mode("sales") end)
+    -- Never auto-post, transfer inventory or write Blizzard's protected
+    -- displayMode. This button only opens the native Sell tab after a real
+    -- user click. The user chooses their bag item, stack and final price.
+    labels.prepare=Button(f,"Prepare Auction",323,-87,135,function()
+        if view~="bags" or not selectedItemID or
+            (type(InCombatLockdown)=="function" and InCombatLockdown()) then
+            return
+        end
+        local rows=type(ChalkBox_MarketBagRows)=="function" and
+            ChalkBox_MarketBagRows("",250) or {}
+        local owned=false
+        for _,item in ipairs(rows) do
+            if item.itemID==selectedItemID and (item.count or 0)>0 and
+                not item.protected and not item.bound and
+                item.boundKnown==true then owned=true;break end
+        end
+        if not owned then return end
+        local native=host and (host.SellTab or
+            (type(host.Tabs)=="table" and host.Tabs[2]))
+        if native and type(native.Click)=="function" then
+            -- Native tab is clicked in response to THIS button's hardware
+            -- event, not as an automated auction action.
+            native:Click()
+        end
+    end)
+    Hint(labels.prepare,"Prepare Auction",
+        "Open the native Sell tab for the selected item in your bags.",
+        "Choose the item, duration, deposit and final price yourself.")
     -- Scan results live under the view choices, not between buttons/search.
     labels.details=Font(f,"GameFontHighlightSmall",21,-117,446)
     labels.scan=Button(f,"Scan Market",21,-106,125,function()
