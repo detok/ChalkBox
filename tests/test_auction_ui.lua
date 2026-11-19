@@ -71,6 +71,26 @@ _G.CreateFrame=function(kind,name,parent,template)
 end
 _G.AuctionHouseFrame=Element("Frame",UIParent,"AuctionHouseFrame")
 AuctionHouseFrame.level=15
+local stagedLocation,postCalls=nil,0
+_G.C_Container={
+    GetContainerNumSlots=function(bag) return bag==0 and 2 or 0 end,
+    GetContainerItemLink=function(bag,slot)
+        return bag==0 and slot==1 and "|cff1eff00|Hitem:8888:0:0:0|h[My Test Green]|h|r" or nil
+    end,
+}
+_G.NUM_BAG_SLOTS=4
+_G.ItemLocation={
+    CreateFromBagAndSlot=function(bag,slot)
+        return {bag=bag,slot=slot}
+    end,
+}
+_G.C_AuctionHouse={
+    IsSellItemValid=function(location) return location.bag==0 and location.slot==1 end,
+}
+function AuctionHouseFrame:SetPostItem(location)
+    postCalls=postCalls+1
+    stagedLocation=location
+end
 local buy=Element("Button",AuctionHouseFrame,"AHBuy")
 local sell=Element("Button",AuctionHouseFrame,"AHSell")
 local auctions=Element("Button",AuctionHouseFrame,"AHAuctions")
@@ -678,6 +698,9 @@ prepare:Click()
 assert(not pane.shown and
     AuctionHouseFrame:GetDisplayMode()==AuctionHouseFrameDisplayMode.Sell,
     "Prepare Auction opens native Sell only on deliberate user click")
+assert(postCalls==1 and stagedLocation and
+    stagedLocation.bag==0 and stagedLocation.slot==1,
+    "Prepare Auction stages the selected LIVE bag stack, not just the Sell tab")
 assert(nativeRegistryEdits==0,
     "auction preparation never changes protected native tab registry")
 print("PASS: Market read-only state, owned-item Prepare Auction navigation, native tab recovery and responsive table")
