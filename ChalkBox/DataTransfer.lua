@@ -17,7 +17,7 @@ local function Copy(x,depth,budget,seen)
     if t=="string" then return #x<=512 and x or x:sub(1,512) end
     if t=="boolean" then return x end
     if t~="table" then return nil end
-    if depth>12 or budget.n>250000 then
+    if depth>12 or budget.n>2000000 then
         budget.tooLarge=true
         return nil
     end
@@ -25,7 +25,7 @@ local function Copy(x,depth,budget,seen)
     seen[x]=true
     local out={}
     for k,v in pairs(x) do
-        if budget.n>=250000 then budget.tooLarge=true;break end
+        if budget.n>=2000000 then budget.tooLarge=true;break end
         if (type(k)=="number" and Int(k) or
             type(k)=="string" and #k<=160) then
             budget.n=budget.n+1
@@ -539,8 +539,25 @@ function ChalkBox_TransferImport()
         data.version~=1 then return false,
         "No valid transfer file. Exit WoW, copy the file, then log in." end
     if type(data.auction)~="table" or type(data.sales)~="table" or
-        type(data.drops)~="table" or type(data.dropParts)~="table" then
-        return false,"Incomplete transfer; no changes made." end
+        type(data.drops)~="table" or type(data.dropParts)~="table" or
+        data.auction.version~=1 or data.sales.version~=1 or
+        data.drops.version~=2 or
+        (data.flights and data.flights.version~=1) then
+        return false,"Incomplete or incompatible transfer; no changes made." end
+    -- Fail closed. An unfamiliar saved schema must never be reset just
+    -- because an older transfer file was imported.
+    if type(ChalkBoxDB)=="table" and
+        ((type(ChalkBoxDB.auctionSense)=="table" and
+            ChalkBoxDB.auctionSense.version~=1) or
+         (type(ChalkBoxDB.auctionInsights)=="table" and
+            ChalkBoxDB.auctionInsights.version~=1)) then
+        return false,"Newer local auction schema; import blocked safely." end
+    if type(ChalkBoxZoneDB)=="table" and
+        ((type(ChalkBoxZoneDB.dropSense)=="table" and
+            ChalkBoxZoneDB.dropSense.version~=2) or
+         (type(ChalkBoxZoneDB.discoveriesKnownFlights)=="table" and
+            ChalkBoxZoneDB.discoveriesKnownFlights.version~=1)) then
+        return false,"Different local Discoveries schema; import blocked safely." end
     -- Deep-copy first: imports never mutate the file or share table aliases.
     local copied=Snapshot(data)
     if type(copied)~="table" or
