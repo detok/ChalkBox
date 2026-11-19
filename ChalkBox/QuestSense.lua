@@ -537,8 +537,8 @@ local function Reconcile()
     local function Compare(a,b)
         if mode~="all" and a.complete~=b.complete then
             -- Completed are last by default; Completed First remains opt-in.
-            return settings.smartCompleteFirst==true and a.complete or
-                not a.complete
+            if settings.smartCompleteFirst==true then return a.complete end
+            return not a.complete
         end
         if mode=="smart" and settings.smartNearbyFirst~=false and
             a.inArea~=b.inArea then return a.inArea end
