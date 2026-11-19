@@ -555,11 +555,8 @@ assert(Text("DE / ITEM") and Text("IN BAG") and Text("My Test Green")
     and bagsRead>0 and rows[1].marketView=="bags",
     "My Items integrates bag/DE appraisal into native Market frame")
 local prepare=Button("Prepare Auction")
-assert(prepare and prepare.shown and prepare.enabled==false,
-    "preparing an auction requires explicitly selecting an owned item")
-rows[1].scripts.OnMouseDown(rows[1],"LeftButton")
-assert(prepare.enabled==true,
-    "selecting a verified tradeable owned item enables Prepare Auction")
+assert(prepare and prepare.shown and prepare.enabled==true,
+    "selected verified tradeable owned item enables Prepare Auction")
 prepare:Click()
 assert(not pane.shown and
     AuctionHouseFrame:GetDisplayMode()==AuctionHouseFrameDisplayMode.Sell,
