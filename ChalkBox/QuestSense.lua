@@ -90,6 +90,10 @@ local function GroupQuest(info,header)
         (type(info.suggestedGroup)=="number" and info.suggestedGroup>1) then
         return true
     end
+    -- Some Forever quests omit group flags but expose the native elite API.
+    if Call(C_QuestLog and C_QuestLog.IsEliteQuest,info.questID)==true then
+        return true
+    end
     local tag=Call(C_QuestLog and C_QuestLog.GetQuestTagInfo,info.questID)
     if type(tag)=="table" then
         if tag.isElite==true or tag.isDungeon==true or tag.isRaid==true then
@@ -596,20 +600,27 @@ local function Reconcile()
     local capacity=math.max(0,limit-reservedManual)
     local desired={}
     local autoSlots=0
-    if settings.enabled then
-        for _,quest in ipairs(prioritized) do
-            local id=quest.id
-            if not settings.muted[id] then
-                if watched[id] and not settings.managed[id] then
-                    -- Existing manual selection takes precedence.
-                elseif restoreManual[id] then
-                    -- Temporarily suspended manual selection takes precedence.
-                elseif autoSlots<capacity then
-                    desired[id]=true
-                    autoSlots=autoSlots+1
-                end
+    local function Consider(quest)
+        local id=quest.id
+        if not settings.muted[id] then
+            if watched[id] and not settings.managed[id] then
+                -- Already a manual watch, counted in the total budget.
+            elseif restoreManual[id] then
+                -- A previously suspended manual watch has reserved its slot.
+            elseif autoSlots<capacity and not desired[id] then
+                desired[id]=true
+                autoSlots=autoSlots+1
             end
         end
+    end
+    if settings.enabled then
+        -- A freshly accepted eligible quest wins one automatic slot this
+        -- reconciliation. Once added it becomes a retained manual watch,
+        -- rather than disappearing on the next periodic refresh.
+        for _,quest in ipairs(prioritized) do
+            if recentlyAccepted[quest.id] then Consider(quest) end
+        end
+        for _,quest in ipairs(prioritized) do Consider(quest) end
     end
 
     -- Remove outdated auto-watches first, then suspend non-local manual
@@ -678,7 +689,12 @@ local function Reconcile()
                         local after=Watches()
                         if after and after[id] then
                             watched=after
-                            settings.managed[id]=true
+                            if recentlyAccepted[id] then
+                                settings.managed[id]=nil
+                                seenManual[id]=true
+                            else
+                                settings.managed[id]=true
+                            end
                             added=added+1
                         else failed=failed+1 end
                     else failed=failed+1 end
@@ -746,7 +762,9 @@ function ChalkBox_QuestNavFocus(id)
     id=ValidID(id) and id or nil
     if id==navFocusID then return end
     navFocusID=id
-    if id then QueueUpdate() end
+    -- Clearing an old focus is also a zone-filter change: Nearby should
+    -- release the exemption rather than wait for the next zone event.
+    QueueUpdate()
 end
 function ChalkBox_QuestStatus()
     local zoneID,name=CurrentZone()
