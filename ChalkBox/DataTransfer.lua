@@ -16,12 +16,16 @@ local function Copy(x,depth,budget,seen)
     if t=="number" then return Int(x) and x or nil end
     if t=="string" then return #x<=512 and x or x:sub(1,512) end
     if t=="boolean" then return x end
-    if t~="table" or depth>12 or budget.n>250000 then return nil end
+    if t~="table" then return nil end
+    if depth>12 or budget.n>250000 then
+        budget.tooLarge=true
+        return nil
+    end
     if seen[x] then return nil end
     seen[x]=true
     local out={}
     for k,v in pairs(x) do
-        if budget.n>=250000 then break end
+        if budget.n>=250000 then budget.tooLarge=true;break end
         if (type(k)=="number" and Int(k) or
             type(k)=="string" and #k<=160) then
             budget.n=budget.n+1
@@ -33,7 +37,9 @@ local function Copy(x,depth,budget,seen)
     return out
 end
 local function Snapshot(t)
-    return Copy(t,0,{n=0},{})
+    local budget={n=0,tooLarge=false}
+    local result=Copy(t,0,budget,{})
+    return not budget.tooLarge and result or nil
 end
 local function Count(t)
     local n=0
@@ -499,14 +505,28 @@ function ChalkBox_TransferExport()
     if not character then return false,"Character/realm isn't ready." end
     local parts=Tracking()
     local now=type(time)=="function" and time() or 0
+    local a=ChalkBoxDB and ChalkBoxDB.auctionSense or {}
+    local s=ChalkBoxDB and ChalkBoxDB.auctionInsights or {}
+    local d=ChalkBoxZoneDB and ChalkBoxZoneDB.dropSense or {}
+    local f=ChalkBoxZoneDB and ChalkBoxZoneDB.discoveriesKnownFlights or {}
+    -- Export DATA ONLY. Account/character settings, scan cooldowns and
+    -- preferences are intentionally excluded from the portable file.
+    local auction=Snapshot({version=1,markets=a.markets or {}})
+    local sales=Snapshot({version=1,characters=s.characters or {}})
+    local drops=Snapshot({version=2,items=d.items or {},areas=d.areas or {},
+        windows=d.windows or 0,observedItems=d.observedItems or 0,
+        legacyWindows=d.legacyWindows or 0})
+    local dropParts=Snapshot(parts.parts)
+    local flights=Snapshot({version=1,nodes=f.nodes or {}})
+    if not auction or not sales or not drops or
+        not dropParts or not flights then
+        return false,"Too much or invalid transfer data; old file unchanged."
+    end
     _G.ChalkBoxTransferDB={
         kind="ChalkBoxData",version=1,exportedAt=Int(now) and now or 0,
         character=character,origin=parts.localID,
-        auction=Snapshot(ChalkBoxDB and ChalkBoxDB.auctionSense),
-        sales=Snapshot(ChalkBoxDB and ChalkBoxDB.auctionInsights),
-        drops=Snapshot(ChalkBoxZoneDB and ChalkBoxZoneDB.dropSense),
-        dropParts=Snapshot(parts.parts),
-        flights=Snapshot(ChalkBoxZoneDB and ChalkBoxZoneDB.discoveriesKnownFlights),
+        auction=auction,sales=sales,drops=drops,
+        dropParts=dropParts,flights=flights,
     }
     lastMessage="Export prepared. /reload or log out to write ChalkBoxTransfer.lua."
     return true,lastMessage
