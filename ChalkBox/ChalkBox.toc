@@ -33,6 +33,7 @@ CampAura.lua
 ReminderToast.lua
 SessionJournal.lua
 CampSense.lua
+DataTransfer.lua
 DropSense.lua
 AuctionSense.lua
 AuctionSenseUI.lua
