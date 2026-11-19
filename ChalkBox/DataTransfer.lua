@@ -578,6 +578,9 @@ function ChalkBox_TransferImport()
     if type(ChalkBox_AuctionRefreshUI)=="function" then
         pcall(ChalkBox_AuctionRefreshUI)
     end
+    if type(ChalkBox_MapDiscoveriesRefresh)=="function" then
+        pcall(ChalkBox_MapDiscoveriesRefresh)
+    end
     lastMessage=("Merged %d market snapshots, %d sale receipts; %s."):format(
         markets,sales,dropStatus)
     return true,lastMessage
