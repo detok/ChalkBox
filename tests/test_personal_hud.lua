@@ -237,11 +237,11 @@ _G.C_UI={
 }
 Fire("NOTCHED_DISPLAY_MODE_CHANGED")
 local notch=ChalkBox_BarTopInsetStatus()
-assert(bar.points[1][5]==0 and bar.points[2][5]==0 and
-    bar.points[1][2]==WorldFrame and bar.points[2][2]==WorldFrame
-    and notch.split and notch.source=="native notch split"
-    and notch.gapStart==892 and notch.gapEnd==1148,
-    "shifted UIParent must not trap the split bar below the camera notch")
+assert(bar.points[1][5]==36 and bar.points[2][5]==36 and
+    bar.points[1][2]==UIParent and bar.points[2][2]==UIParent
+    and notch.split and notch.source=="Mac notch calibrated default"
+    and notch.gapStart==940 and notch.gapEnd==1108,
+    "confirmed Mac notch defaults to tested 152px gap and +36px rise")
 assert(bar.backgroundRight.visible and
     bar.background.points[2][4]==notch.gapStart and
     bar.backgroundRight.points[1][4]==notch.gapEnd,
@@ -267,19 +267,19 @@ assert(UIParent:GetHeight()==768,
 -- splitting and anchor to WorldFrame instead of suppressing the mode.
 C_UI.ShouldUIParentAvoidNotch=function() return true end
 Fire("NOTCHED_DISPLAY_MODE_CHANGED")
-assert(bar.points[1][2]==WorldFrame and
+assert(bar.points[1][5]==36 and
     ChalkBox_BarTopInsetStatus().split,
     "ShouldUIParentAvoidNotch true must never disable a valid split")
 C_UI.ShouldUIParentAvoidNotch=function() return false end
 Fire("NOTCHED_DISPLAY_MODE_CHANGED")
-assert(bar.points[1][2]==WorldFrame and
+assert(bar.points[1][5]==36 and
     ChalkBox_BarTopInsetStatus().split,
     "the split also works when Blizzard does not shift UIParent")
 -- A Forever build without WorldFrame can still lift by native notch depth.
 _G.WorldFrame=nil
 Fire("NOTCHED_DISPLAY_MODE_CHANGED")
-assert(bar.points[1][2]==UIParent and bar.points[1][5]==28,
-    "when WorldFrame is unavailable, native safe height lifts the bar UP")
+assert(bar.points[1][2]==UIParent and bar.points[1][5]==36,
+    "calibrated notch lift does not depend on WorldFrame")
 _G.WorldFrame={width=2048,GetWidth=function(self) return self.width end}
 C_UI.DoesAnyDisplayHaveNotch=function() return false end
 Fire("DISPLAY_SIZE_CHANGED")
