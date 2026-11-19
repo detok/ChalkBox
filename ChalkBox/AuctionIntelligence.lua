@@ -1111,6 +1111,25 @@ local function Analyze(rows,stats)
                     math.floor(net*(evidence.risk or 0.65))
                 p.estimatedAHUnit=adjusted
                 p.marketEvidence=evidence.source
+                -- Posted auction deposit is not available from these market
+                -- snapshots. It is returned on a successful sale and lost
+                -- after an unsuccessful expiry/cancel. Never silently treat
+                -- the model's risk haircut as a measured success rate.
+                local cut=Cut()
+                p.feeDetail=("AH cut modeled at %.1f%% on sale; "..
+                    "deposit NOT included (refunded if sold, lost if unsold)"):format(cut*100)
+                p.riskDetail=evidence.source=="personal sales" and
+                    "Demand evidence: repeated personal sales; not a sell-through rate" or
+                    (evidence.sample=="thin" and
+                    "Demand evidence: thin listings; sale chance unknown" or
+                    "Demand evidence: asking-price depth only; sale chance unknown")
+                if vendor and vendor>0 then
+                    local premium=adjusted-vendor
+                    p.vendorDecisionDetail=premium<=0 and
+                        "Vendor now: modeled AH proceeds do not beat guaranteed vendor gold" or
+                        ("Estimated AH premium "..Money(premium)..
+                        "/unit over guaranteed vendor; deposit loss/expiry risk extra")
+                end
                 if vendor then
                     p.comparisonDetail="AH modeled "..Money(adjusted)..
                         "/unit vs vendor "..Money(vendor).."/unit"
