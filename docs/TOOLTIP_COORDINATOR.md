@@ -1,7 +1,6 @@
 # Item Insights / Tooltip Coordinator — experimental sandbox
 
-**Status:** experimental branch, not a release. The addon TOC version stays
-`2.2.27-intel-beta` on this branch. Stable `main` stays unchanged.
+**Status:** experimental feature OFF by default inside the unified `2.2.28-quest-beta` prerelease. This does not claim that all features are verified on the live Forever client.
 
 ## Enable or undo
 

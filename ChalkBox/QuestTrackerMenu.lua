@@ -47,16 +47,11 @@ local function Entries()
         {label=(off and "✓ " or "").."Off",run=function() SetMode("off") end},
         {label=(smart and "✓ " or "").."Smart",run=function() SetMode("smart") end},
         {label=(zone and "✓ " or "").."Nearby",run=function() SetMode("zone") end},
-        {label="Sort: "..(q.sort or "nearest").." (next)",
+        {label="Priority: "..(q.sort=="level" and "Lowest level first" or
+            "Closest first").." (switch)",
             run=function()
-                local modes={"nearest","zone","level","title","log"}
-                local current=q.sort or "nearest"
-                for i,m in ipairs(modes) do
-                    if m==current then
-                        ChalkBox_QuestCommand("sort "..modes[i%#modes+1])
-                        break
-                    end
-                end
+                ChalkBox_QuestCommand(q.sort=="level" and
+                    "sort closest" or "sort lowest")
             end},
         {label="Navigation: "..(n.enabled and "On" or "Off"),
             run=function()

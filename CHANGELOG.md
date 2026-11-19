@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.28-quest-beta — Cleaner QuestSense Smart and Nearby
+
+- Smart priority options are Closest First and Lowest Level First, with completed quests last by default and an optional completed-first override.
+- Nearby uses zone micro-map children and each quest's own validated waypoint map to find more true local quests without cross-zone guesses.
+- Five/ten is the combined watch selection budget; existing manual overflow is preserved rather than removed without consent.
+- Newly accepted eligible quests receive a slot and remain manually owned; clearing navigation focus releases its Nearby exemption.
+- Expanded solo group-quest detection, Nearby status diagnostics and simulated five/ten candidate regression tests.
+- Preserves the built-in Blizzard quest tracker without insecure sort overrides.
+
 ## 2.2.27 — QuestSense Smart priorities (Beta)
 
 - Prefer actual Forever quest-helper distances for Smart's nearest objectives, with current-zone priority and configurable completion/level/title/log ordering.

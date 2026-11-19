@@ -1,7 +1,7 @@
 <div align="center">
 
 
-**Experimental 2.2.27-intel-beta (draft PR #107, not published):** Inventory Intelligence is disabled by default and offers optional Skill Up / Make Gold advice in the existing AuctionSense UI. See [technical details](docs/AUCTION_INTELLIGENCE.md). The official stable release remains 2.2.26.
+**QuestSense beta 2.2.28-quest-beta:** Smart now offers **Closest First** or **Lowest Level First**, with completed quests last by default. Nearby verifies objectives across zone micro-maps and quest-specific waypoints, then fills up to five or ten eligible quests. This beta includes all previous AuctionSense Intelligence, tooltip, Mac notch, and data-transfer work. [Download beta](https://github.com/detok/ChalkBox/releases/tag/v2.2.28-quest-beta). Stable 2.2.26 remains available.
 
 <img src="curseforge/artwork/chalkbox-github-header-1600x470.svg" alt="ChalkBox for WoW Forever" width="100%" />
 

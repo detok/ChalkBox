@@ -901,8 +901,8 @@ local function MakeQuests()
     Label(panel,"Smart: show verified quests for the current dungeon; restore on exit.",
         "GameFontHighlightSmall",28,-265,502)
     Label(panel,"Auto-watch limit","GameFontNormalLarge",28,-302,210)
-    for i,n in ipairs({5,10,15,20}) do
-        Button(panel,tostring(n),195+(i-1)*75,-298,64,
+    for i,n in ipairs({5,10}) do
+        Button(panel,tostring(n).." quests",195+(i-1)*130,-298,115,
             function() Run("limit "..n) end)
     end
     Button(panel,"Refresh Quests",27,-348,198,function() Run("refresh") end)
@@ -937,18 +937,14 @@ local function MakeQuestSmart()
         end
         if panel.OnRefresh then panel.OnRefresh() end
     end
-    Label(panel,"Priority order","GameFontNormalLarge",28,-105,450)
-    Button(panel,"Nearest objective",27,-137,160,
-        function() Run("sort nearest") end)
-    Button(panel,"Current zone",198,-137,147,
-        function() Run("sort zone") end)
-    Button(panel,"Quest level",357,-137,155,
-        function() Run("sort level") end)
-    Button(panel,"Quest title",27,-178,190,
-        function() Run("sort title") end)
-    Button(panel,"Quest log",228,-178,160,
-        function() Run("sort log") end)
-    local rank=Label(panel,"","GameFontHighlightSmall",227,-182,285)
+    Label(panel,"SMART PRIORITY","GameFontNormalLarge",28,-105,450)
+    Button(panel,"Closest first",27,-143,229,
+        function() Run("sort closest") end)
+    Button(panel,"Lowest level first",266,-143,234,
+        function() Run("sort lowest") end)
+    local rank=Label(panel,"","GameFontHighlightSmall",28,-185,470)
+    Label(panel,"Selects watched quests; Blizzard controls row order.",
+        "GameFontHighlightSmall",28,-207,480)
     Toggle(panel,"Prioritize quests in the current zone",
         "Zone match is stronger than distant quest distance.",
         -230,
@@ -958,7 +954,7 @@ local function MakeQuestSmart()
         end,
         function(on) Run("nearbyfirst "..(on and "on" or "off")) end)
     Toggle(panel,"Completed quests first",
-        "Show known turn-ins before unfinished objectives.",
+        "Optional: put turn-ins ahead of unfinished quests; turn OFF for completed at bottom.",
         -296,
         function()
             local st=ChalkBox_QuestStatus and ChalkBox_QuestStatus()
@@ -975,10 +971,11 @@ local function MakeQuestSmart()
     local explanation=Label(panel,"","GameFontHighlightSmall",28,-448,492)
     panel:AddRefresh(function()
         local st=ChalkBox_QuestStatus and ChalkBox_QuestStatus() or {}
-        rank:SetText("Selected: "..tostring(st.sort or "nearest"))
+        rank:SetText("Selected: "..(st.sort=="level" and
+            "Lowest level first" or "Closest first"))
         explanation:SetText("Nearby radius "..tostring(st.nearbyRange or 0)..
-            "y | first quest #"..tostring(st.nearest or "unknown")..
-            " | Blizzard tracker display preserved")
+            "y | "..tostring(st.localCandidates or 0).." local candidates"..
+            " | "..tostring(st.eligibleCandidates or 0).." eligible")
     end)
     return panel
 end

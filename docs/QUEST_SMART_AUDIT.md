@@ -1,6 +1,6 @@
 # QuestSense Smart — Forever API and tracker audit
 
-Status: **draft integration for live Forever verification**. The last stable release remains ChalkBox 2.2.26. This does not introduce a separate quest tracker.
+Status: **2.2.28-quest-beta live Forever verification**. The latest stable release remains ChalkBox 2.2.26. No separate or protected tracker replaces Blizzard's UI.
 
 ## Existing behavior reviewed
 
@@ -27,12 +27,12 @@ Status: **draft integration for live Forever verification**. The last stable rel
 
 ## Live acceptance gates
 
-1. Open Smart with around 40 accepted quests. Nearest public quest objective in the selected current-zone group appears first when Native tracker order is enabled; remote/unlocated quests do not displace local ones.
-2. Change zones, move farther than another objective, and wait for the 12-second scan. The native tracker reorders without a watch-count change or duplicates.
-3. Switch sorting between nearest, zone, level, title and log from settings and the tracker-header context menu. Disable custom order and confirm Blizzard's original order returns.
-4. Toggle Nearby zone-only, then a 500-yard radius; verify nearby native evidence is respected and remote quests are not fabricated.
-5. Confirm manual watches, explicit unwatch, current-dungeon-only focus, quest navigator, combat lockdown, map-open deferral, and reload all retain their current safety.
-6. Test with other objective-tracker addons disabled; code integration shares the native tracker method, so multiple simultaneous tracker-altering addons cannot be assumed compatible.
+1. With at least ten accepted local quests, switch Nearby to 5 then 10. Check its diagnostic local/eligible counts and verify no remote quest enters solely to fill slots.
+2. Compare **Closest First** and **Lowest Level First** in Smart; these select watches only and intentionally do not modify Blizzard's visual row sorting.
+3. Accept a new eligible quest with a full automatic selection; it should be retained while the older, lower-priority automatic choice is displaced.
+4. Complete a quest; the default selection puts unfinished objectives first and keeps completed quests last, unless the user opts into Completed First.
+5. Confirm manual watches, explicit unwatch, current-dungeon-only focus, Quest Navigator, combat/map-open safety, party toggles and reloading all retain their behavior.
+6. Test with other quest addons disabled first. Where fewer than five/ten eligible local objectives can be verified, the remaining slots intentionally stay empty.
 
 ## Deferred zone headings
 

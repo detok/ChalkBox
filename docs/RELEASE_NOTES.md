@@ -1,22 +1,23 @@
-# ChalkBox 2.2.26 — Adventure Tools & World Map
+# ChalkBox 2.2.28-quest-beta — QuestSense reliability beta
 
+**Prerelease for World of Warcraft: Forever.** This ZIP integrates the already-merged AuctionSense Intelligence, data transfer, toolbar icons/tooltips, Mac notch, and map fixes. The latest stable release remains 2.2.26.
 
-**Experimental 2.2.27-intel-beta (unified integration test, not published):** Inventory Intelligence is disabled by default and offers optional Skill Up / Make Gold advice in the existing AuctionSense UI. This integrated test build also includes QuestSense Smart native-objective priorities and Smart Rules, while preserving the solo elite/dungeon exclusion. See [Intelligence](AUCTION_INTELLIGENCE.md) and [QuestSense Smart](QUEST_SMART_AUDIT.md). The official stable release remains 2.2.26.
+## QuestSense
 
-**Official WoW Forever release.** ChalkBox brings loot insights, quests, auction information, macros and an adjustable HUD into one addon.
+- **Simple Smart priority:** Choose **Closest First** or **Lowest Level First**. Completed quests move below unfinished objectives by default; the original Completed First preference remains opt-in.
+- **Nearby fills what it can verify:** Include relevant accepted quests from the zone map, player and sibling micro-maps, and native quest-specific waypoint maps. Confirmed remote quests are excluded; the optional native distance radius remains available.
+- **5 or 10 total watch budget:** Count existing manual watches in the selected budget before adding automatic watches. Existing manual overflow is protected rather than silently discarded.
+- **Fresh accepted quests:** A newly accepted, eligible quest wins an automatic slot, then stays watched as a manual selection until the player untracks or turns it in.
+- **Solo safety:** Elite/dungeon/raid quests are excluded automatically without a party, even in All mode where supported by the client's quest metadata.
+- **Diagnostics:** `/chalk quests status` shows verified local candidates, eligible candidates and any unfilled slots.
+- **Native tracker safety:** No protected Blizzard objective-tracker replacement. Closest/Level sorting determines *which* quests are selected; Blizzard controls visible row order.
 
-## What's new
+## Retained from 2.2.27
 
-- **Discoveries & World Map:** Learned flight paths on local zone maps and map markers for recorded outdoor loot locations. Hover an item in Discoveries to see where it was collected.
-- **LootSense:** Selected future quest-item hints alongside existing quest and profession information.
-- **AuctionSense:** Optional historical asking-price charts and connected bag-value insights.
-- **The Bar:** Adjustable module widths and a remembered bank vendor-value display.
-- **Combat Meter:** Ranked PARTY/SAY reports and streamlined display options.
-- **Navigation & MacroForge:** Follow a selected map pin and open the macro workbench beside Blizzard's editor where space allows.
-- **Emota:** Optional Hunter pet interactions on supported clients.
+- Experimental read-only AuctionSense Inventory Intelligence (off by default), complete data-transfer companion, visual bar icons and semantic tooltip styling, safe Mac notch handling, and other unified fixes.
 
 ## Install
 
-Download **ChalkBox-2.2.26.zip** from [GitHub Releases](https://github.com/detok/ChalkBox/releases) or the corresponding approved CurseForge addon file. Place its single `ChalkBox/` directory in `Interface/AddOns/`. Preserve SavedVariables to keep your history and settings. Open settings with `/chalk`.
+Download the GitHub prerelease's **ChalkBox-2.2.28-quest-beta.zip**. Extract both `ChalkBox/` and optional `ChalkBoxTransfer/` into `Interface/AddOns/`, preserving your SavedVariables. `/chalk` opens the settings.
 
-Auction prices represent observed asking prices, not confirmed sales. Discoveries locations represent where your character opened loot windows. Compatibility is targeted at **WoW Forever**; ordinary Classic and Retail are not claimed.
+**Live testing still required:** Blizzard/Forever quest map evidence varies by zone. Nearby intentionally leaves slots empty when it cannot prove enough eligible local quests, rather than guessing or showing remote objectives.

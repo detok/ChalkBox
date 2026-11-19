@@ -149,8 +149,8 @@ end
 Fire("ADDON_LOADED","ChalkBox")
 assert(ChalkBoxZoneDB.smartSort=="nearest" and
     ChalkBoxZoneDB.smartNearbyFirst==true and
-    ChalkBoxZoneDB.smartCompleteFirst==true,
-    "fresh Smart enables completed-first by default")
+    ChalkBoxZoneDB.smartCompleteFirst==false,
+    "Smart defaults to unfinished quests first, with completed turn-ins last")
 Fire("PLAYER_LOGIN")
 Flush()
 assert(watches[101] and watches[102] and watches[301] and
@@ -164,6 +164,8 @@ Flush()
 assert(ChalkBox_QuestDisplayOrder()[102]<ChalkBox_QuestDisplayOrder()[101],
     "level-order Smart can choose a lower-level local quest")
 ChalkBox_QuestCommand("sort nearest")
+Flush()
+ChalkBox_QuestCommand("completefirst on") -- deliberate opt-in to legacy priority
 Flush()
 -- Quest objective finishes during gameplay: Smart must keep the actual
 -- completed quest watched so Blizzard can show its native Complete state.
@@ -267,8 +269,55 @@ Flush()
 assert(ChalkBox_QuestDisplayOrder()[101]<
     ChalkBox_QuestDisplayOrder()[102],
     "Smart reevaluates nearest objectives on its twelve-second update")
-ChalkBox_QuestCommand("sort title")
+ChalkBox_QuestCommand("sort lowest")
 Flush()
-assert(ChalkBox_QuestStatus().sort=="title",
-    "native Smart offers an alphabetical selection mode")
-print("PASS: 40-quest Smart ranking, micro-map Nearby POIs, waypoint evidence, radius controls, travel-time updates and native display order without watch writes")
+assert(ChalkBox_QuestStatus().sort=="level",
+    "Smart exposes Lowest level first without an alphabetical mode")
+-- Nearby must consider sibling micro-maps and quest-specific waypoint maps,
+-- rather than accepting only the one quest visible on the current micro-map.
+mapInfo[4]={name="Worgen Grove",mapType=5,parentMapID=1}
+C_Map.GetMapChildrenInfo=function(id,mapType,allDescendants)
+    assert(mapType==5 and allDescendants==true)
+    if id==1 then return {{mapID=4}} end
+    return {}
+end
+local getOriginal=C_QuestLog.GetQuestsOnMap
+C_QuestLog.GetQuestsOnMap=function(id)
+    if id==4 then
+        local result={}
+        for questID=1501,1506 do
+            result[#result+1]={questID=questID}
+        end
+        return result
+    end
+    return getOriginal(id)
+end
+for questID=1501,1507 do
+    logs[#logs+1]={questID=questID,title="Local task "..questID,level=33}
+end
+C_QuestLog.GetNextWaypoint=function(id)
+    if id==1507 then return 4,.35,.65 end
+    if id==201 then return 2,.35,.65 end -- remote objective, never Nearby
+end
+Constants.QuestWatchConsts.MAX_QUEST_WATCHES=25
+ChalkBox_QuestCommand("limit 5")
+ChalkBox_QuestCommand("zone")
+Flush()
+assert(C_QuestLog.GetNumQuestWatches()==5,
+    "Nearby fills all five slots when five local quests have native evidence")
+assert(not watches[201] and not watches[301],
+    "Nearby does not invent locality for other zones or manual dungeon quests")
+ChalkBox_QuestCommand("limit 10")
+Flush()
+assert(C_QuestLog.GetNumQuestWatches()==10 and watches[1507] and
+    not watches[201] and not watches[301],
+    "Nearby fills ten verified objectives, including sibling micro-map waypoints")
+local near=ChalkBox_QuestStatus()
+assert(near.localCandidates==10 and near.eligibleCandidates==10
+    and near.tracked==10 and near.shortfall==0,
+    "Nearby diagnostics match the selected budget and verified candidate count")
+ChalkBox_QuestCommand("sort closest")
+Flush()
+assert(ChalkBox_QuestStatus().sort=="nearest",
+    "Closest first remains an available setting next to Lowest level first")
+print("PASS: 5/10 Nearby filling from sibling maps and waypoints; closest/level priorities; protected Blizzard tracker")

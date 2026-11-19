@@ -1,7 +1,7 @@
 # ChalkBox documentation
 
 
-**Experimental 2.2.27-intel-beta (draft PR #107, not published):** Inventory Intelligence is disabled by default and offers optional Skill Up / Make Gold advice in the existing AuctionSense UI. See [technical details](AUCTION_INTELLIGENCE.md). The official stable release remains 2.2.26.
+**Current beta 2.2.28-quest-beta:** QuestSense adds Closest/Lowest priorities and more complete verified Nearby detection; previous experimental Auction Intelligence remains opt-in and off by default. See [technical details](AUCTION_INTELLIGENCE.md). The official stable release remains 2.2.26.
 
 This is the **versioned documentation home** for ChalkBox. GitHub has a Wiki feature, but keeping the primary instructions here means user guides, tests and the actual Lua implementation can be reviewed in the same pull request. Release documentation lives with the code it describes.
 

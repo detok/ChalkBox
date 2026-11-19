@@ -45,10 +45,10 @@
 | `/chalk quests smart` | Prioritize accepted quests; focus on verified current-dungeon quests when available |
 | `/chalk quests zone` | Nearby-only current-zone watch filtering |
 | `/chalk quests all` | Accepted quests in quest-log order, subject to limits |
-| `/chalk quests limit 5` | Select the auto-watch limit (5, 10, 15 or 20) |
+| `/chalk quests limit 5` / `10` | Choose a total watch budget of five or ten, including existing manual watches; manual overflow remains protected |
 | `/chalk quests refresh` | Queue native quest-watch reconciliation when safe |
-| `/chalk quests status` | Inspect watch counts, selected mode, zone, instance match and API diagnostics |
-| `/chalk quests sort nearest` / `zone` / `level` / `title` / `log` | Choose Smart's candidate priority and optional native tracker visual order |
+| `/chalk quests status` | Inspect watch count, limit, verified Nearby candidates, missing slots, zone and API diagnostics |
+| `/chalk quests sort closest` / `lowest` | Choose nearest objective or lowest quest level for selecting Smart/Nearby watches; native row order remains Blizzard-controlled |
 | `/chalk quests nearbyfirst on` / `off` | Prefer proven current-zone objectives before distant quests |
 | `/chalk quests completefirst on` / `off` | Prioritize completed quests when choosing watches |
 | `/chalk quests range 0` / `500` / `1000` / `2000` | Nearby: strict zone-only by default, or include game-reported nearby quest goals within the chosen yard range |

@@ -394,9 +394,9 @@ logs[#logs+1]={questID=703,title="Ordinary Solo Objective"}
 watches[702]=true -- existing manual dungeon watch must be restored later
 -- Ensure this test exercises eligibility rather than the older 10-slot cap.
 Constants.QuestWatchConsts.MAX_QUEST_WATCHES=25
-ChalkBox_QuestCommand("limit 20")
+ChalkBox_QuestCommand("limit 10")
 ChalkBox_QuestCommand("smart")
-Fire("QUEST_LOG_UPDATE")
+Fire("QUEST_ACCEPTED",#logs,703)
 Flush()
 assert(watches[703] and not watches[701] and not watches[702] and
     ChalkBoxZoneDB.suspendedManual[702],
@@ -405,12 +405,17 @@ assert(watches[703] and not watches[701] and not watches[702] and
     " 703="..tostring(watches[703]).." suspended="..
     tostring(ChalkBoxZoneDB.suspendedManual[702]).." mode="..
     tostring(ChalkBoxZoneDB.mode).." reason="..ChalkBox_QuestStatus().reason)
+Fire("QUEST_LOG_UPDATE")
+Flush()
+assert(watches[703],
+    "newly accepted eligible quest remains watched on the next scan")
+local soloCandidates=ChalkBox_QuestStatus().eligibleCandidates
 grouped=true
 Fire("GROUP_ROSTER_UPDATE")
 Flush()
-assert(watches[701] and watches[702] and
-    not ChalkBoxZoneDB.suspendedManual[702],
-    "joining a party makes elite/dungeon quests eligible and restores manual watches")
+assert(watches[702] and not ChalkBoxZoneDB.suspendedManual[702]
+    and ChalkBox_QuestStatus().eligibleCandidates>=soloCandidates+2,
+    "group quests become eligible when grouped, and manual dungeon watch returns")
 grouped=false
 Fire("GROUP_ROSTER_UPDATE")
 Flush()

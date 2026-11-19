@@ -1,11 +1,11 @@
-# ChalkBox 2.2.26 stable guide — install and first use
+# ChalkBox 2.2.28-quest-beta — install and first use
 
 
-**Experimental 2.2.27-intel-beta (draft PR #107, not published):** Inventory Intelligence is disabled by default and offers optional Skill Up / Make Gold advice in the existing AuctionSense UI. See [technical details](../../docs/AUCTION_INTELLIGENCE.md). The official stable release remains 2.2.26.
+**Current GitHub beta: 2.2.28-quest-beta.** Includes QuestSense Closest/Lowest priorities, improved verified Nearby filling and the previous opt-in Auction Intelligence. See [technical details](../../docs/AUCTION_INTELLIGENCE.md). Stable version 2.2.26 remains available.
 
 **Stable release: download the playable 2.2.26 addon ZIP from GitHub Releases, not an old test archive.
 
-1. Download the **`ChalkBox-2.2.26.zip`** game asset from [GitHub Releases](https://github.com/detok/ChalkBox/releases/tag/v2.2.26). **Not** the media kit or GitHub Source code ZIP.
+1. Download the **`ChalkBox-2.2.28-quest-beta.zip`** game asset from [GitHub Releases](https://github.com/detok/ChalkBox/releases/tag/v2.2.26). **Not** the media kit or GitHub Source code ZIP.
 2. Extract its single `ChalkBox/` folder into your actual Forever client `Interface/AddOns/`. Confirm `Interface/AddOns/ChalkBox/ChalkBox.toc` exists.
 3. Launch the game and type **`/chalk`** to open the native settings pages.
 4. **LootSense:** Hover items. Quest items may identify the accepted quest and collection progress when reliably matched. Use `/chalk keep [item]` for a personally protected item; learned recipe hints are distinct from potential uses.

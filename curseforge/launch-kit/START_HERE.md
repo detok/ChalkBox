@@ -1,9 +1,9 @@
-# ChalkBox 2.2.26 — publisher quick start
+# ChalkBox 2.2.28-quest-beta — publisher kit
 
 
-**Experimental 2.2.27-intel-beta (draft PR #107, not published):** Inventory Intelligence is disabled by default and offers optional Skill Up / Make Gold advice in the existing AuctionSense UI. See [technical details](../../docs/AUCTION_INTELLIGENCE.md). The official stable release remains 2.2.26.
+**Current GitHub beta: 2.2.28-quest-beta.** Includes QuestSense Closest/Lowest priorities, improved verified Nearby filling and the previous opt-in Auction Intelligence. See [technical details](../../docs/AUCTION_INTELLIGENCE.md). Stable version 2.2.26 remains available.
 
-**Upload to CurseForge:** `ChalkBox-2.2.26.zip` — one installable `ChalkBox/` folder.
+**Upload to CurseForge:** `ChalkBox-2.2.28-quest-beta.zip` — one installable `ChalkBox/` folder.
 
 **Do not upload as the game:** `ChalkBox-CurseForge-Media-2.2.26.zip` — project art, copy and screenshots.
 

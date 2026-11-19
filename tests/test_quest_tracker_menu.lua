@@ -23,7 +23,7 @@ _G.ChalkBox_QuestCommand=function(command)
     if command=="smart" or command=="zone" or command=="all" then
         state.mode=command
     end
-    if command=="sort zone" then state.sort="zone" end
+    if command=="sort lowest" then state.sort="level" end
     if command=="nativeorder on" then state.nativeOrder=true end
 end
 _G.ChalkBox_NavCommand=function(command)
@@ -89,9 +89,13 @@ assert(state.enabled==true and state.mode=="smart" and
     calls[#calls-1]=="on" and calls[#calls]=="smart",
     "Smart re-enables tracking using the native QuestSense command")
 header.hooks[1](header,"RightButton")
-Click("Sort: nearest")
-assert(calls[#calls]=="sort zone" and state.sort=="zone",
-    "tracker context menu cycles Smart display sort")
+Click("Priority: Closest first")
+assert(calls[#calls]=="sort lowest" and state.sort=="level",
+    "tracker context menu switches to Lowest level first")
+header.hooks[1](header,"RightButton")
+Click("Priority: Lowest level first")
+assert(calls[#calls]=="sort closest",
+    "tracker context menu switches back to Closest first")
 header.hooks[1](header,"RightButton")
 Click("Navigation: Off")
 assert(nav.enabled and calls[#calls]=="nav:on",
