@@ -267,8 +267,8 @@ Flush()
 assert(ChalkBox_QuestDisplayOrder()[101]<
     ChalkBox_QuestDisplayOrder()[102],
     "Smart reevaluates nearest objectives on its twelve-second update")
-ChalkBox_QuestCommand("sort title")
+ChalkBox_QuestCommand("sort lowest")
 Flush()
-assert(ChalkBox_QuestStatus().sort=="title",
-    "native Smart offers an alphabetical selection mode")
+assert(ChalkBox_QuestStatus().sort=="level",
+    "Smart exposes Lowest level first without an alphabetical mode")
 print("PASS: 40-quest Smart ranking, micro-map Nearby POIs, waypoint evidence, radius controls, travel-time updates and native display order without watch writes")
