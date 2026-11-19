@@ -1294,7 +1294,7 @@ end
 
 local function MakeBarAppearance()
     local panel=Panel("The Bar Appearance",
-        "Opacity and a layout saved for each character.")
+        "Panel opacity, compact module icons and a customizable layout.")
     Label(panel,"BACKGROUND","GameFontNormalLarge",28,-111,370)
     Label(panel,"Only the panel fades. Text, hover details and the XP line remain clear.",
         "GameFontHighlightSmall",28,-145,500)
@@ -1319,30 +1319,42 @@ local function MakeBarAppearance()
     end)
     Label(panel,"0% = text only     ·     100% = solid charcoal",
         "GameFontHighlightSmall",36,-225,460)
-    Label(panel,"LAYOUT EDITOR","GameFontNormalLarge",28,-274,460)
-    Button(panel,"Edit Bar",28,-306,150,function()
+    Toggle(panel,"Show icons beside Bar stats",
+        "Compact Blizzard icons. Existing module widths, position and notch gap stay unchanged.",
+        -249,
+        function()
+            return type(ChalkBox_BarIconsGet)~="function" or
+                ChalkBox_BarIconsGet()
+        end,
+        function(on)
+            if type(ChalkBox_BarIconsSet)=="function" then
+                ChalkBox_BarIconsSet(on==true)
+            end
+        end)
+    Label(panel,"LAYOUT EDITOR","GameFontNormalLarge",28,-290,460)
+    Button(panel,"Edit Bar",28,-320,150,function()
         if ChalkBox_BarCommand then ChalkBox_BarCommand("edit on") end
         if panel.OnRefresh then panel.OnRefresh() end
     end)
-    Button(panel,"Done Editing",190,-306,150,function()
+    Button(panel,"Done Editing",190,-320,150,function()
         if ChalkBox_BarCommand then ChalkBox_BarCommand("edit off") end
         if panel.OnRefresh then panel.OnRefresh() end
     end)
-    Button(panel,"Reset Layout",352,-306,150,function()
+    Button(panel,"Reset Layout",352,-320,150,function()
         if ChalkBox_BarCommand then ChalkBox_BarCommand("layout reset") end
         if panel.OnRefresh then panel.OnRefresh() end
     end)
-    local mode=Label(panel,"","GameFontHighlightSmall",29,-349,500)
+    local mode=Label(panel,"","GameFontHighlightSmall",29,-362,500)
     panel:AddRefresh(function()
         mode:SetText("Edit mode: "..(ChalkBox_BarEditStatus and
             ChalkBox_BarEditStatus() and "ON — move modules" or "OFF — locked"))
     end)
     Label(panel,"Outside Edit Mode, right-click a stat for its context menu.",
-        "GameFontHighlightSmall",28,-378,500)
+        "GameFontHighlightSmall",28,-393,500)
     Label(panel,"Inside Edit Mode, drag to move modules between thirds;",
-        "GameFontHighlightSmall",28,-400,500)
+        "GameFontHighlightSmall",28,-415,500)
     Label(panel,"right-click cycles alignment. Layout is per character.",
-        "GameFontHighlightSmall",28,-422,500)
+        "GameFontHighlightSmall",28,-437,500)
     return panel
 end
 

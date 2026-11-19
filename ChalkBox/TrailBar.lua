@@ -113,7 +113,7 @@ local function GetRates()
     return xpPerHour, eta, net * 3600 / elapsed, elapsed
 end
 
--- The top bar stays monochrome; hover values get meaning, not branding.
+-- Bar icons are recognizable at a glance; tooltip colors convey meaning.
 local function TipRole(key,line)
     if line=="Unavailable" or line=="No quote"
         or line:find("^Unknown") or line:find("unavailable") then
@@ -184,7 +184,14 @@ local function Hint(widget,label,details,key)
             if type(ChalkBox_TipColor)=="function" then
                 r,g,b=ChalkBox_TipColor(role)
             end
-            GameTooltip:AddLine(line,r,g,b,true)
+            -- Native two-column layout keeps the label quiet and the value
+            -- vivid. Fallback preserves original text on older Forever UI.
+            local name,value=line:match("^([^:]+):%s*(.+)$")
+            if name and type(GameTooltip.AddDoubleLine)=="function" then
+                GameTooltip:AddDoubleLine(name,value,0.69,0.76,0.82,r,g,b)
+            else
+                GameTooltip:AddLine(line,r,g,b,true)
+            end
         end
         GameTooltip:Show()
     end)
@@ -217,6 +224,23 @@ local specs={
     latency={width=86,group="right"},
     gold={width=182,group="right"},
 }
+-- Native Blizzard textures, not new asset dependencies. Every module keeps
+-- its existing width, spacing and notch-safe position.
+local moduleIcons={
+    level="Interface\\Icons\\INV_Misc_Book_07",
+    rate="Interface\\Icons\\Spell_Holy_ArcaneIntellect",
+    bags="Interface\\Icons\\INV_Misc_Bag_08",
+    bagvalue="Interface\\Icons\\INV_Misc_Coin_01",
+    bankvalue="Interface\\Icons\\INV_Misc_Coin_02",
+    repair="Interface\\Icons\\INV_Hammer_09",
+    gear="Interface\\Icons\\INV_Chest_Chain_05",
+    eta="Interface\\Icons\\INV_Misc_PocketWatch_01",
+    rested="Interface\\Icons\\Spell_Nature_Sleep",
+    pet="Interface\\Icons\\Ability_Hunter_BeastCall",
+    time="Interface\\Icons\\INV_Misc_PocketWatch_02",
+    latency="Interface\\Icons\\Spell_Arcane_Blink",
+    gold="Interface\\Icons\\INV_Misc_Coin_01",
+}
 local groups={
     left={"level","rate"},
     center={"time","eta","rested"},
@@ -238,6 +262,35 @@ local function ModuleWidth(key)
     local saved=type(ChalkBox_BarLayoutWidthGet)=="function"
         and ChalkBox_BarLayoutWidthGet(key) or nil
     return saved or specs[key].width
+end
+local function IconsShown()
+    return not db or db.barShowIcons~=false
+end
+local function LayoutModuleIcon(widget)
+    if not widget or not widget.text then return end
+    local font=widget.text
+    -- If a client cannot provide the two text anchors, don't paint an icon
+    -- across the existing metric. The text-only presentation still works.
+    local anchored=type(font.ClearAllPoints)=="function"
+        and type(font.SetPoint)=="function"
+    local show=IconsShown() and anchored and widget.icon~=nil
+    if widget.icon then
+        if show then widget.icon:Show() else widget.icon:Hide() end
+    end
+    if anchored then
+        font:ClearAllPoints()
+        font:SetPoint("LEFT",widget,"LEFT",show and 18 or 1,0)
+        font:SetPoint("RIGHT",widget,"RIGHT",-2,0)
+    elseif type(font.SetAllPoints)=="function" then
+        font:SetAllPoints(widget)
+    end
+end
+function ChalkBox_BarIconsGet() return IconsShown() end
+function ChalkBox_BarIconsSet(value)
+    if not db or type(value)~="boolean" then return false end
+    db.barShowIcons=value
+    for _,widget in pairs(widgets) do LayoutModuleIcon(widget) end
+    return true
 end
 local function CursorInBar()
     if type(GetCursorPosition)~="function" or not bar then return nil end
@@ -719,6 +772,10 @@ function ChalkBox_BarContextItems(key)
             current and "selected" or "normal")
     end
     AddMenuEntry(result,"Position",nil,positions,"group")
+    AddMenuEntry(result,IconsShown() and "Hide module icons" or
+        "Show module icons",function()
+        ChalkBox_BarIconsSet(not IconsShown())
+    end,nil,"group")
     local notch=ChalkBox_BarTopInsetStatus()
     AddMenuEntry(result,"Top safe area ("..
         (notch.mode=="auto" and "Auto" or
@@ -961,6 +1018,21 @@ local function CreateBar()
             (specs[key].group=="center" and "CENTER" or "LEFT"))
         widget.text=font
         widgets[key]=widget
+        local icon=widget:CreateTexture(nil,"ARTWORK")
+        if type(icon.SetTexture)=="function" then
+            icon:SetTexture(moduleIcons[key] or
+                "Interface\\Icons\\INV_Misc_QuestionMark")
+        end
+        if type(icon.SetWidth)=="function" then icon:SetWidth(13) end
+        if type(icon.SetHeight)=="function" then icon:SetHeight(13) end
+        if type(icon.SetPoint)=="function" then
+            icon:SetPoint("LEFT",widget,"LEFT",2,0)
+        end
+        if type(icon.SetTexCoord)=="function" then
+            icon:SetTexCoord(0.07,0.93,0.07,0.93)
+        end
+        widget.icon=icon
+        LayoutModuleIcon(widget)
         local grab=widget:CreateTexture(nil,"BACKGROUND")
         grab:SetAllPoints(widget)
         grab:SetColorTexture(0.45,0.32,0.12,0)
@@ -1563,6 +1635,10 @@ function ChalkBox_BarCommand(message)
     if alpha then
         ChalkBox_BarAppearanceSet(tonumber(alpha))
         Note("TrailBar charcoal background opacity: "..ChalkBox_BarAppearanceGet().."%.")
+    elseif action=="icons on" or action=="icons off" then
+        local on=action=="icons on"
+        ChalkBox_BarIconsSet(on)
+        Note("Bar module icons: "..(on and "ON." or "OFF."))
     elseif action=="edit" or action=="edit toggle" or action=="edit on"
         or action=="edit off" then
         local on=action=="edit on" or
@@ -1744,6 +1820,7 @@ function ChalkBox_BarCommand(message)
         Note("Stats: /chalk bar stat <module> on/off | stats all|balanced|minimal")
         Note("Layout: /chalk bar edit on/off | drag right-edge gold grips | layout reset")
         Note("Mac notch: /chalk bar safe auto | safe split 40-400 | safe up 0-120 | safe 0-120 (below)")
+        Note("Icons: /chalk bar icons on|off.")
         Note("Widths: /chalk bar width <module> 60-280 | width <module> reset | move <module> <left|center|right>")
         Note("Text alignment: /chalk bar align <module> <left|center|right> | opacity 0-100")
         Note("Vendor value: /chalk bar stat bagvalue on | bagvalue junk|total|toggle")

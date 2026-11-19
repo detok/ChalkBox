@@ -97,6 +97,8 @@ local function NewTexture()
         ClearAllPoints=function(self) self.points={} end,
         SetAllPoints=function(self,owner) self.allPoints=owner end,
         SetColorTexture=function(self,r,g,b,a) self.rgba={r,g,b,a} end,
+        SetTexture=function(self,path) self.texture=path end,
+        SetTexCoord=function(self,...) self.coords={...} end,
         SetPoint=function(self,...)
             self.points[#self.points+1]={...}
         end,
@@ -106,8 +108,14 @@ local function NewTexture()
         Hide=function(self) self.visible=false end}
 end
 local function NewFont()
-    return {SetAllPoints=function() end,SetJustifyH=function() end,
-        SetText=function(self,value) self.value=value end}
+    return {
+        points={},
+        SetAllPoints=function(self,owner) self.allPoints=owner end,
+        ClearAllPoints=function(self) self.points={};self.allPoints=nil end,
+        SetPoint=function(self,...) self.points[#self.points+1]={...} end,
+        SetJustifyH=function() end,
+        SetText=function(self,value) self.value=value end,
+    }
 end
 _G.CreateFrame = function(_, name, parent)
     local frame={name=name,parent=parent,events={},scripts={},anchor=nil,points={},visible=true,width=1024}
@@ -378,6 +386,33 @@ local function RootIsBaseline()
        and select(5,UIParent:GetPoint(2))==0
 end
 assert(bar.height==18,"bar should remain slim")
+assert(ChalkBox_BarIconsGet(),"new Bar layouts show compact module icons")
+local moduleIcons=0
+for _,frame in ipairs(frames) do
+    if frame.parent==bar and frame.icon then
+        moduleIcons=moduleIcons+1
+        assert(frame.icon.texture and
+            frame.icon.texture:find("Interface",1,true)==1,
+            "every Bar module uses a native Blizzard icon path")
+        assert(frame.icon.width==13 and frame.icon.height==13 and
+            frame.icon.visible~=false,
+            "icons fit inside the original 18-pixel bar")
+        assert(frame.font.points[1][4]==18,
+            "metric text starts after its icon, not underneath it")
+    end
+end
+assert(moduleIcons==13,"all supported Bar metrics receive their own icon")
+assert(ChalkBox_BarIconsSet(false) and not ChalkBox_BarIconsGet())
+for _,frame in ipairs(frames) do
+    if frame.parent==bar and frame.icon then
+        assert(frame.icon.visible==false and frame.font.points[1][4]==1,
+            "disabling icons restores the original full text area")
+    end
+end
+ChalkBox_BarCommand("icons on")
+assert(ChalkBox_BarIconsGet() and ChalkBoxDB.barShowIcons==true,
+    "icon preference persists and slash command restores native textures")
+assert(bar.height==18,"icons must never increase Bar height")
 assert(bar.strata=="BACKGROUND" and bar.level==1,
     "Bar chrome must be behind LOW/MEDIUM Blizzard unit frames and resting ZZZ")
 assert(RootIsBaseline(),
