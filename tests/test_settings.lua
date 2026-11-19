@@ -351,8 +351,8 @@ assert(loadfile("ChalkBox_Settings.lua"))("ChalkBox")
 local loader=frames[#frames]
 assert(loader.event=="PLAYER_LOGIN","must register settings when the client is ready")
 loader.script.OnEvent(loader,"PLAYER_LOGIN")
-assert(#registered==24,
-    "native settings include coordinated tooltips plus existing experimental child pages")
+assert(#registered==25,
+    "native settings include the notch-safe Bar page and experimental child pages")
 for _,texture in ipairs(textures) do
     assert(not (texture.color and texture.color[1]==0.02
         and texture.color[2]==0.02 and texture.color[3]==0.025
@@ -364,8 +364,9 @@ assert(shortcutRefreshes==1,
 assert(categories.home.name=="ChalkBox")
 assert(categories["The Bar"].parent==categories.home
     and categories["The Bar Appearance"].parent==categories["The Bar"]
-    and categories["The Bar Stats"].parent==categories["The Bar"],
-    "Bar appearance and modules are nested under The Bar")
+    and categories["The Bar Stats"].parent==categories["The Bar"]
+    and categories["Top Safe Area"].parent==categories["The Bar"],
+    "Bar appearance, modules and notch-safe controls are nested under The Bar")
 assert(categories["LootSense Appearance"].parent==categories["LootSense"]
     and categories["Toast Appearance"].parent==categories["Adventure Prep"]
     and categories["Emota Race Behavior"].parent==categories["Emota"],
