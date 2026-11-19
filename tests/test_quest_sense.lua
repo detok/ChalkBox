@@ -392,6 +392,9 @@ logs[#logs+1]={questID=701,title="Overpowered Enemy",suggestedGroup=3}
 logs[#logs+1]={questID=702,title="Retrieve the Relic"}
 logs[#logs+1]={questID=703,title="Ordinary Solo Objective"}
 watches[702]=true -- existing manual dungeon watch must be restored later
+-- Ensure this test exercises eligibility rather than the older 10-slot cap.
+Constants.QuestWatchConsts.MAX_QUEST_WATCHES=25
+ChalkBox_QuestCommand("limit 20")
 ChalkBox_QuestCommand("smart")
 Fire("QUEST_LOG_UPDATE")
 Flush()
