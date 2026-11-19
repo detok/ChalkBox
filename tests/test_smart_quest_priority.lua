@@ -149,8 +149,8 @@ end
 Fire("ADDON_LOADED","ChalkBox")
 assert(ChalkBoxZoneDB.smartSort=="nearest" and
     ChalkBoxZoneDB.smartNearbyFirst==true and
-    ChalkBoxZoneDB.smartCompleteFirst==true,
-    "fresh Smart enables completed-first by default")
+    ChalkBoxZoneDB.smartCompleteFirst==false,
+    "Smart defaults to unfinished quests first, with completed turn-ins last")
 Fire("PLAYER_LOGIN")
 Flush()
 assert(watches[101] and watches[102] and watches[301] and
@@ -164,6 +164,8 @@ Flush()
 assert(ChalkBox_QuestDisplayOrder()[102]<ChalkBox_QuestDisplayOrder()[101],
     "level-order Smart can choose a lower-level local quest")
 ChalkBox_QuestCommand("sort nearest")
+Flush()
+ChalkBox_QuestCommand("completefirst on") -- deliberate opt-in to legacy priority
 Flush()
 -- Quest objective finishes during gameplay: Smart must keep the actual
 -- completed quest watched so Blizzard can show its native Complete state.
