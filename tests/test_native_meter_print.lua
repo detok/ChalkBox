@@ -340,6 +340,8 @@ _G.C_Timer=nil
 now=720
 ChalkBox_NativeMeterCommand("auto on")
 ChalkBox_NativeMeterCommand("channel party")
+ChalkBox_NativeMeterCommand("min 10")
+ChalkBox_NativeMeterCommand("cooldown 60")
 C_ChatInfo.InChatMessagingLockdown=function() return true end
 old={combatSources={{name="New Party Result",amountPerSecond=777,totalAmount=7770}}}
 Fire("PLAYER_REGEN_DISABLED")
