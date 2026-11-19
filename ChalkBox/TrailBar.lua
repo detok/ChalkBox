@@ -437,7 +437,13 @@ local function Reflow()
             local leftEnd=12+leftWidth+(leftCount>0 and lc>0 and 10 or 0)+lw
             local rightStart=width-12-rightWidth-
                 (rightCount>0 and rc>0 and 10 or 0)-rw
-            if leftEnd<=split.left and rightStart>=split.right then
+            -- With two or more center modules, require one on EACH
+            -- side before accepting the split; otherwise we'd stop
+            -- dropping optional right-side stats too early and leave the
+            -- entire center group stranded on the left.
+            local balanced=#center<2 or (pivot>0 and pivot<#center)
+            if balanced and leftEnd<=split.left and
+                rightStart>=split.right then
                 local leftRoom=math.max(1,split.left-12)
                 local rightRoom=math.max(1,width-split.right-12)
                 local balance=math.abs((leftEnd/leftRoom)-
