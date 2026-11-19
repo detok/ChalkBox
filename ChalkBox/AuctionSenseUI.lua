@@ -96,6 +96,62 @@ local function Button(parent,title,x,y,width,callback)
     b:SetScript("OnClick",callback)
     return b
 end
+-- Resolve an actual owned stack at click time. Market entries are grouped by
+-- item ID and never carry a stable slot; a cached slot could now hold a
+-- different item. A mixed-variant ID must not silently choose random gear.
+local function FindAuctionBagSlot(id)
+    if type(id)~="number" or id<=0 then return nil end
+    local api=type(C_Container)=="table" and C_Container or nil
+    local num=api and api.GetContainerNumSlots or GetContainerNumSlots
+    local get=api and api.GetContainerItemLink or GetContainerItemLink
+    if type(num)~="function" or type(get)~="function" then return nil end
+    local last=type(NUM_BAG_SLOTS)=="number" and
+        math.min(5,NUM_BAG_SLOTS) or 4
+    local foundBag,foundSlot,firstLink
+    for bag=0,last do
+        local ok,slots=pcall(num,bag)
+        if ok and type(slots)=="number" and slots>=0 and slots<=200 then
+            for slot=1,slots do
+                local valid,link=pcall(get,bag,slot)
+                if valid and type(link)=="string" then
+                    local itemID=tonumber(link:match("item:(%d+)"))
+                    if itemID==id then
+                        if firstLink and firstLink~=link then
+                            return nil -- ambiguous bonus/stat variant
+                        end
+                        firstLink=link
+                        foundBag,foundSlot=bag,slot
+                    end
+                end
+            end
+        end
+    end
+    return foundBag,foundSlot
+end
+local function StageAuctionItem(id)
+    if not host or type(host.SetPostItem)~="function" or
+        type(ItemLocation)~="table" or
+        type(ItemLocation.CreateFromBagAndSlot)~="function" then
+        return false,"Native item-prefill API unavailable; choose item in Sell tab"
+    end
+    local bag,slot=FindAuctionBagSlot(id)
+    if not bag then return false,
+        "Could not resolve one unambiguous live bag stack" end
+    local ok,location=pcall(ItemLocation.CreateFromBagAndSlot,bag,slot)
+    if not ok or not location then return false,
+        "Item location unavailable; choose item in Sell tab" end
+    if type(C_AuctionHouse)=="table" and
+        type(C_AuctionHouse.IsSellItemValid)=="function" then
+        local safe,valid=pcall(C_AuctionHouse.IsSellItemValid,location)
+        if not safe or valid~=true then return false,
+            "The client does not allow this item to be auctioned" end
+    end
+    local success=pcall(host.SetPostItem,host,location)
+    if not success then return false,
+        "The client rejected item prefill; select the bag item manually" end
+    return true
+end
+
 local function Coin(value)
     if type(value)~="number" or value<0 then return "--" end
     value=math.floor(value+0.5)
@@ -721,14 +777,20 @@ local function Ensure()
         local native=host and (host.SellTab or
             (type(host.Tabs)=="table" and host.Tabs[2]))
         if native and type(native.Click)=="function" then
-            -- Native tab is clicked in response to THIS button's hardware
-            -- event, not as an automated auction action.
+            -- Real hardware click: Blizzard controls native tab and post
+            -- form; no auction is submitted and no price is preselected.
             native:Click()
+            local ok,reason=StageAuctionItem(selectedItemID)
+            if not ok and type(DEFAULT_CHAT_FRAME)=="table" and
+                type(DEFAULT_CHAT_FRAME.AddMessage)=="function" then
+                DEFAULT_CHAT_FRAME:AddMessage(
+                    "|cff67c6b7AuctionSense|r "..reason)
+            end
         end
     end)
     Hint(labels.prepare,"Prepare Auction",
-        "Open the native Sell tab for the selected item in your bags.",
-        "Choose the item, duration, deposit and final price yourself.")
+        "Load a matching bag stack into Blizzard's native Sell form.",
+        "Does NOT post the auction; you choose price, count and duration.")
     -- Scan results live under the view choices, not between buttons/search.
     labels.details=Font(f,"GameFontHighlightSmall",21,-117,446)
     labels.scan=Button(f,"Scan Market",21,-106,125,function()
