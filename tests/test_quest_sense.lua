@@ -397,7 +397,11 @@ Fire("QUEST_LOG_UPDATE")
 Flush()
 assert(watches[703] and not watches[701] and not watches[702] and
     ChalkBoxZoneDB.suspendedManual[702],
-    "solo Smart excludes group quests and temporarily suspends manual dungeon watches")
+    "solo Smart excludes group quests and temporarily suspends manual dungeon watches: "..
+    "701="..tostring(watches[701]).." 702="..tostring(watches[702])..
+    " 703="..tostring(watches[703]).." suspended="..
+    tostring(ChalkBoxZoneDB.suspendedManual[702]).." mode="..
+    tostring(ChalkBoxZoneDB.mode).." reason="..ChalkBox_QuestStatus().reason)
 grouped=true
 Fire("GROUP_ROSTER_UPDATE")
 Flush()
