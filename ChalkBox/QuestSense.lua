@@ -186,33 +186,66 @@ end
 local function DistanceRank(value)
     return value
 end
+-- A valid quest objective map must belong to this zone (not a neighboring
+-- zone or instance). Quest-specific waypoints work even without map POI pins.
+local function MapWithinZone(mapID,zoneID)
+    if not ValidID(mapID) or not ValidID(zoneID) then return false end
+    local seen={}
+    for _=1,10 do
+        if mapID==zoneID then return true end
+        if seen[mapID] then return false end
+        seen[mapID]=true
+        local info=Call(C_Map and C_Map.GetMapInfo,mapID)
+        if type(info)~="table" or info.mapType==2 or
+            info.mapType==3 or info.mapType==4 or
+            not ValidID(info.parentMapID) then return false end
+        mapID=info.parentMapID
+    end
+    return false
+end
 local function Relevant(quests,zoneID,zoneNames)
     local onMap,hasMapData={},false
-    -- Check the actual player subzone and its zone ancestors, stopping
-    -- before the continent. Forever can attach quest POIs to micro maps
-    -- that never appear in the top-level zone query.
+    local queried,queryCount={},0
+    local function ScanMap(id)
+        if not ValidID(id) or queried[id] or queryCount>=48 then return end
+        queried[id]=true
+        queryCount=queryCount+1
+        local list=Call(C_QuestLog and C_QuestLog.GetQuestsOnMap,id)
+        if type(list)=="table" then
+            hasMapData=true
+            for _,q in ipairs(list) do
+                if type(q)=="table" and ValidID(q.questID) then
+                    onMap[q.questID]=true
+                end
+            end
+        end
+    end
+    -- Include player micro-map, parent zone and sibling micro-maps.
     local map=Call(C_Map and C_Map.GetBestMapForUnit,"player")
     if not ValidID(map) then map=zoneID end
     local seen={}
     for _=1,10 do
         if not ValidID(map) or seen[map] then break end
         seen[map]=true
-        if C_QuestLog and type(C_QuestLog.GetQuestsOnMap)=="function" then
-            local list=Call(C_QuestLog.GetQuestsOnMap,map)
-            if type(list)=="table" then
-                hasMapData=true
-                for _,q in ipairs(list) do
-                    if type(q)=="table" and ValidID(q.questID) then
-                        onMap[q.questID]=true
-                    end
-                end
-            end
-        end
+        ScanMap(map)
         if map==zoneID then break end
         local info=Call(C_Map and C_Map.GetMapInfo,map)
         if type(info)~="table" or info.mapType==2 or
             not ValidID(info.parentMapID) then break end
         map=info.parentMapID
+    end
+    if ValidID(zoneID) then
+        ScanMap(zoneID)
+        local children=Call(C_Map and C_Map.GetMapChildrenInfo,zoneID,5,true)
+        if type(children)=="table" then
+            for _,child in ipairs(children) do
+                local id=type(child)=="table" and
+                    (child.mapID or child.uiMapID) or nil
+                if ValidID(id) and MapWithinZone(id,zoneID) then
+                    ScanMap(id)
+                end
+            end
+        end
     end
     local marked,nearby={},{}
     local headerMatch=false
@@ -235,6 +268,22 @@ local function Relevant(quests,zoneID,zoneNames)
                 nearby[quest.id]=true
                 score=score+375
                 hasMapData=true
+            end
+        end
+        -- The native quest-specific next waypoint may be on another micro-map
+        -- in this same zone, even when map quest pins are missing.
+        if not nearby[quest.id] then
+            local waypoint=C_QuestLog and C_QuestLog.GetNextWaypoint
+            if type(waypoint)=="function" then
+                local ok,questMap,x,y=pcall(waypoint,quest.id)
+                if ok and Public(questMap) and Public(x) and Public(y)
+                    and type(x)=="number" and type(y)=="number"
+                    and x>=0 and x<=1 and y>=0 and y<=1
+                    and MapWithinZone(questMap,zoneID) then
+                    nearby[quest.id]=true
+                    score=score+375
+                    hasMapData=true
+                end
             end
         end
         -- Optional short-distance catchment. Never cross continents:
@@ -341,7 +390,7 @@ local function Reconcile()
     if not settings.enabled and not settings.cleanup
         and next(settings.suspendedManual)==nil and not navFocusID then return end
     local mode=settings.mode or "smart"
-    local soloFilter=settings.enabled and mode~="all" and not GroupReady()
+    local soloFilter=settings.enabled and not GroupReady()
     local dungeon=settings.enabled and mode=="smart" and CurrentDungeon() or nil
     local allowed,why=CanEdit(dungeon~=nil)
     if not allowed then pending=true;lastReason=why;return end
@@ -452,7 +501,7 @@ local function Reconcile()
     end
     local prioritized={}
     local sortMode=(mode=="all") and "log" or
-        (settings.smartSort or "nearest")
+        (settings.smartSort=="level" and "level" or "nearest")
     for _,quest in ipairs(quests) do
         local score=mode=="all" and 0 or (scores[quest.id] or 0)
         if (not focusOnly or localQuests[quest.id]) and
@@ -487,9 +536,11 @@ local function Reconcile()
             type(b.title)=="string" and a.title~=b.title then
             return a.title:lower()<b.title:lower()
         end
-        if sortMode=="level" and type(a.level)=="number" and
-            type(b.level)=="number" and a.level~=b.level then
-            return a.level<b.level
+        if sortMode=="level" then
+            local aKnown=type(a.level)=="number" and a.level>0
+            local bKnown=type(b.level)=="number" and b.level>0
+            if aKnown~=bKnown then return aKnown end
+            if aKnown and a.level~=b.level then return a.level<b.level end
         end
         if sortMode=="nearest" then
             if a.bucket~=b.bucket then
@@ -498,8 +549,15 @@ local function Reconcile()
                 return a.bucket<b.bucket
             end
         end
-        if sortMode~="log" and sortMode~="level" and
-            a.score~=b.score then return a.score>b.score end
+        if sortMode=="level" then
+            if a.bucket~=b.bucket then
+                if not a.bucket then return false end
+                if not b.bucket then return true end
+                return a.bucket<b.bucket
+            end
+        elseif sortMode~="log" and a.score~=b.score then
+            return a.score>b.score
+        end
         return a.logIndex<b.logIndex
     end
     table.sort(prioritized,Compare)
@@ -533,8 +591,9 @@ local function Reconcile()
         end
     end
     local reservedManual=manualRetained+Count(restoreManual)
-    local capacity=math.max(0,math.min(settings.limit or 10,
-        MaxWatches()-reservedManual))
+    -- One total tracker budget, including the already-watched manual quests.
+    local limit=math.max(1,math.min(settings.limit or 10,10,MaxWatches()))
+    local capacity=math.max(0,limit-reservedManual)
     local desired={}
     local autoSlots=0
     if settings.enabled then
@@ -650,7 +709,10 @@ local function Reconcile()
         manual=manualNow,initialWatches=before,
         dungeon=dungeon and dungeon.name or nil,
         dungeonMatches=dungeon and dungeonCount or nil,
-        sort=sortMode,nearest=prioritized[1] and prioritized[1].id or nil}
+        sort=sortMode,nearest=prioritized[1] and prioritized[1].id or nil,
+        localCandidates=Count(localQuests),eligibleCandidates=#prioritized,
+        limit=limit,availableSlots=capacity,
+        shortfall=math.max(0,limit-Count(watched))}
 end
 QueueUpdate=function()
     if not settings or queued or busy then return end
@@ -705,7 +767,11 @@ function ChalkBox_QuestStatus()
         completeFirst=settings and settings.smartCompleteFirst~=false,
         nativeOrder=false,
         nearbyRange=settings and settings.nearbyRange or 0,
-        nearest=lastStats.nearest}
+        nearest=lastStats.nearest,
+        localCandidates=lastStats.localCandidates or 0,
+        eligibleCandidates=lastStats.eligibleCandidates or 0,
+        availableSlots=lastStats.availableSlots or 0,
+        shortfall=lastStats.shortfall or 0}
 end
 -- Read-only view of Smart's ranked candidates. The built-in tracker can
 -- sort its display without altering Blizzard quest-watch ownership/order.
@@ -735,8 +801,15 @@ function ChalkBox_QuestCommand(text)
         Note("Accepted "..st.accepted.." | candidates "..st.candidates..
             " | watched "..st.tracked.." | hidden "..st.hidden..
             " | last change +"..st.added.."/-"..st.removed)
-        Note("Smart completed-first "..(st.completeFirst and "ON" or
-            "OFF").." | sort "..st.sort.." | nearest #"..tostring(st.nearest or "-"))
+        Note("Priority: "..(st.sort=="level" and "Lowest level first" or
+            "Closest first").." | completed first "..(st.completeFirst and "ON" or
+            "OFF").." | top quest #"..tostring(st.nearest or "-"))
+        if st.mode=="zone" then
+            Note("Nearby: "..st.localCandidates.." verified in zone | "..
+                st.eligibleCandidates.." eligible | target "..st.limit..
+                " | watched "..st.tracked..
+                (st.shortfall>0 and (" | "..st.shortfall.." slots unfilled") or ""))
+        end
         if st.dungeon then
             Note("Dungeon "..st.dungeon.." | confirmed quests "..
                 tostring(st.dungeonMatches or 0))
@@ -751,11 +824,13 @@ function ChalkBox_QuestCommand(text)
             (cmd=="all" and "All accepted." or "Smart.")))
     elseif cmd:match("^sort %a+$") then
         local sort=cmd:match("^sort (%a+)$")
-        if sort=="nearest" or sort=="zone" or sort=="level" or
-            sort=="title" or sort=="log" then
-            settings.smartSort=sort;QueueUpdate()
-            Note("Smart selection order: "..sort..".")
-        else Note("Choose sort nearest, zone, level, title or log.") end
+        if sort=="nearest" or sort=="closest" then
+            settings.smartSort="nearest";QueueUpdate()
+            Note("Smart priority: Closest first.")
+        elseif sort=="level" or sort=="lowest" then
+            settings.smartSort="level";QueueUpdate()
+            Note("Smart priority: Lowest level first.")
+        else Note("Choose sort closest or lowest.") end
     elseif cmd:match("^range %d+$") then
         local range=tonumber(cmd:match("%d+"))
         if range==0 or range==500 or range==1000 or range==2000 then
@@ -783,14 +858,14 @@ function ChalkBox_QuestCommand(text)
             and "on." or "off."))
     elseif cmd:match("^limit %d+$") then
         local n=tonumber(cmd:match("%d+"))
-        if n==5 or n==10 or n==15 or n==20 then
+        if n==5 or n==10 then
             settings.limit=n;QueueUpdate()
             Note("Maximum automatically managed watches: "..n)
         else
-            Note("Choose limit 5, 10, 15 or 20.")
+            Note("Choose limit 5 or 10.")
         end
     else
-        Note("/chalk quests on|off|smart|zone|all|sort nearest/zone/level/title/log|nearbyfirst on/off|range 0/500/1000/2000|completefirst on/off|limit 5/10/15/20|refresh|status")
+        Note("/chalk quests on|off|smart|zone|all|sort closest/lowest|nearbyfirst on/off|range 0/500/1000/2000|completefirst on/off|limit 5/10|refresh|status")
     end
 end
 local events=CreateFrame("Frame")
@@ -800,6 +875,7 @@ for _,event in ipairs({
     "QUEST_LOG_UPDATE","QUEST_ACCEPTED","QUEST_REMOVED","QUEST_TURNED_IN",
     "QUEST_WATCH_LIST_CHANGED","PLAYER_REGEN_ENABLED",
     "GROUP_ROSTER_UPDATE","PARTY_MEMBERS_CHANGED",
+    "QUEST_POI_UPDATE","QUEST_WATCH_UPDATE",
 }) do
     pcall(events.RegisterEvent,events,event)
 end
@@ -817,12 +893,10 @@ events:SetScript("OnEvent",function(_,event,arg1,arg2)
         if settings.mode~="smart" and settings.mode~="zone" and settings.mode~="all" then
             settings.mode="smart"
         end
-        if type(settings.limit)~="number" or settings.limit<5 or settings.limit>20 then
+        if settings.limit~=5 and settings.limit~=10 then
             settings.limit=10
         end
-        if settings.smartSort~="nearest" and settings.smartSort~="zone"
-            and settings.smartSort~="level" and settings.smartSort~="title" and
-            settings.smartSort~="log" then
+        if settings.smartSort~="nearest" and settings.smartSort~="level" then
             settings.smartSort="nearest"
         end
         if settings.smartNearbyFirst==nil then
