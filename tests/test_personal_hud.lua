@@ -39,7 +39,9 @@ UIParent.ClearAllPoints=function() error("unsafe UIParent:ClearAllPoints") end
 UIParent.SetPoint=function() error("unsafe UIParent:SetPoint") end
 UIParent.SetAllPoints=function() error("unsafe UIParent:SetAllPoints") end
 UIParent.SetSize=function() error("unsafe UIParent:SetSize") end
-_G.ChalkBoxDB = {barReserve=true}
+_G.ChalkBoxDB = {barReserve=true,barTopInset=120}
+-- Simulate a saved preference from the previous backward-sliding beta.
+-- Upgrading must release that obsolete down-offset automatically.
 _G.ChalkBoxZoneDB = {}
 local cursorX=0
 _G.GetCursorPosition=function() return cursorX,0 end
@@ -207,6 +209,9 @@ assert(loadfile("TrailBar.lua"))("ChalkBox")
 Fire("ADDON_LOADED","ChalkBox")
 assert(ChalkBoxDB.emota.auto==false,"integrated auto-emotes must default off")
 assert(ChalkBoxDB.bar=="top","default info bar is at top")
+assert(ChalkBoxDB.barTopInset==nil and
+    ChalkBoxDB.barNotchPositionV2==true,
+    "old backward notch slider is reset once and does not hold bar down")
 Fire("PLAYER_ENTERING_WORLD")
 local bar
 for _,frame in ipairs(frames) do if frame.name=="ChalkBoxInfoBar" then bar=frame end end
