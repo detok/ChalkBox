@@ -148,3 +148,6 @@ Start with [Troubleshooting](TROUBLESHOOTING.md), then [Commands](COMMANDS.md) f
 
 
 **2.2.25 GitHub beta:** Adds the bank vendor-value label, per-module Trail Bar widths, standard ranked combat chat, experimental price-history charts and optional map additions. Read the [current release notes](RELEASE_NOTES.md). **2.2.22 remains the last fully accepted stable release.**
+
+
+**Developer beta:** ChalkBox 2.2.27 is a QuestSense Smart experiment; 2.2.26 remains the supported stable release. [Beta notes](https://github.com/detok/ChalkBox/blob/feature/smart-quest-native-priorities/docs/RELEASE_NOTES.md).

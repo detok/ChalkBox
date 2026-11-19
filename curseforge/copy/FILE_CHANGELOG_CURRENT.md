@@ -9,6 +9,7 @@
 - **AuctionSense:** Historical asking-price charts and connected item-value insights.
 - **The Bar:** Resize individual modules, and view a remembered bank vendor-value total.
 - **Combat Meter:** Ranked PARTY/SAY reports and compact display controls.
+- **QuestSense Smart:** Native objective distances, completed-first and current-zone selection priorities, Smart Rules controls and Nearby radius. Solo selection excludes verified elite/dungeon/raid quests. Does not modify protected Blizzard tracker methods.
 - **QuestSense & MacroForge:** Follow a selected map waypoint; use MacroForge alongside Blizzard's macro editor.
 - **Emota:** Optional Hunter pet interactions when the client supports them.
 

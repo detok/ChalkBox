@@ -34,3 +34,6 @@ Download **ChalkBox-2.2.26.zip** from [GitHub Releases](https://github.com/detok
 **Version 2.2.26 · WoW Forever** · [What's new](docs/RELEASE_NOTES.md) · [User guide](docs/USER_GUIDE.md)
 
 ChalkBox is an independent community addon. [MIT license](LICENSE); bundled libraries retain their own notices. Observed loot rates and auction asking prices are estimates, not official drop rates or completed sales.
+
+
+**Developer beta:** ChalkBox 2.2.27 is a QuestSense Smart experiment; 2.2.26 remains the supported stable release. [Beta notes](https://github.com/detok/ChalkBox/blob/feature/smart-quest-native-priorities/docs/RELEASE_NOTES.md).

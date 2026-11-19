@@ -18,6 +18,7 @@ local navigation = {
         {key="auctioncharts", title="Charts (Experimental)"},
         {key="auctionintel", title="Intelligence (Experimental)"}}},
     {key="quests", title="QuestSense", children={
+        {key="questsmart", title="Smart Rules"},
         {key="questnav", title="Navigation"}}},
     {key="journal", title="Session Journal"},
     {key="bar", title="The Bar", children={
@@ -909,6 +910,9 @@ local function MakeQuests()
     Button(panel,"Navigation Arrow",27,-379,198,function()
         Activate("questnav")
     end)
+    Button(panel,"Smart Rules",234,-379,210,function()
+        Activate("questsmart")
+    end)
     local info=Label(panel,"","GameFontHighlightSmall",28,-419,498)
     panel:AddRefresh(function()
         local st=ChalkBox_QuestStatus and ChalkBox_QuestStatus() or nil
@@ -920,6 +924,61 @@ local function MakeQuests()
             "  |  "..tostring(st.hidden or 0).." hidden"..
             "  |  limit "..tostring(st.limit)..
             (st.pending and "  |  updating when safe" or ""))
+    end)
+    return panel
+end
+
+local function MakeQuestSmart()
+    local panel=Panel("QuestSense / Smart Rules",
+        "Choose which accepted quests Smart favors without replacing Blizzard's tracker.")
+    local function Run(action)
+        if type(ChalkBox_QuestCommand)=="function" then
+            ChalkBox_QuestCommand(action)
+        end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end
+    Label(panel,"Priority order","GameFontNormalLarge",28,-105,450)
+    Button(panel,"Nearest objective",27,-137,160,
+        function() Run("sort nearest") end)
+    Button(panel,"Current zone",198,-137,147,
+        function() Run("sort zone") end)
+    Button(panel,"Quest level",357,-137,155,
+        function() Run("sort level") end)
+    Button(panel,"Quest title",27,-178,190,
+        function() Run("sort title") end)
+    Button(panel,"Quest log",228,-178,160,
+        function() Run("sort log") end)
+    local rank=Label(panel,"","GameFontHighlightSmall",227,-182,285)
+    Toggle(panel,"Prioritize quests in the current zone",
+        "Zone match is stronger than distant quest distance.",
+        -230,
+        function()
+            local st=ChalkBox_QuestStatus and ChalkBox_QuestStatus()
+            return st and st.nearbyFirst
+        end,
+        function(on) Run("nearbyfirst "..(on and "on" or "off")) end)
+    Toggle(panel,"Completed quests first",
+        "Show known turn-ins before unfinished objectives.",
+        -296,
+        function()
+            local st=ChalkBox_QuestStatus and ChalkBox_QuestStatus()
+            return st and st.completeFirst
+        end,
+        function(on) Run("completefirst "..(on and "on" or "off")) end)
+    Label(panel,"Nearby radius","GameFontNormal",28,-407,160)
+    for i,radius in ipairs({0,500,1000,2000}) do
+        Button(panel,radius==0 and "Zone" or (radius.."y"),
+            170+(i-1)*88,-401,80,function()
+                Run("range "..radius)
+            end)
+    end
+    local explanation=Label(panel,"","GameFontHighlightSmall",28,-448,492)
+    panel:AddRefresh(function()
+        local st=ChalkBox_QuestStatus and ChalkBox_QuestStatus() or {}
+        rank:SetText("Selected: "..tostring(st.sort or "nearest"))
+        explanation:SetText("Nearby radius "..tostring(st.nearbyRange or 0)..
+            "y | first quest #"..tostring(st.nearest or "unknown")..
+            " | Blizzard tracker display preserved")
     end)
     return panel
 end
@@ -1735,6 +1794,7 @@ local function Register()
     panels.loothighlight = MakeLootAppearance()
     panels.tooltipcoord = MakeTooltipCoordinator()
     panels.quests = MakeQuests()
+    panels.questsmart = MakeQuestSmart()
     panels.questnav = MakeQuestNavigation()
     panels.bar = MakeBar()
     panels.barsafe = MakeBarSafeArea()

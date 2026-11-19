@@ -1,7 +1,7 @@
 # ChalkBox 2.2.26 — Adventure Tools & World Map
 
 
-**Experimental 2.2.27-intel-beta (draft PR #107, not published):** Inventory Intelligence is disabled by default and offers optional Skill Up / Make Gold advice in the existing AuctionSense UI. See [technical details](AUCTION_INTELLIGENCE.md). The official stable release remains 2.2.26.
+**Experimental 2.2.27-intel-beta (unified integration test, not published):** Inventory Intelligence is disabled by default and offers optional Skill Up / Make Gold advice in the existing AuctionSense UI. This integrated test build also includes QuestSense Smart native-objective priorities and Smart Rules, while preserving the solo elite/dungeon exclusion. See [Intelligence](AUCTION_INTELLIGENCE.md) and [QuestSense Smart](QUEST_SMART_AUDIT.md). The official stable release remains 2.2.26.
 
 **Official WoW Forever release.** ChalkBox brings loot insights, quests, auction information, macros and an adjustable HUD into one addon.
 

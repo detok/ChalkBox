@@ -15,3 +15,6 @@ Use the media ZIP's `Copy-and-Checklist/copy/` directory for:
 Upload `Artwork/PNG/Upload-Ready/Project-Icon-512.png` as the project icon. Use only genuine current screenshots in the gameplay gallery. Verify Forever compatibility, license, release type and actual moderation status before publishing.
 
 [Release process](../../docs/RELEASE_PROCESS.md)
+
+
+**Developer beta:** ChalkBox 2.2.27 is a QuestSense Smart experiment; 2.2.26 remains the supported stable release. [Beta notes](https://github.com/detok/ChalkBox/blob/feature/smart-quest-native-priorities/docs/RELEASE_NOTES.md).
