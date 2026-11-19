@@ -355,7 +355,7 @@ assert(loadfile("ChalkBox_Settings.lua"))("ChalkBox")
 local loader=frames[#frames]
 assert(loader.event=="PLAYER_LOGIN","must register settings when the client is ready")
 loader.script.OnEvent(loader,"PLAYER_LOGIN")
-assert(#registered==25,
+assert(#registered==26,
     "native settings include the notch-safe Bar page and experimental child pages")
 for _,texture in ipairs(textures) do
     assert(not (texture.color and texture.color[1]==0.02
@@ -379,7 +379,8 @@ assert(categories["QuestSense Navigation"] and
     categories["QuestSense Navigation"].parent==categories["QuestSense"],
     "navigation is an optional child of QuestSense, not a second root addon")
 assert(categories["Global Appearance"].parent==categories.home
-    and categories["Updates"].parent==categories.home,
+    and categories["Updates"].parent==categories.home
+    and categories["Data Transfer"].parent==categories.home,
     "standalone modules remain accessible directly below ChalkBox")
 
 ChalkBox_OpenSettings()
