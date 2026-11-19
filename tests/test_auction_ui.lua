@@ -230,7 +230,8 @@ _G.ChalkBox_MarketBagRows=function()
     bagsRead=bagsRead+1
     return {{name="My Test Green",itemID=8888,low=1000,
         count=2,marketTotal=2000,vendorTotal=500,
-        de=1500,note="DE candidate",protected=false,bound=false}},
+        de=1500,note="DE candidate",protected=false,bound=false,
+        boundKnown=true}},
         {stacks=1,priced=1,marketValue=2000,vendorValue=500}
 end
 _G.ChalkBox_MarketSaleRows=function()
@@ -553,6 +554,19 @@ assert(Text("No saved scan for this item"),
 assert(Text("DE / ITEM") and Text("IN BAG") and Text("My Test Green")
     and bagsRead>0 and rows[1].marketView=="bags",
     "My Items integrates bag/DE appraisal into native Market frame")
+local prepare=Button("Prepare Auction")
+assert(prepare and prepare.shown and prepare.enabled==false,
+    "preparing an auction requires explicitly selecting an owned item")
+rows[1].scripts.OnMouseDown(rows[1],"LeftButton")
+assert(prepare.enabled==true,
+    "selecting a verified tradeable owned item enables Prepare Auction")
+prepare:Click()
+assert(not pane.shown and
+    AuctionHouseFrame:GetDisplayMode()==AuctionHouseFrameDisplayMode.Sell,
+    "Prepare Auction opens Blizzard's Sell tab only after a click")
+tab:Click()
+assert(pane.shown and rows[1].marketView=="bags",
+    "returning to Market keeps My Items and never posts an auction")
 rows[1].scripts.OnEnter(rows[1])
 local hasBag,hasDE=false,false
 for _,entry in ipairs(tip.lines) do
