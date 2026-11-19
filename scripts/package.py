@@ -11,6 +11,9 @@ from render_quest_arrow import render_arrow
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "ChalkBox"
+TRANSFER_SOURCE = ROOT / "ChalkBoxTransfer"
+TRANSFER_FILES = ("ChalkBoxTransfer.toc", "ChalkBoxTransfer_Camelot.toc",
+                  "TransferBootstrap.lua")
 DIST = ROOT / "dist"
 FILES = (
     "ChalkBox.toc",
@@ -44,6 +47,7 @@ FILES = (
     "ReminderToast.lua",
     "SessionJournal.lua",
     "CampSense.lua",
+    "DataTransfer.lua",
     "DropSense.lua",
     "AuctionSense.lua",
     "AuctionSenseUI.lua",
@@ -103,6 +107,8 @@ def build() -> Path:
     render_icon()
     render_arrow()
     versions = {version_of(SOURCE / name) for name in FILES if name.endswith(".toc")}
+    versions.update(version_of(TRANSFER_SOURCE / name) for name in TRANSFER_FILES
+                    if name.endswith(".toc"))
     if len(versions) != 1:
         raise ValueError(f"TOC versions differ: {versions}")
     version = versions.pop()
@@ -116,6 +122,15 @@ def build() -> Path:
             if not source.is_file():
                 raise FileNotFoundError(source)
             info = ZipInfo(f"ChalkBox/{relative}", date_time=(2026, 1, 1, 0, 0, 0))
+            info.compress_type = ZIP_DEFLATED
+            info.external_attr = 0o644 << 16
+            archive.writestr(info, source.read_bytes())
+        for relative in TRANSFER_FILES:
+            source = TRANSFER_SOURCE / relative
+            if not source.is_file():
+                raise FileNotFoundError(source)
+            info = ZipInfo(f"ChalkBoxTransfer/{relative}",
+                           date_time=(2026, 1, 1, 0, 0, 0))
             info.compress_type = ZIP_DEFLATED
             info.external_attr = 0o644 << 16
             archive.writestr(info, source.read_bytes())
