@@ -7,7 +7,12 @@ local lastAutoAt=-1000000000
 local lastAutoMessage=nil
 local combatStartedAt=nil
 local pendingDelay=nil
+local autoAttempts=0
 local reportInProgress=false
+local readyReport=nil -- transient, never persisted to SavedVariables
+local lastPreparedFingerprint=nil
+local MAX_AUTO_ATTEMPTS=5
+local AUTO_RETRY_SECONDS=1.5
 
 local function Safe(value)
     return value~=nil and
@@ -158,7 +163,17 @@ local function MessagingRestricted()
     end
     return false
 end
-local function SendReport(frame,channel,auto)
+local function SaveReady(lines,channel,reason)
+    if type(lines)~="table" or #lines<2 then return false end
+    local fingerprint=table.concat(lines,"\n")
+    if fingerprint==lastPreparedFingerprint then return false end
+    readyReport={lines=lines,channel=channel,fingerprint=fingerprint}
+    lastPreparedFingerprint=fingerprint
+    Note("Post-fight report ready; meter Menu > Send ready to "..channel..
+        ". "..(reason or "Chat needs a player click."))
+    return true
+end
+local function SendReport(frame,channel,auto,preparedLines)
     local function Reject(why)
         if not auto then Note(why) end
         return false
@@ -187,34 +202,41 @@ local function SendReport(frame,channel,auto)
     local send=type(SendChatMessage)=="function" and SendChatMessage or
         (C_ChatInfo and C_ChatInfo.SendChatMessage)
     if type(send)~="function" then return Reject("Chat API unavailable.") end
-    local kind,label,perSecond,title,sources
-    if auto then
-        kind=AutoType()
-        label,perSecond=TypeInfo(kind)
-        title="Last"
-        sources=kind and ExpiredSources(kind) or nil
+    local lines,reason
+    if type(preparedLines)=="table" then
+        -- A legitimate click can send the already sanitized snapshot.
+        -- No second native combat read is required at click time.
+        lines=preparedLines
     else
-        if not frame or type(frame.GetDamageMeterType)~="function" then
-            return Reject("Native meter selection unavailable.")
+        local kind,label,perSecond,title,sources
+        if auto then
+            kind=AutoType()
+            label,perSecond=TypeInfo(kind)
+            title="Last"
+            sources=kind and ExpiredSources(kind) or nil
+        else
+            if not frame or type(frame.GetDamageMeterType)~="function" then
+                return Reject("Native meter selection unavailable.")
+            end
+            local ok,selected=pcall(frame.GetDamageMeterType,frame)
+            if not ok or not Safe(selected) then
+                return Reject("Meter statistic unavailable.")
+            end
+            kind=selected
+            label,perSecond=TypeInfo(kind)
+            title=SessionLabel(frame)
+            sources=SelectedSources(frame)
+            local _,current=SessionLabel(frame)
+            if (not sources or #sources==0) and current then
+                sources=ExpiredSources(kind)
+                if sources and #sources>0 then title="Last" end
+            end
         end
-        local ok,selected=pcall(frame.GetDamageMeterType,frame)
-        if not ok or not Safe(selected) then
-            return Reject("Meter statistic unavailable.")
-        end
-        kind=selected
-        label,perSecond=TypeInfo(kind)
-        title=SessionLabel(frame)
-        sources=SelectedSources(frame)
-        local _,current=SessionLabel(frame)
-        if (not sources or #sources==0) and current then
-            sources=ExpiredSources(kind)
-            if sources and #sources>0 then title="Last" end
-        end
+        if not label then return Reject("Meter statistic unavailable.") end
+        lines,reason=BuildMessages(sources,label,title,perSecond,
+            Settings().nativeReportRows)
+        if not lines then return Reject(reason) end
     end
-    if not label then return Reject("Meter statistic unavailable.") end
-    local lines,reason=BuildMessages(sources,label,title,perSecond,
-        Settings().nativeReportRows)
-    if not lines then return Reject(reason) end
     -- Only the local fingerprint uses a newline; no newline goes to chat.
     local fingerprint=table.concat(lines,"\n")
     if auto and fingerprint==lastAutoMessage then return false end
@@ -228,6 +250,9 @@ local function SendReport(frame,channel,auto)
     local function Finished()
         reportInProgress=false
         if auto then lastAutoAt=now;lastAutoMessage=fingerprint end
+        if readyReport and readyReport.fingerprint==fingerprint then
+            readyReport=nil
+        end
         Note((auto and "Auto report" or "Report").." requested in "..channel..
             " (delivery is controlled by the game).")
     end
@@ -236,7 +261,9 @@ local function SendReport(frame,channel,auto)
         local ok,result=pcall(send,lines[i],channel)
         if not ok or (Safe(result) and result==false) then
             reportInProgress=false
-            if not auto then
+            if auto then
+                SaveReady(lines,channel,"The client declined automatic chat.")
+            else
                 local detail=not ok and Safe(result) and type(result)=="string"
                     and result:sub(1,180) or "chat API returned false"
                 Note(channel.." report stopped at line "..i..": "..detail)
@@ -256,6 +283,13 @@ local function SendReport(frame,channel,auto)
     reportInProgress=true
     return SendLine(1)
 end
+function ChalkBox_NativeMeterSendReady()
+    if not readyReport then
+        Note("No after-combat report is waiting.")
+        return false
+    end
+    return SendReport(nil,readyReport.channel,false,readyReport.lines)
+end
 function ChalkBox_NativeMeterPrint(frame,channel)
     return SendReport(frame,channel or "PARTY",false)
 end
@@ -263,6 +297,8 @@ function ChalkBox_NativeMeterStatus()
     local db=Settings()
     return {installed=installed,enabled=Enabled(),rows=db.nativeReportRows,
         auto=db.nativeAutoPrint,channel=db.nativeAutoChannel,
+        ready=readyReport~=nil,
+        readyChannel=readyReport and readyReport.channel or nil,
         minFight=db.nativeAutoMinFight,cooldown=db.nativeAutoCooldown,
         metric=db.nativeAutoMetric}
 end
@@ -277,11 +313,18 @@ function ChalkBox_NativeMeterCommand(message)
     local db=Settings()
     if value=="on" or value=="off" then
         db.nativePrint=value=="on"
-        if not db.nativePrint then db.nativeAutoPrint=false;pendingDelay=nil end
+        if not db.nativePrint then
+            db.nativeAutoPrint=false
+            pendingDelay=nil
+            readyReport=nil
+        end
         Note("Native meter reports "..(db.nativePrint and "ON" or "OFF")..".")
     elseif value=="auto on" or value=="auto off" then
         db.nativeAutoPrint=value=="auto on"
-        if not db.nativeAutoPrint then pendingDelay=nil end
+        if not db.nativeAutoPrint then
+            pendingDelay=nil
+            readyReport=nil
+        end
         Note("After-combat reports "..(db.nativeAutoPrint and "ON" or "OFF")..".")
     elseif value=="print party" or value=="print say" then
         Note("Use Blizzard meter gear menu to print the selected session.")
@@ -332,6 +375,10 @@ local function Install()
                 function() SendReport(frame,"PARTY",false) end)
             root:CreateButton("Print top "..db.nativeReportRows.." to SAY",
                 function() SendReport(frame,"SAY",false) end)
+            if readyReport then
+                root:CreateButton("Send ready report to "..readyReport.channel,
+                    ChalkBox_NativeMeterSendReady)
+            end
             root:CreateButton("Report size: Top "..db.nativeReportRows..
                 "  (3 / 5 / 10)",function()
                 db.nativeReportRows=Cycle(db.nativeReportRows,{3,5,10})
@@ -340,7 +387,10 @@ local function Install()
             root:CreateButton("After combat: "..(db.nativeAutoPrint and
                 "|cff4ce39aON|r" or "|cffaaaaaaOFF|r"),function()
                 db.nativeAutoPrint=not db.nativeAutoPrint
-                if not db.nativeAutoPrint then pendingDelay=nil end
+                if not db.nativeAutoPrint then
+                    pendingDelay=nil
+                    readyReport=nil
+                end
                 Note("After-combat reports "..(db.nativeAutoPrint and "ON" or "OFF")..".")
             end)
             root:CreateButton("Auto channel: "..db.nativeAutoChannel,
@@ -392,9 +442,19 @@ events:SetScript("OnEvent",function(_,event,name)
             and finishedAt>=startedAt
             and finishedAt-startedAt>=db.nativeAutoMinFight then
             pendingDelay=2
+            autoAttempts=0
         end
     end
 end)
+local function PrepareAuto()
+    local kind=AutoType()
+    if not kind then return nil,"Native damage type unavailable." end
+    local label,perSecond=TypeInfo(kind)
+    local sources=ExpiredSources(kind)
+    if not sources then return nil,"Completed session not ready." end
+    return BuildMessages(sources,label,"Last",perSecond,
+        Settings().nativeReportRows)
+end
 events:SetScript("OnUpdate",function(_,elapsed)
     if not pendingDelay then return end
     if not Number(elapsed) or elapsed<0 then return end
@@ -406,8 +466,41 @@ events:SetScript("OnUpdate",function(_,elapsed)
     if pendingDelay<=0 then
         pendingDelay=nil
         local db=Settings()
-        if Enabled() and db.nativeAutoPrint then
-            SendReport(nil,db.nativeAutoChannel,true)
+        if not Enabled() or not db.nativeAutoPrint then return end
+        local lines,reason=PrepareAuto()
+        if not lines then
+            autoAttempts=autoAttempts+1
+            if autoAttempts<MAX_AUTO_ATTEMPTS then
+                -- Forever's server may finalize the previous fight later
+                -- than the first two seconds after PLAYER_REGEN_ENABLED.
+                pendingDelay=AUTO_RETRY_SECONDS
+            else
+                Note("Auto report couldn't read a completed fight: "..
+                    (reason or "no data")..
+                    ". Check the native meter after combat.")
+            end
+            return
+        end
+        local channel=db.nativeAutoChannel
+        local fingerprint=table.concat(lines,"\n")
+        if fingerprint==lastAutoMessage or
+            fingerprint==lastPreparedFingerprint then return end
+        local now=Clock()
+        if now and now-lastAutoAt<db.nativeAutoCooldown then return end
+        -- PARTY may be permitted in a normal group outside chat lockdown.
+        -- Automatic SAY requires a hardware event on Forever: never try.
+        local mayAuto=channel=="PARTY" and not MessagingRestricted()
+            and type(IsInGroup)=="function" and IsInGroup()
+            and (type(IsInRaid)~="function" or not IsInRaid())
+        if mayAuto then
+            local sent=SendReport(nil,channel,true,lines)
+            if sent then return end
+        end
+        -- Do not silently swallow restrictions; offer a real click using
+        -- the existing meter gear menu and the prepared, sanitized summary.
+        if SaveReady(lines,channel,
+            "Forever may require a player click to send chat.") then
+            lastAutoAt=now or lastAutoAt
         end
     end
 end)
