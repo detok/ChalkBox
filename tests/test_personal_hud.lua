@@ -223,43 +223,43 @@ _G.C_UI={
     GetTopRightNotchSafeRegion=function() return 570,1024,768,740 end,
 }
 Fire("NOTCHED_DISPLAY_MODE_CHANGED")
-assert(bar.points[1][4]==-32 and bar.points[2][4]==-32
+assert(bar.points[1][5]==-32 and bar.points[2][5]==-32
     and ChalkBox_BarTopInsetStatus().source=="native notch safe region",
     "Mac notched fullscreen positions the full-width bar below 28px cutout")
 assert(UIParent:GetHeight()==768,
     "notch handling never changes native UIParent height")
 C_UI.ShouldUIParentAvoidNotch=function() return true end
 Fire("NOTCHED_DISPLAY_MODE_CHANGED")
-assert(bar.points[1][4]==0 and bar.points[2][4]==0,
+assert(bar.points[1][5]==0 and bar.points[2][5]==0,
     "when Blizzard already avoids notch, do not shift the bar twice")
 C_UI.ShouldUIParentAvoidNotch=function() return false end
 C_UI.DoesAnyDisplayHaveNotch=function() return false end
 Fire("DISPLAY_SIZE_CHANGED")
-assert(bar.points[1][4]==0,
+assert(bar.points[1][5]==0,
     "moving game to an external non-notched display resets automatic inset")
 C_UI.DoesAnyDisplayHaveNotch=function() return true end
 C_UI.GetTopLeftNotchSafeRegion=function() return 0,450,768,100 end
 C_UI.GetTopRightNotchSafeRegion=function() return 570,1024,768,100 end
 Fire("UI_SCALE_CHANGED")
-assert(bar.points[1][4]==0,
+assert(bar.points[1][5]==0,
     "invalid oversized safe-region measurement never pushes bar down blindly")
 _G.C_UI=nil
 assert(ChalkBox_BarTopInsetSet(50) and
     ChalkBox_BarTopInsetStatus().mode=="manual" and
-    bar.points[1][4]==-50 and bar.points[2][4]==-50,
+    bar.points[1][5]==-50 and bar.points[2][5]==-50,
     "unsupported client can use a saved explicit notch-safe inset")
-assert(not ChalkBox_BarTopInsetSet(200) and bar.points[1][4]==-50,
+assert(not ChalkBox_BarTopInsetSet(200) and bar.points[1][5]==-50,
     "out-of-range manual insets are rejected without mutating layout")
 combat=true
-assert(ChalkBox_BarTopInsetSet(60) and bar.points[1][4]==-50
+assert(ChalkBox_BarTopInsetSet(60) and bar.points[1][5]==-50
     and ChalkBox_BarTopInsetStatus().pending,
     "safe inset changes do not reposition frames while in combat")
 combat=false
 Fire("PLAYER_REGEN_ENABLED")
-assert(bar.points[1][4]==-60 and not ChalkBox_BarTopInsetStatus().pending,
+assert(bar.points[1][5]==-60 and not ChalkBox_BarTopInsetStatus().pending,
     "inset queued in combat applies after combat ends")
 assert(ChalkBox_BarTopInsetSet("auto")
-    and bar.points[1][4]==0 and ChalkBoxDB.barTopInset==nil,
+    and bar.points[1][5]==0 and ChalkBoxDB.barTopInset==nil,
     "automatic mode restores baseline when notch APIs are unavailable")
 assert(ChalkBoxDB.barReserve==false,
     "legacy UIParent reservation setting must be migrated to safe overlay")
