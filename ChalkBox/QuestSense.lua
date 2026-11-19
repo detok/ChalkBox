@@ -920,11 +920,12 @@ events:SetScript("OnEvent",function(_,event,arg1,arg2)
         if settings.smartNearbyFirst==nil then
             settings.smartNearbyFirst=true
         end
-        -- A quest that is ready to hand in must not silently disappear from
-        -- Smart just because another objective is closer. Preserve an
-        -- explicit saved opt-out instead of overriding the user's choice.
-        if settings.smartCompleteFirst==nil then
-            settings.smartCompleteFirst=true
+        -- The normal leveling flow puts complete turn-ins AFTER unfinished
+        -- objectives. Upgrade the earlier beta's completed-first default once;
+        -- the player can still explicitly opt back into completed-first.
+        if settings.questCompletePriorityV2~=true then
+            settings.smartCompleteFirst=false
+            settings.questCompletePriorityV2=true
         end
         settings.nativeOrder=false -- migrate unsafe beta opt-in to safe default
         if settings.nearbyRange~=0 and settings.nearbyRange~=500 and
