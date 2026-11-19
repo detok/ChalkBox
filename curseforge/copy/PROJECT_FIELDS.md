@@ -1,5 +1,8 @@
 # ChalkBox 2.2.26 — CurseForge project fields
 
+
+**Experimental 2.2.27-intel-beta (draft PR #107, not published):** Inventory Intelligence is disabled by default and offers optional Skill Up / Make Gold advice in the existing AuctionSense UI. See [technical details](../../docs/AUCTION_INTELLIGENCE.md). The official stable release remains 2.2.26.
+
 | Field | Value |
 | --- | --- |
 | Name | ChalkBox |
@@ -16,3 +19,6 @@
 | Project image | `Artwork/PNG/Upload-Ready/Project-Icon-512.png` |
 
 **Important:** Do not upload the separate media ZIP as the game addon. Only choose a CurseForge game flavor that actually supports the Forever client; portal approval is separate from GitHub release status. Use real gameplay screenshots rather than editorial banner artwork.
+
+
+**Developer beta:** ChalkBox 2.2.27 is a QuestSense Smart experiment; 2.2.26 remains the supported stable release. [Beta notes](https://github.com/detok/ChalkBox/blob/feature/smart-quest-native-priorities/docs/RELEASE_NOTES.md).

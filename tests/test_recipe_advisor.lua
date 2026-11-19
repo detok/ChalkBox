@@ -65,6 +65,19 @@ itemQty=nil
 advice=ChalkBox_RecipeAdvice("2318","Light Leather")
 assert(advice:find("requires 5",1,true),
     "show material requirement without inventing inaccessible bag count")
+known["2318"]={{recipe="Choice Craft",profession="Leatherworking",
+    quantity=2,alternative=true}}
+advice=ChalkBox_RecipeAdvice("2318","Light Leather")
+assert(advice:find("RECIPE ALTERNATIVE:",1,true) and
+    advice:find("2 if chosen",1,true) and
+    not advice:find("needs 2",1,true),
+    "alternatives are possibilities, not simultaneous required reagents")
+known["2318"]={{recipe="Decorated Craft",profession="Leatherworking",
+    quantity=1,optional=true}}
+advice=ChalkBox_RecipeAdvice("2318","Light Leather")
+assert(advice:find("OPTIONAL REAGENT:",1,true) and
+    advice:find("not required",1,true),
+    "optional reagents must not be described as mandatory")
 known["2318"]=nil
 hasLW=false
 advice=ChalkBox_RecipeAdvice("2318","Light Leather")

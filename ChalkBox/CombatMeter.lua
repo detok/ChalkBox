@@ -5,6 +5,9 @@ local addonName=...
 local db,window,header,notice,opacitySlider,lockButton,resizeHandle
 local rows={}
 local refreshQueued=false
+local refreshElapsed=0
+local lastDisplayError=nil
+local LIVE_REFRESH_SECONDS=0.75
 local modes={
     {key="dps", label="DPS", enum="Dps", perSecond=true},
     {key="damage", label="DMG", enum="DamageDone"},
@@ -264,16 +267,19 @@ local function MakeRow(i)
     frame.value=value
     return frame
 end
+-- Never leave old damage figures beside a cleared player name. This is
+-- particularly important when a player drops off the native leaderboard.
+local function ClearRow(row)
+    row.playerName:SetText("")
+    row.value:SetText("")
+    row.classIcon:Hide()
+    row.marker:Hide()
+    row.bar:SetMinMaxValues(0,1)
+    row.bar:SetValue(0)
+    row.bar:SetStatusBarColor(0.27,0.60,0.78,0.50)
+end
 local function ResetDisplay(message)
-    for _,row in ipairs(rows) do
-        row.playerName:SetText("")
-        row.value:SetText("")
-        row.classIcon:Hide()
-        row.marker:Hide()
-        row.bar:SetMinMaxValues(0,1)
-        row.bar:SetValue(0)
-        row.bar:SetStatusBarColor(0.27,0.60,0.78,0.50)
-    end
+    for _,row in ipairs(rows) do pcall(ClearRow,row) end
     Note(message or "No fight recorded yet.")
 end
 -- Pass secret combat values directly to Blizzard's C setters. Never convert,
@@ -304,7 +310,13 @@ local function DrawRow(row,source,maxValue,perSecond)
     else
         row.bar:SetStatusBarColor(0.25,0.64,0.78,0.55)
     end
-    if source.isLocalPlayer==true then row.marker:Show() else row.marker:Hide() end
+    -- Forever may return a secret boolean. Never compare it in Lua.
+    local localPlayer=source.isLocalPlayer
+    if Safe(localPlayer) and localPlayer==true then
+        row.marker:Show()
+    else
+        row.marker:Hide()
+    end
     local amount=perSecond and source.amountPerSecond or source.totalAmount
     if Safe(maxValue) and type(maxValue)=="number" and maxValue<=0 then
         maxValue=1
@@ -328,6 +340,7 @@ local function DrawRow(row,source,maxValue,perSecond)
 end
 local function Refresh()
     refreshQueued=false
+    lastDisplayError=nil
     if not window or not db or db.shown==false or not window:IsShown() then return end
     local available,reason=IsAvailable()
     if not available then ResetDisplay(reason);return end
@@ -339,29 +352,53 @@ local function Refresh()
         ({Current=1,Expired=2,Overall=0})[session.enum])
     -- The native API is readable even in combat, but can return secret fields.
     local ok,data=pcall(C_DamageMeter.GetCombatSessionFromType,sessionId,modeId)
-    if not ok or type(data)~="table" then
+    if not ok or not Safe(data) or type(data)~="table" then
         ResetDisplay("Waiting for Blizzard combat data...")
         return
     end
     local sources=data.combatSources
-    if type(issecretvalue)=="function" and issecretvalue(sources) then
-        ResetDisplay("Combat data protected: enable the Blizzard meter.")
+    if not Safe(sources) or type(sources)~="table" then
+        ResetDisplay("Native combat sources unavailable or protected.")
         return
     end
-    if type(sources)~="table" then ResetDisplay("No recorded data yet.");return end
-    local visible=0
+    local usingLast=false
+    if session.key=="current" and #sources==0 then
+        -- Blizzard may close Current as soon as the fight ends. The
+        -- compact window should behave like our report sender and show
+        -- the most recently completed fight rather than a blank panel.
+        local expiredID=EnumValue("DamageMeterSessionType","Expired",2)
+        local savedOK,saved=pcall(C_DamageMeter.GetCombatSessionFromType,
+            expiredID,modeId)
+        if savedOK and Safe(saved) and type(saved)=="table" and
+            Safe(saved.combatSources) and
+            type(saved.combatSources)=="table" and
+            #saved.combatSources>0 then
+            data,sources=saved,saved.combatSources
+            usingLast=true
+        end
+    end
+    if meterTitle then
+        meterTitle:SetText(mode.label.."  /  "..(usingLast and "Last" or session.label))
+    end
+    local visible,unreadable=0,false
     for i=1,db.rows do
         local source=sources[i]
-        if type(source)=="table" then
-            DrawRow(rows[i],source,data.maxAmount,mode.perSecond)
-            visible=visible+1
+        if Safe(source) and type(source)=="table" then
+            -- A single inconsistent native row must not blank the whole
+            -- meter or throw an error from an input/click handler.
+            local drawn,detail=pcall(DrawRow,rows[i],source,data.maxAmount,
+                mode.perSecond)
+            if drawn then
+                visible=visible+1
+            else
+                unreadable=true
+                if not lastDisplayError then
+                    lastDisplayError=tostring(detail):sub(1,180)
+                end
+                pcall(ClearRow,rows[i])
+            end
         else
-            rows[i].playerName:SetText("")
-            rows[i].value:SetText("")
-            rows[i].classIcon:Hide()
-            rows[i].marker:Hide()
-            rows[i].bar:SetMinMaxValues(0,1)
-            rows[i].bar:SetValue(0)
+            pcall(ClearRow,rows[i])
         end
     end
     -- Treat saved rows as a maximum, not permanent blank slots.
@@ -371,10 +408,25 @@ local function Refresh()
         if i<=shown then row:Show() else row:Hide() end
     end
     if window.SetHeight then window:SetHeight(66+shown*25) end
-    if visible==0 then
-        Note("No fight data yet. Attack something!")
+    local auto=type(ChalkBox_NativeMeterStatus)=="function" and
+        ChalkBox_NativeMeterStatus() or nil
+    if auto and auto.ready then
+        Note("Report ready  ·  Menu > Send ready to "..(
+            auto.readyChannel or "PARTY"))
+    elseif visible==0 then
+        Note(unreadable and "Combat data unavailable on this client."
+            or "No fight data yet. Attack something!")
     else
-        Note("")
+        Note(unreadable and "Some native combat rows could not be displayed." or "")
+    end
+end
+-- An unexpected native API response should be diagnosable rather than
+-- breaking the next menu click or leaving stale numbers in the window.
+local function SafeRefresh()
+    local ok,reason=pcall(Refresh)
+    if not ok then
+        lastDisplayError=tostring(reason):sub(1,180)
+        ResetDisplay("Meter display issue. Use /chalk meter status.")
     end
 end
 local function QueueRefresh()
@@ -382,13 +434,14 @@ local function QueueRefresh()
     if not window or not db or db.shown==false then return end
     if C_Timer and type(C_Timer.After)=="function" then
         refreshQueued=true
-        C_Timer.After(0.12,Refresh)
+        C_Timer.After(0.12,SafeRefresh)
     else
-        Refresh()
+        SafeRefresh()
     end
 end
 local function SetShown(on)
     db.shown=on==true
+    refreshElapsed=0
     if not window then return end
     if db.shown then window:Show();QueueRefresh() else window:Hide() end
 end
@@ -751,6 +804,7 @@ function ChalkBox_MeterCommand(input)
             " | "..db.rows.." rows | "..db.iconMode.." icons | "..math.floor(db.opacity*100)..
             "% background | "..(db.locked and "locked" or "unlocked")..
             " | "..(db.shown and "shown" or "hidden"))
+        if lastDisplayError then Chat("Last meter error: "..lastDisplayError) end
     elseif value=="icons class" or value=="icons spec" or value=="icons off" then
         db.iconMode=value:match("icons (%w+)")
         for _,row in ipairs(rows) do ArrangeRowName(row) end
@@ -788,7 +842,7 @@ function ChalkBox_MeterStatus()
     local enabled=IsAvailable()
     return {shown=db.shown,locked=db.locked,mode=db.mode,session=db.session,
         rows=db.rows,scale=db.scale,opacity=db.opacity,width=db.width,
-        iconMode=db.iconMode,
+        iconMode=db.iconMode,displayError=lastDisplayError,
         available=enabled}
 end
 local event=CreateFrame("Frame")
@@ -797,6 +851,22 @@ event:RegisterEvent("PLAYER_LOGIN")
 event:RegisterEvent("DAMAGE_METER_COMBAT_SESSION_UPDATED")
 event:RegisterEvent("DAMAGE_METER_CURRENT_SESSION_UPDATED")
 event:RegisterEvent("DAMAGE_METER_RESET")
+-- Server-side damage updates should normally arrive via events. A small
+-- visible-only heartbeat heals missed events on Forever; hidden meters
+-- remain completely idle and no combat-log parsing is introduced.
+event:SetScript("OnUpdate",function(_,elapsed)
+    if not db or db.shown==false or not window or
+        not window:IsShown() then
+        refreshElapsed=0
+        return
+    end
+    if type(elapsed)~="number" or elapsed~=elapsed or elapsed<0 then return end
+    refreshElapsed=refreshElapsed+elapsed
+    if refreshElapsed>=LIVE_REFRESH_SECONDS then
+        refreshElapsed=refreshElapsed%LIVE_REFRESH_SECONDS
+        if not refreshQueued then SafeRefresh() end
+    end
+end)
 event:SetScript("OnEvent",function(_,name,loaded)
     if name=="ADDON_LOADED" then
         if loaded~=addonName then return end

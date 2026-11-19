@@ -164,38 +164,75 @@ local function HasTooltipLine(tooltip, text)
     return false
 end
 
-local function OnItemTooltip(tooltip)
-    if not MerchantFrame or not MerchantFrame:IsShown() then return end
-    if not tooltip or not tooltip.GetItem then return end
-    local itemName = tooltip:GetItem()
-    if not Safe(itemName) or type(itemName) ~= "string" then return end
-
-    local entry = questItems[itemName]
-    if not entry then return end
-
-    local slot, vendorBuyTab = TooltipVendorSlot(tooltip)
-    if slot and not vendorBuyTab then return end -- buyback is not an inventory sale
-    local message, r, g, b
-    if slot then
-        -- No false buying recommendation when hovering buyback items or
-        -- items for already-completed objectives.
-        if not entry.purchase or GetVendorName(slot) ~= itemName then return end
-        message = "BUY FOR QUEST  ·  " .. entry.purchase.quest
-        if entry.purchase.remaining and entry.purchase.remaining > 0 then
-            message = message .. " (" .. entry.purchase.remaining .. " more)"
-        end
-        r, g, b = 0.98, 0.45, 0.40
-    elseif entry.protect then
-        message = "DO NOT SELL  ·  " .. entry.protect
-        r, g, b = 0.98, 0.45, 0.40
-    else
-        return
+-- Read-only Core quest facts for Item Insights. These are the same
+-- cached accepted-quest objectives used by the legacy vendor warnings.
+function ChalkBox_CoreQuestFact(tooltip)
+    if not tooltip or type(tooltip.GetItem)~="function" then return nil end
+    local name=tooltip:GetItem()
+    if not Safe(name) or type(name)~="string" then return nil end
+    local entry=questItems[name]
+    if not entry then return nil end
+    -- The accepted-quest cache can protect a bag item even when no
+    -- merchant is open. Keep the vendor-offer check for BUY/buyback only.
+    local slot,buyTab
+    if MerchantFrame and MerchantFrame.IsShown and
+        MerchantFrame:IsShown() then
+        slot,buyTab=TooltipVendorSlot(tooltip)
     end
-
-    if not HasTooltipLine(tooltip, message) then
-        tooltip:AddLine(message, r, g, b, true)
+    if slot and not buyTab then return nil end
+    if slot then
+        if not entry.purchase or GetVendorName(slot)~=name then return nil end
+        local message="BUY FOR QUEST  ·  "..entry.purchase.quest
+        if entry.purchase.remaining and entry.purchase.remaining>0 then
+            message=message.." ("..entry.purchase.remaining.." more)"
+        end
+        return {kind="buy",message=message,quest=entry.purchase.quest}
+    end
+    if entry.protect then
+        return {kind="keep",message="DO NOT SELL  ·  "..entry.protect,
+            quest=entry.protect}
+    end
+end
+local function OnItemTooltip(tooltip,forceLegacy)
+    local coordinatorOn=not forceLegacy and
+        type(ChalkBox_TipCoordinatorEnabled)=="function" and
+        ChalkBox_TipCoordinatorEnabled()
+    -- Retain the exact previous Core behavior when the experiment is OFF:
+    -- only merchant-open tooltips receive Core's own warning. With the
+    -- coordinator ON, Core can serve as a final safety owner even outside
+    -- merchants if LootSense's own callback fails to run.
+    if not coordinatorOn and not (MerchantFrame and
+        MerchantFrame.IsShown and MerchantFrame:IsShown()) then return end
+    local fact=ChalkBox_CoreQuestFact(tooltip)
+    if not fact then return end
+    if coordinatorOn and
+        type(ChalkBox_TipCoordinatorShow)=="function" and
+        tooltip and type(tooltip.GetItem)=="function" then
+        -- Core's independent quest hook is the emergency safety owner.
+        -- When possible, let the coordinator render its normal section;
+        -- if LootSense is missing, Core still has the accepted-quest cache.
+        local name,link=tooltip:GetItem()
+        if Safe(name) and type(name)=="string" then
+            local slot=TooltipVendorSlot(tooltip)
+            local ok,handled=pcall(ChalkBox_TipCoordinatorShow,tooltip,{
+                name=name,link=link,vendorOffer=slot~=nil})
+            if ok and handled then return end
+        end
+    end
+    -- An absent/failing coordinator must never erase verified quest safety.
+    local r,g,b=0.98,0.45,0.40
+    if fact.kind=="buy" then r,g,b=0.39,0.94,0.62 end
+    if type(ChalkBox_TipColor)=="function" then
+        r,g,b=ChalkBox_TipColor(fact.kind=="buy" and "good" or "danger")
+    end
+    if not HasTooltipLine(tooltip,fact.message) then
+        tooltip:AddLine(fact.message,r,g,b,true)
         tooltip:Show()
     end
+end
+-- Restore the legacy Core safety warning if coordinator processing fails.
+function ChalkBox_CoreQuestTooltipFallback(tooltip)
+    return OnItemTooltip(tooltip,true)
 end
 
 local function MakeVendorGlow(button)

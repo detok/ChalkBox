@@ -101,6 +101,13 @@ local function Items()
             end
         end),
     }
+    if report.ready and type(ChalkBox_NativeMeterSendReady)=="function" then
+        -- Uses the existing menu; this click supplies the necessary
+        -- hardware action if automatic outgoing chat was blocked.
+        table.insert(entries,7,Add("Reports",
+            "Send ready report to "..(report.readyChannel or "PARTY"),
+            ChalkBox_NativeMeterSendReady))
+    end
     return entries
 end
 function ChalkBox_MeterOpenMenu(owner)

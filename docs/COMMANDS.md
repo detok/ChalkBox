@@ -48,6 +48,10 @@
 | `/chalk quests limit 5` | Select the auto-watch limit (5, 10, 15 or 20) |
 | `/chalk quests refresh` | Queue native quest-watch reconciliation when safe |
 | `/chalk quests status` | Inspect watch counts, selected mode, zone, instance match and API diagnostics |
+| `/chalk quests sort nearest` / `zone` / `level` / `title` / `log` | Choose Smart's candidate priority and optional native tracker visual order |
+| `/chalk quests nearbyfirst on` / `off` | Prefer proven current-zone objectives before distant quests |
+| `/chalk quests completefirst on` / `off` | Prioritize completed quests when choosing watches |
+| `/chalk quests range 0` / `500` / `1000` / `2000` | Nearby: strict zone-only by default, or include game-reported nearby quest goals within the chosen yard range |
 | `/chalk macro`, `/chalk forge` | Open MacroForge |
 | `/chalk forge rescan` | Rescan actually learned, active spells |
 | `/chalk forge status` | Spellbook/MacroForge diagnostics |
@@ -68,6 +72,7 @@
 | Command | Purpose |
 | --- | --- |
 | `/chalk bar status` | XP rate, Bar layout and safe display diagnostics |
+| `/chalk bar safe auto` / `safe split 40-400` / `safe up 0-120` / `safe 0-120` | On notched Macs, automatically split the top bar's **center modules to either side of the camera cutout**. Use `safe split 120` for a manual center gap if the client does not report a notch. The height slider raises the bar UP into the notch area (`safe up 32`); `safe 32` lowers the bar as a fallback. Settings: The Bar → Mac / Notch Safe Area. |
 | `/chalk bar edit` or `edit on` / `off` | Toggle/finish Edit Mode; empty-Bar right-click also has **Done editing** |
 | `/chalk bar layout` | Show positions of Bar modules |
 | `/chalk bar layout reset` | Restore default Bar positions, alignment **and module widths**, leaving other settings alone |
@@ -106,7 +111,7 @@ The Bar's fresh layout differs from players' older saved layouts; upgrades do **
 | `/chalk meter rows 5` / `8` / `12` | Limit visible rows, up to five by default; raise cap for raids |
 | `/chalk meter opacity 0-100` | Adjust **background only**; keeps names, icons and values readable |
 | `/chalk meter lock` / `unlock` | Lock/drag and resize the compact window |
-| `/chalk meter native status` | Native Blizzard meter extension diagnostics |
+| `/chalk meter native status` | Native Blizzard meter report status; after-combat reports blocked by chat restrictions can be sent by clicking **Menu → Send ready report** |
 | `/chalk session` / `session last` | Open current or preceding Session Journal |
 | `/chalk prep` | Print a camp/preparation checklist |
 | `/chalk prep test` | Preview the preparation reminder |

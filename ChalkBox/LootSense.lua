@@ -207,11 +207,76 @@ local function AddFutureQuestNote(tooltip,uses)
     return true
 end
 
+-- Coordinator fact source: respects existing LootSense categories
+-- and live character quest evidence; never writes directly to a tooltip.
+function ChalkBox_LootInsight(name,link)
+    if not db or not Public(name) or type(name)~="string" then return nil end
+    if not Public(link) then link=nil end
+    local personal=IsProtected(name,link)
+    local accepted=type(ChalkBox_IsTrackedQuestItem)=="function" and
+        ChalkBox_IsTrackedQuestItem(name)==true
+    local future=db.lootAdvice~=false and FutureUses(name,link) or nil
+    local quality,itemType,itemSubType,equipLoc,sellPrice,classID
+    local bindType,isCraftingReagent
+    if db.lootAdvice~=false then
+        local itemFn=C_Item and C_Item.GetItemInfo or GetItemInfo
+        if type(itemFn)=="function" then
+            local ok,n,_,q,_,_,typ,sub,_,loc,_,price,cls,_,bind,_,_,reagent=
+                pcall(itemFn,link or name)
+            if ok and Public(n) then
+                quality,itemType,itemSubType,equipLoc,sellPrice,classID=
+                    q,typ,sub,loc,price,cls
+                bindType,isCraftingReagent=bind,reagent
+            end
+        end
+    end
+    local message
+    if db.lootAdvice~=false then
+        message=Classify(name,link,quality,itemType,itemSubType,equipLoc,
+            sellPrice,classID,bindType,isCraftingReagent)
+    end
+    local label,details=ChalkBox_LootPresentation(message)
+    local questClass=classID==12
+    local quests=(accepted or questClass) and
+        type(ChalkBox_QuestItemDetails)=="function" and
+        ChalkBox_QuestItemDetails(name) or nil
+    local extra
+    if db.lootAdvice~=false and type(ChalkBox_RecipeDetails)=="function"
+        and type(IsShiftKeyDown)=="function" and IsShiftKeyDown() then
+        local id=type(link)=="string" and link:match("item:(%d+)")
+        extra=ChalkBox_RecipeDetails(id,name)
+    end
+    local role=label=="KEEP" and
+        (accepted or questClass) and "danger" or
+        label=="KEEP" and "good" or
+        (label=="LEARNED RECIPE" or label=="LEARNED USE") and "good" or
+        (label=="POSSIBLE RECIPE" or label=="POSSIBLE MATERIAL") and
+            "warning" or
+        label=="OTHER PROFESSION" and "count" or "info"
+    return {label=label,details=details,role=role,
+        personalProtect=personal and db.lootAdvice~=false,
+        isQuest=(accepted or questClass) and db.lootAdvice~=false,
+        protected=personal or accepted or questClass or future~=nil,
+        saleProtected=personal or accepted or questClass,
+        future=future,quests=quests,recipeDetails=extra}
+end
+
 local function OnItemTooltip(tooltip)
-    if not db or not tooltip or not tooltip.GetItem or IsVendorOffer(tooltip) then return end
+    if not db or not tooltip or not tooltip.GetItem then return end
     local name, link = tooltip:GetItem()
     if not Public(name) or type(name) ~= "string" then return end
     if not Public(link) then link = nil end
+    local vendorOffer=IsVendorOffer(tooltip)
+    if type(ChalkBox_TipCoordinatorEnabled)=="function" and
+        ChalkBox_TipCoordinatorEnabled() then
+        local ok,handled=pcall(ChalkBox_TipCoordinatorShow,tooltip,{
+            name=name,link=link,vendorOffer=vendorOffer})
+        if ok and handled==true then return end
+        if type(ChalkBox_CoreQuestTooltipFallback)=="function" then
+            pcall(ChalkBox_CoreQuestTooltipFallback,tooltip)
+        end
+    end
+    if vendorOffer then return end
     -- DropSense is an independent, opt-in note available only on native
     -- loot-window item tooltips, even when ordinary LootSense advice is off.
     if type(ChalkBox_DropTooltip)=="function" then
@@ -221,6 +286,13 @@ local function OnItemTooltip(tooltip)
     -- general LootSense classification advice has been disabled.
     if type(ChalkBox_AuctionTooltip)=="function" then
         pcall(ChalkBox_AuctionTooltip,tooltip,link)
+    end
+    -- Experimental intelligence is off by default. It only reads bag and
+    -- market data and may annotate items physically in the player's bags.
+    if type(ChalkBox_IntelEnabled)=="function" and
+        ChalkBox_IntelEnabled() and
+        type(ChalkBox_IntelTooltip)=="function" then
+        pcall(ChalkBox_IntelTooltip,tooltip,link)
     end
     local future=FutureUses(name,link)
     -- Future-quest reference items should never receive an unqualified
@@ -417,6 +489,20 @@ SlashCmdList.CHALKBOX = function(input)
         if type(ChalkBox_AuctionCommand)=="function" then
             ChalkBox_AuctionCommand(argument)
         else Note("AuctionSense isn't available on this client.") end
+    elseif command=="intel" or command=="intelligence" then
+        if type(ChalkBox_IntelCommand)=="function" then
+            ChalkBox_IntelCommand(argument)
+        else Note("Inventory Intelligence is unavailable.") end
+    elseif command=="tips" or command=="tooltips" then
+        local mode=(argument or ""):lower()
+        if (mode=="on" or mode=="off") and
+            type(ChalkBox_TipCoordinatorSet)=="function" then
+            ChalkBox_TipCoordinatorSet(mode=="on")
+        end
+        Note("Tooltip Coordinator "..(
+            type(ChalkBox_TipCoordinatorEnabled)=="function" and
+            ChalkBox_TipCoordinatorEnabled() and "ON" or "OFF")..
+            " for this character. Re-hover items to compare.")
     elseif command=="update" or command=="updates" then
         if type(ChalkBox_UpdateCommand)=="function" then
             ChalkBox_UpdateCommand()

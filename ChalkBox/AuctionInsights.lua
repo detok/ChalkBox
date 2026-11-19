@@ -61,11 +61,16 @@ end
 local function ItemInfo(link)
     local getter=C_Item and C_Item.GetItemInfo or GetItemInfo
     if type(getter)~="function" then return nil end
-    local name,_,quality,level,required,class,sub,stack,slot,icon,vendor,
-        classID,subclassID=Call(getter,link)
-    if not Safe(name) or type(name)~="string" then return nil end
-    return {name=name,quality=quality,vendor=Number(vendor) and vendor or nil,
-        classID=classID}
+    -- The common Call helper intentionally returns only 11 values.
+    -- Item class and bind type are positions 12 and 14 of GetItemInfo,
+    -- so read the tuple directly without changing other Call callers.
+    local ok,name,_,quality,level,required,class,sub,stack,slot,icon,
+        vendor,classID,subclassID,bindType=pcall(getter,link)
+    if not ok or not Safe(name) or type(name)~="string" then return nil end
+    return {name=name,quality=quality,
+        vendor=Number(vendor) and vendor or nil,
+        classID=Safe(classID) and classID or nil,
+        bindType=Safe(bindType) and bindType or nil}
 end
 local function ItemID(link)
     if Int(link) then return link end
@@ -92,7 +97,8 @@ local function ContainerItem(bag,slot)
         if type(info)=="table" then
             local link=Safe(info.hyperlink) and info.hyperlink or
                 Call(container.GetContainerItemLink,bag,slot)
-            return link,info.stackCount or 1,info.isBound==true
+            return link,info.stackCount or 1,info.isBound==true,
+                type(info.isBound)=="boolean" and Safe(info.isBound)
         end
     end
     local getter=container and container.GetContainerItemLink or GetContainerItemLink
@@ -104,7 +110,7 @@ local function ContainerItem(bag,slot)
         local _,n=Call(GetContainerItemInfo,bag,slot)
         if Int(n) then count=n end
     end
-    return link,count,false
+    return link,count,false,false
 end
 local function ValidAsk(id)
     if type(ChalkBox_AuctionPrice)~="function" then return nil end
@@ -115,9 +121,12 @@ local function ValidAsk(id)
     end
 end
 local function BagItems(search)
-    local results={}
+    local results,all={},{}
+    local intelligence=type(ChalkBox_IntelEnabled)=="function" and
+        ChalkBox_IntelEnabled()==true
     local counters={stacks=0,units=0,priced=0,marketValue=0,
-        vendorValue=0,unpriced=0,protected=0}
+        vendorValue=0,unpriced=0,protected=0,freeSlots=0,
+        totalSlots=0}
     local container=C_Container
     local slotsFn=container and container.GetContainerNumSlots or
         GetContainerNumSlots
@@ -128,8 +137,15 @@ local function BagItems(search)
     for bag=0,last do
         local slots=Call(slotsFn,bag)
         if Int(slots) and slots>=0 and slots<=200 then
+            -- These are observations of current bags, not cached bank data.
+            local free=Call(container and container.GetContainerNumFreeSlots or
+                GetContainerNumFreeSlots,bag)
+            if Int(free) and free<=slots then
+                counters.freeSlots=counters.freeSlots+free
+                counters.totalSlots=counters.totalSlots+slots
+            end
             for slot=1,slots do
-                local link,count,bound=ContainerItem(bag,slot)
+                local link,count,bound,boundKnown=ContainerItem(bag,slot)
                 local id=ItemID(link)
                 if id and Int(count) and count>0 and count<=100000 then
                     local data=ItemInfo(link)
@@ -137,21 +153,33 @@ local function BagItems(search)
                     local row=byID[id]
                     if not row then
                         row={itemID=id,name=name,count=0,bound=false,
+                            stacks=0,boundKnown=true,
                             quality=data and data.quality or nil,
+                            classID=data and data.classID or nil,
                             vendor=data and data.vendor or nil}
                         byID[id]=row
                     end
                     row.count=row.count+count
-                    row.bound=row.bound or bound
+                    row.stacks=row.stacks+1
+                    -- Client-proven soulbound or bind-on-pickup never goes to AH.
+                    row.bound=row.bound or bound or
+                        (data and data.bindType==1) or false
+                    row.boundKnown=row.boundKnown and
+                        (boundKnown==true or
+                            (data and
+                             (data.bindType==0 or data.bindType==1)))
                 end
             end
         end
     end
+    if counters.totalSlots==0 then counters.freeSlots=nil end
     for _,item in pairs(byID) do
-        if search=="" or item.name:lower():find(search,1,true)
-            or tostring(item.itemID):find(search,1,true) then
+        local matches=search=="" or item.name:lower():find(search,1,true)
+            or tostring(item.itemID):find(search,1,true)
+        if matches or intelligence then
             local low,market=ValidAsk(item.itemID)
-            local protected=Protect(item.name,item.itemID)
+            local protected=Protect(item.name,item.itemID) or
+                item.classID==12 -- Native quest item class always wins
             local vendor=item.vendor
             local vendorTotal=vendor and vendor*item.count or nil
             local marketTotal=low and low*item.count or nil
@@ -173,6 +201,12 @@ local function BagItems(search)
                 (denum and denum>low*1.15 and "DE candidate" or
                 (vendor and vendor>low*1.15 and "Vendor candidate" or
                 "Auction candidate")))
+            if intelligence then all[#all+1]=item end
+        end
+        if matches then
+            local vendorTotal=item.vendorTotal
+            local marketTotal=item.marketTotal
+            local protected=item.protected
             counters.stacks=counters.stacks+1
             counters.units=counters.units+item.count
             counters.vendorValue=counters.vendorValue+(vendorTotal or 0)
@@ -184,7 +218,30 @@ local function BagItems(search)
             results[#results+1]=item
         end
     end
+    if intelligence and type(ChalkBox_IntelAnnotate)=="function" then
+        -- Search filters the DISPLAY, never the shared ingredient budget.
+        -- Analyze the whole bag first, then display only matching rows.
+        pcall(ChalkBox_IntelAnnotate,all,counters)
+    end
+    local priority={["CRAFT"]=1,["AUCTION"]=2,["VENDOR"]=3,
+        ["CHECK DE"]=4,["REVIEW"]=5,["KEEP"]=6,["IGNORE"]=7}
     table.sort(results,function(a,b)
+        if intelligence and a.intel and b.intel then
+            local ap=priority[a.intel.kind] or 6
+            local bp=priority[b.intel.kind] or 6
+            if counters.freeSlots and counters.freeSlots<=4 then
+                -- A recommendation to clear an entire observed item group
+                -- may deserve attention ahead of a small value increase.
+                if a.intel.kind=="AUCTION" and
+                    a.intel.qty>=a.count then ap=0 end
+                if b.intel.kind=="AUCTION" and
+                    b.intel.qty>=b.count then bp=0 end
+            end
+            if ap~=bp then return ap<bp end
+            local aa=a.intel.advantage or 0
+            local ba=b.intel.advantage or 0
+            if aa~=ba then return aa>ba end
+        end
         if a.name:lower()==b.name:lower() then return a.itemID<b.itemID end
         return a.name:lower()<b.name:lower()
     end)
@@ -261,8 +318,15 @@ function ChalkBox_MarketCaptureSales()
     end)
     while #ledger.sales>MAX_RECEIPTS do table.remove(ledger.sales) end
     lastCapture=now
-    if added>0 and type(ChalkBox_AuctionRefreshUI)=="function" then
-        Call(ChalkBox_AuctionRefreshUI)
+    if added>0 then
+        if type(ChalkBox_IntelEnabled)=="function" and
+            ChalkBox_IntelEnabled() and
+            type(ChalkBox_IntelInvalidate)=="function" then
+            ChalkBox_IntelInvalidate()
+        end
+        if type(ChalkBox_AuctionRefreshUI)=="function" then
+            Call(ChalkBox_AuctionRefreshUI)
+        end
     end
     return added,("Captured %d new seller invoices"):format(added)
 end
@@ -317,6 +381,11 @@ frame:SetScript("OnEvent",function(_,event,name)
     elseif event=="MAIL_INBOX_UPDATE" then
         if mailboxActive then ChalkBox_MarketCaptureSales() end
     elseif event=="BAG_UPDATE_DELAYED" then
+        if type(ChalkBox_IntelEnabled)=="function" and
+            ChalkBox_IntelEnabled() and
+            type(ChalkBox_IntelInvalidate)=="function" then
+            ChalkBox_IntelInvalidate()
+        end
         if type(ChalkBox_AuctionRefreshUI)=="function" then
             Call(ChalkBox_AuctionRefreshUI)
         end

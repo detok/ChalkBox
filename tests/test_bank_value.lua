@@ -86,6 +86,12 @@ _G.ChalkBox_AuctionPrice=function(id)
     if id==103 then return {low=9999,stale=true,mixed=false} end
     if id==104 then return {low=5000,stale=false,mixed=true} end
 end
+local intelEnabled,bankObservations=false,{}
+_G.ChalkBox_IntelEnabled=function() return intelEnabled end
+_G.ChalkBox_IntelObserveBankInventory=function(items,meta)
+    bankObservations[#bankObservations+1]={items=items,meta=meta}
+    return true
+end
 local barRefresh=0
 _G.ChalkBox_BarBankValueRefresh=function()
     barRefresh=barRefresh+1
@@ -109,6 +115,8 @@ assert(v.ahCopper==3000 and v.ahPriced==1 and v.ahUnknown==3
     and not v.ahComplete and auctionReads==4,
     "AH comparison is additional and excludes stale, mixed, missing prices")
 assert(accountReads==0,"account/guild bank never read")
+assert(#bankObservations==0,
+    "with Intelligence OFF, existing bank pass must not record a single item")
 local valuePanel
 for _,frame in ipairs(allFrames) do
     if frame.name=="ChalkBoxBankValuePanel" then valuePanel=frame end
@@ -127,11 +135,18 @@ clock=clock+4000
 assert(ChalkBox_BankValueStatus().age=="1h ago",
     "saved snapshot shows last bank visit, not current holdings")
 prices[102]=250
+intelEnabled=true
 bankVisible=true
 listener.scripts.OnEvent(listener,"BANKFRAME_OPENED")
 v=ChalkBox_BankValueStatus()
 assert(v.vendorCopper==1500 and v.vendorUnknown==0 and v.vendorComplete,
     "visiting bank again updates previously unknown vendor cache values")
+local observed=bankObservations[#bankObservations]
+assert(observed and observed.items[101]==3 and
+    observed.items[102]==2 and observed.items[103]==1 and
+    observed.items[104]==4 and observed.items[999]==nil and
+    observed.meta.missingTabs==0 and observed.meta.containers==2,
+    "opt-in observation is drawn only from actual character bank tabs")
 bankVisible=false
 listener.scripts.OnEvent(listener,"BANKFRAME_CLOSED")
 local original=ChalkBoxZoneDB

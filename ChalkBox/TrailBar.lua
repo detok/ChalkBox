@@ -113,7 +113,7 @@ local function GetRates()
     return xpPerHour, eta, net * 3600 / elapsed, elapsed
 end
 
--- The top bar stays monochrome; hover values get meaning, not branding.
+-- Bar icons are recognizable at a glance; tooltip colors convey meaning.
 local function TipRole(key,line)
     if line=="Unavailable" or line=="No quote"
         or line:find("^Unknown") or line:find("unavailable") then
@@ -172,7 +172,11 @@ local function Hint(widget,label,details,key)
         GameTooltip:SetOwner(self,db and db.bar=="bottom" and
             "ANCHOR_TOP" or "ANCHOR_BOTTOM")
         GameTooltip:ClearLines()
-        GameTooltip:AddLine(label,1,0.82,0.35)
+        local tr,tg,tb=1,0.82,0.35
+        if type(ChalkBox_TipColor)=="function" then
+            tr,tg,tb=ChalkBox_TipColor("title")
+        end
+        GameTooltip:AddLine(label,tr,tg,tb)
         for _,line in ipairs(details()) do
             local role=TipRole(key,line)
             local c=tipFallback[role] or tipFallback.text
@@ -180,7 +184,14 @@ local function Hint(widget,label,details,key)
             if type(ChalkBox_TipColor)=="function" then
                 r,g,b=ChalkBox_TipColor(role)
             end
-            GameTooltip:AddLine(line,r,g,b,true)
+            -- Native two-column layout keeps the label quiet and the value
+            -- vivid. Fallback preserves original text on older Forever UI.
+            local name,value=line:match("^([^:]+):%s*(.+)$")
+            if name and type(GameTooltip.AddDoubleLine)=="function" then
+                GameTooltip:AddDoubleLine(name,value,0.69,0.76,0.82,r,g,b)
+            else
+                GameTooltip:AddLine(line,r,g,b,true)
+            end
         end
         GameTooltip:Show()
     end)
@@ -213,6 +224,23 @@ local specs={
     latency={width=86,group="right"},
     gold={width=182,group="right"},
 }
+-- Native Blizzard textures, not new asset dependencies. Every module keeps
+-- its existing width, spacing and notch-safe position.
+local moduleIcons={
+    level="Interface\\Icons\\INV_Misc_Book_07",
+    rate="Interface\\Icons\\Spell_Holy_ArcaneIntellect",
+    bags="Interface\\Icons\\INV_Misc_Bag_08",
+    bagvalue="Interface\\Icons\\INV_Misc_Coin_01",
+    bankvalue="Interface\\Icons\\INV_Misc_Coin_02",
+    repair="Interface\\Icons\\INV_Hammer_09",
+    gear="Interface\\Icons\\INV_Chest_Chain_05",
+    eta="Interface\\Icons\\INV_Misc_PocketWatch_01",
+    rested="Interface\\Icons\\Spell_Nature_Sleep",
+    pet="Interface\\Icons\\Ability_Hunter_BeastCall",
+    time="Interface\\Icons\\INV_Misc_PocketWatch_02",
+    latency="Interface\\Icons\\Spell_Arcane_Blink",
+    gold="Interface\\Icons\\INV_Misc_Coin_01",
+}
 local groups={
     left={"level","rate"},
     center={"time","eta","rested"},
@@ -221,6 +249,7 @@ local groups={
 local dropPriority={"latency","time","pet","eta","rate","rested","gear","bagvalue","bankvalue","bags","repair","gold"}
 local displayed={}
 local lastLayout=""
+local NotchLayout -- native/manual notch geometry, defined with the bar placement
 local editMode=false
 local backgroundOpacity=70
 local previewWidths={} -- preview only; persisted once a resize finishes
@@ -233,6 +262,35 @@ local function ModuleWidth(key)
     local saved=type(ChalkBox_BarLayoutWidthGet)=="function"
         and ChalkBox_BarLayoutWidthGet(key) or nil
     return saved or specs[key].width
+end
+local function IconsShown()
+    return not db or db.barShowIcons~=false
+end
+local function LayoutModuleIcon(widget)
+    if not widget or not widget.text then return end
+    local font=widget.text
+    -- If a client cannot provide the two text anchors, don't paint an icon
+    -- across the existing metric. The text-only presentation still works.
+    local anchored=type(font.ClearAllPoints)=="function"
+        and type(font.SetPoint)=="function"
+    local show=IconsShown() and anchored and widget.icon~=nil
+    if widget.icon then
+        if show then widget.icon:Show() else widget.icon:Hide() end
+    end
+    if anchored then
+        font:ClearAllPoints()
+        font:SetPoint("LEFT",widget,"LEFT",show and 18 or 1,0)
+        font:SetPoint("RIGHT",widget,"RIGHT",-2,0)
+    elseif type(font.SetAllPoints)=="function" then
+        font:SetAllPoints(widget)
+    end
+end
+function ChalkBox_BarIconsGet() return IconsShown() end
+function ChalkBox_BarIconsSet(value)
+    if not db or type(value)~="boolean" then return false end
+    db.barShowIcons=value
+    for _,widget in pairs(widgets) do LayoutModuleIcon(widget) end
+    return true
 end
 local function CursorInBar()
     if type(GetCursorPosition)~="function" or not bar then return nil end
@@ -259,6 +317,9 @@ local function ApplyAppearance()
             r,g,bg,alpha=ChalkBox_ThemeBackground(a/100)
         end
         bar.background:SetColorTexture(r,g,bg,alpha)
+        if bar.backgroundRight and bar.backgroundRight.SetColorTexture then
+            bar.backgroundRight:SetColorTexture(r,g,bg,alpha)
+        end
     end
 end
 function ChalkBox_BarThemeRefresh() ApplyAppearance() end
@@ -375,15 +436,23 @@ local function Reflow()
     end
     local width=bar:GetWidth()
     if not Public(width) or type(width)~="number" or width<=0 then return end
+    local split=type(NotchLayout)=="function" and
+        db and db.bar=="top" and db.barTopInset==nil and
+        NotchLayout(width) or nil
+    -- A manually selected gap supersedes a previous top-inset selection.
+    if db and db.barNotchGap then
+        split=type(NotchLayout)=="function" and db.bar=="top" and
+            NotchLayout(width) or nil
+    end
     local chosen={}
     for key in pairs(specs) do
         chosen[key]=StatEnabled(key) and (key=="level" or
             key=="rate" or key=="eta" or key=="time" or key=="gold" or
             key=="bankvalue" or latest[key]~=nil)
     end
-    local function Measure(group)
+    local function Measure(list)
         local total,count=0,0
-        for _,key in ipairs(groups[group]) do
+        for _,key in ipairs(list) do
             if chosen[key] then
                 total=total+ModuleWidth(key)+(count>0 and 7 or 0)
                 count=count+1
@@ -392,22 +461,86 @@ local function Reflow()
         return total,count
     end
     local function Need()
-        local l,lc=Measure("left")
-        local c,cc=Measure("center")
-        local r,rc=Measure("right")
+        local l,lc=Measure(groups.left)
+        local c,cc=Measure(groups.center)
+        local r,rc=Measure(groups.right)
         return l+c+r+24+(lc>0 and cc>0 and 10 or 0)
             +(rc>0 and (lc>0 or cc>0) and 10 or 0),l,c,r
     end
-    local needed=Need()
-    for _,key in ipairs(dropPriority) do
-        if needed<=width then break end
-        if chosen[key] then chosen[key]=false;needed=Need() end
+    -- A notch divides only the CENTER group. Left/right groups continue to
+    -- use their saved order, widths and text alignment unchanged.
+    -- Find the most balanced center partition that fits both safe lanes.
+    local function ChooseSplit()
+        if not split then return nil end
+        local leftWidth,leftCount=Measure(groups.left)
+        local rightWidth,rightCount=Measure(groups.right)
+        local center={}
+        for _,key in ipairs(groups.center) do
+            if chosen[key] then center[#center+1]=key end
+        end
+        local best,bestScore=nil,nil
+        for pivot=0,#center do
+            local first,second={},{}
+            for i,key in ipairs(center) do
+                local lane=i<=pivot and first or second
+                lane[#lane+1]=key
+            end
+            local lw,lc=Measure(first)
+            local rw,rc=Measure(second)
+            local leftEnd=12+leftWidth+(leftCount>0 and lc>0 and 10 or 0)+lw
+            local rightStart=width-12-rightWidth-
+                (rightCount>0 and rc>0 and 10 or 0)-rw
+            -- With two or more center modules, require one on EACH
+            -- side before accepting the split; otherwise we'd stop
+            -- dropping optional right-side stats too early and leave the
+            -- entire center group stranded on the left.
+            local balanced=#center<2 or (pivot>0 and pivot<#center)
+            if balanced and leftEnd<=split.left and
+                rightStart>=split.right then
+                local leftRoom=math.max(1,split.left-12)
+                local rightRoom=math.max(1,width-split.right-12)
+                local balance=math.abs((leftEnd/leftRoom)-
+                    ((width-rightStart)/rightRoom))
+                local score=math.abs(pivot-#center/2)*2+balance
+                if not bestScore or score<bestScore then
+                    bestScore=score
+                    best={first=first,second=second,
+                        leftStart=12+leftWidth+
+                            (leftCount>0 and lc>0 and 10 or 0),
+                        rightStart=rightStart}
+                end
+            end
+        end
+        return best
     end
-    -- At very low resolutions keep level first rather than overlap elements.
-    if needed>width then
+    local chosenSplit=ChooseSplit()
+    local needed=Need()
+    -- In split mode prioritize the center widgets over lower-priority
+    -- right-edge metrics. Otherwise the original drop order could discard
+    -- every center widget before leaving room beside the camera notch.
+    local splitDropPriority={"latency","pet","bagvalue","repair",
+        "bankvalue","gear","bags","rate","gold","time","rested","eta"}
+    for _,key in ipairs(split and splitDropPriority or dropPriority) do
+        if (split and chosenSplit) or (not split and needed<=width) then
+            break
+        end
+        if chosen[key] then
+            chosen[key]=false
+            needed=Need()
+            chosenSplit=ChooseSplit()
+        end
+    end
+    if split and not chosenSplit then
+        -- Only the level indicator is indispensable. If even that cannot
+        -- occupy its lane, do not draw anything over the camera cutout.
+        for key in pairs(chosen) do chosen[key]=key=="level" end
+        chosenSplit=ChooseSplit()
+        if not chosenSplit then chosen.level=false end
+    elseif not split and needed>width then
         for key in pairs(chosen) do chosen[key]=(key=="level") end
     end
-    local signature=math.floor(width+0.5)..":"
+    local signature=math.floor(width+0.5)..":"..
+        (split and ("split:"..split.left..":"..split.right) or "normal")..":"
     for _,group in ipairs({"left","center","right"}) do
         for _,key in ipairs(groups[group]) do
             if chosen[key] then
@@ -425,10 +558,9 @@ local function Reflow()
             displayed[key]=true
         else widget:Hide() end
     end
-    local _,leftWidth,centerWidth,rightWidth=Need()
-    local function Arrange(group,start)
+    local function Arrange(list,group,start)
         local x=start
-        for _,key in ipairs(groups[group]) do
+        for _,key in ipairs(list) do
             if chosen[key] then
                 local widget=widgets[key]
                 local justification=groups.align and groups.align[key] or group
@@ -439,7 +571,8 @@ local function Reflow()
                 if group=="left" then
                     widget:SetPoint("LEFT",bar,"LEFT",x,0)
                 elseif group=="center" then
-                    widget:SetPoint("CENTER",bar,"LEFT",x+ModuleWidth(key)/2,0)
+                    widget:SetPoint("CENTER",bar,"LEFT",
+                        x+ModuleWidth(key)/2,0)
                 else
                     widget:SetPoint("RIGHT",bar,"RIGHT",
                         x+ModuleWidth(key)-width,0)
@@ -448,13 +581,49 @@ local function Reflow()
             end
         end
     end
-    Arrange("left",12)
-    local rightStart=width-12-rightWidth
-    local centerStart=math.max(12+leftWidth+(leftWidth>0 and 10 or 0),
-        math.min((width-centerWidth)/2,
-            rightStart-centerWidth-(rightWidth>0 and 10 or 0)))
-    Arrange("center",centerStart)
-    Arrange("right",rightStart)
+    if split then
+        local leftWidth=Measure(groups.left)
+        local rightWidth=Measure(groups.right)
+        Arrange(groups.left,"left",12)
+        if chosenSplit then
+            Arrange(chosenSplit.first,"center",chosenSplit.leftStart)
+            Arrange(chosenSplit.second,"center",chosenSplit.rightStart)
+        end
+        Arrange(groups.right,"right",width-12-rightWidth)
+        -- The bar remains in one Blizzard-owned frame, but only its two
+        -- visible backgrounds cover usable pixels. No added game frames or
+        -- invisible notch hit-targets.
+        if bar.background and bar.backgroundRight and
+            bar.background.ClearAllPoints and
+            bar.backgroundRight.ClearAllPoints then
+            bar.background:ClearAllPoints()
+            bar.background:SetPoint("TOPLEFT",bar,"TOPLEFT",0,0)
+            bar.background:SetPoint("BOTTOMRIGHT",bar,"BOTTOMLEFT",
+                split.left,0)
+            bar.backgroundRight:ClearAllPoints()
+            bar.backgroundRight:SetPoint("TOPLEFT",bar,"TOPLEFT",
+                split.right,0)
+            bar.backgroundRight:SetPoint("BOTTOMRIGHT",bar,"BOTTOMRIGHT",
+                0,0)
+            bar.backgroundRight:Show()
+        end
+    else
+        local _,leftWidth,centerWidth,rightWidth=Need()
+        Arrange(groups.left,"left",12)
+        local rightStart=width-12-rightWidth
+        local centerStart=math.max(12+leftWidth+(leftWidth>0 and 10 or 0),
+            math.min((width-centerWidth)/2,
+                rightStart-centerWidth-(rightWidth>0 and 10 or 0)))
+        Arrange(groups.center,"center",centerStart)
+        Arrange(groups.right,"right",rightStart)
+        if bar.background and bar.backgroundRight then
+            if bar.background.ClearAllPoints then
+                bar.background:ClearAllPoints()
+                bar.background:SetAllPoints(bar)
+            end
+            bar.backgroundRight:Hide()
+        end
+    end
 end
 -- Cosmetic widths are per-character and never resize protected game UI.
 function ChalkBox_BarWidthGet(key)
@@ -603,6 +772,19 @@ function ChalkBox_BarContextItems(key)
             current and "selected" or "normal")
     end
     AddMenuEntry(result,"Position",nil,positions,"group")
+    AddMenuEntry(result,IconsShown() and "Hide module icons" or
+        "Show module icons",function()
+        ChalkBox_BarIconsSet(not IconsShown())
+    end,nil,"group")
+    local notch=ChalkBox_BarTopInsetStatus()
+    AddMenuEntry(result,"Top safe area ("..
+        (notch.mode=="auto" and "Auto" or
+            notch.mode=="split" and "Split" or
+            tostring(notch.inset).."px")..")",function()
+        if type(ChalkBox_OpenSettings)=="function" then
+            ChalkBox_OpenSettings("barsafe")
+        end
+    end,nil,"group")
     AddMenuEntry(result,editMode and "Done editing" or "Edit layout",
         function() ChalkBox_BarCommand(editMode and "edit off" or "edit on") end,
         nil,editMode and "enabled" or "normal")
@@ -698,12 +880,22 @@ local function CreateBar()
     local background=bar:CreateTexture(nil,"BACKGROUND")
     background:SetAllPoints(bar)
     bar.background=background
+    local backgroundRight=bar:CreateTexture(nil,"BACKGROUND")
+    backgroundRight:SetAllPoints(bar)
+    bar.backgroundRight=backgroundRight
+    backgroundRight:Hide()
     ApplyAppearance()
     local progress=bar:CreateTexture(nil,"ARTWORK")
     progress:SetPoint("BOTTOMLEFT",bar,"BOTTOMLEFT",0,0)
     progress:SetHeight(1)
     progress:SetColorTexture(0.19,0.64,0.93,0.85)
     bar.xpProgress=progress
+    local progressRight=bar:CreateTexture(nil,"ARTWORK")
+    progressRight:SetPoint("BOTTOMLEFT",bar,"BOTTOMLEFT",0,0)
+    progressRight:SetHeight(1)
+    progressRight:SetColorTexture(0.19,0.64,0.93,0.85)
+    progressRight:Hide()
+    bar.xpProgressRight=progressRight
     -- Hover details are a quick readout, not a help article.
     -- Keep each metric to one or two useful values; guidance belongs in settings.
     local blocks={
@@ -826,6 +1018,21 @@ local function CreateBar()
             (specs[key].group=="center" and "CENTER" or "LEFT"))
         widget.text=font
         widgets[key]=widget
+        local icon=widget:CreateTexture(nil,"ARTWORK")
+        if type(icon.SetTexture)=="function" then
+            icon:SetTexture(moduleIcons[key] or
+                "Interface\\Icons\\INV_Misc_QuestionMark")
+        end
+        if type(icon.SetWidth)=="function" then icon:SetWidth(13) end
+        if type(icon.SetHeight)=="function" then icon:SetHeight(13) end
+        if type(icon.SetPoint)=="function" then
+            icon:SetPoint("LEFT",widget,"LEFT",2,0)
+        end
+        if type(icon.SetTexCoord)=="function" then
+            icon:SetTexCoord(0.07,0.93,0.07,0.93)
+        end
+        widget.icon=icon
+        LayoutModuleIcon(widget)
         local grab=widget:CreateTexture(nil,"BACKGROUND")
         grab:SetAllPoints(widget)
         grab:SetColorTexture(0.45,0.32,0.12,0)
@@ -983,10 +1190,203 @@ end
 -- Never reanchor, resize, or reset UIParent, Blizzard action buttons,
 -- or another addon's frames. Those mutations can taint protected actions.
 local reservation={active=false,pending=false,position=nil,issue=nil}
+-- Auto-read Blizzard's notched-display safe region, when Forever exposes
+-- it. We deliberately do not move UIParent or alter the macOS game display.
+-- Manual override is available for clients without these APIs.
+local TOP_INSET_MAX=120
+local function ValidInset(value)
+    return Public(value) and type(value)=="number" and
+        value==value and value>=0 and value<=TOP_INSET_MAX
+        and value~=math.huge
+end
+local function SafeRegion(fn)
+    if type(fn)~="function" then return nil end
+    local ok,left,right,top,bottom=pcall(fn)
+    if not ok or not Public(left) or not Public(right) or
+        not Public(top) or not Public(bottom) or
+        type(left)~="number" or type(right)~="number" or
+        type(top)~="number" or type(bottom)~="number" or
+        left~=left or right~=right or top~=top or bottom~=bottom or
+        right<=left or top<=bottom then return nil end
+    return {left=left,right=right,top=top,bottom=bottom}
+end
+NotchLayout=function(width)
+    if not db or not Public(width) or type(width)~="number"
+        or width<160 then return nil end
+    -- Use the owner's live-tested MacBook geometry only when the active
+    -- display reports a real notch. Keep manual saved choices authoritative.
+    -- Never apply these values on a normal/external display.
+    local manual=db.barNotchGap
+    local calibrated=false
+    if manual==nil and db.barTopInset==nil then
+        local api=type(C_UI)=="table" and C_UI or nil
+        if api and type(api.DoesAnyDisplayHaveNotch)=="function" then
+            local ok,has=pcall(api.DoesAnyDisplayHaveNotch)
+            if ok and Public(has) and has==true then
+                local l=SafeRegion(api.GetTopLeftNotchSafeRegion)
+                local r=SafeRegion(api.GetTopRightNotchSafeRegion)
+                if l and r and r.left>l.right then
+                    local height=math.min(l.top-l.bottom,r.top-r.bottom)
+                    local span=r.right-l.left
+                    local notchWidth=r.left-l.right
+                    if height>0 and height<=TOP_INSET_MAX and span>0
+                        and notchWidth/span>=0.02
+                        and notchWidth/span<=0.45 then
+                        manual=152
+                        calibrated=true
+                    end
+                end
+            end
+        end
+    end
+    if type(manual)=="number" and Public(manual) and manual==manual
+        and manual>=40 and manual<=400 and manual<width*0.50 then
+        local mid=width/2
+        local left=math.floor(mid-manual/2-8)
+        local right=math.ceil(mid+manual/2+8)
+        if left>24 and right<width-24 then
+            return {left=left,right=right,source=calibrated and
+                "Mac notch calibrated default" or "manual split"}
+        end
+    end
+    if manual~=nil or db.barTopInset~=nil then return nil end
+    local api=type(C_UI)=="table" and C_UI or nil
+    if not api then return nil end
+    -- ShouldUIParentAvoidNotch() means BLIZZARD HAS MOVED UIParent DOWN:
+    -- it is precisely when our split needs to reach WorldFrame's top.
+    -- Never suppress valid notch geometry because that returns true.
+    if type(api.DoesAnyDisplayHaveNotch)=="function" then
+        local ok,has=pcall(api.DoesAnyDisplayHaveNotch)
+        if ok and Public(has) and has==false then return nil end
+    end
+    local left=SafeRegion(api.GetTopLeftNotchSafeRegion)
+    local right=SafeRegion(api.GetTopRightNotchSafeRegion)
+    if not left or not right or right.left<=left.right then return nil end
+    local span=right.right-left.left
+    local notchWidth=right.left-left.right
+    local height=math.min(left.top-left.bottom,
+        right.top-right.bottom)
+    if span<=0 or notchWidth/span<0.02 or notchWidth/span>0.45
+        or height<=0 or height>TOP_INSET_MAX then return nil end
+    local x1=(left.right-left.left)/span*width
+    local x2=(right.left-left.left)/span*width
+    if x1<width*0.15 or x2>width*0.85 then return nil end
+    -- An 8 UI-pixel guard on each side keeps grips and glyphs clear.
+    local a=math.floor(x1-8)
+    local b=math.ceil(x2+8)
+    if a<=24 or b>=width-24 then return nil end
+    return {left=a,right=b,source="native notch split"}
+end
+local function NativeTopInset()
+    local api=type(C_UI)=="table" and C_UI or nil
+    if not api then return 0,"no notch API" end
+    if type(api.ShouldUIParentAvoidNotch)=="function" then
+        local ok,already=pcall(api.ShouldUIParentAvoidNotch)
+        if ok and Public(already) and already==true then
+            return 0,"Blizzard already avoids notch"
+        end
+    end
+    if type(api.DoesAnyDisplayHaveNotch)=="function" then
+        local ok,present=pcall(api.DoesAnyDisplayHaveNotch)
+        if ok and Public(present) and present==false then
+            return 0,"no notched display"
+        end
+    end
+    local depth=0
+    for _,fn in ipairs({"GetTopLeftNotchSafeRegion",
+        "GetTopRightNotchSafeRegion"}) do
+        if type(api[fn])=="function" then
+            local ok,left,right,top,bottom=pcall(api[fn])
+            if ok and Public(left) and Public(right) and
+                Public(top) and Public(bottom) and
+                type(left)=="number" and type(right)=="number" and
+                type(top)=="number" and type(bottom)=="number" and
+                right>left then
+                local height=top-bottom
+                if ValidInset(height) and height>0 then
+                    depth=math.max(depth,height)
+                end
+            end
+        end
+    end
+    -- The region describes the band left/right of the camera cutout.
+    -- Add a tiny cushion so text and interactive grips sit below it.
+    if depth>0 then
+        return math.min(TOP_INSET_MAX,math.ceil(depth+4)),
+            "native notch safe region"
+    end
+    return 0,"notch region unavailable"
+end
+function ChalkBox_BarTopInsetStatus()
+    local choice=db and db.barTopInset or nil
+    if not ValidInset(choice) then choice=nil end
+    local width=bar and bar.GetWidth and bar:GetWidth()
+        or (UIParent and UIParent.GetWidth and UIParent:GetWidth()) or 0
+    local split=type(NotchLayout)=="function" and NotchLayout(width)
+    local inset,source,mode
+    if split then
+        inset,source=0,split.source
+        mode=db and db.barNotchGap and "split" or "auto"
+    elseif choice~=nil then
+        inset,source,mode=choice,"manual top inset","manual"
+    elseif db and db.barNotchGap~=nil then
+        -- A very narrow window cannot fit the requested manual camera
+        -- gap. Keep all remaining widgets visible below the camera
+        -- instead of incorrectly drawing over the cutout.
+        local native=NativeTopInset()
+        inset,source,mode=math.max(32,native),
+            "manual split too wide for display; lowered","split"
+    else
+        inset,source=NativeTopInset()
+        mode="auto"
+    end
+    return {mode=mode,inset=choice,effective=inset,source=source,
+        manualGap=db and db.barNotchGap or nil,
+        rise=db and db.barNotchRise or nil,
+        split=split~=nil,gapStart=split and split.left,
+        gapEnd=split and split.right,pending=reservation.pending,
+        anchor=reservation.position or "UIParent"}
+end
 -- Top chrome spacing is managed independently by ScreenLayout.lua.
 -- This Bar stays full-width, and never changes Blizzard's UIParent anchors.
 local function InCombat()
     return type(InCombatLockdown)=="function" and InCombatLockdown()
+end
+-- WorldFrame covers the actual rendered display, whereas Blizzard may
+-- shift UIParent below the Mac camera housing. Only anchor OUR bar to
+-- WorldFrame; never resize or move either Blizzard-owned frame.
+local function FullscreenReference()
+    local world=WorldFrame
+    if not Public(world) then world=nil end
+    if not world and type(C_UI)=="table" and
+        type(C_UI.GetWorldFrame)=="function" then
+        local ok,frame=pcall(C_UI.GetWorldFrame)
+        if ok and Public(frame) then world=frame end
+    end
+    if world and type(world.GetWidth)=="function" then
+        local ok,width=pcall(world.GetWidth,world)
+        if ok and Public(width) and type(width)=="number" and width>0 then
+            return world
+        end
+    end
+    return nil
+end
+local function NativeLiftFallback()
+    local api=type(C_UI)=="table" and C_UI or nil
+    local depth=0
+    if api then
+        for _,name in ipairs({"GetTopLeftNotchSafeRegion",
+            "GetTopRightNotchSafeRegion"}) do
+            local region=SafeRegion(api[name])
+            if region then
+                local h=region.top-region.bottom
+                if ValidInset(h) then depth=math.max(depth,h) end
+            end
+        end
+    end
+    -- Without WorldFrame metrics, still let a manual split claim the
+    -- usual camera-height band; its position can be tuned by the user.
+    return depth>0 and math.ceil(depth) or 32
 end
 local function PlaceBar()
     if not bar or not db then return end
@@ -998,13 +1398,38 @@ local function PlaceBar()
     reservation.issue=nil
     -- In overlay mode Blizzard owns its root layout at all times.
     -- This remains anchored to the requested edge after UI scale changes.
+    local state=ChalkBox_BarTopInsetStatus()
+    local reference=UIParent
+    local y=-(state.effective or 0)
+    reservation.position="UIParent"
+    if db.bar=="top" and state.split then
+        local manualRise=db.barNotchRise
+        if manualRise==nil and state.source=="Mac notch calibrated default" then
+            manualRise=36
+        end
+        if ValidInset(manualRise) then
+            -- Slider moves UP into the camera-height band (positive Y).
+            y=manualRise
+            reservation.position="manual lift"
+        else
+            local full=FullscreenReference()
+            if full then
+                reference=full
+                y=0
+                reservation.position="WorldFrame"
+            else
+                y=NativeLiftFallback()
+                reservation.position="native notch height"
+            end
+        end
+    end
     bar:ClearAllPoints()
     if db.bar=="bottom" then
         bar:SetPoint("BOTTOMLEFT",UIParent,"BOTTOMLEFT",0,0)
         bar:SetPoint("BOTTOMRIGHT",UIParent,"BOTTOMRIGHT",0,0)
     else
-        bar:SetPoint("TOPLEFT",UIParent,"TOPLEFT",0,0)
-        bar:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",0,0)
+        bar:SetPoint("TOPLEFT",reference,"TOPLEFT",0,y)
+        bar:SetPoint("TOPRIGHT",reference,"TOPRIGHT",0,y)
     end
     if db.bar=="off" then bar:Hide() else bar:Show() end
     -- ScreenLayout moves only safe, native top chrome once out of combat;
@@ -1013,6 +1438,57 @@ local function PlaceBar()
         ChalkBox_ScreenLayoutAdjust()
     end
     lastLayout=""
+    Reflow()
+end
+function ChalkBox_BarNotchGapSet(value)
+    if not db then return false end
+    if value=="auto" then
+        db.barNotchGap=nil
+        db.barNotchRise=nil
+    elseif type(value)=="number" and Public(value) and
+        value==value and value>=40 and value<=400 then
+        db.barNotchGap=math.floor(value+0.5)
+        db.barTopInset=nil
+    else
+        return false
+    end
+    PlaceBar()
+    return true
+end
+function ChalkBox_BarTopInsetSet(value)
+    if not db then return false end
+    if value=="auto" then
+        db.barTopInset=nil
+        db.barNotchGap=nil
+        db.barNotchRise=nil
+    elseif ValidInset(value) then
+        -- Explicit BELOW-notch fallback, retained for older installations.
+        db.barTopInset=math.floor(value+0.5)
+        db.barNotchGap=nil
+        db.barNotchRise=nil
+    else
+        return false
+    end
+    PlaceBar()
+    return true
+end
+function ChalkBox_BarNotchRaiseSet(value)
+    if not db then return false end
+    if value=="auto" then
+        db.barNotchRise=nil
+    elseif ValidInset(value) then
+        db.barNotchRise=math.floor(value+0.5)
+        db.barTopInset=nil
+        -- On Forever builds that lack the safe-rectangle API, a manual
+        -- upward correction must keep a camera gap to avoid obstruction.
+        if not NotchLayout(bar and bar.GetWidth and bar:GetWidth() or 0) then
+            db.barNotchGap=db.barNotchGap or 120
+        end
+    else
+        return false
+    end
+    PlaceBar()
+    return true
 end
 
 Refresh=function()
@@ -1093,11 +1569,37 @@ Refresh=function()
     if session.maxXP and session.maxXP>0 and bar.xpProgress then
         local width=bar:GetWidth()
         if Public(width) and type(width)=="number" then
-            bar.xpProgress:SetWidth(math.max(0.1,width*math.min(
-                1,session.xp/session.maxXP)))
-            bar.xpProgress:Show()
+            local fill=width*math.min(1,session.xp/session.maxXP)
+            local notch=type(NotchLayout)=="function" and
+                db.bar=="top" and NotchLayout(width) or nil
+            if notch then
+                if fill>0 then
+                    bar.xpProgress:SetWidth(math.max(0.1,
+                        math.min(fill,notch.left)))
+                    bar.xpProgress:Show()
+                else bar.xpProgress:Hide() end
+                local remaining=fill-notch.right
+                if bar.xpProgressRight and remaining>0 then
+                    if bar.xpProgressRight.ClearAllPoints then
+                        bar.xpProgressRight:ClearAllPoints()
+                    end
+                    bar.xpProgressRight:SetPoint("BOTTOMLEFT",bar,
+                        "BOTTOMLEFT",notch.right,0)
+                    bar.xpProgressRight:SetWidth(remaining)
+                    bar.xpProgressRight:Show()
+                elseif bar.xpProgressRight then
+                    bar.xpProgressRight:Hide()
+                end
+            else
+                bar.xpProgress:SetWidth(math.max(0.1,fill))
+                bar.xpProgress:Show()
+                if bar.xpProgressRight then bar.xpProgressRight:Hide() end
+            end
         end
-    elseif bar.xpProgress then bar.xpProgress:Hide() end
+    elseif bar.xpProgress then
+        bar.xpProgress:Hide()
+        if bar.xpProgressRight then bar.xpProgressRight:Hide() end
+    end
 end
 
 -- The bank reader triggers this after a user actually opens a banker.
@@ -1133,6 +1635,10 @@ function ChalkBox_BarCommand(message)
     if alpha then
         ChalkBox_BarAppearanceSet(tonumber(alpha))
         Note("TrailBar charcoal background opacity: "..ChalkBox_BarAppearanceGet().."%.")
+    elseif action=="icons on" or action=="icons off" then
+        local on=action=="icons on"
+        ChalkBox_BarIconsSet(on)
+        Note("Bar module icons: "..(on and "ON." or "OFF."))
     elseif action=="edit" or action=="edit toggle" or action=="edit on"
         or action=="edit off" then
         local on=action=="edit on" or
@@ -1256,6 +1762,40 @@ function ChalkBox_BarCommand(message)
         PlaceBar()
         Note("Safe top UI adjustment: " ..
             ((db.barShiftChrome~=false) and "ON." or "OFF."))
+    elseif action=="safe" or action=="safe status" then
+        local st=ChalkBox_BarTopInsetStatus()
+        Note("Top safe area: "..st.mode.." / "..
+            (st.split and ("split "..tostring(st.gapStart).."–"..
+                tostring(st.gapEnd)) or
+                tostring(st.effective).." UI px").." ("..st.source..
+                "; anchor "..st.anchor.."; lift "..
+                tostring(st.rise or "auto")..").")
+    elseif action=="safe auto" then
+        ChalkBox_BarTopInsetSet("auto")
+        local st=ChalkBox_BarTopInsetStatus()
+        Note("Top safe area: automatic "..(st.split and
+            "split around notch" or st.effective.." UI px inset")..".")
+    elseif action:match("^safe up %d+$") then
+        local rise=tonumber(action:match("^safe up (%d+)$"))
+        if ChalkBox_BarNotchRaiseSet(rise) then
+            Note("Notch bar raised "..rise.." UI px above the game UI edge.")
+        else
+            Note("Upward notch position must be 0–120 UI px.")
+        end
+    elseif action:match("^safe split %d+$") then
+        local gap=tonumber(action:match("^safe split (%d+)$"))
+        if ChalkBox_BarNotchGapSet(gap) then
+            Note("Manual notch gap: "..gap.." UI px (split at top).")
+        else
+            Note("Manual notch gap must be 40–400 UI px.")
+        end
+    elseif action:match("^safe %d+$") then
+        local inset=tonumber(action:match("^safe (%d+)$"))
+        if ChalkBox_BarTopInsetSet(inset) then
+            Note("Top safe area: "..inset.." UI px (manual).")
+        else
+            Note("Top safe area must be 0–120 UI px.")
+        end
     elseif action == "top" or action == "bottom" or action == "off" then
         db.bar = action
         PlaceBar()
@@ -1269,6 +1809,7 @@ function ChalkBox_BarCommand(message)
         local chrome=type(ChalkBox_ScreenLayoutStatus)=="function"
             and ChalkBox_ScreenLayoutStatus() or {}
         Note("Bar=" .. db.bar .. ", layout=full-width / safe chrome shift" ..
+            ", top inset=" .. tostring(ChalkBox_BarTopInsetStatus().effective) ..
             ", shifted=" .. tostring(chrome.moved or 0) ..
             ", protected=" .. tostring(chrome.skippedProtected or 0) ..
             ", pending=" .. tostring(reservation.pending or chrome.pending) ..
@@ -1278,6 +1819,8 @@ function ChalkBox_BarCommand(message)
         Note("The Bar: /chalk bar top|bottom|off | reserve on/off | reset | status")
         Note("Stats: /chalk bar stat <module> on/off | stats all|balanced|minimal")
         Note("Layout: /chalk bar edit on/off | drag right-edge gold grips | layout reset")
+        Note("Mac notch: /chalk bar safe auto | safe split 40-400 | safe up 0-120 | safe 0-120 (below)")
+        Note("Icons: /chalk bar icons on|off.")
         Note("Widths: /chalk bar width <module> 60-280 | width <module> reset | move <module> <left|center|right>")
         Note("Text alignment: /chalk bar align <module> <left|center|right> | opacity 0-100")
         Note("Vendor value: /chalk bar stat bagvalue on | bagvalue junk|total|toggle")
@@ -1316,6 +1859,7 @@ for _,event in ipairs({
 events:RegisterEvent("PLAYER_REGEN_ENABLED")
 events:RegisterEvent("UI_SCALE_CHANGED")
 events:RegisterEvent("DISPLAY_SIZE_CHANGED")
+events:RegisterEvent("NOTCHED_DISPLAY_MODE_CHANGED")
 events:SetScript("OnEvent", function(_, event, name)
     if event == "ADDON_LOADED" then
         if name ~= addonName then return end
@@ -1326,6 +1870,14 @@ events:SetScript("OnEvent", function(_, event, name)
         -- A saved legacy reservation is not safe: never re-enable it.
         -- Keep the Bar itself; leave Blizzard-owned UIParent unmodified.
         db.barReserve=false
+        -- Previous beta's slider moved DOWN by mistake. Clear that one
+        -- obsolete offset once so the corrected world-edge split is not
+        -- silently held below the notch by a stale SavedVariable.
+        if db.barNotchPositionV2~=true then
+            db.barTopInset=nil
+            db.barNotchRise=nil
+            db.barNotchPositionV2=true
+        end
         -- Older characters had a default of Total. Keep it if their Bar
         -- preferences already exist; only genuinely new Bars start on Junk.
         local freshBar=type(db.barStats)~="table"
@@ -1339,6 +1891,14 @@ events:SetScript("OnEvent", function(_, event, name)
         CreateBar()
         PlaceBar()
         Refresh()
+        -- Character switches can finish restoring Blizzard's notch/UIParent
+        -- geometry AFTER PLAYER_ENTERING_WORLD. A slider click fixes it
+        -- because it calls PlaceBar again; repeat that same safe reanchor
+        -- once the display layout settles, without changing any preferences.
+        if C_Timer and type(C_Timer.After)=="function" then
+            C_Timer.After(0.25,function() if bar then PlaceBar() end end)
+            C_Timer.After(1.5,function() if bar then PlaceBar() end end)
+        end
         if not ticker and C_Timer and C_Timer.NewTicker then
             ticker = C_Timer.NewTicker(5, Refresh)
         end
@@ -1350,7 +1910,8 @@ events:SetScript("OnEvent", function(_, event, name)
         return
     elseif event=="UNIT_PET" and name~="player" then
         return
-    elseif event=="UI_SCALE_CHANGED" or event=="DISPLAY_SIZE_CHANGED" then
+    elseif event=="UI_SCALE_CHANGED" or event=="DISPLAY_SIZE_CHANGED"
+        or event=="NOTCHED_DISPLAY_MODE_CHANGED" then
         if bar then PlaceBar() end
     elseif event=="BAG_UPDATE_DELAYED" or event=="GET_ITEM_INFO_RECEIVED"
         or event=="ITEM_DATA_LOAD_RESULT" then

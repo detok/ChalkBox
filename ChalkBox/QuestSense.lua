@@ -10,6 +10,9 @@ local lastStats={accepted=0,candidates=0,watched=0,auto=0,added=0,removed=0,mode
 local recentlyAccepted={}
 local seenManual,seenManualZone={},nil
 local hooksInstalled=false
+local displayRank={}
+local displayGroup={}
+local displayGeneration=0
 -- The compass delegates native watch writes to QuestSense.
 local navFocusID
 local function Public(value)
@@ -63,6 +66,57 @@ local function CurrentZone()
     if type(zoneText)=="string" then normalized[string.lower(zoneText)]=true end
     return best,zoneName,normalized
 end
+-- A normal solo tracker should not advertise dungeon/elite work as if it
+-- were ordinary outdoor questing. Trust Blizzard's metadata where provided;
+-- do not guess from item names or quest titles.
+local function GroupReady()
+    local group=Call(IsInGroup)
+    if group==true then return true end
+    local raid=Call(IsInRaid)
+    if raid==true then return true end
+    local members=Call(GetNumGroupMembers)
+    if type(members)=="number" and members>1 then return true end
+    -- In a genuine party instance, some Forever builds do not expose
+    -- normal group counters until after zone load.
+    if type(IsInInstance)=="function" then
+        local ok,inside,kind=pcall(IsInInstance)
+        if ok and inside==true and kind=="party" then return true end
+    end
+    return false
+end
+local function GroupQuest(info,header)
+    if type(info)~="table" then return false end
+    if info.isElite==true or info.isDungeon==true or info.isRaid==true or
+        (type(info.suggestedGroup)=="number" and info.suggestedGroup>1) then
+        return true
+    end
+    local tag=Call(C_QuestLog and C_QuestLog.GetQuestTagInfo,info.questID)
+    if type(tag)=="table" then
+        if tag.isElite==true or tag.isDungeon==true or tag.isRaid==true then
+            return true
+        end
+        local label=type(tag.tagName)=="string" and
+            tag.tagName:lower() or ""
+        if label:find("dungeon",1,true) or
+            label:find("elite",1,true) or
+            label:find("raid",1,true) then return true end
+        local id=tag.tagID
+        local tags=Enum and Enum.QuestTag
+        if type(tags)=="table" and type(id)=="number" and
+            (id==tags.Dungeon or id==tags.Raid or
+             id==tags.Elite or id==tags.Raid10 or id==tags.Raid25) then
+            return true
+        end
+    end
+    if type(header)=="string" then
+        local heading=header:lower()
+        if heading=="dungeon" or heading=="dungeons" or
+            heading=="elite" or heading=="raids" or heading=="raid" then
+            return true
+        end
+    end
+    return false
+end
 local function ReadLog()
     local num=Call(C_QuestLog.GetNumQuestLogEntries)
     if type(num)~="number" or num<0 then return nil,"quest log isn't ready" end
@@ -81,6 +135,9 @@ local function ReadLog()
                         ("Quest #"..info.questID),
                     header=header,localPOI=info.hasLocalPOI==true,
                     onMap=info.isOnMap==true,index=i,
+                    level=Public(info.level) and type(info.level)=="number"
+                        and info.level or nil,
+                    groupQuest=GroupQuest(info,header),
                 }
             end
         end
@@ -107,19 +164,55 @@ local function MaxWatches()
         and Constants.QuestWatchConsts.MAX_QUEST_WATCHES
     return type(n)=="number" and n>0 and n or 25
 end
+-- Forever's own quest-helper distance points toward the current quest
+-- objective/turn-in. No third-party quest database and no guessed spawn.
+local function NativeDistance(id)
+    local fn=C_QuestLog and C_QuestLog.GetDistanceSqToQuest
+    if type(fn)~="function" then return nil end
+    local ok,distance,onContinent=pcall(fn,id)
+    if ok and Public(distance) and type(distance)=="number"
+        and distance>=0 and distance<1e14
+        and Public(onContinent) and onContinent==true then
+        return distance
+    end
+end
+local function QuestComplete(id)
+    local fn=C_QuestLog and C_QuestLog.IsComplete
+    local value=Call(fn,id)
+    return value==true
+end
+-- Compare only actual client-provided squared distances. The tracker
+-- must not rank a 90-yard quest ahead of a 20-yard quest in the same bucket.
+local function DistanceRank(value)
+    return value
+end
 local function Relevant(quests,zoneID,zoneNames)
     local onMap,hasMapData={},false
-    if ValidID(zoneID) and C_QuestLog and
-        type(C_QuestLog.GetQuestsOnMap)=="function" then
-        local list=Call(C_QuestLog.GetQuestsOnMap,zoneID)
-        if type(list)=="table" then
-            hasMapData=true
-            for _,q in ipairs(list) do
-                if type(q)=="table" and ValidID(q.questID) then
-                    onMap[q.questID]=true
+    -- Check the actual player subzone and its zone ancestors, stopping
+    -- before the continent. Forever can attach quest POIs to micro maps
+    -- that never appear in the top-level zone query.
+    local map=Call(C_Map and C_Map.GetBestMapForUnit,"player")
+    if not ValidID(map) then map=zoneID end
+    local seen={}
+    for _=1,10 do
+        if not ValidID(map) or seen[map] then break end
+        seen[map]=true
+        if C_QuestLog and type(C_QuestLog.GetQuestsOnMap)=="function" then
+            local list=Call(C_QuestLog.GetQuestsOnMap,map)
+            if type(list)=="table" then
+                hasMapData=true
+                for _,q in ipairs(list) do
+                    if type(q)=="table" and ValidID(q.questID) then
+                        onMap[q.questID]=true
+                    end
                 end
             end
         end
+        if map==zoneID then break end
+        local info=Call(C_Map and C_Map.GetMapInfo,map)
+        if type(info)~="table" or info.mapType==2 or
+            not ValidID(info.parentMapID) then break end
+        map=info.parentMapID
     end
     local marked,nearby={},{}
     local headerMatch=false
@@ -130,14 +223,36 @@ local function Relevant(quests,zoneID,zoneNames)
         if onMap[quest.id] then score=score+400 end
         if inZone then score=score+350;headerMatch=true end
         if inZone or onMap[quest.id] then nearby[quest.id]=true end
-        -- A local POI flag does not identify the current zone, and a newly
-        -- accepted quest may be far away. Neither bypasses Nearby-only.
+        -- A local POI flag doesn't identify the zone, but actual client
+        -- coordinates for THIS zone are valid local evidence.
+        local waypoint=C_QuestLog and C_QuestLog.GetNextWaypointForMap
+        if not nearby[quest.id] and ValidID(zoneID) and
+            type(waypoint)=="function" then
+            local ok,x,y=pcall(waypoint,quest.id,zoneID)
+            if ok and Public(x) and Public(y) and
+                type(x)=="number" and type(y)=="number" and
+                x>=0 and x<=1 and y>=0 and y<=1 then
+                nearby[quest.id]=true
+                score=score+375
+                hasMapData=true
+            end
+        end
+        -- Optional short-distance catchment. Never cross continents:
+        -- distance is the native quest helper's current objective/turn-in.
+        local radius=settings and settings.nearbyRange or 0
+        if not nearby[quest.id] and type(radius)=="number" and
+            radius>0 then
+            local d=NativeDistance(quest.id)
+            if d and d<=radius*radius then
+                nearby[quest.id]=true
+                score=score+300
+                hasMapData=true
+            end
+        end
         if quest.localPOI or quest.onMap then score=score+80 end
-        if recentlyAccepted[quest.id] then score=score+600 end
+        if recentlyAccepted[quest.id] then score=score+40 end
         marked[quest.id]=score
     end
-    -- No zone map and no matching quest header means the client hasn't
-    -- supplied enough evidence to safely change existing watches.
     return marked,nearby,hasMapData or headerMatch
 end
 -- Only the explicit Smart mode changes behavior in actual party dungeons.
@@ -226,6 +341,7 @@ local function Reconcile()
     if not settings.enabled and not settings.cleanup
         and next(settings.suspendedManual)==nil and not navFocusID then return end
     local mode=settings.mode or "smart"
+    local soloFilter=settings.enabled and mode~="all" and not GroupReady()
     local dungeon=settings.enabled and mode=="smart" and CurrentDungeon() or nil
     local allowed,why=CanEdit(dungeon~=nil)
     if not allowed then pending=true;lastReason=why;return end
@@ -279,6 +395,12 @@ local function Reconcile()
             end
         end
     end
+    local excluded={}
+    if soloFilter then
+        for _,quest in ipairs(quests) do
+            if quest.groupQuest then excluded[quest.id]=true end
+        end
+    end
     local scores,nearby,zoneReady=Relevant(quests,zoneID,names)
     local dungeonQuests=dungeon and DungeonMatches(quests,dungeon) or nil
     local dungeonCount=Count(dungeonQuests)
@@ -329,32 +451,81 @@ local function Reconcile()
         end
     end
     local prioritized={}
+    local sortMode=(mode=="all") and "log" or
+        (settings.smartSort or "nearest")
     for _,quest in ipairs(quests) do
         local score=mode=="all" and 0 or (scores[quest.id] or 0)
-        if not focusOnly or localQuests[quest.id] then
-            prioritized[#prioritized+1]={id=quest.id,title=quest.title,score=score,
-                logIndex=quest.index}
+        if (not focusOnly or localQuests[quest.id]) and
+            not excluded[quest.id] then
+            local d=NativeDistance(quest.id)
+            local nearbyQuest=localQuests[quest.id]==true
+            prioritized[#prioritized+1]={
+                id=quest.id,title=quest.title,score=score,
+                logIndex=quest.index,header=quest.header or "Other",
+                level=quest.level,complete=QuestComplete(quest.id),
+                distance=d,bucket=DistanceRank(d),
+                inArea=nearbyQuest,
+                recent=recentlyAccepted[quest.id]==true,
+            }
         end
     end
-    table.sort(prioritized,function(a,b)
-        if a.score~=b.score then return a.score>b.score end
+    -- Smart: local evidence before remote, then closest verified objective.
+    -- Nearby has already removed nonlocal quests. All remains log-order
+    -- compatible unless the player explicitly chooses another sort.
+    local function Compare(a,b)
+        if mode~="all" and settings.smartCompleteFirst~=false and
+            a.complete~=b.complete then
+            return a.complete
+        end
+        if mode=="smart" and settings.smartNearbyFirst~=false and
+            a.inArea~=b.inArea then return a.inArea end
+        if sortMode=="zone" and a.header~=b.header then
+            if a.inArea~=b.inArea then return a.inArea end
+            return a.header<b.header
+        end
+        if sortMode=="title" and type(a.title)=="string" and
+            type(b.title)=="string" and a.title~=b.title then
+            return a.title:lower()<b.title:lower()
+        end
+        if sortMode=="level" and type(a.level)=="number" and
+            type(b.level)=="number" and a.level~=b.level then
+            return a.level<b.level
+        end
+        if sortMode=="nearest" then
+            if a.bucket~=b.bucket then
+                if not a.bucket then return false end
+                if not b.bucket then return true end
+                return a.bucket<b.bucket
+            end
+        end
+        if sortMode~="log" and sortMode~="level" and
+            a.score~=b.score then return a.score>b.score end
         return a.logIndex<b.logIndex
-    end)
+    end
+    table.sort(prioritized,Compare)
+    displayRank,displayGroup={},{}
+    for position,q in ipairs(prioritized) do
+        displayRank[q.id]=position
+        displayGroup[q.id]=q.header
+    end
+    displayGeneration=displayGeneration+1
 
     -- Nearby is a strict current-zone filter, including previously MANUALLY
     -- watched non-local quests. Suspend those selections rather than losing
     -- them; restore them when relevant again or when Nearby is turned off.
     local toSuspend,restoreManual={},{}
     for id in pairs(settings.suspendedManual) do
-        if not focusOnly or not settings.enabled or localQuests[id] then
+        if not focusOnly and not excluded[id] or not settings.enabled
+            or (localQuests[id] and not excluded[id]) then
             restoreManual[id]=true
         end
     end
     local manualRetained=0
     for id in pairs(watched) do
         if not settings.managed[id] then
-            if settings.enabled and focusOnly and accepted[id]
-                and not localQuests[id] and id~=focusID then
+            if settings.enabled and accepted[id] and
+                ((focusOnly and not localQuests[id]) or excluded[id])
+                and id~=focusID then
                 toSuspend[id]=true
             else
                 manualRetained=manualRetained+1
@@ -478,7 +649,8 @@ local function Reconcile()
         zone=name or "unknown",mode=mode,max=MaxWatches(),
         manual=manualNow,initialWatches=before,
         dungeon=dungeon and dungeon.name or nil,
-        dungeonMatches=dungeon and dungeonCount or nil}
+        dungeonMatches=dungeon and dungeonCount or nil,
+        sort=sortMode,nearest=prioritized[1] and prioritized[1].id or nil}
 end
 QueueUpdate=function()
     if not settings or queued or busy then return end
@@ -527,7 +699,18 @@ function ChalkBox_QuestStatus()
         restored=lastStats.restored or 0,
         api=API(),pending=pending,
         dungeon=lastStats.dungeon,dungeonMatches=lastStats.dungeonMatches,
-        navigationWatch=navFocusID}
+        navigationWatch=navFocusID,
+        sort=settings and settings.smartSort or "nearest",
+        nearbyFirst=settings and settings.smartNearbyFirst~=false,
+        completeFirst=settings and settings.smartCompleteFirst~=false,
+        nativeOrder=false,
+        nearbyRange=settings and settings.nearbyRange or 0,
+        nearest=lastStats.nearest}
+end
+-- Read-only view of Smart's ranked candidates. The built-in tracker can
+-- sort its display without altering Blizzard quest-watch ownership/order.
+function ChalkBox_QuestDisplayOrder()
+    return displayRank,displayGroup,displayGeneration
 end
 function ChalkBox_QuestCommand(text)
     if not settings then return end
@@ -552,6 +735,8 @@ function ChalkBox_QuestCommand(text)
         Note("Accepted "..st.accepted.." | candidates "..st.candidates..
             " | watched "..st.tracked.." | hidden "..st.hidden..
             " | last change +"..st.added.."/-"..st.removed)
+        Note("Smart completed-first "..(st.completeFirst and "ON" or
+            "OFF").." | sort "..st.sort.." | nearest #"..tostring(st.nearest or "-"))
         if st.dungeon then
             Note("Dungeon "..st.dungeon.." | confirmed quests "..
                 tostring(st.dungeonMatches or 0))
@@ -564,6 +749,38 @@ function ChalkBox_QuestCommand(text)
         Note("QuestSense: "..(cmd=="zone" and
             "Nearby only (auto-updates; other watches saved)." or
             (cmd=="all" and "All accepted." or "Smart.")))
+    elseif cmd:match("^sort %a+$") then
+        local sort=cmd:match("^sort (%a+)$")
+        if sort=="nearest" or sort=="zone" or sort=="level" or
+            sort=="title" or sort=="log" then
+            settings.smartSort=sort;QueueUpdate()
+            Note("Smart selection order: "..sort..".")
+        else Note("Choose sort nearest, zone, level, title or log.") end
+    elseif cmd:match("^range %d+$") then
+        local range=tonumber(cmd:match("%d+"))
+        if range==0 or range==500 or range==1000 or range==2000 then
+            settings.nearbyRange=range
+            QueueUpdate()
+            Note("Nearby distance allowance: "..(range==0 and
+                "current zone only" or (range.." yards"))..".")
+        else
+            Note("Choose range 0, 500, 1000 or 2000.")
+        end
+    elseif cmd=="nativeorder on" or cmd=="nativeorder off" then
+        -- Never patch a live Blizzard ObjectiveTracker method: doing so can
+        -- taint secure MapCanvas pin pass-through configuration.
+        settings.nativeOrder=false
+        Note("Native tracker reordering is unavailable: protected UI safety.")
+    elseif cmd=="nearbyfirst on" or cmd=="nearbyfirst off" then
+        settings.smartNearbyFirst=cmd=="nearbyfirst on"
+        QueueUpdate()
+        Note("Smart current-zone priority "..(settings.smartNearbyFirst and
+            "on." or "off."))
+    elseif cmd=="completefirst on" or cmd=="completefirst off" then
+        settings.smartCompleteFirst=cmd=="completefirst on"
+        QueueUpdate()
+        Note("Smart completed-quest priority "..(settings.smartCompleteFirst
+            and "on." or "off."))
     elseif cmd:match("^limit %d+$") then
         local n=tonumber(cmd:match("%d+"))
         if n==5 or n==10 or n==15 or n==20 then
@@ -573,7 +790,7 @@ function ChalkBox_QuestCommand(text)
             Note("Choose limit 5, 10, 15 or 20.")
         end
     else
-        Note("/chalk quests on|off|refresh|status|smart|zone|all|limit 5/10/15/20")
+        Note("/chalk quests on|off|smart|zone|all|sort nearest/zone/level/title/log|nearbyfirst on/off|range 0/500/1000/2000|completefirst on/off|limit 5/10/15/20|refresh|status")
     end
 end
 local events=CreateFrame("Frame")
@@ -582,6 +799,7 @@ for _,event in ipairs({
     "ZONE_CHANGED","ZONE_CHANGED_INDOORS","ZONE_CHANGED_NEW_AREA",
     "QUEST_LOG_UPDATE","QUEST_ACCEPTED","QUEST_REMOVED","QUEST_TURNED_IN",
     "QUEST_WATCH_LIST_CHANGED","PLAYER_REGEN_ENABLED",
+    "GROUP_ROSTER_UPDATE","PARTY_MEMBERS_CHANGED",
 }) do
     pcall(events.RegisterEvent,events,event)
 end
@@ -602,6 +820,25 @@ events:SetScript("OnEvent",function(_,event,arg1,arg2)
         if type(settings.limit)~="number" or settings.limit<5 or settings.limit>20 then
             settings.limit=10
         end
+        if settings.smartSort~="nearest" and settings.smartSort~="zone"
+            and settings.smartSort~="level" and settings.smartSort~="title" and
+            settings.smartSort~="log" then
+            settings.smartSort="nearest"
+        end
+        if settings.smartNearbyFirst==nil then
+            settings.smartNearbyFirst=true
+        end
+        -- A quest that is ready to hand in must not silently disappear from
+        -- Smart just because another objective is closer. Preserve an
+        -- explicit saved opt-out instead of overriding the user's choice.
+        if settings.smartCompleteFirst==nil then
+            settings.smartCompleteFirst=true
+        end
+        settings.nativeOrder=false -- migrate unsafe beta opt-in to safe default
+        if settings.nearbyRange~=0 and settings.nearbyRange~=500 and
+            settings.nearbyRange~=1000 and settings.nearbyRange~=2000 then
+            settings.nearbyRange=0
+        end
         -- Leave old per-character manual watch history alone.
     elseif event=="PLAYER_LOGIN" then
         SetupHooks()
@@ -616,7 +853,9 @@ events:SetScript("OnEvent",function(_,event,arg1,arg2)
                 local watchDungeon=settings and settings.enabled and
                     settings.mode=="smart" and CurrentDungeon()~=nil
                 if pending or (settings and settings.enabled
-                    and (settings.mode=="zone" or watchDungeon)
+                    and (settings.mode=="zone" or watchDungeon or
+                        (settings.mode=="smart" and
+                         settings.smartSort=="nearest"))
                     and ticks%4==0) then
                     QueueUpdate()
                 end

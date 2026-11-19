@@ -1,5 +1,8 @@
 # ChalkBox player handbook
 
+
+**Experimental 2.2.27-intel-beta (draft PR #107, not published):** Inventory Intelligence is disabled by default and offers optional Skill Up / Make Gold advice in the existing AuctionSense UI. See [technical details](AUCTION_INTELLIGENCE.md). The official stable release remains 2.2.26.
+
 **ChalkBox 2.2.26 (release) · World of Warcraft: Forever**
 
 ChalkBox is a set of optional quality-of-life features inside **one addon**. Use Blizzard's **Options → AddOns → ChalkBox** pages or type `/chalk` (also `/cb`). Features that display observations are not proofs of unseen game data; ChalkBox should be conservative when Forever withholds information.
@@ -145,3 +148,6 @@ Start with [Troubleshooting](TROUBLESHOOTING.md), then [Commands](COMMANDS.md) f
 
 
 **2.2.25 GitHub beta:** Adds the bank vendor-value label, per-module Trail Bar widths, standard ranked combat chat, experimental price-history charts and optional map additions. Read the [current release notes](RELEASE_NOTES.md). **2.2.22 remains the last fully accepted stable release.**
+
+
+**Developer beta:** ChalkBox 2.2.27 is a QuestSense Smart experiment; 2.2.26 remains the supported stable release. [Beta notes](https://github.com/detok/ChalkBox/blob/feature/smart-quest-native-priorities/docs/RELEASE_NOTES.md).

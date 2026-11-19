@@ -2,6 +2,7 @@
 local now, playerXP, xpMax, playerLevel, money = 1000, 200, 1000, 25, 150000
 local standalone, moving, combat = false, true, false
 local frames, timers, emotes, notes = {}, {}, {}, {}
+local deferredPositions={}
 -- Model Blizzard-owned UIParent. The addon must never alter its anchors or size.
 _G.UIParent = {points={},width=1024,height=768}
 local function ScreenPoint(point,relative,relativePoint,x,y)
@@ -39,7 +40,9 @@ UIParent.ClearAllPoints=function() error("unsafe UIParent:ClearAllPoints") end
 UIParent.SetPoint=function() error("unsafe UIParent:SetPoint") end
 UIParent.SetAllPoints=function() error("unsafe UIParent:SetAllPoints") end
 UIParent.SetSize=function() error("unsafe UIParent:SetSize") end
-_G.ChalkBoxDB = {barReserve=true}
+_G.ChalkBoxDB = {barReserve=true,barTopInset=120}
+-- Simulate a saved preference from the previous backward-sliding beta.
+-- Upgrading must release that obsolete down-offset automatically.
 _G.ChalkBoxZoneDB = {}
 local cursorX=0
 _G.GetCursorPosition=function() return cursorX,0 end
@@ -83,17 +86,36 @@ _G.C_AddOns = {IsAddOnLoaded=function(name) assert(name=="EmotaSpeak"); return s
 _G.C_Timer = {NewTicker=function(_,callback)
     timers[#timers+1]=callback
     return {Cancel=function() end}
+end, After=function(delay,callback)
+    if delay==0.25 or delay==1.5 then
+        deferredPositions[#deferredPositions+1]=callback
+    end
 end}
 
 local function NewTexture()
-    return {SetAllPoints=function() end,
+    return {points={},
+        ClearAllPoints=function(self) self.points={} end,
+        SetAllPoints=function(self,owner) self.allPoints=owner end,
         SetColorTexture=function(self,r,g,b,a) self.rgba={r,g,b,a} end,
-        SetPoint=function() end, SetHeight=function() end, SetWidth=function() end,
-        Show=function(self) self.visible=true end, Hide=function(self) self.visible=false end}
+        SetTexture=function(self,path) self.texture=path end,
+        SetTexCoord=function(self,...) self.coords={...} end,
+        SetPoint=function(self,...)
+            self.points[#self.points+1]={...}
+        end,
+        SetHeight=function(self,v) self.height=v end,
+        SetWidth=function(self,v) self.width=v end,
+        Show=function(self) self.visible=true end,
+        Hide=function(self) self.visible=false end}
 end
 local function NewFont()
-    return {SetAllPoints=function() end,SetJustifyH=function() end,
-        SetText=function(self,value) self.value=value end}
+    return {
+        points={},
+        SetAllPoints=function(self,owner) self.allPoints=owner end,
+        ClearAllPoints=function(self) self.points={};self.allPoints=nil end,
+        SetPoint=function(self,...) self.points[#self.points+1]={...} end,
+        SetJustifyH=function() end,
+        SetText=function(self,value) self.value=value end,
+    }
 end
 _G.CreateFrame = function(_, name, parent)
     local frame={name=name,parent=parent,events={},scripts={},anchor=nil,points={},visible=true,width=1024}
@@ -200,6 +222,9 @@ assert(loadfile("TrailBar.lua"))("ChalkBox")
 Fire("ADDON_LOADED","ChalkBox")
 assert(ChalkBoxDB.emota.auto==false,"integrated auto-emotes must default off")
 assert(ChalkBoxDB.bar=="top","default info bar is at top")
+assert(ChalkBoxDB.barTopInset==nil and
+    ChalkBoxDB.barNotchPositionV2==true,
+    "old backward notch slider is reset once and does not hold bar down")
 Fire("PLAYER_ENTERING_WORLD")
 local bar
 for _,frame in ipairs(frames) do if frame.name=="ChalkBoxInfoBar" then bar=frame end end
@@ -211,6 +236,146 @@ assert(bar and bar.visible and bar.anchor=="TOPRIGHT",
     "top bar must stay visible as its own combat-safe overlay")
 assert(bar.points[2] and bar.points[2][4]==0,
     "the full-width Bar reaches both screen edges")
+-- Split the bar around real native notch coordinates. Do not lower the
+-- entire bar or move UIParent, and never overlap the physical camera cutout.
+assert(ChalkBox_BarTopInsetStatus().mode=="auto" and
+    ChalkBox_BarTopInsetStatus().effective==0,
+    "non-notched default keeps the entire original bar position")
+_G.WorldFrame={width=2048,GetWidth=function(self) return self.width end}
+_G.C_UI={
+    DoesAnyDisplayHaveNotch=function() return true end,
+    ShouldUIParentAvoidNotch=function() return true end,
+    GetTopLeftNotchSafeRegion=function() return 0,450,768,740 end,
+    GetTopRightNotchSafeRegion=function() return 570,1024,768,740 end,
+}
+Fire("NOTCHED_DISPLAY_MODE_CHANGED")
+assert(#deferredPositions==2,
+    "character entry schedules two bounded reanchors after layout settles")
+-- Simulate macOS/Blizzard moving the UI after the first frame of login.
+bar.points[1][5]=0
+bar.points[2][5]=0
+for _,reanchor in ipairs(deferredPositions) do reanchor() end
+assert(bar.points[1][5]==36 and bar.points[2][5]==36,
+    "deferred character-login reanchor restores the saved notch height")
+local notch=ChalkBox_BarTopInsetStatus()
+assert(bar.points[1][5]==36 and bar.points[2][5]==36 and
+    bar.points[1][2]==UIParent and bar.points[2][2]==UIParent
+    and notch.split and notch.source=="Mac notch calibrated default"
+    and notch.gapStart==940 and notch.gapEnd==1108,
+    "confirmed Mac notch defaults to tested 152px gap and +36px rise")
+assert(bar.backgroundRight.visible and
+    bar.background.points[2][4]==notch.gapStart and
+    bar.backgroundRight.points[1][4]==notch.gapEnd,
+    "two background strips have a genuine transparent camera gap")
+local firstSide,secondSide=0,0
+for _,frame in ipairs(frames) do
+    if frame.parent==bar and frame.font and frame.visible and
+        frame.anchor=="CENTER" then
+        local x=frame.points[1][4]
+        local from=x-frame.width/2
+        local to=from+frame.width
+        assert(to<=notch.gapStart or from>=notch.gapEnd,
+            "center widgets must never cross behind the camera notch")
+        if to<=notch.gapStart then firstSide=firstSide+1
+        else secondSide=secondSide+1 end
+    end
+end
+assert(firstSide>0 and secondSide>0,
+    "center group is intentionally split across both usable top lanes")
+assert(UIParent:GetHeight()==768,
+    "notch handling never changes native UIParent height")
+-- WoW intentionally shifts UIParent below the notch; we must KEEP
+-- splitting and anchor to WorldFrame instead of suppressing the mode.
+C_UI.ShouldUIParentAvoidNotch=function() return true end
+Fire("NOTCHED_DISPLAY_MODE_CHANGED")
+assert(bar.points[1][5]==36 and
+    ChalkBox_BarTopInsetStatus().split,
+    "ShouldUIParentAvoidNotch true must never disable a valid split")
+C_UI.ShouldUIParentAvoidNotch=function() return false end
+Fire("NOTCHED_DISPLAY_MODE_CHANGED")
+assert(bar.points[1][5]==36 and
+    ChalkBox_BarTopInsetStatus().split,
+    "the split also works when Blizzard does not shift UIParent")
+-- A Forever build without WorldFrame can still lift by native notch depth.
+_G.WorldFrame=nil
+Fire("NOTCHED_DISPLAY_MODE_CHANGED")
+assert(bar.points[1][2]==UIParent and bar.points[1][5]==36,
+    "calibrated notch lift does not depend on WorldFrame")
+_G.WorldFrame={width=2048,GetWidth=function(self) return self.width end}
+C_UI.DoesAnyDisplayHaveNotch=function() return false end
+Fire("DISPLAY_SIZE_CHANGED")
+assert(bar.points[1][5]==0 and bar.points[1][2]==UIParent and
+    not ChalkBox_BarTopInsetStatus().split and
+    not bar.backgroundRight.visible,
+    "external display returns to native UIParent with a single full bar")
+C_UI.DoesAnyDisplayHaveNotch=function() return true end
+C_UI.GetTopLeftNotchSafeRegion=function() return 0,450,768,100 end
+C_UI.GetTopRightNotchSafeRegion=function() return 570,1024,768,100 end
+Fire("UI_SCALE_CHANGED")
+assert(bar.points[1][5]==0 and
+    not ChalkBox_BarTopInsetStatus().split,
+    "invalid oversized notch rectangles never create an unsafe split")
+_G.C_UI=nil
+assert(ChalkBox_BarNotchGapSet(160)
+    and ChalkBox_BarTopInsetStatus().split
+    and ChalkBox_BarTopInsetStatus().mode=="split"
+    and bar.points[1][2]==WorldFrame and bar.points[1][5]==0,
+    "manual split uses WorldFrame even when client notch API is unavailable")
+bar.width=280
+Fire("DISPLAY_SIZE_CHANGED")
+assert(not ChalkBox_BarTopInsetStatus().split and
+    ChalkBox_BarTopInsetStatus().effective==32 and
+    bar.points[1][5]==-32,
+    "manual split becomes a safe below-notch strip in very narrow windows")
+bar.width=2048
+Fire("DISPLAY_SIZE_CHANGED")
+assert(ChalkBox_BarTopInsetStatus().split and
+    bar.points[1][5]==0,
+    "normal window size restores user-selected manual split")
+ChalkBox_BarCommand("safe split 144")
+assert(ChalkBox_BarTopInsetStatus().manualGap==144 and
+    ChalkBox_BarTopInsetStatus().split,
+    "manual split-width command is wired to real layout preference")
+-- Height slider now moves UP, independently of the manual split gap.
+assert(ChalkBox_BarNotchRaiseSet(40)
+    and bar.points[1][2]==UIParent and bar.points[1][5]==40
+    and ChalkBox_BarTopInsetStatus().rise==40,
+    "positive raise slider offsets into the notch, never DOWN")
+assert(ChalkBox_BarNotchRaiseSet(80)
+    and bar.points[1][5]==80,
+    "increasing the height slider moves the bar further UP")
+combat=true
+assert(ChalkBox_BarNotchRaiseSet(48)
+    and bar.points[1][5]==80 and
+    ChalkBox_BarTopInsetStatus().pending,
+    "height slider postpones repositioning while in combat")
+combat=false
+Fire("PLAYER_REGEN_ENABLED")
+assert(bar.points[1][5]==48,
+    "deferred upward adjustment applies when combat ends")
+assert(ChalkBox_BarNotchRaiseSet("auto")
+    and bar.points[1][2]==WorldFrame and bar.points[1][5]==0,
+    "reselecting auto returns split to the world top")
+assert(ChalkBox_BarNotchGapSet("auto")
+    and not ChalkBox_BarTopInsetStatus().split,
+    "manual split is reversible without restarting or changing UIParent")
+assert(ChalkBox_BarTopInsetSet(50) and
+    ChalkBox_BarTopInsetStatus().mode=="manual" and
+    bar.points[1][5]==-50 and bar.points[2][5]==-50,
+    "unsupported client can use a saved explicit notch-safe inset")
+assert(not ChalkBox_BarTopInsetSet(200) and bar.points[1][5]==-50,
+    "out-of-range manual insets are rejected without mutating layout")
+combat=true
+assert(ChalkBox_BarTopInsetSet(60) and bar.points[1][5]==-50
+    and ChalkBox_BarTopInsetStatus().pending,
+    "safe inset changes do not reposition frames while in combat")
+combat=false
+Fire("PLAYER_REGEN_ENABLED")
+assert(bar.points[1][5]==-60 and not ChalkBox_BarTopInsetStatus().pending,
+    "inset queued in combat applies after combat ends")
+assert(ChalkBox_BarTopInsetSet("auto")
+    and bar.points[1][5]==0 and ChalkBoxDB.barTopInset==nil,
+    "automatic mode restores baseline when notch APIs are unavailable")
 assert(ChalkBoxDB.barReserve==false,
     "legacy UIParent reservation setting must be migrated to safe overlay")
 assert(UIParent:GetHeight()==768,"Blizzard root height must never change")
@@ -221,6 +386,33 @@ local function RootIsBaseline()
        and select(5,UIParent:GetPoint(2))==0
 end
 assert(bar.height==18,"bar should remain slim")
+assert(ChalkBox_BarIconsGet(),"new Bar layouts show compact module icons")
+local moduleIcons=0
+for _,frame in ipairs(frames) do
+    if frame.parent==bar and frame.icon then
+        moduleIcons=moduleIcons+1
+        assert(frame.icon.texture and
+            frame.icon.texture:find("Interface",1,true)==1,
+            "every Bar module uses a native Blizzard icon path")
+        assert(frame.icon.width==13 and frame.icon.height==13 and
+            frame.icon.visible~=false,
+            "icons fit inside the original 18-pixel bar")
+        assert(frame.font.points[1][4]==18,
+            "metric text starts after its icon, not underneath it")
+    end
+end
+assert(moduleIcons==13,"all supported Bar metrics receive their own icon")
+assert(ChalkBox_BarIconsSet(false) and not ChalkBox_BarIconsGet())
+for _,frame in ipairs(frames) do
+    if frame.parent==bar and frame.icon then
+        assert(frame.icon.visible==false and frame.font.points[1][4]==1,
+            "disabling icons restores the original full text area")
+    end
+end
+ChalkBox_BarCommand("icons on")
+assert(ChalkBox_BarIconsGet() and ChalkBoxDB.barShowIcons==true,
+    "icon preference persists and slash command restores native textures")
+assert(bar.height==18,"icons must never increase Bar height")
 assert(bar.strata=="BACKGROUND" and bar.level==1,
     "Bar chrome must be behind LOW/MEDIUM Blizzard unit frames and resting ZZZ")
 assert(RootIsBaseline(),
@@ -366,9 +558,11 @@ FindMenu(lastNativeMenu,"Hide").func()
 assert(not ChalkBoxDB.barStats.gear,"menu action hides clicked module")
 bar.scripts.OnMouseUp(bar,"RightButton")
 local allModules=FindMenu(lastNativeMenu,"Modules")
-assert(#lastNativeMenu==7 and allModules and
+assert(#lastNativeMenu==9 and allModules and
+    FindMenu(lastNativeMenu,"Hide module icons") and
+    FindMenu(lastNativeMenu,"Top safe area (Auto)") and
     FindMenu(allModules.children,"OFF Durability"),
-    "background menu has compact, categorized controls")
+    "background menu has compact, categorized controls including notch safety")
 assert(FindMenu(allModules.children,"OFF Durability").text:
     find("|cff9ba2ad",1,true),
     "disabled stats are muted gray instead of a sea of white")

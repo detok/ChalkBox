@@ -118,6 +118,10 @@ _G.ChalkBox_BarAppearanceGet=function() return ChalkBoxDB.barBackgroundOpacity o
 _G.ChalkBox_BarAppearanceSet=function(value)
     ChalkBoxDB.barBackgroundOpacity=math.max(0,math.min(100,value))
 end
+_G.ChalkBox_BarNotchRaiseSet=function(value)
+    ChalkBoxDB.barNotchRise=value
+    return true
+end
 _G.ChalkBox_BarEditStatus=function() return editor end
 _G.ChalkBox_BarHighlightNotPresent=function() return nil end
 local originalBarCommand=ChalkBox_BarCommand
@@ -332,6 +336,19 @@ _G.Settings={
     end,
     OpenToCategory=function(id) opened[#opened+1]=id end,
 }
+local exports,imports=0,0
+_G.ChalkBox_TransferStatus=function()
+    return {companion=true,file=true,marketCount=1,saleCharacters=1,
+        discoveryAreas=1,message="Ready"}
+end
+_G.ChalkBox_TransferExport=function()
+    exports=exports+1
+    return true,"Export prepared"
+end
+_G.ChalkBox_TransferImport=function()
+    imports=imports+1
+    return true,"Merged"
+end
 _G.ChalkBox_AuctionStatus=function()
     return {open=true,available=true,tooltip=true,
         state="Ready to scan",realm="Whitemane",faction="Alliance",
@@ -351,8 +368,8 @@ assert(loadfile("ChalkBox_Settings.lua"))("ChalkBox")
 local loader=frames[#frames]
 assert(loader.event=="PLAYER_LOGIN","must register settings when the client is ready")
 loader.script.OnEvent(loader,"PLAYER_LOGIN")
-assert(#registered==22,
-    "native settings include the optional AuctionSense Charts and QuestSense Navigation child pages")
+assert(#registered==27,
+    "native settings include the notch-safe Bar page and experimental child pages")
 for _,texture in ipairs(textures) do
     assert(not (texture.color and texture.color[1]==0.02
         and texture.color[2]==0.02 and texture.color[3]==0.025
@@ -364,8 +381,9 @@ assert(shortcutRefreshes==1,
 assert(categories.home.name=="ChalkBox")
 assert(categories["The Bar"].parent==categories.home
     and categories["The Bar Appearance"].parent==categories["The Bar"]
-    and categories["The Bar Stats"].parent==categories["The Bar"],
-    "Bar appearance and modules are nested under The Bar")
+    and categories["The Bar Stats"].parent==categories["The Bar"]
+    and categories["Mac / Notch Safe Area"].parent==categories["The Bar"],
+    "Bar appearance, modules and notch-safe controls are nested under The Bar")
 assert(categories["LootSense Appearance"].parent==categories["LootSense"]
     and categories["Toast Appearance"].parent==categories["Adventure Prep"]
     and categories["Emota Race Behavior"].parent==categories["Emota"],
@@ -373,8 +391,12 @@ assert(categories["LootSense Appearance"].parent==categories["LootSense"]
 assert(categories["QuestSense Navigation"] and
     categories["QuestSense Navigation"].parent==categories["QuestSense"],
     "navigation is an optional child of QuestSense, not a second root addon")
+assert(categories["QuestSense Smart Rules"] and
+    categories["QuestSense Smart Rules"].parent==categories["QuestSense"],
+    "Smart Rules stays nested under QuestSense")
 assert(categories["Global Appearance"].parent==categories.home
-    and categories["Updates"].parent==categories.home,
+    and categories["Updates"].parent==categories.home
+    and categories["Data Transfer"].parent==categories.home,
     "standalone modules remain accessible directly below ChalkBox")
 
 ChalkBox_OpenSettings()
@@ -395,6 +417,13 @@ local function ControlIn(categoryName,caption)
     end
     error("Missing native control "..categoryName.."/"..caption)
 end
+assert(ControlIn("Data Transfer","Export Data") and
+    ControlIn("Data Transfer","Import & Merge"),
+    "file transfer actions live inside native ChalkBox Settings")
+ControlIn("Data Transfer","Export Data"):Click()
+ControlIn("Data Transfer","Import & Merge"):Click()
+assert(exports==1 and imports==1,
+    "native Settings buttons invoke the real transfer module actions")
 local function FindCheckByParentTitle(title)
     local category = categories[title]
     assert(category,title)
@@ -404,6 +433,18 @@ local function FindCheckByParentTitle(title)
     end end
     return checks
 end
+assert(categories["LootSense Item Insights (Experimental)"]
+    and categories["LootSense Item Insights (Experimental)"].parent==
+        categories["LootSense"],
+    "coordinator is an optional child of LootSense, not a new root addon")
+categories["LootSense Item Insights (Experimental)"].panel:Show()
+local coordinatorChecks=FindCheckByParentTitle(
+    "LootSense Item Insights (Experimental)")
+assert(#coordinatorChecks==1 and not coordinatorChecks[1].checked,
+    "coordinator defaults OFF until this character explicitly opts in")
+assert(ControlIn("LootSense Item Insights (Experimental)",
+    "Restore Legacy Tooltips"),
+    "experimental item tips provide an immediate rollback control")
 assert(categories["AuctionSense"] and
     categories["AuctionSense"].parent==categories.home,
     "AuctionSense is an independent ChalkBox module, not a hidden submenu")
@@ -416,6 +457,29 @@ ControlIn("AuctionSense","Charts Lab (Experimental)"):Click()
 assert(opened[#opened]==categories["AuctionSense Charts (Experimental)"].ID
     and auctionOpens==0 and auctionScans==0,
     "opening chart settings does not open AH or request any auction scan")
+assert(categories["AuctionSense Intelligence (Experimental)"]
+    and categories["AuctionSense Intelligence (Experimental)"].parent==categories["AuctionSense"],
+    "experimental intelligence stays nested under AuctionSense")
+assert(ControlIn("AuctionSense","Intelligence Lab"),
+    "AuctionSense exposes Intelligence as a settings-only experiment")
+ControlIn("AuctionSense","Intelligence Lab"):Click()
+assert(opened[#opened]==categories["AuctionSense Intelligence (Experimental)"].ID
+    and auctionOpens==0 and auctionScans==0,
+    "opening intelligence settings never opens or scans the AH")
+-- Native mock checkboxes populate checked state during panel OnShow.
+categories["AuctionSense Intelligence (Experimental)"].panel:Show()
+local intelChecks=FindCheckByParentTitle("AuctionSense Intelligence (Experimental)")
+assert(#intelChecks==3 and not intelChecks[1].checked and
+    intelChecks[3].checked,
+    "Intelligence starts off while shared profession protection defaults on")
+assert(ControlIn("AuctionSense Intelligence (Experimental)","Skill Up") and
+    ControlIn("AuctionSense Intelligence (Experimental)","Make Gold"),
+    "both planners are selectable inside settings")
+assert(ControlIn("AuctionSense Intelligence (Experimental)",
+    "Pin last scanned profession") and
+    ControlIn("AuctionSense Intelligence (Experimental)",
+    "Use automatic profession"),
+    "experimental settings expose a stable selectable profession goal")
 assert(ControlIn("AuctionSense","Open AuctionSense Tab"),
     "settings directs the player to the native AH tab")
 ControlIn("AuctionSense","Open AuctionSense Tab"):Click()
@@ -776,10 +840,14 @@ local sliders={}
 for _,frame in ipairs(frames) do
     if frame.kind=="Slider" then sliders[#sliders+1]=frame end
 end
-assert(#sliders==11,
-    "QuestSense arrow size joins the existing ten sliders without removing any")
-local appearanceSlider,highlightSlider
+assert(#sliders==13,
+    "Mac notch split-width and top-inset controls add two sliders")
+local appearanceSlider,highlightSlider,safeSlider,gapSlider
 for _,frame in ipairs(sliders) do
+    if frame.parent==categories["Mac / Notch Safe Area"].panel then
+        if frame.min==40 then gapSlider=frame
+        else safeSlider=frame end
+    end
     if frame.parent==categories["The Bar Appearance"].panel then
         appearanceSlider=frame
     end
@@ -787,6 +855,13 @@ for _,frame in ipairs(sliders) do
         highlightSlider=frame
     end
 end
+assert(safeSlider and safeSlider.min==0 and safeSlider.max==120
+    and safeSlider.step==2 and gapSlider and gapSlider.min==40
+    and gapSlider.max==400 and gapSlider.step==4,
+    "notch page exposes manual split gap and upward-height slider")
+safeSlider:SetValue(48)
+assert(ChalkBoxDB.barNotchRise==48,
+    "increasing vertical slider requests a positive UP lift")
 assert(appearanceSlider and appearanceSlider.value==70,
     "native bar opacity slider defaults to original 70%")
 appearanceSlider:SetValue(0)

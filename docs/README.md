@@ -1,5 +1,8 @@
 # ChalkBox documentation
 
+
+**Experimental 2.2.27-intel-beta (draft PR #107, not published):** Inventory Intelligence is disabled by default and offers optional Skill Up / Make Gold advice in the existing AuctionSense UI. See [technical details](AUCTION_INTELLIGENCE.md). The official stable release remains 2.2.26.
+
 This is the **versioned documentation home** for ChalkBox. GitHub has a Wiki feature, but keeping the primary instructions here means user guides, tests and the actual Lua implementation can be reviewed in the same pull request. Release documentation lives with the code it describes.
 
 **Stable release: 2.2.26 · World of Warcraft: Forever · [Download the official playable ZIP](https://github.com/detok/ChalkBox/releases/latest). Retail and ordinary Classic are unverified.
@@ -45,3 +48,6 @@ A feature is not considered documented merely because it appears in a historical
 
 [Back to project README](../README.md) · [Report an issue](https://github.com/detok/ChalkBox/issues/new/choose)
 
+
+
+**Developer beta:** ChalkBox 2.2.27 is a QuestSense Smart experiment; 2.2.26 remains the supported stable release. [Beta notes](https://github.com/detok/ChalkBox/blob/feature/smart-quest-native-priorities/docs/RELEASE_NOTES.md).

@@ -37,7 +37,11 @@ local function StartTooltip(owner,title)
         type(tip.AddLine)~="function" then return nil end
     tip:SetOwner(owner,"ANCHOR_RIGHT")
     if type(tip.ClearLines)=="function" then tip:ClearLines() end
-    tip:AddLine(title,0.95,0.95,0.93)
+    if type(ChalkBox_TipLine)=="function" then
+        ChalkBox_TipLine(tip,title,"title")
+    else
+        tip:AddLine(title,0.95,0.95,0.93)
+    end
     return tip
 end
 local function Metric(tip,label,value,rgb)
@@ -60,11 +64,16 @@ local function Hint(button,title,summary,extra)
     button:SetScript("OnEnter",function(self)
         local tip=StartTooltip(self,title)
         if not tip then return end
-        tip:AddLine(summary,COLOR.neutral[1],COLOR.neutral[2],
-            COLOR.neutral[3])
-        if extra then
-            tip:AddLine(extra,COLOR.muted[1],COLOR.muted[2],
-                COLOR.muted[3])
+        if type(ChalkBox_TipLine)=="function" then
+            ChalkBox_TipLine(tip,summary,"text",true)
+            if extra then ChalkBox_TipLine(tip,extra,"muted",true) end
+        else
+            tip:AddLine(summary,COLOR.neutral[1],COLOR.neutral[2],
+                COLOR.neutral[3])
+            if extra then
+                tip:AddLine(extra,COLOR.muted[1],COLOR.muted[2],
+                    COLOR.muted[3])
+            end
         end
         EndTooltip(tip)
     end)
@@ -87,6 +96,62 @@ local function Button(parent,title,x,y,width,callback)
     b:SetScript("OnClick",callback)
     return b
 end
+-- Resolve an actual owned stack at click time. Market entries are grouped by
+-- item ID and never carry a stable slot; a cached slot could now hold a
+-- different item. A mixed-variant ID must not silently choose random gear.
+local function FindAuctionBagSlot(id)
+    if type(id)~="number" or id<=0 then return nil end
+    local api=type(C_Container)=="table" and C_Container or nil
+    local num=api and api.GetContainerNumSlots or GetContainerNumSlots
+    local get=api and api.GetContainerItemLink or GetContainerItemLink
+    if type(num)~="function" or type(get)~="function" then return nil end
+    local last=type(NUM_BAG_SLOTS)=="number" and
+        math.min(5,NUM_BAG_SLOTS) or 4
+    local foundBag,foundSlot,firstLink
+    for bag=0,last do
+        local ok,slots=pcall(num,bag)
+        if ok and type(slots)=="number" and slots>=0 and slots<=200 then
+            for slot=1,slots do
+                local valid,link=pcall(get,bag,slot)
+                if valid and type(link)=="string" then
+                    local itemID=tonumber(link:match("item:(%d+)"))
+                    if itemID==id then
+                        if firstLink and firstLink~=link then
+                            return nil -- ambiguous bonus/stat variant
+                        end
+                        firstLink=link
+                        foundBag,foundSlot=bag,slot
+                    end
+                end
+            end
+        end
+    end
+    return foundBag,foundSlot
+end
+local function StageAuctionItem(id)
+    if not host or type(host.SetPostItem)~="function" or
+        type(ItemLocation)~="table" or
+        type(ItemLocation.CreateFromBagAndSlot)~="function" then
+        return false,"Native item-prefill API unavailable; choose item in Sell tab"
+    end
+    local bag,slot=FindAuctionBagSlot(id)
+    if not bag then return false,
+        "Could not resolve one unambiguous live bag stack" end
+    local ok,location=pcall(ItemLocation.CreateFromBagAndSlot,bag,slot)
+    if not ok or not location then return false,
+        "Item location unavailable; choose item in Sell tab" end
+    if type(C_AuctionHouse)=="table" and
+        type(C_AuctionHouse.IsSellItemValid)=="function" then
+        local safe,valid=pcall(C_AuctionHouse.IsSellItemValid,location)
+        if not safe or valid~=true then return false,
+            "The client does not allow this item to be auctioned" end
+    end
+    local success=pcall(host.SetPostItem,host,location)
+    if not success then return false,
+        "The client rejected item prefill; select the bag item manually" end
+    return true
+end
+
 local function Coin(value)
     if type(value)~="number" or value<0 then return "--" end
     value=math.floor(value+0.5)
@@ -448,11 +513,24 @@ local function Refresh()
             entries,extra=ChalkBox_MarketBagRows(searchText,250)
         end
         extra=extra or {}
+        local intel=type(ChalkBox_IntelEnabled)=="function" and
+            ChalkBox_IntelEnabled() and
+            type(ChalkBox_IntelStatus)=="function" and
+            ChalkBox_IntelStatus() or nil
+        local active=intel and intel.enabled
         labels.details:SetText(("Bags: %d items  ·  %d priced"):format(
-            extra.stacks or 0,extra.priced or 0))
-        labels.info:SetText("Bag asks "..Coin(extra.marketValue or 0)..
-            "  ·  Vendor "..Coin(extra.vendorValue or 0)..
-            "  ·  Price is not a guaranteed sale")
+            extra.stacks or 0,extra.priced or 0)..
+            (active and ("  ·  "..(intel.mode=="gold" and
+                "Make Gold" or "Skill Up").." / "..
+                tostring(intel.profession or "No goal")) or ""))
+        if active then
+            labels.info:SetText((intel.summary or
+                "Read-only suggestions; asking prices are not sales"):sub(1,115))
+        else
+            labels.info:SetText("Bag asks "..Coin(extra.marketValue or 0)..
+                "  ·  Vendor "..Coin(extra.vendorValue or 0)..
+                "  ·  Price is not a guaranteed sale")
+        end
     elseif view=="sales" then
         entries=type(ChalkBox_MarketSaleRows)=="function" and
             ChalkBox_MarketSaleRows(searchText,250) or {}
@@ -537,7 +615,12 @@ local function Refresh()
                 row.average:SetText(Coin(item.de))
                 row.listings:SetText(tostring(item.count or 0).."x")
                 row.note:SetText(item.note or "Compare prices")
-                Tint(row.note,(item.protected or item.bound) and COLOR.warning or
+                Tint(row.note,(item.protected or item.bound or
+                    item.intel and (item.intel.kind=="HOLD" or
+                    item.intel.kind=="SCAN AH")) and COLOR.warning or
+                    item.intel and
+                        (item.intel.kind=="CRAFT" or
+                        item.intel.kind=="AUCTION") and COLOR.ready or
                     COLOR.muted)
             elseif view=="sales" then
                 row.low:SetText(Coin(item.gross))
@@ -592,6 +675,26 @@ local function Refresh()
     if labels.fullscan and labels.fullscan.SetEnabled then
         labels.fullscan:SetEnabled(status.open and status.fullAvailable
             and not status.busy and cooldown==0)
+    end
+    -- A market listing alone is not inventory. Only offer preparation for
+    -- an explicitly selected item currently observed in the player's bags.
+    local ownedSelection=false
+    if view=="bags" and selectedItemID then
+        for _,item in ipairs(entries) do
+            if item.itemID==selectedItemID and (item.count or 0)>0 and
+                not item.protected and not item.bound and
+                item.boundKnown==true then
+                ownedSelection=true;break
+            end
+        end
+    end
+    if labels.prepare then
+        if labels.prepare.SetEnabled then
+            labels.prepare:SetEnabled(ownedSelection and status.open)
+        end
+        if ownedSelection then labels.prepare:Show()
+        elseif view=="bags" then labels.prepare:Show()
+        else labels.prepare:Hide() end
     end
 end
 function ChalkBox_AuctionRefreshUI() Refresh() end
@@ -654,6 +757,40 @@ local function Ensure()
     labels.mode_market=Button(f,"Prices",21,-87,78,function() Mode("market") end)
     labels.mode_bags=Button(f,"My Items",104,-87,92,function() Mode("bags") end)
     labels.mode_sales=Button(f,"Sales & Stats",201,-87,114,function() Mode("sales") end)
+    -- Never auto-post, transfer inventory or write Blizzard's protected
+    -- displayMode. This button only opens the native Sell tab after a real
+    -- user click. The user chooses their bag item, stack and final price.
+    labels.prepare=Button(f,"Prepare Auction",323,-87,135,function()
+        if view~="bags" or not selectedItemID or
+            (type(InCombatLockdown)=="function" and InCombatLockdown()) then
+            return
+        end
+        local rows=type(ChalkBox_MarketBagRows)=="function" and
+            ChalkBox_MarketBagRows("",250) or {}
+        local owned=false
+        for _,item in ipairs(rows) do
+            if item.itemID==selectedItemID and (item.count or 0)>0 and
+                not item.protected and not item.bound and
+                item.boundKnown==true then owned=true;break end
+        end
+        if not owned then return end
+        local native=host and (host.SellTab or
+            (type(host.Tabs)=="table" and host.Tabs[2]))
+        if native and type(native.Click)=="function" then
+            -- Real hardware click: Blizzard controls native tab and post
+            -- form; no auction is submitted and no price is preselected.
+            native:Click()
+            local ok,reason=StageAuctionItem(selectedItemID)
+            if not ok and type(DEFAULT_CHAT_FRAME)=="table" and
+                type(DEFAULT_CHAT_FRAME.AddMessage)=="function" then
+                DEFAULT_CHAT_FRAME:AddMessage(
+                    "|cff67c6b7AuctionSense|r "..reason)
+            end
+        end
+    end)
+    Hint(labels.prepare,"Prepare Auction",
+        "Load a matching bag stack into Blizzard's native Sell form.",
+        "Does NOT post the auction; you choose price, count and duration.")
     -- Scan results live under the view choices, not between buttons/search.
     labels.details=Font(f,"GameFontHighlightSmall",21,-117,446)
     labels.scan=Button(f,"Scan Market",21,-106,125,function()
@@ -742,6 +879,27 @@ local function Ensure()
         Tint(note,COLOR.muted)
         if type(row.EnableMouse)=="function" then row:EnableMouse(true) end
         row:SetScript("OnMouseDown",function(self,button)
+            if button=="RightButton" and self.marketView=="bags" then
+                local item=self.marketData
+                local status=type(ChalkBox_IntelStatus)=="function" and
+                    ChalkBox_IntelStatus() or nil
+                if status and status.enabled and item and
+                    type(item.itemID)=="number" and
+                    type(ChalkBox_IntelPreference)=="function" then
+                    local reserve,ignored=ChalkBox_IntelPreference(item.itemID)
+                    local shift=type(IsShiftKeyDown)=="function" and
+                        IsShiftKeyDown()==true
+                    if shift and type(ChalkBox_IntelIgnore)=="function" then
+                        ChalkBox_IntelIgnore(item.itemID,not ignored)
+                    elseif type(ChalkBox_IntelReserve)=="function" then
+                        ChalkBox_IntelReserve(item.itemID,
+                            reserve>=item.count and 0 or item.count)
+                    end
+                    HideTooltip()
+                    Refresh()
+                end
+                return
+            end
             if button and button~="LeftButton" then return end
             local item=self.marketData
             if not item or type(item.itemID)~="number" or
@@ -767,7 +925,71 @@ local function Ensure()
                     COLOR.neutral)
                 Metric(tip,"DE estimate / item",Coin(item.de),
                     item.de and COLOR.average or COLOR.muted)
-                if item.protected or item.bound then
+                if item.intel then
+                    local advice=item.intel
+                    tip:AddLine("ChalkBox  |  "..(advice.mode=="gold" and
+                        "Make Gold" or "Skill Up"),
+                        COLOR.ready[1],COLOR.ready[2],COLOR.ready[3])
+                    tip:AddLine(advice.headline or "Hold for now",
+                        COLOR.neutral[1],COLOR.neutral[2],COLOR.neutral[3],true)
+                    tip:AddLine(advice.reason or "Insufficient evidence",
+                        COLOR.muted[1],COLOR.muted[2],COLOR.muted[3],true)
+                    if advice.goalDetail then
+                        tip:AddLine(advice.goalDetail,
+                            COLOR.warning[1],COLOR.warning[2],
+                            COLOR.warning[3],true)
+                    end
+                    if advice.comparisonDetail then
+                        tip:AddLine(advice.comparisonDetail,
+                            COLOR.low[1],COLOR.low[2],COLOR.low[3],true)
+                    end
+                    if advice.feeDetail then
+                        tip:AddLine(advice.feeDetail,
+                            COLOR.warning[1],COLOR.warning[2],
+                            COLOR.warning[3],true)
+                    end
+                    if advice.riskDetail then
+                        tip:AddLine(advice.riskDetail,
+                            COLOR.muted[1],COLOR.muted[2],
+                            COLOR.muted[3],true)
+                    end
+                    if advice.vendorDecisionDetail then
+                        tip:AddLine(advice.vendorDecisionDetail,
+                            COLOR.low[1],COLOR.low[2],
+                            COLOR.low[3],true)
+                    end
+                    if advice.craftValueDetail then
+                        tip:AddLine(advice.craftValueDetail,
+                            COLOR.average[1],COLOR.average[2],
+                            COLOR.average[3],true)
+                    end
+                    if advice.bankDetail then
+                        tip:AddLine(advice.bankDetail,
+                            COLOR.counts[1],COLOR.counts[2],
+                            COLOR.counts[3],true)
+                    end
+                    if advice.bagDetail then
+                        tip:AddLine(advice.bagDetail,
+                            COLOR.counts[1],COLOR.counts[2],
+                            COLOR.counts[3],true)
+                    end
+                    if advice.shortfall and advice.shortfall>0 then
+                        tip:AddLine("Missing from bags: "..advice.shortfall..
+                            " for planned reserve",
+                            COLOR.warning[1],COLOR.warning[2],
+                            COLOR.warning[3],true)
+                    end
+                    if advice.trainingDetail then
+                        tip:AddLine(advice.trainingDetail,
+                            COLOR.warning[1],COLOR.warning[2],
+                            COLOR.warning[3],true)
+                    end
+                    tip:AddLine(advice.evidenceDetail or
+                        "Evidence: limited",COLOR.muted[1],
+                        COLOR.muted[2],COLOR.muted[3],true)
+                    tip:AddLine("Right-click: reserve ALL in bags | Shift-right-click: ignore",
+                        COLOR.muted[1],COLOR.muted[2],COLOR.muted[3],true)
+                elseif item.protected or item.bound then
                     tip:AddLine(item.protected and "KEEP: protected by you" or
                         "Bound item: check tradeability",
                         COLOR.warning[1],COLOR.warning[2],COLOR.warning[3])

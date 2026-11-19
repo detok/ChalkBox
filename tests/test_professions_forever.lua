@@ -1,13 +1,53 @@
 -- WoW Forever 1.60 test: legacy profession APIs absent, modern data loads
 -- after SHOW, and some recipe schematic endpoints are incomplete.
 local seenFrame,timers=nil,{}
-_G.ChalkBoxProfessionDB=nil
+local observedRecipes,forgotten={},0
+local observedSkills={}
+_G.ChalkBox_IntelObserveSkill=function(profession,rank,cap)
+    observedSkills[profession]={rank,cap}
+end
+_G.ChalkBox_IntelObserveRecipe=function(_,id,_,schematic)
+    observedRecipes[id]=schematic
+end
+_G.ChalkBox_IntelForgetRecipe=function()
+    forgotten=forgotten+1
+end
+local learnedTent=true
+_G.ChalkBoxProfessionDB={
+    reagents={
+        ["id:783"]={Cooking=true},
+        ["name:light hide"]={Cooking=true}},
+    recipeUses={
+        ["id:783"]={["Cooking|Cured Light Hide"]={
+            profession="Cooking",recipe="Cured Light Hide",quantity=1}},
+        ["name:light hide"]={["Cooking|Cured Light Hide"]={
+            profession="Cooking",recipe="Cured Light Hide",quantity=1}},
+    }
+}
+-- The actual bundled Forever database puts spell 3816 in Leatherworking.
+-- A stale profession heading must never relabel it as Cooking.
+_G.LibStub=setmetatable({},{__call=function(_,name)
+    if name~="LibProfessionDB-1.0" then return nil end
+    return {GetRecipes=function(_,professionID)
+        if professionID==165 then
+            return {[3816]={reagents={[783]=1,[4289]=1}}}
+        elseif professionID==185 then
+            return {[5001]={reagents={[30817]=1}}}
+        end
+        return {}
+    end}
+end})
 _G.GetProfessions=nil
 _G.GetProfessionInfo=nil
 _G.GetNumSkillLines=nil
 _G.GetNumTradeSkills=nil
 _G.GetTradeSkillLine=nil
-_G.GetSpellInfo=function(spell) return spell==2001 and "Camp Tent" or "Alchemy Potion" end
+_G.GetSpellInfo=function(spell)
+    if spell==3816 then return "Cured Light Hide" end
+    if spell==5001 then return "Roast Test Fish" end
+    if spell==2006 then return "Alternate Leather" end
+    return spell==2001 and "Camp Tent" or "Alchemy Potion"
+end
 _G.C_Timer={After=function(delay,callback)
     assert(delay>0)
     timers[#timers+1]=callback
@@ -25,14 +65,46 @@ local schematic=true
 _G.C_TradeSkillUI={
     GetBaseProfessionInfo=function()
         return {professionID=currentProfession,
-            professionName=currentProfession==165 and "Leatherworking" or "Alchemy"}
+            professionName=currentProfession==165 and "Leatherworking" or
+                currentProfession==185 and "Cooking" or "Alchemy",
+            skillLevel=currentProfession==165 and 170 or 85,
+            maxSkillLevel=currentProfession==165 and 225 or 150}
     end,
     GetAllRecipeIDs=function() return recipeIDs end,
+    GetProfessionInfoByRecipeID=function(recipeID)
+        if recipeID==3816 then
+            return {professionID=165,professionName="Leatherworking"}
+        end
+        -- No per-recipe profession identity for older synthetic test recipes.
+        return nil
+    end,
     GetRecipeInfo=function(id)
-        return {name=id==2001 and "Camp Tent" or nil,learned=id~=2002}
+        return {name=id==3816 and "Cured Light Hide" or
+            id==2001 and "Camp Tent" or
+            id==2006 and "Alternate Leather" or nil,
+            learned=id~=2002 and (id~=2001 or learnedTent),
+            outputItemID=id==2005 and 9008 or nil,
+            quantityMin=id==2005 and 1 or nil,
+            quantityMax=id==2005 and 1 or nil}
     end,
     GetRecipeSchematic=function(id)
         if schematic then
+            if id==2006 then
+                return {reagentSlotSchematics={{
+                    required=true,quantityRequired=2,
+                    reagents={{itemID=2318},{itemID=4234}}
+                },{
+                    required=false,quantityRequired=1,
+                    reagents={{itemID=4470}}
+                }}}
+            end
+            if id==3816 then
+                return {reagentSlotSchematics={{
+                    quantityRequired=1,reagents={{itemID=783}}
+                },{
+                    quantityRequired=1,reagents={{itemID=4289}}
+                }}}
+            end
             return {reagentSlotSchematics={{
                 quantityRequired=5,reagents={{itemID=2318}}
             }}}
@@ -50,6 +122,11 @@ assert(frame.events.TRADE_SKILL_LIST_UPDATE and
     frame.events.TRADE_SKILL_DATA_SOURCE_CHANGED,
     "must respond to modern Forever list/data-source changes")
 frame.callback(frame,"ADDON_LOADED","ChalkBox")
+assert(ChalkBoxProfessionDB.recipeUses["id:783"]==nil and
+    ChalkBoxProfessionDB.recipeUses["name:light hide"]==nil,
+    "old saved Cooking / Cured Light Hide association must be repaired")
+assert(ChalkBoxProfessionDB.reagents["id:783"].Cooking==nil,
+    "wrong cached known-reagent label must not survive migration")
 frame.callback(frame,"TRADE_SKILL_SHOW")
 assert(#ChalkBox_LearnedRecipeUses("2318","Light Leather")==0,
     "empty early recipe list must not invent learned recipes")
@@ -57,6 +134,10 @@ recipeIDs={2001,2002}
 frame.callback(frame,"TRADE_SKILL_LIST_UPDATE")
 assert(ChalkBox_ProfessionHas("Leatherworking"),
     "active modern profession is legitimate evidence, even without classic APIs")
+assert(observedSkills.Leatherworking and
+    observedSkills.Leatherworking[1]==170 and
+    observedSkills.Leatherworking[2]==225,
+    "modern-only Forever profession window must send rank/cap to Intelligence")
 local items=ChalkBox_LearnedRecipeUses("2318","Light Leather")
 assert(#items==1 and items[1].recipe=="Camp Tent" and items[1].quantity==5,
     "modern learned recipe plus reagent quantity must be recorded")
@@ -69,16 +150,115 @@ for _,cb in ipairs(timers) do cb() end
 timers={}
 items=ChalkBox_LearnedRecipeUses("2318","Light Leather")
 assert(#items==1,"delayed scan after recipe data load must be idempotent")
+learnedTent=false
+frame.callback(frame,"TRADE_SKILL_LIST_UPDATE")
+assert(#ChalkBox_LearnedRecipeUses("2318","Light Leather")==0 and
+    forgotten>0,
+    "explicit unlearned state revokes stale known-recipe association")
+learnedTent=true
+frame.callback(frame,"TRADE_SKILL_LIST_UPDATE")
+assert(#ChalkBox_LearnedRecipeUses("2318","Light Leather")==1,
+    "relearning after a positive client observation restores the recipe")
 currentProfession=171
 recipeIDs={2005}
 schematic=false
 frame.callback(frame,"TRADE_SKILL_DATA_SOURCE_CHANGED")
 assert(ChalkBox_ProfessionHas("Alchemy"),"data source change detects next profession")
 local potion=ChalkBox_LearnedRecipeUses("3371","Empty Vial")
+assert(observedSkills.Alchemy and
+    observedSkills.Alchemy[1]==85 and
+    observedSkills.Alchemy[2]==150,
+    "switching modern profession refreshes the current skill observation")
 assert(#potion==1 and potion[1].profession=="Alchemy"
     and potion[1].quantity==2,
     "incomplete schematic must fall back to GetRecipeNumReagents")
+assert(type(observedRecipes[2005])=="table" and
+    observedRecipes[2005].chalkBoxReagentFallback==true and
+    observedRecipes[2005].reagentSlotSchematics[1].quantityRequired==2 and
+    observedRecipes[2005].outputItemID==9008 and
+    observedRecipes[2005].quantityMin==1,
+    "complete live fallback must reach Intelligence with known output and yield")
+-- If the old reader reports choice/optional metadata, the tooltip may
+-- describe it, but the planner must not treat it as a complete bill.
+local oldReagent=C_TradeSkillUI.GetRecipeReagentInfo
+C_TradeSkillUI.GetRecipeReagentInfo=function()
+    return {itemID=3371,quantityRequired=2,isAlternative=true}
+end
+observedRecipes[2005]=nil
+frame.callback(frame,"TRADE_SKILL_UPDATE")
+assert(observedRecipes[2005]==nil,
+    "choice materials in an old API are never assumed to be mandatory")
+local alternatives=ChalkBox_LearnedRecipeUses(3371,"Empty Vial")
+local foundChoice=false
+for _,entry in ipairs(alternatives) do
+    if entry.recipe=="Alchemy Potion" and entry.alternative==true then
+        foundChoice=true
+    end
+end
+assert(foundChoice,"choice metadata must survive old API reagent reading")
+C_TradeSkillUI.GetRecipeReagentInfo=oldReagent
+frame.callback(frame,"TRADE_SKILL_UPDATE")
 frame.callback(frame,"PLAYER_ENTERING_WORLD")
 assert(ChalkBox_ProfessionHas("Alchemy"),
     "on modern-only client, observed profession survives refresh")
-print("PASS: Forever-only modern profession scanning, late list update, learned/unlearned, schema fallback, source switch and diagnostics")
+-- Simulate Forever's transient mismatch: profession header says Cooking,
+-- but the recipe list still contains a learned Leatherworking recipe.
+currentProfession=185
+recipeIDs={3816}
+schematic=true
+frame.callback(frame,"TRADE_SKILL_DATA_SOURCE_CHANGED")
+assert(#ChalkBox_LearnedRecipeUses(783,"Light Hide")==0,
+    "stale cross-profession list must never become learned Cooking")
+assert(ChalkBoxProfessionDB.recipeUses["id:783"]==nil,
+    "wrong new recipe must not be written to saved variables")
+-- The independent bundled catalog must catch the same contamination
+-- even on Forever builds without GetProfessionInfoByRecipeID.
+C_TradeSkillUI.GetProfessionInfoByRecipeID=nil
+frame.callback(frame,"TRADE_SKILL_DATA_SOURCE_CHANGED")
+assert(#ChalkBox_LearnedRecipeUses(783,"Light Hide")==0,
+    "offline recipe ID ownership rejects stale Cooking data")
+-- Legacy trade-skill APIs can also lag a profession/source switch.
+_G.GetTradeSkillLine=function() return "Cooking" end
+_G.GetNumTradeSkills=function() return 1 end
+_G.GetTradeSkillInfo=function() return "Cured Light Hide","optimal" end
+_G.GetTradeSkillNumReagents=function() return 1 end
+_G.GetTradeSkillReagentInfo=function() return "Light Hide",nil,1 end
+_G.GetTradeSkillReagentItemLink=function() return "item:783" end
+frame.callback(frame,"TRADE_SKILL_DATA_SOURCE_CHANGED")
+assert(#ChalkBox_LearnedRecipeUses(783,"Light Hide")==0,
+    "legacy stale Cooking recipe title cannot contaminate saved data")
+-- After the client settles on Leatherworking, the legitimate scan can
+-- re-establish the correct learned association.
+currentProfession=165
+frame.callback(frame,"TRADE_SKILL_DATA_SOURCE_CHANGED")
+local hides=ChalkBox_LearnedRecipeUses(783,"Light Hide")
+assert(#hides==1 and hides[1].profession=="Leatherworking" and
+    hides[1].recipe=="Cured Light Hide" and hides[1].recipeID==3816,
+    "actual Leatherworking list restores the correct profession and recipe ID")
+recipeIDs={2006}
+frame.callback(frame,"TRADE_SKILL_LIST_UPDATE")
+local altUses=ChalkBox_LearnedRecipeUses(2318,"Light Leather")
+local optUses=ChalkBox_LearnedRecipeUses(4470,"Simple Wood")
+local foundAlternative=false
+for _,row in ipairs(altUses) do
+    if row.recipe=="Alternate Leather" and row.alternative==true then
+        foundAlternative=true
+    end
+end
+local foundOptional=false
+for _,row in ipairs(optUses) do
+    if row.recipe=="Alternate Leather" and row.optional==true then
+        foundOptional=true
+    end
+end
+assert(foundAlternative and foundOptional,
+    "alternative and optional slot types must survive the live scan")
+-- Old saved rows have nil flags while new rows use explicit false.
+-- The comparator must remain a strict order across both representations.
+local stored=ChalkBoxProfessionDB.recipeUses["id:2318"]
+stored["legacy"]={profession="Leatherworking",recipe="Old Entry",quantity=1}
+local mixed=ChalkBox_LearnedRecipeUses(2318,"Light Leather")
+assert(#mixed>=3 and mixed[1].alternative~=true and
+    mixed[1].optional~=true,
+    "required recipes appear ahead of alternative or optional choices")
+print("PASS: Forever live recipe identity, fallback data, explicit unlearning, alternative/optional reagents and stale-heading safeguards")

@@ -1,0 +1,4 @@
+-- Companion addon exists only to let WoW write its own standalone
+-- WTF/Account/<account>/SavedVariables/ChalkBoxTransfer.lua file.
+-- Do not initialize or overwrite ChalkBoxTransferDB here: imported data
+-- has already been restored from disk before this Lua file executes.

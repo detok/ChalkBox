@@ -88,8 +88,16 @@ local function Position(frame,anchor)
     return success
 end
 local function Offset(anchor)
+    local inset=0
+    if type(ChalkBox_BarTopInsetStatus)=="function" then
+        local ok,state=pcall(ChalkBox_BarTopInsetStatus)
+        local n=ok and type(state)=="table" and state.effective
+        if Safe(n) and type(n)=="number" and n>=0 and n<=120 then
+            inset=n
+        end
+    end
     return {point=anchor.point,relative=anchor.relative,
-        relativePoint=anchor.relativePoint,x=anchor.x,y=anchor.y-BAR_HEIGHT}
+        relativePoint=anchor.relativePoint,x=anchor.x,y=anchor.y-BAR_HEIGHT-inset}
 end
 local function Restore(name)
     local old=tracked[name]
@@ -122,7 +130,13 @@ local function Apply(name)
     end
     local old=tracked[name]
     if old then
-        if Same(current,old.applied) then return end
+        if Same(current,old.applied) then
+            local updated=Offset(old.original)
+            if not Same(updated,old.applied) and Position(frame,updated) then
+                old.applied=updated
+            end
+            return
+        end
         if not Same(current,old.original) then
             tracked[name]=nil
             abandoned[name]=true
@@ -168,7 +182,8 @@ function ChalkBox_ScreenLayoutStatus()
 end
 local events=CreateFrame("Frame")
 for _,event in ipairs({"ADDON_LOADED","PLAYER_ENTERING_WORLD",
-    "PLAYER_REGEN_ENABLED","DISPLAY_SIZE_CHANGED","UI_SCALE_CHANGED"}) do
+    "PLAYER_REGEN_ENABLED","DISPLAY_SIZE_CHANGED","UI_SCALE_CHANGED",
+    "NOTCHED_DISPLAY_MODE_CHANGED"}) do
     events:RegisterEvent(event)
 end
 events:SetScript("OnEvent",function(_,event,name)
@@ -183,7 +198,8 @@ events:SetScript("OnEvent",function(_,event,name)
     end
     if not db then return end
     if event=="PLAYER_ENTERING_WORLD" or event=="PLAYER_REGEN_ENABLED"
-        or event=="DISPLAY_SIZE_CHANGED" or event=="UI_SCALE_CHANGED" then
+        or event=="DISPLAY_SIZE_CHANGED" or event=="UI_SCALE_CHANGED"
+        or event=="NOTCHED_DISPLAY_MODE_CHANGED" then
         ChalkBox_ScreenLayoutAdjust()
     end
 end)

@@ -11,16 +11,20 @@ local registered = false
 -- Existing keys stay stable so slash shortcuts and saved preferences work.
 local navigation = {
     {key="loot", title="LootSense", children={
-        {key="loothighlight", title="Appearance"}}},
+        {key="loothighlight", title="Appearance"},
+        {key="tooltipcoord", title="Item Insights (Experimental)"}}},
     {key="drops", title="DropSense"},
     {key="auction", title="AuctionSense", children={
-        {key="auctioncharts", title="Charts (Experimental)"}}},
+        {key="auctioncharts", title="Charts (Experimental)"},
+        {key="auctionintel", title="Intelligence (Experimental)"}}},
     {key="quests", title="QuestSense", children={
+        {key="questsmart", title="Smart Rules"},
         {key="questnav", title="Navigation"}}},
     {key="journal", title="Session Journal"},
     {key="bar", title="The Bar", children={
         {key="barstats", title="Modules"},
-        {key="barappearance", title="Appearance"}}},
+        {key="barappearance", title="Appearance"},
+        {key="barsafe", title="Mac / Notch Safe Area"}}},
     {key="meter", title="Combat Meter"},
     {key="forge", title="MacroForge"},
     {key="prep", title="Adventure Prep", children={
@@ -30,6 +34,7 @@ local navigation = {
         {key="races", title="Race Behavior"},
         {key="catalog", title="Emote Catalog"}}},
     {key="guard", title="QuietGuard"},
+    {key="transfer", title="Data Transfer"},
     {key="updates", title="Updates"},
 }
 local parentPage = {}
@@ -176,7 +181,7 @@ local function MakeHome()
         {title="COMBAT & HUD",
             keys={"bar","meter","forge","prep"}},
         {title="PERSONALIZE & MANAGE",
-            keys={"theme","emota","guard","updates"}},
+            keys={"theme","emota","guard","transfer"}},
     }
     local pageByKey={}
     for _,entry in ipairs(navigation) do pageByKey[entry.key]=entry end
@@ -201,6 +206,56 @@ end
 
 -- Global appearance is a shared, optional surface layer. Local opacity
 -- controls on the Bar/toast/meter are preserved and apply independently.
+local function MakeTransfer()
+    local panel=Panel("Data Transfer",
+        "Copy one file between PCs. Only AuctionSense and Discoveries are transferred.")
+    Label(panel,"AUCTION DATA + DISCOVERIES","GameFontNormalLarge",28,-109,490)
+    Label(panel,"Includes saved price scans, confirmed sale receipts, recorded drops",
+        "GameFontHighlightSmall",28,-139,490)
+    Label(panel,"and known flight paths. Does NOT transfer settings or session data.",
+        "GameFontHighlightSmall",28,-156,490)
+    Button(panel,"Export Data",28,-192,210,function()
+        if type(ChalkBox_TransferExport)~="function" then
+            Note("Transfer module is unavailable.");return
+        end
+        local ok,msg=ChalkBox_TransferExport()
+        Note(msg or (ok and "Export prepared." or "Export failed."))
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    Button(panel,"Import & Merge",260,-192,210,function()
+        if type(ChalkBox_TransferImport)~="function" then
+            Note("Transfer module is unavailable.");return
+        end
+        local ok,msg=ChalkBox_TransferImport()
+        Note(msg or (ok and "Data merged." or "Import failed."))
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    Label(panel,"EXPORT: Click Export Data, then /reload or log out to save the file.",
+        "GameFontHighlightSmall",28,-246,495)
+    Label(panel,"COPY: While WoW is closed on both PCs, transfer this file:",
+        "GameFontHighlightSmall",28,-269,495)
+    Label(panel,"WTF/Account/<account>/SavedVariables/ChalkBoxTransfer.lua",
+        "GameFontHighlightSmall",28,-292,495)
+    Label(panel,"IMPORT: Start WoW on the second PC, then click Import & Merge.",
+        "GameFontHighlightSmall",28,-315,495)
+    local info=Label(panel,"","GameFontHighlightSmall",28,-354,495)
+    local state=Label(panel,"","GameFontHighlightSmall",28,-386,495)
+    panel:AddRefresh(function()
+        local s=type(ChalkBox_TransferStatus)=="function" and
+            ChalkBox_TransferStatus() or nil
+        if not s or not s.companion then
+            info:SetText("Transfer companion not enabled: reinstall the full ChalkBox ZIP.")
+        elseif not s.file then
+            info:SetText("No transfer file loaded. Export here, or copy one from the other PC.")
+        else
+            info:SetText(("File ready: %d markets · %d sale ledgers · %d discovery areas"):format(
+                s.marketCount or 0,s.saleCharacters or 0,s.discoveryAreas or 0))
+        end
+        state:SetText(s and s.message or "Only explicit imports change local records.")
+    end)
+    return panel
+end
+
 local function MakeTheme()
     local panel=Panel("Global Appearance",
         "One background and accent palette for ChalkBox windows, The Bar and camp alerts.")
@@ -411,7 +466,10 @@ local function MakeAuction()
         end
     end)
     Label(panel,"AuctionSense is part of Blizzard's Auction House.",
-        "GameFontHighlightSmall",28,-287,490)
+        "GameFontHighlightSmall",28,-287,295)
+    Button(panel,"Intelligence Lab",334,-283,188,function()
+        Activate("auctionintel")
+    end)
     Toggle(panel,"Show auction prices on item tooltips",
         "Only when a market scan exists; always includes scan age.",
         -311,function()
@@ -445,6 +503,72 @@ local function MakeAuction()
             st.items or 0,st.source=="browse" and "Browse snapshot" or
             (st.source=="full" and "Full listing snapshot" or "Unscanned"),
             st.age and (math.floor(st.age/60).."m old") or "No scan"))
+    end)
+    return panel
+end
+
+local function MakeAuctionIntel()
+    local panel=Panel("AuctionSense / Intelligence (Experimental)",
+        "Read-only inventory decisions. OFF by default on every character.")
+    local function Status()
+        return type(ChalkBox_IntelStatus)=="function" and
+            ChalkBox_IntelStatus() or {enabled=false,mode="skill",
+            target=25,margin=25,learn=true,protectGoal=true,recipes=0}
+    end
+    local function Set(key,value)
+        if type(ChalkBox_IntelSet)=="function" then
+            ChalkBox_IntelSet(key,value)
+        end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end
+    Toggle(panel,"Enable Inventory Intelligence",
+        "Starts OFF; never buys, crafts, sells or posts auctions.",
+        -108,function() return Status().enabled end,
+        function(on) Set("enabled",on) end)
+    Toggle(panel,"Use my confirmed auction-sale history",nil,
+        -163,function() return Status().learn end,
+        function(on) Set("learn",on) end)
+    Toggle(panel,"Protect Skill Up materials in Make Gold mode",nil,
+        -201,function() return Status().protectGoal end,
+        function(on) Set("protectGoal",on) end)
+    Label(panel,"DECISION GOAL","GameFontNormalLarge",28,-239,480)
+    Button(panel,"Skill Up",28,-260,231,function() Set("mode","skill") end)
+    Button(panel,"Make Gold",273,-260,231,function() Set("mode","gold") end)
+    local goalLabel=Label(panel,"Goal: open a profession window",
+        "GameFontHighlightSmall",28,-299,500)
+    Button(panel,"Pin last scanned profession",28,-314,235,function()
+        local st=Status()
+        if st.lastObserved then Set("profession",st.lastObserved) end
+    end)
+    Button(panel,"Use automatic profession",274,-314,230,function()
+        Set("profession",nil)
+    end)
+    Label(panel,"SKILL FORECAST","GameFontNormal",28,-355,240)
+    Label(panel,"AUCTION / CRAFT MARGIN","GameFontNormal",281,-355,240)
+    for i,n in ipairs({10,25,50}) do
+        Button(panel,"+"..n,28+(i-1)*76,-376,67,function()
+            Set("target",n)
+        end)
+    end
+    for i,n in ipairs({15,25,50}) do
+        Button(panel,n.."%",281+(i-1)*76,-376,67,function()
+            Set("margin",n)
+        end)
+    end
+    local state=Label(panel,"Disabled","GameFontHighlightSmall",28,-419,500)
+    panel:AddRefresh(function()
+        local st=Status()
+        local skill=st.skill
+        goalLabel:SetText("Goal: "..tostring(st.profession or "No profession scanned")..
+            (skill and type(skill.rank)=="number" and
+             type(skill.cap)=="number" and
+             ("  "..skill.rank.."/"..skill.cap) or "")..
+            (st.goalPinned and "  (PINNED)" or "  (AUTO)"))
+        state:SetText((st.enabled and "ON" or "OFF")..
+            "  |  "..(st.mode=="gold" and "Make Gold" or "Skill Up")..
+            "  |  +"..tostring(st.target or 25).." points  |  "..
+            tostring(st.margin or 25).."% margin  |  "..
+            tostring(st.recipes or 0).." scanned recipes")
     end)
     return panel
 end
@@ -653,6 +777,44 @@ local function MakeLoot()
     return panel
 end
 
+local function MakeTooltipCoordinator()
+    local panel=Panel("LootSense / Item Insights (Experimental)",
+        "One read-only item tooltip. OFF by default; legacy tooltips are preserved.")
+    Toggle(panel,"Enable coordinated item tooltips",
+        "Combines quest safety, recipes, auction evidence and optional advice.",
+        -111,function()
+            return type(ChalkBox_TipCoordinatorEnabled)=="function" and
+                ChalkBox_TipCoordinatorEnabled()
+        end,function(on)
+            if type(ChalkBox_TipCoordinatorSet)=="function" then
+                ChalkBox_TipCoordinatorSet(on)
+            end
+        end)
+    Label(panel,"HOW IT WORKS","GameFontNormalLarge",28,-190,485)
+    Label(panel,"One priority-driven ChalkBox section replaces overlapping",
+        "GameFontHighlightSmall",28,-225,494)
+    Label(panel,"item notes. Quest and personal protection outrank sales.",
+        "GameFontHighlightSmall",28,-246,494)
+    Label(panel,"Hold Shift and re-hover for prices and more recipes.",
+        "GameFontHighlightSmall",28,-274,494)
+    Label(panel,"No automatic scans, transactions or protected UI changes.",
+        "GameFontHighlightSmall",28,-295,494)
+    Button(panel,"Restore Legacy Tooltips",28,-350,232,function()
+        if type(ChalkBox_TipCoordinatorSet)=="function" then
+            ChalkBox_TipCoordinatorSet(false)
+        end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    local status=Label(panel,"","GameFontHighlight",28,-406,490)
+    panel:AddRefresh(function()
+        status:SetText(type(ChalkBox_TipCoordinatorEnabled)=="function" and
+            ChalkBox_TipCoordinatorEnabled() and
+            "ACTIVE: coordinated tooltips for this character." or
+            "OFF: original tooltips remain in control.")
+    end)
+    return panel
+end
+
 local function MakeLootAppearance()
     local panel=Panel("LootSense Appearance",
         "Control which item hints appear. WoW's item art remains unchanged.")
@@ -748,6 +910,9 @@ local function MakeQuests()
     Button(panel,"Navigation Arrow",27,-379,198,function()
         Activate("questnav")
     end)
+    Button(panel,"Smart Rules",234,-379,210,function()
+        Activate("questsmart")
+    end)
     local info=Label(panel,"","GameFontHighlightSmall",28,-419,498)
     panel:AddRefresh(function()
         local st=ChalkBox_QuestStatus and ChalkBox_QuestStatus() or nil
@@ -759,6 +924,61 @@ local function MakeQuests()
             "  |  "..tostring(st.hidden or 0).." hidden"..
             "  |  limit "..tostring(st.limit)..
             (st.pending and "  |  updating when safe" or ""))
+    end)
+    return panel
+end
+
+local function MakeQuestSmart()
+    local panel=Panel("QuestSense / Smart Rules",
+        "Choose which accepted quests Smart favors without replacing Blizzard's tracker.")
+    local function Run(action)
+        if type(ChalkBox_QuestCommand)=="function" then
+            ChalkBox_QuestCommand(action)
+        end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end
+    Label(panel,"Priority order","GameFontNormalLarge",28,-105,450)
+    Button(panel,"Nearest objective",27,-137,160,
+        function() Run("sort nearest") end)
+    Button(panel,"Current zone",198,-137,147,
+        function() Run("sort zone") end)
+    Button(panel,"Quest level",357,-137,155,
+        function() Run("sort level") end)
+    Button(panel,"Quest title",27,-178,190,
+        function() Run("sort title") end)
+    Button(panel,"Quest log",228,-178,160,
+        function() Run("sort log") end)
+    local rank=Label(panel,"","GameFontHighlightSmall",227,-182,285)
+    Toggle(panel,"Prioritize quests in the current zone",
+        "Zone match is stronger than distant quest distance.",
+        -230,
+        function()
+            local st=ChalkBox_QuestStatus and ChalkBox_QuestStatus()
+            return st and st.nearbyFirst
+        end,
+        function(on) Run("nearbyfirst "..(on and "on" or "off")) end)
+    Toggle(panel,"Completed quests first",
+        "Show known turn-ins before unfinished objectives.",
+        -296,
+        function()
+            local st=ChalkBox_QuestStatus and ChalkBox_QuestStatus()
+            return st and st.completeFirst
+        end,
+        function(on) Run("completefirst "..(on and "on" or "off")) end)
+    Label(panel,"Nearby radius","GameFontNormal",28,-407,160)
+    for i,radius in ipairs({0,500,1000,2000}) do
+        Button(panel,radius==0 and "Zone" or (radius.."y"),
+            170+(i-1)*88,-401,80,function()
+                Run("range "..radius)
+            end)
+    end
+    local explanation=Label(panel,"","GameFontHighlightSmall",28,-448,492)
+    panel:AddRefresh(function()
+        local st=ChalkBox_QuestStatus and ChalkBox_QuestStatus() or {}
+        rank:SetText("Selected: "..tostring(st.sort or "nearest"))
+        explanation:SetText("Nearby radius "..tostring(st.nearbyRange or 0)..
+            "y | first quest #"..tostring(st.nearest or "unknown")..
+            " | Blizzard tracker display preserved")
     end)
     return panel
 end
@@ -931,6 +1151,82 @@ local function MakeBar()
     return panel
 end
 
+local function MakeBarSafeArea()
+    local panel=Panel("Top Safe Area",
+        "Use both sides of a MacBook notch while keeping Trail Bar at the top.")
+    Label(panel,"NOTCH-SAFE TOP BAR","GameFontNormalLarge",28,-111,470)
+    Label(panel,"Auto uses the full game edge, above Blizzard's shifted UI.",
+        "GameFontHighlightSmall",28,-141,500)
+    Label(panel,"Normal displays keep their current full-width layout.",
+        "GameFontHighlightSmall",28,-164,500)
+    Button(panel,"Auto split",28,-200,152,function()
+        if ChalkBox_BarTopInsetSet then ChalkBox_BarTopInsetSet("auto") end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    Button(panel,"Manual split",192,-200,152,function()
+        if ChalkBox_BarNotchGapSet then
+            local st=ChalkBox_BarTopInsetStatus and
+                ChalkBox_BarTopInsetStatus() or {}
+            ChalkBox_BarNotchGapSet(st.manualGap or 120)
+        end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    Button(panel,"Below notch",356,-200,152,function()
+        if ChalkBox_BarTopInsetSet then ChalkBox_BarTopInsetSet(32) end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    local current=Label(panel,"","GameFontHighlight",28,-251,500)
+    Label(panel,"MANUAL CAMERA GAP · 40–400 UI pixels",
+        "GameFontNormalLarge",28,-287,500)
+    local gap=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
+    gap:SetSize(353,18)
+    gap:SetPoint("TOPLEFT",panel,"TOPLEFT",42,-324)
+    gap:SetMinMaxValues(40,400)
+    if gap.SetValueStep then gap:SetValueStep(4) end
+    local gapText=Label(panel,"120px","GameFontHighlight",412,-329,100)
+    local loading=false
+    gap:SetScript("OnValueChanged",function(_,value)
+        if loading or type(value)~="number" then return end
+        local width=math.floor(math.max(40,math.min(400,value))/4+0.5)*4
+        if ChalkBox_BarNotchGapSet then ChalkBox_BarNotchGapSet(width) end
+        gapText:SetText(width.."px")
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    Label(panel,"RAISE BAR INTO NOTCH · 0–120 UI pixels",
+        "GameFontNormalLarge",28,-370,500)
+    local up=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
+    up:SetSize(353,18)
+    up:SetPoint("TOPLEFT",panel,"TOPLEFT",42,-408)
+    up:SetMinMaxValues(0,120)
+    if up.SetValueStep then up:SetValueStep(2) end
+    local upText=Label(panel,"AUTO","GameFontHighlight",412,-413,100)
+    up:SetScript("OnValueChanged",function(_,value)
+        if loading or type(value)~="number" then return end
+        -- Larger values are physically HIGHER. The previous beta wired
+        -- this control to a down-inset and did the opposite.
+        local rise=math.floor(math.max(0,math.min(120,value))/2+0.5)*2
+        if ChalkBox_BarNotchRaiseSet then ChalkBox_BarNotchRaiseSet(rise) end
+        upText:SetText("+"..rise.."px")
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    panel:AddRefresh(function()
+        local st=ChalkBox_BarTopInsetStatus and
+            ChalkBox_BarTopInsetStatus() or {}
+        loading=true
+        gap:SetValue(st.manualGap or 120)
+        up:SetValue(st.rise or 0)
+        loading=false
+        gapText:SetText(tostring(st.manualGap or 120).."px")
+        upText:SetText(st.rise and ("+"..st.rise.."px") or "AUTO")
+        local mode=st.mode=="split" and "Manual split" or
+            (st.mode=="manual" and "Below notch" or "Auto")
+        current:SetText(mode.." · "..(st.anchor or st.source or "UIParent")..
+            (st.split and " · gap protected" or "")..
+            (st.pending and " · applies after combat" or ""))
+    end)
+    return panel
+end
+
 local function MakeBarStats()
     local panel=Panel("The Bar Stats",
         "Choose the stats you want on the bar.")
@@ -998,7 +1294,7 @@ end
 
 local function MakeBarAppearance()
     local panel=Panel("The Bar Appearance",
-        "Opacity and a layout saved for each character.")
+        "Panel opacity, compact module icons and a customizable layout.")
     Label(panel,"BACKGROUND","GameFontNormalLarge",28,-111,370)
     Label(panel,"Only the panel fades. Text, hover details and the XP line remain clear.",
         "GameFontHighlightSmall",28,-145,500)
@@ -1023,30 +1319,42 @@ local function MakeBarAppearance()
     end)
     Label(panel,"0% = text only     ·     100% = solid charcoal",
         "GameFontHighlightSmall",36,-225,460)
-    Label(panel,"LAYOUT EDITOR","GameFontNormalLarge",28,-274,460)
-    Button(panel,"Edit Bar",28,-306,150,function()
+    Toggle(panel,"Show icons beside Bar stats",
+        "Compact Blizzard icons. Existing module widths, position and notch gap stay unchanged.",
+        -249,
+        function()
+            return type(ChalkBox_BarIconsGet)~="function" or
+                ChalkBox_BarIconsGet()
+        end,
+        function(on)
+            if type(ChalkBox_BarIconsSet)=="function" then
+                ChalkBox_BarIconsSet(on==true)
+            end
+        end)
+    Label(panel,"LAYOUT EDITOR","GameFontNormalLarge",28,-290,460)
+    Button(panel,"Edit Bar",28,-320,150,function()
         if ChalkBox_BarCommand then ChalkBox_BarCommand("edit on") end
         if panel.OnRefresh then panel.OnRefresh() end
     end)
-    Button(panel,"Done Editing",190,-306,150,function()
+    Button(panel,"Done Editing",190,-320,150,function()
         if ChalkBox_BarCommand then ChalkBox_BarCommand("edit off") end
         if panel.OnRefresh then panel.OnRefresh() end
     end)
-    Button(panel,"Reset Layout",352,-306,150,function()
+    Button(panel,"Reset Layout",352,-320,150,function()
         if ChalkBox_BarCommand then ChalkBox_BarCommand("layout reset") end
         if panel.OnRefresh then panel.OnRefresh() end
     end)
-    local mode=Label(panel,"","GameFontHighlightSmall",29,-349,500)
+    local mode=Label(panel,"","GameFontHighlightSmall",29,-362,500)
     panel:AddRefresh(function()
         mode:SetText("Edit mode: "..(ChalkBox_BarEditStatus and
             ChalkBox_BarEditStatus() and "ON — move modules" or "OFF — locked"))
     end)
     Label(panel,"Outside Edit Mode, right-click a stat for its context menu.",
-        "GameFontHighlightSmall",28,-378,500)
+        "GameFontHighlightSmall",28,-393,500)
     Label(panel,"Inside Edit Mode, drag to move modules between thirds;",
-        "GameFontHighlightSmall",28,-400,500)
+        "GameFontHighlightSmall",28,-415,500)
     Label(panel,"right-click cycles alignment. Layout is per character.",
-        "GameFontHighlightSmall",28,-422,500)
+        "GameFontHighlightSmall",28,-437,500)
     return panel
 end
 
@@ -1486,17 +1794,22 @@ local function Register()
     if registered then return end
     panels.home = MakeHome()
     panels.theme = MakeTheme()
+    panels.transfer = MakeTransfer()
     panels.drops = MakeDrops()
     panels.auction = MakeAuction()
     panels.auctioncharts = MakeAuctionCharts()
+    panels.auctionintel = MakeAuctionIntel()
     panels.journal = MakeJournal()
     panels.forge = MakeForge()
     panels.updates = MakeUpdates()
     panels.loot = MakeLoot()
     panels.loothighlight = MakeLootAppearance()
+    panels.tooltipcoord = MakeTooltipCoordinator()
     panels.quests = MakeQuests()
+    panels.questsmart = MakeQuestSmart()
     panels.questnav = MakeQuestNavigation()
     panels.bar = MakeBar()
+    panels.barsafe = MakeBarSafeArea()
     panels.barstats = MakeBarStats()
     panels.barappearance = MakeBarAppearance()
     panels.emota = MakeEmota()

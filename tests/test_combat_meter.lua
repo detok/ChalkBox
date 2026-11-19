@@ -156,6 +156,10 @@ local function Flush()
 end
 Flush()
 assert(callCount==0,"a hidden meter must not fetch combat data at startup")
+assert(event.script.OnUpdate,
+    "visible-only heartbeat can recover native damage events that are missed")
+event.script.OnUpdate(event,2.0)
+assert(callCount==0,"hidden heartbeat must not poll native combat data")
 ChalkBox_MeterCommand("show")
 Flush()
 assert(lastMeterType==1 and lastSession==1,"manual show defaults to current DPS")
@@ -198,6 +202,10 @@ assert(icons[3].shown and icons[3].texturePath==
     "Interface\\Icons\\INV_Misc_QuestionMark",
     "unknown/pet sources never get mislabeled as a player class")
 assert(not icons[4].shown,"empty result rows must not retain stale icons")
+local firstValueLabel=bars[1].parent.value
+local thirdValueLabel=bars[3].parent.value
+assert(firstValueLabel and thirdValueLabel,
+    "each native combat row owns its own numerical text")
 local name1
 for _,f in ipairs(labels) do
     if f.text==secretName then name1=f end
@@ -304,9 +312,21 @@ grip.script.OnMouseUp(grip)
 assert(ChalkBoxDB.meter.width==422 and ChalkBoxDB.meter.rows==10,
     "dragged width/height turn into saved width and visible row count")
 assert(window.w==422 and window.h==316,"resized meter keeps dimensions")
+-- No combat-session event was fired: the visible-only heartbeat still
+-- repaints one bounded native sample instead of leaving values stale.
+Flush()
+local beforeHeartbeat=callCount
+event.script.OnUpdate(event,0.50)
+assert(callCount==beforeHeartbeat,
+    "heartbeat does not poll more often than the bounded cadence")
+event.script.OnUpdate(event,0.30)
+assert(callCount==beforeHeartbeat+1,
+    "visible meter recovers without needing a native session event")
 ChalkBox_MeterCommand("hide")
 Flush()
 local old=callCount
+event.script.OnUpdate(event,2)
+assert(callCount==old,"hidden meter disables all periodic API reads")
 event.script.OnEvent(event,"DAMAGE_METER_COMBAT_SESSION_UPDATED")
 Flush()
 assert(callCount==old,"hidden window should not poll Blizzard data")
@@ -406,6 +426,47 @@ assert(#partyMessages==3
     "when the current session is empty, report the last recorded fight")
 C_DamageMeter.GetCombatSessionFromType=saved
 assert(resetCount==1,"PRINT never resets Blizzard's shared sessions")
+-- Once a fight completes, empty Current must display the last native
+-- session rather than an apparently broken all-zero meter.
+local fallbackGetter=C_DamageMeter.GetCombatSessionFromType
+C_DamageMeter.GetCombatSessionFromType=function(session,kind)
+    if session==Enum.DamageMeterSessionType.Current then
+        return {maxAmount=0,combatSources={}}
+    end
+    return fallbackGetter(session,kind)
+end
+ChalkBox_MeterCommand("current")
+Flush()
+assert(lastSession==Enum.DamageMeterSessionType.Expired and
+    bars[1].parent.value.text~=nil,
+    "compact display falls back to Last after Current becomes empty")
+C_DamageMeter.GetCombatSessionFromType=fallbackGetter
+-- An intermittent player entry failure must not prevent other rows from
+-- showing, nor retain a stale player number.
+local failing=bars[1].SetStatusBarColor
+local once=true
+bars[1].SetStatusBarColor=function(self,...)
+    if once then once=false;error("simulated protected rendering failure") end
+    return failing(self,...)
+end
+ChalkBox_MeterCommand("dps")
+Flush()
+assert(bars[1].parent.value.text=="" and
+    bars[2].parent.value.text~=nil and
+    ChalkBox_MeterStatus().displayError:find("simulated protected",1,true),
+    "one failed row is isolated and its issue is available to diagnostics")
+bars[1].SetStatusBarColor=failing
+local fewer=C_DamageMeter.GetCombatSessionFromType
+C_DamageMeter.GetCombatSessionFromType=function()
+    return {maxAmount=120,combatSources={
+        {name="Only Player",classFilename="HUNTER",
+            amountPerSecond=120,totalAmount=1000}}}
+end
+ChalkBox_MeterCommand("damage")
+Flush()
+assert(thirdValueLabel.text=="",
+    "unused combat rows clear stale numerical text as well as names")
+C_DamageMeter.GetCombatSessionFromType=fewer
 local api=C_DamageMeter
 C_DamageMeter=nil
 ChalkBox_MeterCommand("status")

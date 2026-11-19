@@ -71,6 +71,26 @@ _G.CreateFrame=function(kind,name,parent,template)
 end
 _G.AuctionHouseFrame=Element("Frame",UIParent,"AuctionHouseFrame")
 AuctionHouseFrame.level=15
+local stagedLocation,postCalls=nil,0
+_G.C_Container={
+    GetContainerNumSlots=function(bag) return bag==0 and 2 or 0 end,
+    GetContainerItemLink=function(bag,slot)
+        return bag==0 and slot==1 and "|cff1eff00|Hitem:8888:0:0:0|h[My Test Green]|h|r" or nil
+    end,
+}
+_G.NUM_BAG_SLOTS=4
+_G.ItemLocation={
+    CreateFromBagAndSlot=function(bag,slot)
+        return {bag=bag,slot=slot}
+    end,
+}
+_G.C_AuctionHouse={
+    IsSellItemValid=function(location) return location.bag==0 and location.slot==1 end,
+}
+function AuctionHouseFrame:SetPostItem(location)
+    postCalls=postCalls+1
+    stagedLocation=location
+end
 local buy=Element("Button",AuctionHouseFrame,"AHBuy")
 local sell=Element("Button",AuctionHouseFrame,"AHSell")
 local auctions=Element("Button",AuctionHouseFrame,"AHAuctions")
@@ -230,7 +250,8 @@ _G.ChalkBox_MarketBagRows=function()
     bagsRead=bagsRead+1
     return {{name="My Test Green",itemID=8888,low=1000,
         count=2,marketTotal=2000,vendorTotal=500,
-        de=1500,note="DE candidate",protected=false,bound=false}},
+        de=1500,note="DE candidate",protected=false,bound=false,
+        boundKnown=true}},
         {stacks=1,priced=1,marketValue=2000,vendorValue=500}
 end
 _G.ChalkBox_MarketSaleRows=function()
@@ -665,4 +686,21 @@ ChalkBox_AuctionHide()
 assert(not pane.shown and AuctionHouseFrame.AuctionsFrame.shown,
     "closing Market restores Blizzard native subframes without changing mode")
 assert(nativeRegistryEdits==0,"no protected PanelTemplates mutations")
-print("PASS: Market never writes AH displayMode; Cozy Sleeping Bag item-use path safe, native tabs restore, real AH artwork, market scans and responsive table")
+-- The handoff is an explicit separate user workflow: don't contaminate
+-- the preceding read-only Market/tab-state invariants with native Sell.
+tab:Click()
+Button("My Items"):Click()
+rows[1].scripts.OnMouseDown(rows[1],"LeftButton")
+local prepare=Button("Prepare Auction")
+assert(prepare and prepare.shown and prepare.enabled==true,
+    "selected verified tradeable bag item enables Prepare Auction")
+prepare:Click()
+assert(not pane.shown and
+    AuctionHouseFrame:GetDisplayMode()==AuctionHouseFrameDisplayMode.Sell,
+    "Prepare Auction opens native Sell only on deliberate user click")
+assert(postCalls==1 and stagedLocation and
+    stagedLocation.bag==0 and stagedLocation.slot==1,
+    "Prepare Auction stages the selected LIVE bag stack, not just the Sell tab")
+assert(nativeRegistryEdits==0,
+    "auction preparation never changes protected native tab registry")
+print("PASS: Market read-only state, owned-item Prepare Auction navigation, native tab recovery and responsive table")

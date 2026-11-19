@@ -1453,13 +1453,26 @@ local function InstallButton()
     b:SetScript("OnEnter",function(self)
         if GameTooltip then
             GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
-            GameTooltip:SetText("Discoveries")
-            GameTooltip:AddLine("Left click  ·  Open journal",
-                0.8,0.82,0.85,true)
-            GameTooltip:AddLine("Drag  ·  Move button",
-                0.7,0.85,0.75,true)
-            GameTooltip:AddLine("Right click  ·  Reset position",
-                0.75,0.75,0.8,true)
+            if type(GameTooltip.ClearLines)=="function" then
+                GameTooltip:ClearLines()
+            end
+            if type(ChalkBox_TipLine)=="function" then
+                ChalkBox_TipLine(GameTooltip,"Discoveries","title")
+                ChalkBox_TipLine(GameTooltip,
+                    "Left-click  ·  Open journal","text",true)
+                ChalkBox_TipLine(GameTooltip,
+                    "Drag  ·  Move button","muted",true)
+                ChalkBox_TipLine(GameTooltip,
+                    "Right-click  ·  Reset position","muted",true)
+            else
+                GameTooltip:SetText("Discoveries")
+                GameTooltip:AddLine("Left-click  ·  Open journal",
+                    0.8,0.82,0.85,true)
+                GameTooltip:AddLine("Drag  ·  Move button",
+                    0.7,0.85,0.75,true)
+                GameTooltip:AddLine("Right-click  ·  Reset position",
+                    0.75,0.75,0.8,true)
+            end
             GameTooltip:Show()
         end
     end)

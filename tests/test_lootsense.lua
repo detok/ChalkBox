@@ -288,4 +288,20 @@ merchantOpen=false
 assert(Hover(101)=="","junk remains quiet")
 hasLW=false
 assert(Hover(102)=="","profession hint must disappear when profession is absent")
-print("PASS: native LootSense quest title/progress, multi-quest and completed objectives, personal KEEP protection, merchant separation and prior camp/profession hints")
+-- Legacy assertions above must pass unchanged before enabling the experiment.
+assert(loadfile("TooltipCoordinator.lua"))()
+assert(not ChalkBox_TipCoordinatorEnabled())
+assert(ChalkBox_TipCoordinatorSet(true))
+local coordinated=Hover(4470)
+assert(coordinated:find("ChalkBox  |  Item Insights",1,true) and
+    coordinated:find("CAMP SUPPLY",1,true),
+    "one unified section retains original LootSense useful classifications")
+local count=#tip.lines
+onTooltip(tip)
+assert(#tip.lines==count,"multiple callbacks cannot repeat the coordinator")
+SlashCmdList.CHALKBOX("tooltips off")
+assert(not ChalkBox_TipCoordinatorEnabled() and
+    Hover(4470):find("CAMP SUPPLY",1,true) and
+    not Hover(4470):find("Item Insights",1,true),
+    "single slash switch restores original tooltip rendering immediately")
+print("PASS: native LootSense and opt-in coordinated rendering, quest/profession preservation, no duplicate annotations and instant rollback")

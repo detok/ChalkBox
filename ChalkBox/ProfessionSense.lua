@@ -41,6 +41,176 @@ local function Normalize(name, skill)
     return nil
 end
 
+-- The open profession heading and recipe list can temporarily disagree when
+-- Forever changes trade-skill data sources. The bundled Forever recipe catalog
+-- gives us an independent mapping from recipe SPELL ID to its profession.
+-- It also lets us repair old, name-only saved associations conservatively.
+local recipeCatalog
+local function RecipeCatalog()
+    if recipeCatalog then return recipeCatalog end
+    if type(LibStub)~="function" and type(LibStub)~="table" then return nil end
+    local ok,lib=pcall(function()
+        return LibStub("LibProfessionDB-1.0",true)
+    end)
+    if not ok or type(lib)~="table" or
+        type(lib.GetRecipes)~="function" then return nil end
+    local lookup={owner={},reagents={}}
+    local total=0
+    for professionID,profession in pairs(ids) do
+        local found,recipes=pcall(lib.GetRecipes,lib,professionID)
+        if found and type(recipes)=="table" then
+            for spellID,record in pairs(recipes) do
+                if type(spellID)=="number" and type(record)=="table" then
+                    total=total+1
+                    if total>10000 then return nil end
+                    if lookup.owner[spellID]==nil then
+                        lookup.owner[spellID]=profession
+                    elseif lookup.owner[spellID]~=profession then
+                        lookup.owner[spellID]=false -- conflicting catalog
+                    end
+                    if type(record.reagents)=="table" then
+                        for itemID in pairs(record.reagents) do
+                            itemID=tonumber(itemID)
+                            if itemID and itemID>0 then
+                                local list=lookup.reagents[itemID] or {}
+                                list[#list+1]={spellID=spellID,
+                                    profession=profession,record=record}
+                                lookup.reagents[itemID]=list
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    if total==0 then return nil end
+    recipeCatalog=lookup
+    return recipeCatalog
+end
+
+local spellNames={}
+local function CatalogSpellName(spellID,record)
+    if type(record)=="table" and type(record.name)=="string" and
+        record.name~="" then return record.name end
+    if spellNames[spellID] then return spellNames[spellID] end
+    local name
+    if type(GetSpellInfo)=="function" then
+        local ok,value=pcall(GetSpellInfo,spellID)
+        if ok and Safe(value) and type(value)=="string" then name=value end
+    end
+    if not name and type(C_Spell)=="table" and
+        type(C_Spell.GetSpellName)=="function" then
+        local ok,value=pcall(C_Spell.GetSpellName,spellID)
+        if ok and Safe(value) and type(value)=="string" then name=value end
+    end
+    if name then spellNames[spellID]=name end
+    return name
+end
+
+local function CatalogOwnerByName(itemID,recipeName)
+    if not itemID or type(recipeName)~="string" then return nil end
+    local catalog=RecipeCatalog()
+    if not catalog then return nil end
+    local owner
+    for _,candidate in ipairs(catalog.reagents[tonumber(itemID)] or {}) do
+        local name=CatalogSpellName(candidate.spellID,candidate.record)
+        if name and name:lower()==recipeName:lower() then
+            if owner and owner~=candidate.profession then return nil end
+            owner=candidate.profession
+        end
+    end
+    return owner
+end
+
+local function CatalogOwnerByID(spellID)
+    local catalog=RecipeCatalog()
+    local owner=catalog and catalog.owner[tonumber(spellID)]
+    return type(owner)=="string" and owner or nil
+end
+
+local function ActualRecipeOwner(api,spellID)
+    if type(api)=="table" and
+        type(api.GetProfessionInfoByRecipeID)=="function" then
+        local ok,info=pcall(api.GetProfessionInfoByRecipeID,spellID)
+        if ok and type(info)=="table" then
+            local actual=Normalize(info.professionName or info.name,
+                info.professionID or info.skillLineID)
+            if actual then return actual end
+        end
+    end
+    return CatalogOwnerByID(spellID)
+end
+
+local function WrongRecipeOwner(profession,spellID,itemID,recipeName)
+    local actual=spellID and CatalogOwnerByID(spellID) or nil
+    if not actual and itemID then
+        actual=CatalogOwnerByName(itemID,recipeName)
+    end
+    return actual and actual~=profession
+end
+
+-- A previous beta could save "Cured Light Hide (Cooking)" after a transient
+-- list/heading mismatch. Do not relabel those as LEARNED Leatherworking:
+-- remove the false evidence and let the next real Leatherworking scan rebuild it.
+-- Unknown Forever-only recipes remain untouched; only a proven contradiction
+-- is pruned. Both ID and name lookup keys must be corrected.
+local repairedSavedTable
+local function RepairSavedRecipes()
+    if type(recipeUses)~="table" or repairedSavedTable==recipeUses
+        or not RecipeCatalog() then return end
+    local wrongPairs={}
+    local affected={}
+    for key,set in pairs(recipeUses) do
+        local itemID=type(key)=="string" and
+            tonumber(key:match("^id:(%d+)$")) or nil
+        if itemID and type(set)=="table" then
+            for rowKey,entry in pairs(set) do
+                if type(entry)=="table" and
+                    WrongRecipeOwner(entry.profession,
+                        entry.recipeID or entry.spellID,
+                        itemID,entry.recipe) then
+                    set[rowKey]=nil
+                    wrongPairs[entry.profession.."|"..entry.recipe]=true
+                    affected[key]=affected[key] or {}
+                    affected[key][entry.profession]=true
+                end
+            end
+        end
+    end
+    for key,set in pairs(recipeUses) do
+        if type(key)=="string" and key:sub(1,5)=="name:" and
+            type(set)=="table" then
+            for rowKey,entry in pairs(set) do
+                if type(entry)=="table" and
+                    wrongPairs[entry.profession.."|"..entry.recipe] then
+                    set[rowKey]=nil
+                    affected[key]=affected[key] or {}
+                    affected[key][entry.profession]=true
+                end
+            end
+        end
+    end
+    for key,professions in pairs(affected) do
+        local set=recipeUses[key]
+        for profession in pairs(professions) do
+            local stillKnown=false
+            for _,entry in pairs(type(set)=="table" and set or {}) do
+                if type(entry)=="table" and
+                    entry.profession==profession then
+                    stillKnown=true;break
+                end
+            end
+            if not stillKnown and type(learned[key])=="table" then
+                learned[key][profession]=nil
+            end
+        end
+        if type(set)=="table" and next(set)==nil then
+            recipeUses[key]=nil
+        end
+    end
+    repairedSavedTable=recipeUses
+end
+
 -- Professions in Forever can be visible through the modern trade UI even
 -- when Classic's GetProfessions / skill-list endpoints do not expose them.
 -- Treat a real opened profession as positive evidence; do not require an
@@ -57,7 +227,13 @@ local function ReadProfessions()
                         pcall(GetProfessionInfo,idx)
                     if infoOK then
                         local normalized=Normalize(name,skillID)
-                        if normalized then found[normalized]=true end
+                        if normalized then
+                            found[normalized]=true
+                            if type(ChalkBox_IntelObserveSkill)=="function" then
+                                pcall(ChalkBox_IntelObserveSkill,
+                                    normalized,rank,maxRank)
+                            end
+                        end
                     end
                 end
             end
@@ -92,8 +268,12 @@ local function ReadProfessions()
     available=found
 end
 
-local function AddReagent(profession, link, name, recipeName, quantity)
+local function AddReagent(profession, link, name, recipeName, quantity,spellID,
+    alternative,optional)
     if not profession then return end
+    local itemID=type(link)=="number" and link or
+        type(link)=="string" and tonumber(link:match("item:(%d+)"))
+    if WrongRecipeOwner(profession,spellID,itemID,recipeName) then return end
     available[profession]=true
     seenWindow[profession]=true
     if type(link)=="number" then link="item:"..tostring(link) end
@@ -113,8 +293,11 @@ local function AddReagent(profession, link, name, recipeName, quantity)
             recipeUses[itemKey]=recipeUses[itemKey] or {}
             recipeUses[itemKey][key]={
                 profession=profession,recipe=recipeName,
+                recipeID=type(spellID)=="number" and spellID or nil,
                 quantity=Safe(quantity) and type(quantity)=="number" and
-                    quantity>0 and math.floor(quantity) or nil
+                    quantity>0 and math.floor(quantity) or nil,
+                alternative=alternative==true,
+                optional=optional==true
             }
         end
     end
@@ -132,15 +315,50 @@ local function AddReagent(profession, link, name, recipeName, quantity)
     end
 end
 
+
+-- Forget a recipe only when the live client explicitly reports it unlearned.
+-- A missing/empty recipe list may be transient and must NEVER erase saved data.
+local function ForgetLearnedRecipe(profession,spellID)
+    if type(recipeUses)~="table" then return end
+    for key,set in pairs(recipeUses) do
+        if type(set)=="table" then
+            local changed=false
+            for rowKey,entry in pairs(set) do
+                if type(entry)=="table" and entry.profession==profession and
+                    entry.recipeID==spellID then
+                    set[rowKey]=nil
+                    changed=true
+                end
+            end
+            if changed then
+                local stillUsed=false
+                for _,entry in pairs(set) do
+                    if type(entry)=="table" and entry.profession==profession then
+                        stillUsed=true;break
+                    end
+                end
+                if not stillUsed and type(learned[key])=="table" then
+                    learned[key][profession]=nil
+                    if next(learned[key])==nil then learned[key]=nil end
+                end
+                if next(set)==nil then recipeUses[key]=nil end
+            end
+        end
+    end
+end
+
 local function ReadLegacyTrade()
     if type(GetTradeSkillLine) ~= "function" or type(GetNumTradeSkills) ~= "function"
         or type(GetTradeSkillInfo) ~= "function" then return end
-    local name = GetTradeSkillLine()
+    local name,rank,cap = GetTradeSkillLine()
     local profession = Normalize(name)
     if not profession or (authoritativeProfessions and not available[profession]) then return end
     available[profession]=true
     seenWindow[profession]=true
     scan.lastWindow=profession
+    if type(ChalkBox_IntelObserveSkill)=="function" then
+        pcall(ChalkBox_IntelObserveSkill,profession,rank,cap)
+    end
     local count = GetNumTradeSkills()
     if not Safe(count) or type(count) ~= "number" then return end
     for i=1,math.min(count,1200) do
@@ -213,7 +431,9 @@ local function OpenProfession(api)
                 child.professionID or child.skillLineID)
         end
     end
-    return profession
+    local baseRank=base.skillLevel or base.currentSkillLevel or base.skillRank
+    local baseCap=base.maxSkillLevel or base.maxRank or base.skillMaxRank
+    return profession,baseRank,baseCap
 end
 
 local function RecipeName(info,spellID)
@@ -234,7 +454,7 @@ local function ReadModernTrade()
     local api=C_TradeSkillUI
     if type(api)~="table" or type(api.GetAllRecipeIDs)~="function"
         or type(api.GetRecipeInfo)~="function" then return false end
-    local profession=OpenProfession(api)
+    local profession,rank,cap=OpenProfession(api)
     if not profession then
         scan.source="waiting for modern profession identity"
         return false
@@ -249,21 +469,30 @@ local function ReadModernTrade()
     available[profession]=true
     seenWindow[profession]=true
     scan.lastWindow=profession
+    -- On Forever, GetProfessions may be absent. The open modern window's
+    -- rank and cap are authoritative skill observations for the planner.
+    if type(ChalkBox_IntelObserveSkill)=="function" then
+        pcall(ChalkBox_IntelObserveSkill,profession,rank,cap)
+    end
     local known=0
     local before=scan.reagents
     for i=1,math.min(#recipes,2500) do
         local id=recipes[i]
         if Safe(id) and type(id)=="number" then
             local infoOK,info=pcall(api.GetRecipeInfo,id)
+            local actual=ActualRecipeOwner(api,id)
             if infoOK and type(info)=="table"
-                and (info.learned==true or info.isLearned==true) then
+                and (info.learned==true or info.isLearned==true)
+                and (not actual or actual==profession) then
                 known=known+1
                 local recipeName=RecipeName(info,id)
                 local added=false
+                local intelSchematic=nil
                 if type(api.GetRecipeSchematic)=="function" then
                     local schematicOK,schematic=pcall(api.GetRecipeSchematic,id,false)
                     if schematicOK and type(schematic)=="table"
                         and type(schematic.reagentSlotSchematics)=="table" then
+                        intelSchematic=schematic
                         for _,slot in ipairs(schematic.reagentSlotSchematics) do
                             if type(slot)=="table" and type(slot.reagents)=="table" then
                                 for _,reagent in ipairs(slot.reagents) do
@@ -276,7 +505,8 @@ local function ReadModernTrade()
                                         if Safe(itemID) and tonumber(itemID) then
                                             AddReagent(profession,tonumber(itemID),
                                                 reagent.name,recipeName,
-                                                slot.quantityRequired or reagent.quantityRequired)
+                                                slot.quantityRequired or reagent.quantityRequired,id,
+                                                #slot.reagents>1,slot.required==false)
                                             added=true
                                         end
                                     end
@@ -291,17 +521,71 @@ local function ReadModernTrade()
                 if not added and type(api.GetRecipeNumReagents)=="function"
                     and type(api.GetRecipeReagentInfo)=="function" then
                     local numberOK,n=pcall(api.GetRecipeNumReagents,id)
-                    if numberOK and type(n)=="number" then
-                        for j=1,math.min(n,25) do
+                    if numberOK and type(n)=="number" and n>=1 and
+                        n<=25 and n%1==0 then
+                        local fallbackSlots,complete={},true
+                        for j=1,n do
                             local reagentOK,reagent=pcall(api.GetRecipeReagentInfo,id,j)
                             if reagentOK and type(reagent)=="table" then
                                 local itemID=reagent.itemID or reagent.itemId
-                                AddReagent(profession,itemID or reagent.itemLink,
-                                    reagent.name,recipeName,
-                                    reagent.quantityRequired or reagent.quantity)
+                                local link=reagent.itemLink
+                                if not itemID and type(link)=="string" then
+                                    itemID=tonumber(link:match("item:(%d+)"))
+                                end
+                                local qty=reagent.quantityRequired or reagent.quantity
+                                local optional=reagent.optional==true or
+                                    reagent.isOptional==true or
+                                    reagent.required==false
+                                local alternative=reagent.alternative==true or
+                                    reagent.isAlternative==true or
+                                    reagent.isChoice==true or
+                                    (type(reagent.choices)=="table" and
+                                     #reagent.choices>0)
+                                AddReagent(profession,itemID or link,reagent.name,
+                                    recipeName,qty,id,alternative,optional)
+                                -- The older API sometimes returns a
+                                -- reagent list that includes choices.
+                                -- Neither a choice nor an optional slot
+                                -- proves an exact crafting bill of materials.
+                                if optional or alternative then complete=false end
+                                if type(itemID)=="number" and itemID>0 and
+                                    itemID%1==0 and type(qty)=="number" and
+                                    qty>=1 and qty<=1000 and qty%1==0 then
+                                    fallbackSlots[#fallbackSlots+1]={
+                                        required=true,quantityRequired=qty,
+                                        reagents={{itemID=itemID}}}
+                                else
+                                    complete=false
+                                end
+                            else
+                                complete=false
                             end
                         end
+                        -- Pass through exact legacy reagent data to the
+                        -- planner, not just tooltip labels. Never pass a
+                        -- partial ingredient list as a complete craft.
+                        if complete and #fallbackSlots==n and
+                            not intelSchematic then
+                            intelSchematic={
+                                chalkBoxReagentFallback=true,
+                                reagentSlotSchematics=fallbackSlots,
+                                outputItemID=info.outputItemID or
+                                    info.craftedItemID or info.craftedItemId,
+                                quantityMin=info.quantityMin,
+                                quantityMax=info.quantityMax}
+                        end
                     end
+                end
+                if type(ChalkBox_IntelObserveRecipe)=="function" then
+                    pcall(ChalkBox_IntelObserveRecipe,
+                        profession,id,info,intelSchematic)
+                end
+            elseif infoOK and type(info)=="table" and
+                (info.learned==false or info.isLearned==false) and
+                (not actual or actual==profession) then
+                ForgetLearnedRecipe(profession,id)
+                if type(ChalkBox_IntelForgetRecipe)=="function" then
+                    pcall(ChalkBox_IntelForgetRecipe,profession,id)
                 end
             end
         end
@@ -321,6 +605,7 @@ local function Refresh()
         ChalkBoxProfessionDB.recipeUses={}
     end
     recipeUses=ChalkBoxProfessionDB.recipeUses
+    RepairSavedRecipes()
     loaded = true
 end
 
@@ -408,7 +693,8 @@ end
 -- Saved per-character recipe names only come from the character's actual
 -- learned trade/craft windows. Never infer a recipe is known from an offline DB.
 function ChalkBox_LearnedRecipeUses(itemID,itemName)
-    local entries,seen={},{}
+    RepairSavedRecipes()
+    local entries,seen={},{} 
     local function Include(key)
         local set=recipeUses[key]
         if type(set)~="table" then return end
@@ -428,6 +714,12 @@ function ChalkBox_LearnedRecipeUses(itemID,itemName)
         Include("name:"..string.lower(itemName))
     end
     table.sort(entries,function(a,b)
+        -- Give actual required materials precedence in a tooltip over
+        -- alternatives and optional reagents from other learned recipes.
+        local aOptional,bOptional=a.optional==true,b.optional==true
+        if aOptional~=bOptional then return not aOptional end
+        local aAlternative,bAlternative=a.alternative==true,b.alternative==true
+        if aAlternative~=bAlternative then return not aAlternative end
         if a.profession~=b.profession then return a.profession<b.profession end
         return a.recipe<b.recipe
     end)

@@ -115,6 +115,18 @@ Open();Click("Reset all combat sessions...")
 assert(_G.resetRequested,"reset only requests existing confirmation")
 Open();Click("Open meter settings")
 assert(opened[1]=="meter")
+report.ready=true
+report.readyChannel="PARTY"
+local readyClicks=0
+_G.ChalkBox_NativeMeterSendReady=function()
+    readyClicks=readyClicks+1
+    report.ready=false
+    return true
+end
+Open()
+assert(Click("Send ready report to PARTY")
+    and readyClicks==1 and not report.ready,
+    "compact gear menu exposes a real player click for restricted auto chat")
 locked=true
 assert(not ChalkBox_MeterOpenMenu(owner) and #sent==3,
     "meter refuses right-click popup while combat-protected")

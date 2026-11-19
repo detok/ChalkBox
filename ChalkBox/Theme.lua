@@ -27,6 +27,21 @@ function ChalkBox_TipColor(role)
     local rgb=tooltipColors[role] or tooltipColors.text
     return rgb[1],rgb[2],rgb[3]
 end
+-- One small presentation contract for our OWN tooltip lines. No secure
+-- frame mutation, no edits to Blizzard's text, no persistent state.
+function ChalkBox_TipLine(tooltip,message,role,wrap)
+    if not tooltip or type(tooltip.AddLine)~="function" or
+        message==nil then return false end
+    local r,g,b=ChalkBox_TipColor(role or "text")
+    tooltip:AddLine(tostring(message),r,g,b,wrap==true)
+    return true
+end
+function ChalkBox_TipSection(tooltip,title,spacer)
+    if not tooltip or type(tooltip.AddLine)~="function" or
+        type(title)~="string" or title=="" then return false end
+    if spacer==true then ChalkBox_TipLine(tooltip," ","muted") end
+    return ChalkBox_TipLine(tooltip,title,"info")
+end
 function ChalkBox_TipMetric(tooltip,label,value,role)
     if not tooltip or type(tooltip.AddLine)~="function" then return false end
     local r,g,b=ChalkBox_TipColor(role)

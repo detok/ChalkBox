@@ -327,6 +327,11 @@ end
 local function Capture()
     local s=State()
     if not s.enabled or opened then return end
+    -- Establish independent local counter provenance BEFORE mutating the
+    -- aggregate. Imported drops are then added exactly once per source.
+    if type(ChalkBox_TransferPrepareDrop)=="function" then
+        pcall(ChalkBox_TransferPrepareDrop)
+    end
     local counts,links,total,guid=CapturedItems()
     if not counts then return end
     local now=Clock()
@@ -393,6 +398,11 @@ local function Capture()
     end
     lastAreaKey=area and location.key or nil
     lastSourceKey=sourceRow and sourceKey or nil
+    if type(ChalkBox_TransferRecordDrop)=="function" then
+        pcall(ChalkBox_TransferRecordDrop,counts,total,
+            area and location.key or nil,
+            sourceRow and sourceKey or nil)
+    end
     if type(ChalkBox_JournalNoteLoot)=="function" then
         pcall(ChalkBox_JournalNoteLoot,total,counts,
             area and location.key or nil,
@@ -615,16 +625,20 @@ function ChalkBox_DropSources(key)
     end)
     return result
 end
-function ChalkBox_DropTooltip(tooltip,link)
+-- Identical evidence to the legacy Drop Journal, but no tooltip writes.
+function ChalkBox_DropTooltipInsight(tooltip,link)
     local s=State()
-    if not s.enabled or s.tooltip==false or not tooltip or
-        type(tooltip.AddLine)~="function" then return false end
+    if not s.enabled or s.tooltip==false or not tooltip then return nil end
     local owner=type(tooltip.GetOwner)=="function" and tooltip:GetOwner()
     local frameName=owner and type(owner.GetName)=="function" and
         owner:GetName()
     if type(frameName)~="string" or
-        not frameName:match("^LootButton") then return false end
-    local item=ChalkBox_DropRead(link,lastAreaKey,lastSourceKey)
+        not frameName:match("^LootButton") then return nil end
+    return ChalkBox_DropRead(link,lastAreaKey,lastSourceKey)
+end
+function ChalkBox_DropTooltip(tooltip,link)
+    if not tooltip or type(tooltip.AddLine)~="function" then return false end
+    local item=ChalkBox_DropTooltipInsight(tooltip,link)
     if not item then return false end
     if type(tooltip.GetName)=="function" and
         type(tooltip.NumLines)=="function" then

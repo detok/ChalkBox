@@ -4,6 +4,14 @@
 local addonName=...
 local hooked=setmetatable({},{__mode="k"})
 local dropdown
+-- Never override a Blizzard objective-tracker method. The tracker and
+-- MapCanvas share secure UI execution paths; replacing a live tracker method
+-- can taint map pin setup and surface as SetPassThroughButtons blocked.
+-- QuestSense still ranks candidates; native display sorting is intentionally
+-- disabled pending a verified non-tainting client-side implementation.
+function ChalkBox_QuestTrackerSortRefresh()
+    return false
+end
 local function Busy()
     if type(InCombatLockdown)~="function" then return false end
     local ok,yes=pcall(InCombatLockdown)
@@ -39,6 +47,17 @@ local function Entries()
         {label=(off and "✓ " or "").."Off",run=function() SetMode("off") end},
         {label=(smart and "✓ " or "").."Smart",run=function() SetMode("smart") end},
         {label=(zone and "✓ " or "").."Nearby",run=function() SetMode("zone") end},
+        {label="Sort: "..(q.sort or "nearest").." (next)",
+            run=function()
+                local modes={"nearest","zone","level","title","log"}
+                local current=q.sort or "nearest"
+                for i,m in ipairs(modes) do
+                    if m==current then
+                        ChalkBox_QuestCommand("sort "..modes[i%#modes+1])
+                        break
+                    end
+                end
+            end},
         {label="Navigation: "..(n.enabled and "On" or "Off"),
             run=function()
                 if type(ChalkBox_NavCommand)=="function" then
