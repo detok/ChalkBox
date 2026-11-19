@@ -1154,10 +1154,9 @@ NotchLayout=function(width)
     if manual~=nil or db.barTopInset~=nil then return nil end
     local api=type(C_UI)=="table" and C_UI or nil
     if not api then return nil end
-    if type(api.ShouldUIParentAvoidNotch)=="function" then
-        local ok,avoids=pcall(api.ShouldUIParentAvoidNotch)
-        if ok and Public(avoids) and avoids==true then return nil end
-    end
+    -- ShouldUIParentAvoidNotch() means BLIZZARD HAS MOVED UIParent DOWN:
+    -- it is precisely when our split needs to reach WorldFrame's top.
+    -- Never suppress valid notch geometry because that returns true.
     if type(api.DoesAnyDisplayHaveNotch)=="function" then
         local ok,has=pcall(api.DoesAnyDisplayHaveNotch)
         if ok and Public(has) and has==false then return nil end
@@ -1245,13 +1244,51 @@ function ChalkBox_BarTopInsetStatus()
     end
     return {mode=mode,inset=choice,effective=inset,source=source,
         manualGap=db and db.barNotchGap or nil,
+        rise=db and db.barNotchRise or nil,
         split=split~=nil,gapStart=split and split.left,
-        gapEnd=split and split.right,pending=reservation.pending}
+        gapEnd=split and split.right,pending=reservation.pending,
+        anchor=reservation.position or "UIParent"}
 end
 -- Top chrome spacing is managed independently by ScreenLayout.lua.
 -- This Bar stays full-width, and never changes Blizzard's UIParent anchors.
 local function InCombat()
     return type(InCombatLockdown)=="function" and InCombatLockdown()
+end
+-- WorldFrame covers the actual rendered display, whereas Blizzard may
+-- shift UIParent below the Mac camera housing. Only anchor OUR bar to
+-- WorldFrame; never resize or move either Blizzard-owned frame.
+local function FullscreenReference()
+    local world=WorldFrame
+    if not Public(world) then world=nil end
+    if not world and type(C_UI)=="table" and
+        type(C_UI.GetWorldFrame)=="function" then
+        local ok,frame=pcall(C_UI.GetWorldFrame)
+        if ok and Public(frame) then world=frame end
+    end
+    if world and type(world.GetWidth)=="function" then
+        local ok,width=pcall(world.GetWidth,world)
+        if ok and Public(width) and type(width)=="number" and width>0 then
+            return world
+        end
+    end
+    return nil
+end
+local function NativeLiftFallback()
+    local api=type(C_UI)=="table" and C_UI or nil
+    local depth=0
+    if api then
+        for _,name in ipairs({"GetTopLeftNotchSafeRegion",
+            "GetTopRightNotchSafeRegion"}) do
+            local region=SafeRegion(api[name])
+            if region then
+                local h=region.top-region.bottom
+                if ValidInset(h) then depth=math.max(depth,h) end
+            end
+        end
+    end
+    -- Without WorldFrame metrics, still let a manual split claim the
+    -- usual camera-height band; its position can be tuned by the user.
+    return depth>0 and math.ceil(depth) or 32
 end
 local function PlaceBar()
     if not bar or not db then return end
@@ -1263,14 +1300,35 @@ local function PlaceBar()
     reservation.issue=nil
     -- In overlay mode Blizzard owns its root layout at all times.
     -- This remains anchored to the requested edge after UI scale changes.
+    local state=ChalkBox_BarTopInsetStatus()
+    local reference=UIParent
+    local y=-(state.effective or 0)
+    reservation.position="UIParent"
+    if db.bar=="top" and state.split then
+        local manualRise=db.barNotchRise
+        if ValidInset(manualRise) then
+            -- Slider moves UP into the camera-height band (positive Y).
+            y=manualRise
+            reservation.position="manual lift"
+        else
+            local full=FullscreenReference()
+            if full then
+                reference=full
+                y=0
+                reservation.position="WorldFrame"
+            else
+                y=NativeLiftFallback()
+                reservation.position="native notch height"
+            end
+        end
+    end
     bar:ClearAllPoints()
     if db.bar=="bottom" then
         bar:SetPoint("BOTTOMLEFT",UIParent,"BOTTOMLEFT",0,0)
         bar:SetPoint("BOTTOMRIGHT",UIParent,"BOTTOMRIGHT",0,0)
     else
-        local inset=ChalkBox_BarTopInsetStatus().effective
-        bar:SetPoint("TOPLEFT",UIParent,"TOPLEFT",0,-inset)
-        bar:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",0,-inset)
+        bar:SetPoint("TOPLEFT",reference,"TOPLEFT",0,y)
+        bar:SetPoint("TOPRIGHT",reference,"TOPRIGHT",0,y)
     end
     if db.bar=="off" then bar:Hide() else bar:Show() end
     -- ScreenLayout moves only safe, native top chrome once out of combat;
@@ -1285,6 +1343,7 @@ function ChalkBox_BarNotchGapSet(value)
     if not db then return false end
     if value=="auto" then
         db.barNotchGap=nil
+        db.barNotchRise=nil
     elseif type(value)=="number" and Public(value) and
         value==value and value>=40 and value<=400 then
         db.barNotchGap=math.floor(value+0.5)
@@ -1300,13 +1359,33 @@ function ChalkBox_BarTopInsetSet(value)
     if value=="auto" then
         db.barTopInset=nil
         db.barNotchGap=nil
+        db.barNotchRise=nil
     elseif ValidInset(value) then
+        -- Explicit BELOW-notch fallback, retained for older installations.
         db.barTopInset=math.floor(value+0.5)
         db.barNotchGap=nil
+        db.barNotchRise=nil
     else
         return false
     end
-    -- PlaceBar defers if in combat. Never touch protected Blizzard frames.
+    PlaceBar()
+    return true
+end
+function ChalkBox_BarNotchRaiseSet(value)
+    if not db then return false end
+    if value=="auto" then
+        db.barNotchRise=nil
+    elseif ValidInset(value) then
+        db.barNotchRise=math.floor(value+0.5)
+        db.barTopInset=nil
+        -- On Forever builds that lack the safe-rectangle API, a manual
+        -- upward correction must keep a camera gap to avoid obstruction.
+        if not NotchLayout(bar and bar.GetWidth and bar:GetWidth() or 0) then
+            db.barNotchGap=db.barNotchGap or 120
+        end
+    else
+        return false
+    end
     PlaceBar()
     return true
 end
@@ -1583,12 +1662,21 @@ function ChalkBox_BarCommand(message)
         Note("Top safe area: "..st.mode.." / "..
             (st.split and ("split "..tostring(st.gapStart).."–"..
                 tostring(st.gapEnd)) or
-                tostring(st.effective).." UI px").." ("..st.source..").")
+                tostring(st.effective).." UI px").." ("..st.source..
+                "; anchor "..st.anchor.."; lift "..
+                tostring(st.rise or "auto")..").")
     elseif action=="safe auto" then
         ChalkBox_BarTopInsetSet("auto")
         local st=ChalkBox_BarTopInsetStatus()
         Note("Top safe area: automatic "..(st.split and
             "split around notch" or st.effective.." UI px inset")..".")
+    elseif action:match("^safe up %d+$") then
+        local rise=tonumber(action:match("^safe up (%d+)$"))
+        if ChalkBox_BarNotchRaiseSet(rise) then
+            Note("Notch bar raised "..rise.." UI px above the game UI edge.")
+        else
+            Note("Upward notch position must be 0–120 UI px.")
+        end
     elseif action:match("^safe split %d+$") then
         local gap=tonumber(action:match("^safe split (%d+)$"))
         if ChalkBox_BarNotchGapSet(gap) then
@@ -1626,7 +1714,7 @@ function ChalkBox_BarCommand(message)
         Note("The Bar: /chalk bar top|bottom|off | reserve on/off | reset | status")
         Note("Stats: /chalk bar stat <module> on/off | stats all|balanced|minimal")
         Note("Layout: /chalk bar edit on/off | drag right-edge gold grips | layout reset")
-        Note("Mac notch: /chalk bar safe auto | safe split 40-400 | safe 0-120 | safe status")
+        Note("Mac notch: /chalk bar safe auto | safe split 40-400 | safe up 0-120 | safe 0-120 (below)")
         Note("Widths: /chalk bar width <module> 60-280 | width <module> reset | move <module> <left|center|right>")
         Note("Text alignment: /chalk bar align <module> <left|center|right> | opacity 0-100")
         Note("Vendor value: /chalk bar stat bagvalue on | bagvalue junk|total|toggle")
@@ -1676,6 +1764,14 @@ events:SetScript("OnEvent", function(_, event, name)
         -- A saved legacy reservation is not safe: never re-enable it.
         -- Keep the Bar itself; leave Blizzard-owned UIParent unmodified.
         db.barReserve=false
+        -- Previous beta's slider moved DOWN by mistake. Clear that one
+        -- obsolete offset once so the corrected world-edge split is not
+        -- silently held below the notch by a stale SavedVariable.
+        if db.barNotchPositionV2~=true then
+            db.barTopInset=nil
+            db.barNotchRise=nil
+            db.barNotchPositionV2=true
+        end
         -- Older characters had a default of Total. Keep it if their Bar
         -- preferences already exist; only genuinely new Bars start on Junk.
         local freshBar=type(db.barStats)~="table"
