@@ -340,6 +340,7 @@ local function DrawRow(row,source,maxValue,perSecond)
 end
 local function Refresh()
     refreshQueued=false
+    lastDisplayError=nil
     if not window or not db or db.shown==false or not window:IsShown() then return end
     local available,reason=IsAvailable()
     if not available then ResetDisplay(reason);return end
@@ -385,12 +386,15 @@ local function Refresh()
         if Safe(source) and type(source)=="table" then
             -- A single inconsistent native row must not blank the whole
             -- meter or throw an error from an input/click handler.
-            local drawn=pcall(DrawRow,rows[i],source,data.maxAmount,
+            local drawn,detail=pcall(DrawRow,rows[i],source,data.maxAmount,
                 mode.perSecond)
             if drawn then
                 visible=visible+1
             else
                 unreadable=true
+                if not lastDisplayError then
+                    lastDisplayError=tostring(detail):sub(1,180)
+                end
                 pcall(ClearRow,rows[i])
             end
         else
@@ -423,8 +427,6 @@ local function SafeRefresh()
     if not ok then
         lastDisplayError=tostring(reason):sub(1,180)
         ResetDisplay("Meter display issue. Use /chalk meter status.")
-    else
-        lastDisplayError=nil
     end
 end
 local function QueueRefresh()

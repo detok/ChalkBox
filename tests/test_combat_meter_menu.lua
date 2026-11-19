@@ -124,7 +124,7 @@ _G.ChalkBox_NativeMeterSendReady=function()
     return true
 end
 Open()
-assert(Click("Send ready report to PARTY")()
+assert(Click("Send ready report to PARTY")
     and readyClicks==1 and not report.ready,
     "compact gear menu exposes a real player click for restricted auto chat")
 locked=true

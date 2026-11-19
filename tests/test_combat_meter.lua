@@ -452,8 +452,9 @@ end
 ChalkBox_MeterCommand("dps")
 Flush()
 assert(bars[1].parent.value.text=="" and
-    bars[2].parent.value.text~=nil,
-    "one failed native row is cleared while subsequent rows still render")
+    bars[2].parent.value.text~=nil and
+    ChalkBox_MeterStatus().displayError:find("simulated protected",1,true),
+    "one failed row is isolated and its issue is available to diagnostics")
 bars[1].SetStatusBarColor=failing
 local fewer=C_DamageMeter.GetCombatSessionFromType
 C_DamageMeter.GetCombatSessionFromType=function()
