@@ -68,6 +68,7 @@
 | Command | Purpose |
 | --- | --- |
 | `/chalk bar status` | XP rate, Bar layout and safe display diagnostics |
+| `/chalk bar safe auto` / `safe 0-120` | Automatic notch-safe top inset when the client supports it; manual UI-pixel override for Mac camera cutouts. In The Bar → Mac / Notch Safe Area. |
 | `/chalk bar edit` or `edit on` / `off` | Toggle/finish Edit Mode; empty-Bar right-click also has **Done editing** |
 | `/chalk bar layout` | Show positions of Bar modules |
 | `/chalk bar layout reset` | Restore default Bar positions, alignment **and module widths**, leaving other settings alone |

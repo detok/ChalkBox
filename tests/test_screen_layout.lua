@@ -60,6 +60,23 @@ Fire("PLAYER_ENTERING_WORLD")
 Fire("UI_SCALE_CHANGED")
 assert(MinimapCluster.moves==prior and MinimapCluster.y==-26,
     "repeated events never stack offsets or reposition already shifted UI")
+_G.ChalkBox_BarTopInsetStatus=function()
+    return {mode="manual",effective=40}
+end
+ChalkBox_ScreenLayoutAdjust()
+assert(MinimapCluster.y==-66 and BuffFrame.y==-64,
+    "Mac safe area is added to the normal 18px bar spacing")
+local movesAt40=MinimapCluster.moves
+ChalkBox_ScreenLayoutAdjust()
+assert(MinimapCluster.moves==movesAt40 and MinimapCluster.y==-66,
+    "rechecking the same notch inset never stacks or drifts native UI")
+_G.ChalkBox_BarTopInsetStatus=function()
+    return {mode="auto",effective=0}
+end
+ChalkBox_ScreenLayoutAdjust()
+assert(MinimapCluster.y==-26,
+    "switching to an external display restores the ordinary top chrome shift")
+_G.ChalkBox_BarTopInsetStatus=nil
 assert(ChalkBox_ScreenLayoutSet(false))
 assert(MinimapCluster.y==-8 and BuffFrame.y==-6
     and TicketStatusFrame.y==-15 and WorldStateAlwaysUpFrame.y==-21,

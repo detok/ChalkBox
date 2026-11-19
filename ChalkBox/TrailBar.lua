@@ -607,6 +607,14 @@ function ChalkBox_BarContextItems(key)
             current and "selected" or "normal")
     end
     AddMenuEntry(result,"Position",nil,positions,"group")
+    local notch=ChalkBox_BarTopInsetStatus()
+    AddMenuEntry(result,"Top safe area ("..
+        (notch.mode=="auto" and "Auto" or
+            tostring(notch.inset).."px")..")",function()
+        if type(ChalkBox_OpenSettings)=="function" then
+            ChalkBox_OpenSettings("barsafe")
+        end
+    end,nil,"group")
     AddMenuEntry(result,editMode and "Done editing" or "Edit layout",
         function() ChalkBox_BarCommand(editMode and "edit off" or "edit on") end,
         nil,editMode and "enabled" or "normal")
@@ -987,6 +995,68 @@ end
 -- Never reanchor, resize, or reset UIParent, Blizzard action buttons,
 -- or another addon's frames. Those mutations can taint protected actions.
 local reservation={active=false,pending=false,position=nil,issue=nil}
+-- Auto-read Blizzard's notched-display safe region, when Forever exposes
+-- it. We deliberately do not move UIParent or alter the macOS game display.
+-- Manual override is available for clients without these APIs.
+local TOP_INSET_MAX=120
+local function ValidInset(value)
+    return Public(value) and type(value)=="number" and
+        value==value and value>=0 and value<=TOP_INSET_MAX
+        and value~=math.huge
+end
+local function NativeTopInset()
+    local api=type(C_UI)=="table" and C_UI or nil
+    if not api then return 0,"no notch API" end
+    if type(api.ShouldUIParentAvoidNotch)=="function" then
+        local ok,already=pcall(api.ShouldUIParentAvoidNotch)
+        if ok and Public(already) and already==true then
+            return 0,"Blizzard already avoids notch"
+        end
+    end
+    if type(api.DoesAnyDisplayHaveNotch)=="function" then
+        local ok,present=pcall(api.DoesAnyDisplayHaveNotch)
+        if ok and Public(present) and present==false then
+            return 0,"no notched display"
+        end
+    end
+    local depth=0
+    for _,fn in ipairs({"GetTopLeftNotchSafeRegion",
+        "GetTopRightNotchSafeRegion"}) do
+        if type(api[fn])=="function" then
+            local ok,left,right,top,bottom=pcall(api[fn])
+            if ok and Public(left) and Public(right) and
+                Public(top) and Public(bottom) and
+                type(left)=="number" and type(right)=="number" and
+                type(top)=="number" and type(bottom)=="number" and
+                right>left then
+                local height=top-bottom
+                if ValidInset(height) and height>0 then
+                    depth=math.max(depth,height)
+                end
+            end
+        end
+    end
+    -- The region describes the band left/right of the camera cutout.
+    -- Add a tiny cushion so text and interactive grips sit below it.
+    if depth>0 then
+        return math.min(TOP_INSET_MAX,math.ceil(depth+4)),
+            "native notch safe region"
+    end
+    return 0,"notch region unavailable"
+end
+function ChalkBox_BarTopInsetStatus()
+    local choice=db and db.barTopInset or nil
+    if not ValidInset(choice) then choice=nil end
+    local inset,source
+    if choice~=nil then
+        inset,source=choice,"manual"
+    else
+        inset,source=NativeTopInset()
+    end
+    return {mode=choice==nil and "auto" or "manual",
+        inset=choice,effective=inset,source=source,
+        pending=reservation.pending}
+end
 -- Top chrome spacing is managed independently by ScreenLayout.lua.
 -- This Bar stays full-width, and never changes Blizzard's UIParent anchors.
 local function InCombat()
@@ -1007,8 +1077,9 @@ local function PlaceBar()
         bar:SetPoint("BOTTOMLEFT",UIParent,"BOTTOMLEFT",0,0)
         bar:SetPoint("BOTTOMRIGHT",UIParent,"BOTTOMRIGHT",0,0)
     else
-        bar:SetPoint("TOPLEFT",UIParent,"TOPLEFT",0,0)
-        bar:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",0,0)
+        local inset=ChalkBox_BarTopInsetStatus().effective
+        bar:SetPoint("TOPLEFT",UIParent,"TOPLEFT",0,-inset)
+        bar:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",0,-inset)
     end
     if db.bar=="off" then bar:Hide() else bar:Show() end
     -- ScreenLayout moves only safe, native top chrome once out of combat;
@@ -1017,6 +1088,19 @@ local function PlaceBar()
         ChalkBox_ScreenLayoutAdjust()
     end
     lastLayout=""
+end
+function ChalkBox_BarTopInsetSet(value)
+    if not db then return false end
+    if value=="auto" then
+        db.barTopInset=nil
+    elseif ValidInset(value) then
+        db.barTopInset=math.floor(value+0.5)
+    else
+        return false
+    end
+    -- PlaceBar defers if in combat. Never touch protected Blizzard frames.
+    PlaceBar()
+    return true
 end
 
 Refresh=function()
@@ -1260,6 +1344,21 @@ function ChalkBox_BarCommand(message)
         PlaceBar()
         Note("Safe top UI adjustment: " ..
             ((db.barShiftChrome~=false) and "ON." or "OFF."))
+    elseif action=="safe" or action=="safe status" then
+        local st=ChalkBox_BarTopInsetStatus()
+        Note("Top safe area: "..st.mode.." / "..
+            tostring(st.effective).." UI px ("..st.source..").")
+    elseif action=="safe auto" then
+        ChalkBox_BarTopInsetSet("auto")
+        local st=ChalkBox_BarTopInsetStatus()
+        Note("Top safe area: automatic ("..st.effective.." UI px).")
+    elseif action:match("^safe %d+$") then
+        local inset=tonumber(action:match("^safe (%d+)$"))
+        if ChalkBox_BarTopInsetSet(inset) then
+            Note("Top safe area: "..inset.." UI px (manual).")
+        else
+            Note("Top safe area must be 0–120 UI px.")
+        end
     elseif action == "top" or action == "bottom" or action == "off" then
         db.bar = action
         PlaceBar()
@@ -1273,6 +1372,7 @@ function ChalkBox_BarCommand(message)
         local chrome=type(ChalkBox_ScreenLayoutStatus)=="function"
             and ChalkBox_ScreenLayoutStatus() or {}
         Note("Bar=" .. db.bar .. ", layout=full-width / safe chrome shift" ..
+            ", top inset=" .. tostring(ChalkBox_BarTopInsetStatus().effective) ..
             ", shifted=" .. tostring(chrome.moved or 0) ..
             ", protected=" .. tostring(chrome.skippedProtected or 0) ..
             ", pending=" .. tostring(reservation.pending or chrome.pending) ..
@@ -1282,6 +1382,7 @@ function ChalkBox_BarCommand(message)
         Note("The Bar: /chalk bar top|bottom|off | reserve on/off | reset | status")
         Note("Stats: /chalk bar stat <module> on/off | stats all|balanced|minimal")
         Note("Layout: /chalk bar edit on/off | drag right-edge gold grips | layout reset")
+        Note("Mac notch: /chalk bar safe auto | safe 0-120 | safe status")
         Note("Widths: /chalk bar width <module> 60-280 | width <module> reset | move <module> <left|center|right>")
         Note("Text alignment: /chalk bar align <module> <left|center|right> | opacity 0-100")
         Note("Vendor value: /chalk bar stat bagvalue on | bagvalue junk|total|toggle")
@@ -1320,6 +1421,7 @@ for _,event in ipairs({
 events:RegisterEvent("PLAYER_REGEN_ENABLED")
 events:RegisterEvent("UI_SCALE_CHANGED")
 events:RegisterEvent("DISPLAY_SIZE_CHANGED")
+events:RegisterEvent("NOTCHED_DISPLAY_MODE_CHANGED")
 events:SetScript("OnEvent", function(_, event, name)
     if event == "ADDON_LOADED" then
         if name ~= addonName then return end
@@ -1354,7 +1456,8 @@ events:SetScript("OnEvent", function(_, event, name)
         return
     elseif event=="UNIT_PET" and name~="player" then
         return
-    elseif event=="UI_SCALE_CHANGED" or event=="DISPLAY_SIZE_CHANGED" then
+    elseif event=="UI_SCALE_CHANGED" or event=="DISPLAY_SIZE_CHANGED"
+        or event=="NOTCHED_DISPLAY_MODE_CHANGED" then
         if bar then PlaceBar() end
     elseif event=="BAG_UPDATE_DELAYED" or event=="GET_ITEM_INFO_RECEIVED"
         or event=="ITEM_DATA_LOAD_RESULT" then

@@ -22,7 +22,8 @@ local navigation = {
     {key="journal", title="Session Journal"},
     {key="bar", title="The Bar", children={
         {key="barstats", title="Modules"},
-        {key="barappearance", title="Appearance"}}},
+        {key="barappearance", title="Appearance"},
+        {key="barsafe", title="Mac / Notch Safe Area"}}},
     {key="meter", title="Combat Meter"},
     {key="forge", title="MacroForge"},
     {key="prep", title="Adventure Prep", children={
@@ -1040,6 +1041,58 @@ local function MakeBar()
     return panel
 end
 
+local function MakeBarSafeArea()
+    local panel=Panel("Top Safe Area",
+        "Keep Trail Bar below a MacBook camera notch without moving Blizzard's UI.")
+    Label(panel,"TOP EDGE PROTECTION","GameFontNormalLarge",28,-113,470)
+    Label(panel,"Auto uses Blizzard's notch-safe region when Forever provides it.",
+        "GameFontHighlightSmall",28,-146,490)
+    Label(panel,"On external monitors or Windows the automatic inset is normally 0.",
+        "GameFontHighlightSmall",28,-170,490)
+    Button(panel,"Automatic",28,-210,157,function()
+        if ChalkBox_BarTopInsetSet then ChalkBox_BarTopInsetSet("auto") end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    Button(panel,"No offset (0)",205,-210,157,function()
+        if ChalkBox_BarTopInsetSet then ChalkBox_BarTopInsetSet(0) end
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    local current=Label(panel,"","GameFontHighlight",28,-258,490)
+    Label(panel,"MANUAL TOP INSET  ·  0–120 UI pixels",
+        "GameFontNormalLarge",28,-300,490)
+    local slider=CreateFrame("Slider",nil,panel,"OptionsSliderTemplate")
+    slider:SetSize(370,18)
+    slider:SetPoint("TOPLEFT",panel,"TOPLEFT",42,-351)
+    slider:SetMinMaxValues(0,120)
+    if slider.SetValueStep then slider:SetValueStep(2) end
+    local amount=Label(panel,"","GameFontHighlight",432,-356,80)
+    local loading=false
+    slider:SetScript("OnValueChanged",function(_,value)
+        if loading or type(value)~="number" then return end
+        local inset=math.floor(math.max(0,math.min(120,value))/2+0.5)*2
+        if ChalkBox_BarTopInsetSet then ChalkBox_BarTopInsetSet(inset) end
+        amount:SetText(inset.."px")
+        if panel.OnRefresh then panel.OnRefresh() end
+    end)
+    panel:AddRefresh(function()
+        local st=ChalkBox_BarTopInsetStatus and
+            ChalkBox_BarTopInsetStatus() or {}
+        local effective=st.effective or 0
+        loading=true
+        slider:SetValue(effective)
+        loading=false
+        amount:SetText(effective.."px")
+        current:SetText((st.mode=="auto" and "Auto" or "Manual")..
+            "  ·  "..effective.." UI px  ·  "..(st.source or "unavailable")..
+            (st.pending and "  ·  after combat" or ""))
+    end)
+    Label(panel,"Only Trail Bar and safely adjustable top chrome are moved.",
+        "GameFontHighlightSmall",28,-402,485)
+    Label(panel,"If the game API is missing, adjust until all controls clear the notch.",
+        "GameFontHighlightSmall",28,-425,490)
+    return panel
+end
+
 local function MakeBarStats()
     local panel=Panel("The Bar Stats",
         "Choose the stats you want on the bar.")
@@ -1608,6 +1661,7 @@ local function Register()
     panels.quests = MakeQuests()
     panels.questnav = MakeQuestNavigation()
     panels.bar = MakeBar()
+    panels.barsafe = MakeBarSafeArea()
     panels.barstats = MakeBarStats()
     panels.barappearance = MakeBarAppearance()
     panels.emota = MakeEmota()
