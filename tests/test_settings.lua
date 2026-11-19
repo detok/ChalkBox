@@ -336,6 +336,19 @@ _G.Settings={
     end,
     OpenToCategory=function(id) opened[#opened+1]=id end,
 }
+local exports,imports=0,0
+_G.ChalkBox_TransferStatus=function()
+    return {companion=true,file=true,marketCount=1,saleCharacters=1,
+        discoveryAreas=1,message="Ready"}
+end
+_G.ChalkBox_TransferExport=function()
+    exports=exports+1
+    return true,"Export prepared"
+end
+_G.ChalkBox_TransferImport=function()
+    imports=imports+1
+    return true,"Merged"
+end
 _G.ChalkBox_AuctionStatus=function()
     return {open=true,available=true,tooltip=true,
         state="Ready to scan",realm="Whitemane",faction="Alliance",
@@ -401,6 +414,13 @@ local function ControlIn(categoryName,caption)
     end
     error("Missing native control "..categoryName.."/"..caption)
 end
+assert(ControlIn("Data Transfer","Export Data") and
+    ControlIn("Data Transfer","Import & Merge"),
+    "file transfer actions live inside native ChalkBox Settings")
+ControlIn("Data Transfer","Export Data"):Click()
+ControlIn("Data Transfer","Import & Merge"):Click()
+assert(exports==1 and imports==1,
+    "native Settings buttons invoke the real transfer module actions")
 local function FindCheckByParentTitle(title)
     local category = categories[title]
     assert(category,title)
