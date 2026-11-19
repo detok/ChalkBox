@@ -327,6 +327,11 @@ end
 local function Capture()
     local s=State()
     if not s.enabled or opened then return end
+    -- Establish independent local counter provenance BEFORE mutating the
+    -- aggregate. Imported drops are then added exactly once per source.
+    if type(ChalkBox_TransferPrepareDrop)=="function" then
+        pcall(ChalkBox_TransferPrepareDrop)
+    end
     local counts,links,total,guid=CapturedItems()
     if not counts then return end
     local now=Clock()
@@ -393,6 +398,11 @@ local function Capture()
     end
     lastAreaKey=area and location.key or nil
     lastSourceKey=sourceRow and sourceKey or nil
+    if type(ChalkBox_TransferRecordDrop)=="function" then
+        pcall(ChalkBox_TransferRecordDrop,counts,total,
+            area and location.key or nil,
+            sourceRow and sourceKey or nil)
+    end
     if type(ChalkBox_JournalNoteLoot)=="function" then
         pcall(ChalkBox_JournalNoteLoot,total,counts,
             area and location.key or nil,
