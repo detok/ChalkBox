@@ -1232,11 +1232,19 @@ function ChalkBox_BarTopInsetStatus()
         mode=db and db.barNotchGap and "split" or "auto"
     elseif choice~=nil then
         inset,source,mode=choice,"manual top inset","manual"
+    elseif db and db.barNotchGap~=nil then
+        -- A very narrow window cannot fit the requested manual camera
+        -- gap. Keep all remaining widgets visible below the camera
+        -- instead of incorrectly drawing over the cutout.
+        local native=NativeTopInset()
+        inset,source,mode=math.max(32,native),
+            "manual split too wide for display; lowered","split"
     else
         inset,source=NativeTopInset()
         mode="auto"
     end
     return {mode=mode,inset=choice,effective=inset,source=source,
+        manualGap=db and db.barNotchGap or nil,
         split=split~=nil,gapStart=split and split.left,
         gapEnd=split and split.right,pending=reservation.pending}
 end

@@ -281,6 +281,21 @@ assert(ChalkBox_BarNotchGapSet(160)
     and ChalkBox_BarTopInsetStatus().mode=="split"
     and bar.points[1][5]==0,
     "Mac clients without notch API can manually split the top Bar")
+bar.width=280
+Fire("DISPLAY_SIZE_CHANGED")
+assert(not ChalkBox_BarTopInsetStatus().split and
+    ChalkBox_BarTopInsetStatus().effective==32 and
+    bar.points[1][5]==-32,
+    "manual split becomes a safe below-notch strip in very narrow windows")
+bar.width=2048
+Fire("DISPLAY_SIZE_CHANGED")
+assert(ChalkBox_BarTopInsetStatus().split and
+    bar.points[1][5]==0,
+    "normal window size restores user-selected manual split")
+ChalkBox_BarCommand("safe split 144")
+assert(ChalkBox_BarTopInsetStatus().manualGap==144 and
+    ChalkBox_BarTopInsetStatus().split,
+    "manual split-width command is wired to real layout preference")
 assert(ChalkBox_BarNotchGapSet("auto")
     and not ChalkBox_BarTopInsetStatus().split,
     "manual split is reversible without restarting or changing UIParent")
