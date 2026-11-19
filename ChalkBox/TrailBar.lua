@@ -456,7 +456,12 @@ local function Reflow()
     end
     local chosenSplit=ChooseSplit()
     local needed=Need()
-    for _,key in ipairs(dropPriority) do
+    -- In split mode prioritize the center widgets over lower-priority
+    -- right-edge metrics. Otherwise the original drop order could discard
+    -- every center widget before leaving room beside the camera notch.
+    local splitDropPriority={"latency","pet","bagvalue","repair",
+        "bankvalue","gear","bags","rate","gold","time","rested","eta"}
+    for _,key in ipairs(split and splitDropPriority or dropPriority) do
         if (split and chosenSplit) or (not split and needed<=width) then
             break
         end
