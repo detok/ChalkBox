@@ -1141,14 +1141,33 @@ end
 NotchLayout=function(width)
     if not db or not Public(width) or type(width)~="number"
         or width<160 then return nil end
+    -- Use the owner's live-tested MacBook geometry only when the active
+    -- display reports a real notch. Keep manual saved choices authoritative.
+    -- Never apply these values on a normal/external display.
     local manual=db.barNotchGap
+    local calibrated=false
+    if manual==nil and db.barTopInset==nil then
+        local api=type(C_UI)=="table" and C_UI or nil
+        if api and type(api.DoesAnyDisplayHaveNotch)=="function" then
+            local ok,has=pcall(api.DoesAnyDisplayHaveNotch)
+            if ok and Public(has) and has==true then
+                local l=SafeRegion(api.GetTopLeftNotchSafeRegion)
+                local r=SafeRegion(api.GetTopRightNotchSafeRegion)
+                if l and r and r.left>l.right then
+                    manual=152
+                    calibrated=true
+                end
+            end
+        end
+    end
     if type(manual)=="number" and Public(manual) and manual==manual
         and manual>=40 and manual<=400 and manual<width*0.50 then
         local mid=width/2
         local left=math.floor(mid-manual/2-8)
         local right=math.ceil(mid+manual/2+8)
         if left>24 and right<width-24 then
-            return {left=left,right=right,source="manual split"}
+            return {left=left,right=right,source=calibrated and
+                "Mac notch calibrated default" or "manual split"}
         end
     end
     if manual~=nil or db.barTopInset~=nil then return nil end
@@ -1306,6 +1325,9 @@ local function PlaceBar()
     reservation.position="UIParent"
     if db.bar=="top" and state.split then
         local manualRise=db.barNotchRise
+        if manualRise==nil and state.source=="Mac notch calibrated default" then
+            manualRise=36
+        end
         if ValidInset(manualRise) then
             -- Slider moves UP into the camera-height band (positive Y).
             y=manualRise
