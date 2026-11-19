@@ -158,7 +158,9 @@ local function MessagingRestricted()
         if type(check)=="function" then
             local ok,blocked=pcall(check)
             -- Fail closed if the client cannot answer its own safety query.
-            if not ok or blocked==true then return true end
+            if not ok or not Safe(blocked) or blocked==true then
+                return true
+            end
         end
     end
     return false
@@ -185,10 +187,9 @@ local function SendReport(frame,channel,auto,preparedLines)
     if channel~="PARTY" and channel~="SAY" then
         return Reject("Choose PARTY or SAY.")
     end
-    -- Automatic SAY outside an instance cannot satisfy Forever's
-    -- hardware-event requirement. Do not run a doomed send from OnUpdate.
-    if auto and channel=="SAY" and type(IsInInstance)=="function"
-        and not IsInInstance() then return false end
+    -- Forever's SAY channel can require a hardware event both inside and
+    -- outside instances. Never send SAY from unattended callbacks.
+    if auto and channel=="SAY" then return false end
     if channel=="PARTY" and (type(IsInGroup)~="function"
         or not IsInGroup() or
         (type(IsInRaid)=="function" and IsInRaid())) then
