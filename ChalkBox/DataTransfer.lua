@@ -7,6 +7,7 @@ local function Int(n)
     return type(n)=="number" and n==n and n>=0 and n<=1e12 and n%1==0
 end
 local function Amount(n) return Int(n) and math.min(n,MAX_COUNT) or 0 end
+local function Stamp(n) return Int(n) and n or 0 end
 local function Add(a,b) return math.min(MAX_COUNT,Amount(a)+Amount(b)) end
 local function Str(s,max)
     return type(s)=="string" and #s>0 and #s<=(max or 160)
@@ -374,7 +375,7 @@ local function MergeMarkets(src)
             Int(incoming.scannedAt) then
             local current=db.markets[key]
             local newer=type(current)~="table" or
-                Amount(incoming.scannedAt)>Amount(current.scannedAt) or
+                Stamp(incoming.scannedAt)>Stamp(current.scannedAt) or
                 (incoming.scannedAt==current.scannedAt and
                  incoming.source=="full" and current.source~="full")
             local winning=newer and Snapshot(incoming) or Snapshot(current)
@@ -404,7 +405,7 @@ local function MergeMarkets(src)
     end
     local keys={}
     for key,market in pairs(db.markets) do
-        keys[#keys+1]={key=key,t=Amount(market.scannedAt)}
+        keys[#keys+1]={key=key,t=Stamp(market.scannedAt)}
     end
     table.sort(keys,function(a,b)
         if a.t==b.t then return a.key<b.key end
