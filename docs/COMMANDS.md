@@ -106,7 +106,7 @@ The Bar's fresh layout differs from players' older saved layouts; upgrades do **
 | `/chalk meter rows 5` / `8` / `12` | Limit visible rows, up to five by default; raise cap for raids |
 | `/chalk meter opacity 0-100` | Adjust **background only**; keeps names, icons and values readable |
 | `/chalk meter lock` / `unlock` | Lock/drag and resize the compact window |
-| `/chalk meter native status` | Native Blizzard meter extension diagnostics |
+| `/chalk meter native status` | Native Blizzard meter report status; after-combat reports blocked by chat restrictions can be sent by clicking **Menu → Send ready report** |
 | `/chalk session` / `session last` | Open current or preceding Session Journal |
 | `/chalk prep` | Print a camp/preparation checklist |
 | `/chalk prep test` | Preview the preparation reminder |

@@ -404,7 +404,12 @@ local function Refresh()
         if i<=shown then row:Show() else row:Hide() end
     end
     if window.SetHeight then window:SetHeight(66+shown*25) end
-    if visible==0 then
+    local auto=type(ChalkBox_NativeMeterStatus)=="function" and
+        ChalkBox_NativeMeterStatus() or nil
+    if auto and auto.ready then
+        Note("Report ready  ·  Menu > Send ready to "..(
+            auto.readyChannel or "PARTY"))
+    elseif visible==0 then
         Note(unreadable and "Combat data unavailable on this client."
             or "No fight data yet. Attack something!")
     else
