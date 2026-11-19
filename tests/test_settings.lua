@@ -614,8 +614,18 @@ Control("All accepted"):Click()
 assert(ChalkBoxZoneDB.mode=="all")
 Control("Smart (recommended)"):Click()
 assert(ChalkBoxZoneDB.mode=="smart")
-Control("15"):Click()
-assert(ChalkBoxZoneDB.limit==15,"autowatch limit can be selected from native options")
+Control("10 quests"):Click()
+assert(ChalkBoxZoneDB.limit==10,
+    "native QuestSense options keep a ten-quest total budget")
+Control("5 quests"):Click()
+assert(ChalkBoxZoneDB.limit==5,
+    "nearby and smart expose the same five-quest option")
+ControlIn("QuestSense Smart Rules","Closest first"):Click()
+assert(printed[#printed]=="quests sort closest",
+    "Smart UI offers closest-objective priority")
+ControlIn("QuestSense Smart Rules","Lowest level first"):Click()
+assert(printed[#printed]=="quests sort lowest",
+    "Smart UI offers level priority instead of alphabetical sorting")
 Control("Tracking Diagnostics"):Click()
 assert(printed[#printed]=="quests status")
 Control("Navigation Arrow"):Click()
