@@ -381,4 +381,40 @@ Flush()
 assert(watches[201] and not ChalkBoxZoneDB.suspendedManual[201],
     "selected quest stays visible in Blizzard's tracker across zone filtering")
 ChalkBox_QuestNavFocus(nil)
-print("PASS: Forever Smart dungeon-only tracking, safe instance identity, manual watch restoration, unknown-data fallback, Nearby sync, and watch ownership")
+-- Solo Smart/Nearby must not crowd regular solo quests with elite/dungeon
+-- work. Test live quest-log group metadata and native quest-tag fallback.
+local grouped=false
+_G.IsInGroup=function() return grouped end
+C_QuestLog.GetQuestTagInfo=function(id)
+    return id==702 and {tagName="Dungeon",isElite=false} or nil
+end
+logs[#logs+1]={questID=701,title="Overpowered Enemy",suggestedGroup=3}
+logs[#logs+1]={questID=702,title="Retrieve the Relic"}
+logs[#logs+1]={questID=703,title="Ordinary Solo Objective"}
+watches[702]=true -- existing manual dungeon watch must be restored later
+ChalkBox_QuestCommand("smart")
+Fire("QUEST_LOG_UPDATE")
+Flush()
+assert(watches[703] and not watches[701] and not watches[702] and
+    ChalkBoxZoneDB.suspendedManual[702],
+    "solo Smart excludes group quests and temporarily suspends manual dungeon watches")
+grouped=true
+Fire("GROUP_ROSTER_UPDATE")
+Flush()
+assert(watches[701] and watches[702] and
+    not ChalkBoxZoneDB.suspendedManual[702],
+    "joining a party makes elite/dungeon quests eligible and restores manual watches")
+grouped=false
+Fire("GROUP_ROSTER_UPDATE")
+Flush()
+assert(not watches[701] and not watches[702] and watches[703],
+    "leaving the party removes only auto group quests and suspends manual ones")
+ChalkBox_QuestCommand("zone")
+Flush()
+assert(not watches[701] and not watches[702],
+    "Nearby respects solo elite/dungeon exclusion too")
+ChalkBox_QuestCommand("off")
+Flush()
+assert(watches[702] and not ChalkBoxZoneDB.suspendedManual[702],
+    "turning QuestSense off restores the player's original dungeon watch")
+print("PASS: Forever solo elite/dungeon filtering, party restoration, Smart/Nearby, native watch ownership, dungeon detection and navigation")
