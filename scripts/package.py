@@ -57,7 +57,6 @@ FILES = (
     "Libs/ForeverDisenchantData/OwnLoot.lua",
     "DisenchantSense.lua",
     "AuctionInsights.lua",
-    "AuctionIntelligence.lua",
     "BankValue.lua",
     "MapNativePins.lua",
     "MapDiscoveries.lua",
