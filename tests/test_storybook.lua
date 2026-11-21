@@ -70,6 +70,11 @@ assert(ChalkBox_OpenStorybook())
 local book
 for _,f in ipairs(frames) do if f.name=="ChalkBoxStorybook" then book=f end end
 assert(book and book.shown,"the storybook opens its own window")
+local hasClose=false
+for _,f in ipairs(frames) do
+    if f.text=="Close" then hasClose=true end
+end
+assert(hasClose,"the storybook uses the same Close button as the other windows")
 local blob=""
 for _,font in ipairs(book.fonts) do blob=blob..(font.text or "").."\n" end
 assert(blob:find("level 25",1,true) and blob:find("Discoveries",1,true)
