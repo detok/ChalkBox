@@ -224,8 +224,8 @@ local function Paint()
     local snap=ChalkBox_ChronicleEvents(filter or "timeline",12)
     local title=filter=="today" and "TODAY" or
         (filter=="history" and "HISTORY" or "TIMELINE")
-    if window.title and window.title.SetText then
-        window.title:SetText("Adventure Chronicle · "..title)
+    if window.section and window.section.SetText then
+        window.section:SetText(title)
     end
     local lines={}
     if snap.version~=1 then
@@ -242,44 +242,82 @@ local function Paint()
         row:SetText(lines[i] or "")
     end
 end
+local function ChroniclePlace()
+    if type(ChalkBoxDB)~="table" then ChalkBoxDB={} end
+    if type(ChalkBoxDB.chroniclePlace)~="table" then ChalkBoxDB.chroniclePlace={} end
+    return ChalkBoxDB.chroniclePlace
+end
+local function SaveChroniclePlace()
+    if not window or not window.GetCenter or not UIParent or not UIParent.GetCenter then
+        return
+    end
+    local x,y=window:GetCenter()
+    local ux,uy=UIParent:GetCenter()
+    if type(x)=="number" and type(y)=="number"
+        and type(ux)=="number" and type(uy)=="number" then
+        local box=ChroniclePlace()
+        box.x,box.y=math.floor(x-ux),math.floor(y-uy)
+    end
+end
 function ChalkBox_OpenChronicle(which)
     filter=which=="today" and "today" or (which=="history" and "history" or "timeline")
     if not UIParent or type(CreateFrame)~="function" then return false end
     if not window then
-        window=CreateFrame("Frame","ChalkBoxChronicleFrame",UIParent,"BasicFrameTemplateWithInset")
+        local template=type(BackdropTemplateMixin)=="table" and "BackdropTemplate" or nil
+        window=CreateFrame("Frame","ChalkBoxChronicleFrame",UIParent,template)
         if not window or type(window.SetSize)~="function" then
             window=nil
             return false
         end
-        window:SetSize(460,320)
-        window:SetPoint("CENTER",UIParent,"CENTER",40,40)
+        window:SetSize(520,360)
+        local box=ChroniclePlace()
+        window:SetPoint("CENTER",UIParent,"CENTER",box.x or 40,box.y or 40)
+        if window.SetFrameStrata then window:SetFrameStrata("DIALOG") end
         if window.SetMovable then window:SetMovable(true) end
         if window.EnableMouse then window:EnableMouse(true) end
         if window.RegisterForDrag then window:RegisterForDrag("LeftButton") end
+        if type(window.SetBackdrop)=="function" then
+            window:SetBackdrop({
+                bgFile="Interface\\Buttons\\WHITE8X8",
+                edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border",
+                tile=true,tileSize=32,edgeSize=24,
+                insets={left=8,right=8,top=8,bottom=8},
+            })
+            if window.SetBackdropColor then window:SetBackdropColor(0.018,0.018,0.022,0.96) end
+            if window.SetBackdropBorderColor then
+                window:SetBackdropBorderColor(0.86,0.66,0.38,1)
+            end
+        end
+        local stripe=window:CreateTexture(nil,"ARTWORK")
+        if stripe.SetPoint then stripe:SetPoint("TOPLEFT",window,"TOPLEFT",13,-44) end
+        if stripe.SetSize then stripe:SetSize(400,2) end
+        if stripe.SetColorTexture then stripe:SetColorTexture(0.63,0.44,0.22,0.95) end
+        window.title=window:CreateFontString(nil,"OVERLAY","GameFontNormalHuge")
+        window.title:SetPoint("TOPLEFT",window,"TOPLEFT",22,-16)
+        window.title:SetText("CHALKBOX  /  ADVENTURE CHRONICLE")
+        window.section=window:CreateFontString(nil,"OVERLAY","GameFontNormal")
+        window.section:SetPoint("TOPLEFT",window,"TOPLEFT",27,-52)
+        window.section:SetText("TIMELINE")
         window:SetScript("OnDragStart",function(self)
-            if self.StartMoving then self:StartMoving() end
+            if self.StartMoving and (type(InCombatLockdown)~="function"
+                or not InCombatLockdown()) then self:StartMoving() end
         end)
         window:SetScript("OnDragStop",function(self)
             if self.StopMovingOrSizing then self:StopMovingOrSizing() end
+            SaveChroniclePlace()
         end)
-        if window.TitleText and window.TitleText.SetText then
-            window.title=window.TitleText
-        else
-            window.title=window:CreateFontString(nil,"OVERLAY","GameFontNormal")
-            window.title:SetPoint("TOP",window,"TOP",0,-6)
-        end
         rows={}
         for i=1,12 do
-            local row=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-            row:SetPoint("TOPLEFT",window,"TOPLEFT",18,-36-(i-1)*18)
-            row:SetWidth(420)
+            local row=window:CreateFontString(nil,"OVERLAY","GameFontHighlight")
+            row:SetPoint("TOPLEFT",window,"TOPLEFT",27,-76-(i-1)*18)
+            row:SetWidth(470)
             row:SetJustifyH("LEFT")
             rows[i]=row
         end
         local function Tab(text,x,mode)
             local b=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
-            b:SetSize(90,22)
-            b:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",x,12)
+            b:SetSize(100,26)
+            b:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",x,14)
             b:SetText(text)
             b:SetScript("OnClick",function()
                 filter=mode
@@ -287,10 +325,25 @@ function ChalkBox_OpenChronicle(which)
             end)
         end
         Tab("Today",16,"today")
-        Tab("Timeline",112,"timeline")
-        Tab("History",208,"history")
+        Tab("Timeline",124,"timeline")
+        Tab("History",232,"history")
+        local close=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
+        close:SetSize(100,26)
+        close:SetPoint("BOTTOMRIGHT",window,"BOTTOMRIGHT",-16,14)
+        close:SetText("Close")
+        close:SetScript("OnClick",function() window:Hide() end)
     end
     Paint()
+    if type(UISpecialFrames)=="table" and window.GetName then
+        local name=window:GetName()
+        local listed=false
+        if type(name)=="string" then
+            for _,entry in ipairs(UISpecialFrames) do
+                if entry==name then listed=true end
+            end
+            if not listed then UISpecialFrames[#UISpecialFrames+1]=name end
+        end
+    end
     window:Show()
     return true
 end

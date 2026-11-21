@@ -234,7 +234,7 @@ function ChalkBox_OpenStorybook(which)
         local box=Place()
         window:SetSize(Num(box.w) or 640,Num(box.h) or 440)
         window:SetPoint("CENTER",UIParent,"CENTER",Num(box.x) or 0,Num(box.y) or 20)
-        window:SetFrameStrata("MEDIUM")
+        if window.SetFrameStrata then window:SetFrameStrata("DIALOG") end
         if window.SetMovable then window:SetMovable(true) end
         if window.SetResizable then window:SetResizable(true) end
         if window.SetResizeBounds then
@@ -245,25 +245,30 @@ function ChalkBox_OpenStorybook(which)
         end
         if window.EnableMouse then window:EnableMouse(true) end
         if window.RegisterForDrag then window:RegisterForDrag("LeftButton") end
+        -- Same dialog frame as the session journal.
         if type(window.SetBackdrop)=="function" then
             window:SetBackdrop({
-                bgFile="Interface\\DialogFrame\\UI-DialogBox-Background",
+                bgFile="Interface\\Buttons\\WHITE8X8",
                 edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border",
-                tile=true,tileSize=32,edgeSize=32,
-                insets={left=11,right=12,top=12,bottom=11},
+                tile=true,tileSize=32,edgeSize=24,
+                insets={left=8,right=8,top=8,bottom=8},
             })
-            if window.SetBackdropColor then window:SetBackdropColor(0.12,0.09,0.06,1) end
+            if window.SetBackdropColor then window:SetBackdropColor(0.018,0.018,0.022,0.96) end
+            if window.SetBackdropBorderColor then
+                window:SetBackdropBorderColor(0.86,0.66,0.38,1)
+            end
         else
             local bg=window:CreateTexture(nil,"BACKGROUND")
             bg:SetAllPoints(window)
-            if bg.SetColorTexture then bg:SetColorTexture(0.12,0.09,0.06,0.96) end
+            if bg.SetColorTexture then bg:SetColorTexture(0.018,0.018,0.022,0.96) end
         end
-        local title=window:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
-        title:SetPoint("TOP",window,"TOP",0,-16)
-        title:SetText("ChalkBox")
-        local subtitle=window:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
-        subtitle:SetPoint("TOP",title,"BOTTOM",0,-2)
-        subtitle:SetText("A record of your adventure")
+        local stripe=window:CreateTexture(nil,"ARTWORK")
+        if stripe.SetPoint then stripe:SetPoint("TOPLEFT",window,"TOPLEFT",13,-44) end
+        if stripe.SetSize then stripe:SetSize(500,2) end
+        if stripe.SetColorTexture then stripe:SetColorTexture(0.63,0.44,0.22,0.95) end
+        local title=window:CreateFontString(nil,"OVERLAY","GameFontNormalHuge")
+        title:SetPoint("TOPLEFT",window,"TOPLEFT",22,-16)
+        title:SetText("CHALKBOX  /  STORYBOOK")
         window:SetScript("OnDragStart",function(self)
             if not Combat() and self.StartMoving then self:StartMoving() end
         end)
@@ -274,20 +279,22 @@ function ChalkBox_OpenStorybook(which)
         for i,tab in ipairs(PAGES) do
             local button=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
             button:SetSize(110,22)
-            button:SetPoint("TOPLEFT",window,"TOPLEFT",18+(i-1)*118,-48)
+            button:SetPoint("TOPLEFT",window,"TOPLEFT",18+(i-1)*118,-52)
             button:SetText(tab.label)
-            if button.SetNormalTexture then
-                pcall(button.SetNormalTexture,button,tab.icon)
-            end
             button:SetScript("OnClick",function()
                 page=tab.key
                 Paint()
             end)
         end
+        local close=CreateFrame("Button",nil,window,"UIPanelButtonTemplate")
+        close:SetSize(122,26)
+        close:SetPoint("BOTTOMRIGHT",window,"BOTTOMRIGHT",-16,14)
+        close:SetText("Close")
+        close:SetScript("OnClick",function() window:Hide() end)
         lines={}
         for i=1,14 do
             local row=window:CreateFontString(nil,"OVERLAY","GameFontHighlight")
-            row:SetPoint("TOPLEFT",window,"TOPLEFT",24,-84-(i-1)*20)
+            row:SetPoint("TOPLEFT",window,"TOPLEFT",27,-88-(i-1)*20)
             row:SetPoint("RIGHT",window,"RIGHT",-24,0)
             row:SetJustifyH("LEFT")
             if row.SetWordWrap then row:SetWordWrap(true) end
@@ -295,7 +302,7 @@ function ChalkBox_OpenStorybook(which)
         end
         local grip=CreateFrame("Button",nil,window)
         grip:SetSize(18,18)
-        grip:SetPoint("BOTTOMRIGHT",window,"BOTTOMRIGHT",-8,8)
+        grip:SetPoint("BOTTOMRIGHT",window,"BOTTOMRIGHT",-6,6)
         grip:SetScript("OnMouseDown",function(_,button)
             if button=="LeftButton" and not Combat() and window.StartSizing then
                 window:StartSizing("BOTTOMRIGHT")
@@ -317,6 +324,16 @@ function ChalkBox_OpenStorybook(which)
         end)
     end
     Paint()
+    if type(UISpecialFrames)=="table" and window.GetName then
+        local name=window:GetName()
+        local listed=false
+        if type(name)=="string" then
+            for _,entry in ipairs(UISpecialFrames) do
+                if entry==name then listed=true end
+            end
+            if not listed then UISpecialFrames[#UISpecialFrames+1]=name end
+        end
+    end
     window:Show()
     return true
 end
