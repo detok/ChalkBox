@@ -104,6 +104,10 @@ end
 local function HookHeader(frame)
     if not frame then return false end
     if hooked[frame] then return true end
+    -- Missing or failed protection info is not permission to hook.
+    if type(frame.IsProtected)~="function" then return false end
+    local okProtected,protected=pcall(frame.IsProtected,frame)
+    if not okProtected or protected~=false then return false end
     if type(frame.HookScript)~="function" then return false end
     local ok=pcall(frame.HookScript,frame,"OnMouseUp",
         function(self,button)
@@ -115,23 +119,26 @@ local function HookHeader(frame)
     return ok
 end
 local function Attach()
-    -- Some Forever builds expose a separate header; others have just the
-    -- tracker container. Hook only the real existing header or tracker.
-    -- Do not touch individual quest rows or their Blizzard context menus.
+    -- Hook only a real header. The tracker frame itself shares secure map
+    -- paths, so a click hook there can block map pins. If no safe header
+    -- exists, settings and /chalk quests remain the way in.
+    if Busy() then return false end
     local tracker=ObjectiveTrackerFrame
     local sub=QuestObjectiveTracker
     local installed=false
-    if tracker then
-        for _,f in ipairs({tracker.Header or false,
-            tracker.HeaderFrame or false,
-            tracker.ContentsFrame and tracker.ContentsFrame.Header or false,
-            tracker.TitleBar or false}) do
-            if f and HookHeader(f) then installed=true end
+    local function Consider(frame,forbidden)
+        if frame and frame~=forbidden and HookHeader(frame) then
+            installed=true
         end
-        if not installed then installed=HookHeader(tracker) end
+    end
+    if tracker then
+        Consider(tracker.Header,tracker)
+        Consider(tracker.HeaderFrame,tracker)
+        Consider(tracker.ContentsFrame and tracker.ContentsFrame.Header,tracker)
+        Consider(tracker.TitleBar,tracker)
     end
     if not installed and sub then
-        installed=HookHeader(sub.Header or sub)
+        Consider(sub.Header,sub)
     end
     return installed
 end
@@ -139,15 +146,16 @@ function ChalkBox_QuestTrackerMenuStatus()
     return {attached=Attach(),nativeTracker=ObjectiveTrackerFrame~=nil}
 end
 local listener=CreateFrame("Frame")
-for _,event in ipairs({"ADDON_LOADED","PLAYER_ENTERING_WORLD"}) do
+local loggedIn=false
+for _,event in ipairs({"PLAYER_LOGIN","PLAYER_ENTERING_WORLD",
+    "PLAYER_REGEN_ENABLED","ADDON_LOADED"}) do
     pcall(listener.RegisterEvent,listener,event)
 end
 listener:SetScript("OnEvent",function(_,event,name)
-    if event=="ADDON_LOADED" and name==addonName then
-        Attach()
-    elseif event=="ADDON_LOADED" or event=="PLAYER_ENTERING_WORLD" then
-        -- The actual Blizzard tracker might appear after another addon loads.
-        Attach()
-    end
+    if event=="PLAYER_LOGIN" then loggedIn=true end
+    -- Do not hook during addon file load or before the player is in the world.
+    if not loggedIn then return end
+    if event=="ADDON_LOADED" and name~=addonName
+        and name~="Blizzard_ObjectiveTracker" then return end
+    Attach()
 end)
-Attach()
