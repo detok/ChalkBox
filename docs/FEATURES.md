@@ -40,6 +40,12 @@ ChalkBox is one optional companion. It reads the game and shows notes. It does n
 
 **Status:** Works. The Scan Market button stays clickable. Chat says when a scan starts, which page is being read, when prices are saved, and why a scan cannot start. `/chalk auction debug` prints the detected API and the throttle. A received page is kept if the next page is refused. The old auction list is used when the modern one is missing, with the page number in the position that client expects.
 
+## Black Market
+
+**Supposed to:** When the Black Market window is open, remember what is listed: the item, the current bid, the minimum bid and increment, how many bids, the time-left bucket, and the seller or quantity when the client provides them. That record stays in its own save. It is not an auction asking price, so it does not change valuations, Fill price, or Inventory Intelligence. The AuctionSense panel has a Black Market view for the current list and for items seen before. ChalkBox never bids and never presses a Black Market button.
+
+**Status:** Works when `C_BlackMarket` and the Black Market events exist. `/chalk bmah` says so, or says the Black Market is not on this client. The storybook overview counts the separate list.
+
 ## Auction Insights
 
 **Supposed to:** In the auction house, show bag vendor value and seller-mail receipts the addon has actually seen. It is not a lifetime sales ledger.

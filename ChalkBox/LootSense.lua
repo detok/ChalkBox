@@ -489,6 +489,10 @@ SlashCmdList.CHALKBOX = function(input)
         if type(ChalkBox_AuctionCommand)=="function" then
             ChalkBox_AuctionCommand(argument)
         else Note("AuctionSense isn't available on this client.") end
+    elseif command=="bmah" or command=="blackmarket" or command=="black" then
+        if type(ChalkBox_BlackMarketCommand)=="function" then
+            ChalkBox_BlackMarketCommand()
+        else Note("Black Market is unavailable.") end
     elseif command=="intel" or command=="intelligence" then
         if type(ChalkBox_IntelCommand)=="function" then
             ChalkBox_IntelCommand(argument)

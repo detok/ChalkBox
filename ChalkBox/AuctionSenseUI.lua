@@ -488,6 +488,15 @@ local function Refresh()
             "  ·  Proceeds "..Coin(extra.proceeds or 0)..
             "  ·  Fees "..Coin(extra.fees or 0)..
             "  ·  Captured invoices only"))
+    elseif view=="black" then
+        local black=type(ChalkBox_BlackMarketStatus)=="function" and
+            ChalkBox_BlackMarketStatus() or {}
+        entries=type(ChalkBox_BlackMarketRows)=="function" and
+            ChalkBox_BlackMarketRows(searchText) or {}
+        labels.details:SetText(("%d listed  ·  %d remembered"):format(
+            black.listings or 0,black.history or 0))
+        labels.info:SetText(black.message or
+            "Black Market is separate from auction asking prices.")
     else
         labels.details:SetText(("%d items  ·  %s"):format(
             status.items or 0,
@@ -511,12 +520,15 @@ local function Refresh()
     end
     if labels.hdrLow then
         labels.hdrLow:SetText(view=="bags" and "LOW / UNIT" or
-            (view=="sales" and "GROSS" or "LOW / UNIT"))
+            (view=="sales" and "GROSS" or
+            (view=="black" and "BID" or "LOW / UNIT")))
         labels.hdrAverage:SetText(view=="bags" and "DE / ITEM" or
-            (view=="sales" and "PROCEEDS" or "AVG ASK"))
+            (view=="sales" and "PROCEEDS" or
+            (view=="black" and "MIN BID" or "AVG ASK")))
         labels.hdrListings:SetText(view=="bags" and "IN BAG" or
-            (view=="sales" and "SOLD" or "LISTINGS"))
-        for _,mode in ipairs({"market","bags","sales"}) do
+            (view=="sales" and "SOLD" or
+            (view=="black" and "BIDS" or "LISTINGS")))
+        for _,mode in ipairs({"market","bags","sales","black"}) do
             Tint(labels["mode_"..mode],view==mode and COLOR.ready or COLOR.muted)
         end
     end
@@ -566,6 +578,13 @@ local function Refresh()
                 row.average:SetText(Coin(item.proceeds))
                 row.listings:SetText(tostring(item.count or 1).."x")
                 row.note:SetText("Confirmed seller invoice  ·  "..Coin(item.cut).." fee")
+                Tint(row.note,COLOR.muted)
+            elseif view=="black" then
+                row.low:SetText(Coin(item.low))
+                row.average:SetText(Coin(item.average))
+                row.listings:SetText(item.listings and
+                    (tostring(item.listings).." bids") or "—")
+                row.note:SetText(item.note or "Black Market")
                 Tint(row.note,COLOR.muted)
             else
                 row.low:SetText(Coin(item.low))
@@ -676,6 +695,7 @@ local function Ensure()
     labels.mode_market=Button(f,"Prices",21,-87,78,function() Mode("market") end)
     labels.mode_bags=Button(f,"My Items",104,-87,92,function() Mode("bags") end)
     labels.mode_sales=Button(f,"Sales & Stats",201,-87,114,function() Mode("sales") end)
+    labels.mode_black=Button(f,"Black Market",320,-87,118,function() Mode("black") end)
     -- Scan results live under the view choices, not between buttons/search.
     labels.details=Font(f,"GameFontHighlightSmall",21,-117,446)
     labels.scan=Button(f,"Scan Market",21,-106,125,function()
