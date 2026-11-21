@@ -1,6 +1,8 @@
 # ChalkBox player handbook
 
 
+**Stable 2.2.36:** Includes 2.2.35. The reload emote wait starts when the world appears.
+
 **Stable 2.2.35:** Includes 2.2.33. Emota waits one second after a UI reload.
 
 **Stable 2.2.33:** Includes 2.2.32. `/chalk taintcheck` and `/chalk bmah`.

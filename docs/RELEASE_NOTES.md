@@ -1,3 +1,9 @@
+# ChalkBox 2.2.36 — Stable WoW Forever Release
+
+Includes 2.2.35. The "ChalkBox Emota / UNKNOWN()" line on /reload came from calling the emote through pcall while the one-second wait had already expired. Automatic emotes now wait until the world has been up for five seconds, and the emote is called directly. After that, Emota behaves as before.
+
+## Previous: 2.2.35
+
 # ChalkBox 2.2.35 — Stable WoW Forever Release
 
 Includes 2.2.33. Automatic emotes wait one second after login or a UI reload, so the blocked-action popup does not appear. Idle, combat, level-up, chat, and the Emota buttons are unchanged after that second.

@@ -1,3 +1,7 @@
+# ChalkBox 2.2.36 — Stable Update
+
+- Reloading no longer prints "ChalkBox Emota" with a blocked action named UNKNOWN().
+
 # ChalkBox 2.2.35 — Stable Update
 
 - Reloading the UI no longer shows the blocked-action popup from an automatic emote.

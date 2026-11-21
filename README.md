@@ -1,6 +1,8 @@
 <div align="center">
 
 
+**Stable 2.2.36 for WoW Forever:** Reloading no longer shows the ChalkBox Emota blocked-action line. [Feature list](docs/FEATURES.md).
+
 **Stable 2.2.35 for WoW Forever:** Reloading no longer shows the blocked-action popup. [Feature list](docs/FEATURES.md).
 
 **Stable 2.2.33 for WoW Forever:** Login no longer shows a blocked-action message. Black Market listings stay separate. [Feature list](docs/FEATURES.md).

@@ -1,6 +1,8 @@
 # ChalkBox documentation
 
 
+**Stable 2.2.36:** Reload no longer shows the ChalkBox Emota blocked-action line. See [features](FEATURES.md).
+
 **Stable 2.2.35:** Reload no longer pops the blocked-action message. See [features](FEATURES.md).
 
 **Stable 2.2.33:** Login block fix and separate Black Market listings. See [features](FEATURES.md).

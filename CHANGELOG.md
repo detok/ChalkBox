@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.36 — Reload emote wait actually covers the world appearing
+
+- The one-second wait started too early and the emote call was wrapped in pcall, which the client reported as UNKNOWN() under the name ChalkBox Emota.
+- Automatic emotes wait five seconds after the world appears. The call is direct. Later emotes are unchanged.
+
 ## 2.2.35 — No blocked-action popup on reload
 
 - Automatic emotes wait one second after login or `/reload`. Everything else about Emota is unchanged.

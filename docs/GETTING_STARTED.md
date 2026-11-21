@@ -1,6 +1,8 @@
 # Getting started with ChalkBox
 
 
+**Stable 2.2.36:** Includes 2.2.35. Automatic emotes wait five seconds after the world appears on a reload.
+
 **Stable 2.2.35:** Includes 2.2.33. An automatic emote waits one second after login or reload.
 
 **Stable 2.2.33:** Includes 2.2.32. Login leaves Blizzard frames alone. `/chalk bmah` reads the Black Market when that window exists.
