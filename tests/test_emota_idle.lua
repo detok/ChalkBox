@@ -128,6 +128,20 @@ combat=false
 standalone=true
 assert(not ChalkBox_EmotaTest("WAVE") and #emotes==count)
 standalone=false
+-- /reload reports isReloadingUi. Automatic emotes wait one second.
+-- A click during that second still plays, and idle afterward still plays.
+now=400
+Fire("PLAYER_ENTERING_WORLD", false, true)
+Fire("UI_ERROR_MESSAGE", 0, "Not enough mana")
+Fire("PLAYER_LEVEL_UP")
+assert(#emotes==count, "reload does not fire an automatic emote")
+assert(ChalkBox_EmotaTest("WAVE") and emotes[#emotes]=="WAVE",
+    "a click still plays during the reload moment")
+count=#emotes
+now=402
+Fire("UI_ERROR_MESSAGE", 0, "Not enough mana")
+assert(#emotes==count+1 and emotes[#emotes]=="OOM",
+    "automatic reactions return as soon as the reload moment has passed")
 ChalkBox_EmotaCommand("auto off")
 assert(not ChalkBoxDB.emota.auto)
 math.random=originalRandom
