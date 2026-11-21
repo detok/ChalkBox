@@ -665,4 +665,9 @@ ChalkBox_AuctionHide()
 assert(not pane.shown and AuctionHouseFrame.AuctionsFrame.shown,
     "closing Market restores Blizzard native subframes without changing mode")
 assert(nativeRegistryEdits==0,"no protected PanelTemplates mutations")
+local secure=Element("Button",AuctionHouseFrame,"AHSecure")
+function secure:IsProtected() return true end
+AuctionHouseFrame.Tabs[#AuctionHouseFrame.Tabs+1]=secure
+assert(ChalkBox_AuctionAttach())
+assert(not secure.hooks,"a protected auction tab is never given an addon click hook")
 print("PASS: Market never writes AH displayMode; Cozy Sleeping Bag item-use path safe, native tabs restore, real AH artwork, market scans and responsive table")
