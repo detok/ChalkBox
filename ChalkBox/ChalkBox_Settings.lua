@@ -1779,10 +1779,11 @@ local function MakeMeter()
         opacity:SetValue(math.floor(((status and status.opacity) or 0.94)*100+0.5))
         loading=false
     end)
-    Button(panel,"Show Window",27,-396,133,function() Run("show") end)
-    Button(panel,"Reset Position",172,-396,145,function() Run("position reset") end)
-    Button(panel,"Reset Data...",328,-396,140,function() Run("reset") end)
-    Label(panel,"Blizzard meter gear: Party / Say / Top 3, 5, 10 / Auto after combat.",
+    Button(panel,"Show Window",27,-396,108,function() Run("show") end)
+    Button(panel,"Print Local",145,-396,108,function() Run("print local") end)
+    Button(panel,"Reset Position",263,-396,108,function() Run("position reset") end)
+    Button(panel,"Reset Data...",381,-396,108,function() Run("reset") end)
+    Label(panel,"Local Print stays on your screen. PARTY/SAY reports are separate; auto-send starts off.",
         "GameFontHighlightSmall",28,-428,495)
     return panel
 end
