@@ -98,4 +98,21 @@ assert(ChalkBox_JournalGet(1).areas["z:1436"].windows==1,
     "saved session retains observed outdoor loot regions")
 assert(ChalkBox_OpenSessionJournal("last"),
     "past sessions can be opened without the game combat log")
+now=now+601
+event(nil,"PLAYER_MONEY")
+assert(ChalkBox_JournalGet(0).seconds>=601,
+    "a quiet gap longer than 10 minutes still counts as session time")
+local many={}
+for i=1,16 do many[tostring(i)]=1 end
+ChalkBox_JournalNoteLoot(16,many,"z:1","Elwynn")
+ChalkBox_JournalNoteLoot(500,{["999"]=500},"z:1","Elwynn")
+local drops=ChalkBox_JournalGet(0).topDrops
+assert(drops["999"]==500 and drops["1"]==nil,
+    "the sixteenth-highest drop is kept and a later larger drop replaces the smallest")
+local kept={version=9,history={{label="keep",seconds=3}},note="keep"}
+ChalkBoxZoneDB.sessionJournal=kept
+event(nil,"PLAYER_LOGIN")
+assert(ChalkBoxZoneDB.sessionJournal==kept and
+    ChalkBoxZoneDB.sessionJournal.note=="keep",
+    "an unfamiliar journal save is not replaced")
 print("PASS: preserved session counters and history, readable framed Adventure Journal, inset sections and opacity-zero fallback")
