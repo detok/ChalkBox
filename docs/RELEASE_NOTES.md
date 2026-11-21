@@ -1,23 +1,19 @@
-# ChalkBox 2.2.28-quest-beta — QuestSense reliability beta
+# ChalkBox 2.2.29 — Stable WoW Forever Release
 
-**Prerelease for World of Warcraft: Forever.** This ZIP integrates the already-merged AuctionSense Intelligence, data transfer, toolbar icons/tooltips, Mac notch, and map fixes. The latest stable release remains 2.2.26.
+**CurseForge-ready stable build.** One installable ZIP carries ChalkBox and its optional data-transfer helper.
 
-## QuestSense
+## What's changed
 
-- **Simple Smart priority:** Choose **Closest First** or **Lowest Level First**. Completed quests move below unfinished objectives by default; the original Completed First preference remains opt-in.
-- **Nearby fills what it can verify:** Include relevant accepted quests from the zone map, player and sibling micro-maps, and native quest-specific waypoint maps. Confirmed remote quests are excluded; the optional native distance radius remains available.
-- **5 or 10 total watch budget:** Count existing manual watches in the selected budget before adding automatic watches. Existing manual overflow is protected rather than silently discarded.
-- **Fresh accepted quests:** A newly accepted, eligible quest wins an automatic slot, then stays watched as a manual selection until the player untracks or turns it in.
-- **Solo safety:** Elite/dungeon/raid quests are excluded automatically without a party, even in All mode where supported by the client's quest metadata.
-- **Diagnostics:** `/chalk quests status` shows verified local candidates, eligible candidates and any unfilled slots.
-- **Native tracker safety:** No protected Blizzard objective-tracker replacement. Closest/Level sorting determines *which* quests are selected; Blizzard controls visible row order.
+- **Combat Meter:** Now a personal, display-only meter. All ChalkBox manual PRINT, PARTY/SAY reporting, automatic after-combat messages, queued sends, copy-report windows and reporting menus have been removed. Legacy slash commands are silent no-ops. The live DPS/healing display, icons, window layout, fight selections and confirmed session reset remain available.
+- **QuestSense:** Closest First or Lowest Level First, completed quests last by default, improved verification of objectives on nearby zone micro-maps, five/ten selection budget and solo exclusion of verified group quests. Blizzard's protected tracker stays in control.
+- **AuctionSense and professions:** Previous optional inventory intelligence, recipe guidance, item-value history and price insights remain.
+- **The Bar:** Small optional Blizzard icons, colored tooltip details, adjustable module widths and retained Mac notch support.
+- **Discoveries, LootSense and data transfer:** Retained map markers, observed drops, loot hints and cross-computer import/merge.
 
-## Retained from 2.2.27
+## Install / CurseForge
 
-- Experimental read-only AuctionSense Inventory Intelligence (off by default), complete data-transfer companion, visual bar icons and semantic tooltip styling, safe Mac notch handling, and other unified fixes.
+Upload **ChalkBox-2.2.29.zip** as the game file. The separate **ChalkBox-CurseForge-Media-2.2.29.zip** contains publishing artwork and copy only; it is not installable.
 
-## Install
+Keep your existing SavedVariables. Unpack the archive into the WoW Forever `Interface/AddOns` directory; the game ZIP includes `ChalkBox/` plus `ChalkBoxTransfer/`.
 
-Download the GitHub prerelease's **ChalkBox-2.2.28-quest-beta.zip**. Extract both `ChalkBox/` and optional `ChalkBoxTransfer/` into `Interface/AddOns/`, preserving your SavedVariables. `/chalk` opens the settings.
-
-**Live testing still required:** Blizzard/Forever quest map evidence varies by zone. Nearby intentionally leaves slots empty when it cannot prove enough eligible local quests, rather than guessing or showing remote objectives.
+This release intentionally disables ChalkBox combat chat reporting instead of claiming delivery works on the current client. Blizzard's own damage meter and chat controls are unaffected.
