@@ -1,11 +1,11 @@
 # ChalkBox documentation
 
 
-**Current beta 2.2.28-quest-beta:** QuestSense adds Closest/Lowest priorities and more complete verified Nearby detection; previous experimental Auction Intelligence remains opt-in and off by default. See [technical details](AUCTION_INTELLIGENCE.md). The official stable release remains 2.2.26.
+**Stable 2.2.29:** Original AuctionSense Market/scanning interface restored. The experimental Intelligence Lab is paused; its saved data is preserved. ChalkBox Combat Meter reporting is completely removed, while the local meter display remains.
 
 This is the **versioned documentation home** for ChalkBox. GitHub has a Wiki feature, but keeping the primary instructions here means user guides, tests and the actual Lua implementation can be reviewed in the same pull request. Release documentation lives with the code it describes.
 
-**Stable release: 2.2.26 · World of Warcraft: Forever · [Download the official playable ZIP](https://github.com/detok/ChalkBox/releases/latest). Retail and ordinary Classic are unverified.
+**Stable release: 2.2.29 · World of Warcraft: Forever · [Download the official playable ZIP](https://github.com/detok/ChalkBox/releases/latest). Retail and ordinary Classic are unverified.
 
 ## Player guides
 
