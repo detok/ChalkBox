@@ -45,76 +45,35 @@ local function Fire(event,...)
     e.callback(e,event,...)
 end
 Fire("ADDON_LOADED","ChalkBox")
-assert(ChalkBoxDB.barShiftChrome==true,"top chrome spacing enabled by default")
-Fire("PLAYER_ENTERING_WORLD")
-assert(MinimapCluster.y==-26 and BuffFrame.y==-24
-    and TicketStatusFrame.y==-33 and WorldStateAlwaysUpFrame.y==-39,
-    "unprotected Blizzard chrome shifts down exactly 18px")
-assert(PlayerFrame.y==-20 and TargetFrame.y==-20,
-    "protected unit frame and user-placed frame are never touched")
-local st=ChalkBox_ScreenLayoutStatus()
-assert(st.moved==4 and st.skippedProtected>=1 and st.skippedCustom>=1,
-    "layout reports moved, protected, and custom frame counts")
-local prior=MinimapCluster.moves
+assert(ChalkBoxDB.barShiftChrome==true,"the saved preference is kept")
+local before={
+    MinimapCluster.y,BuffFrame.y,PlayerFrame.y,TargetFrame.y,
+    TicketStatusFrame.y,WorldStateAlwaysUpFrame.y,
+    MinimapCluster.moves,PlayerFrame.moves,
+}
 Fire("PLAYER_ENTERING_WORLD")
 Fire("UI_SCALE_CHANGED")
-assert(MinimapCluster.moves==prior and MinimapCluster.y==-26,
-    "repeated events never stack offsets or reposition already shifted UI")
-_G.ChalkBox_BarTopInsetStatus=function()
-    return {mode="manual",effective=40}
-end
-ChalkBox_ScreenLayoutAdjust()
-assert(MinimapCluster.y==-66 and BuffFrame.y==-64,
-    "Mac safe area is added to the normal 18px bar spacing")
-local movesAt40=MinimapCluster.moves
-ChalkBox_ScreenLayoutAdjust()
-assert(MinimapCluster.moves==movesAt40 and MinimapCluster.y==-66,
-    "rechecking the same notch inset never stacks or drifts native UI")
-_G.ChalkBox_BarTopInsetStatus=function()
-    return {mode="auto",effective=0}
-end
-ChalkBox_ScreenLayoutAdjust()
-assert(MinimapCluster.y==-26,
-    "switching to an external display restores the ordinary top chrome shift")
-_G.ChalkBox_BarTopInsetStatus=nil
-assert(ChalkBox_ScreenLayoutSet(false))
-assert(MinimapCluster.y==-8 and BuffFrame.y==-6
-    and TicketStatusFrame.y==-15 and WorldStateAlwaysUpFrame.y==-21,
-    "disabling restores exact original anchors")
-assert(ChalkBox_ScreenLayoutStatus().moved==0)
-assert(ChalkBox_ScreenLayoutSet(true))
-assert(MinimapCluster.y==-26 and BuffFrame.y==-24)
--- Another addon / Edit Mode takes ownership while our offset is active.
-BuffFrame:ClearAllPoints()
-BuffFrame:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",-176,-90)
 Fire("DISPLAY_SIZE_CHANGED")
-assert(BuffFrame.y==-90,"never override an external frame move")
--- If combat starts, defer disabling; a combat event cannot move any frame.
-local moves=MinimapCluster.moves
+ChalkBox_ScreenLayoutAdjust()
+assert(MinimapCluster.y==before[1] and BuffFrame.y==before[2]
+    and PlayerFrame.y==before[3] and TargetFrame.y==before[4]
+    and TicketStatusFrame.y==before[5] and WorldStateAlwaysUpFrame.y==before[6]
+    and MinimapCluster.moves==before[7] and PlayerFrame.moves==before[8],
+    "login never moves the minimap, buffs, or unit frames")
+local st=ChalkBox_ScreenLayoutStatus()
+assert(st.moved==0 and st.reason=="Blizzard frames stay put"
+    and st.skippedProtected>=1,
+    "status reports that Blizzard frames were left alone")
 combat=true
-ChalkBox_ScreenLayoutSet(false)
-assert(MinimapCluster.y==-26 and MinimapCluster.moves==moves
-    and ChalkBox_ScreenLayoutStatus().pending,
-    "combat locks down even unprotected top chrome repositioning")
+assert(ChalkBox_ScreenLayoutSet(false)==true)
+assert(ChalkBox_ScreenLayoutStatus().pending
+    and MinimapCluster.moves==before[7],
+    "combat does not move chrome either")
 combat=false
 Fire("PLAYER_REGEN_ENABLED")
-assert(MinimapCluster.y==-8 and BuffFrame.y==-90,
-    "after-combat restore honors other addons' moved frames")
-ChalkBox_ScreenLayoutSet(true)
-assert(BuffFrame.y==-90,
-    "externally owned frames stay untouched for the rest of the session")
--- The bottom Bar should never push top UI around.
-ChalkBoxDB.bar="bottom"
-ChalkBox_ScreenLayoutAdjust()
-assert(MinimapCluster.y==-8 and BuffFrame.y==-90)
-ChalkBoxDB.bar="off"
-ChalkBox_ScreenLayoutAdjust()
-assert(ChalkBox_ScreenLayoutStatus().moved==0)
--- Unknown protection state is not permission to relocate a stock frame.
-_G.MinimapCluster=Native("TOPRIGHT",-23,-8,false,false)
-MinimapCluster.IsProtected=nil
-ChalkBoxDB.bar="top"
-ChalkBox_ScreenLayoutAdjust()
-assert(MinimapCluster.y==-8,
-    "frames without IsProtected must be left to Blizzard")
-print("PASS: Titan-style safe top-chrome shift, no UIParent or secure frame writes, reversible anchors, no combat moves and no stacking")
+assert(MinimapCluster.y==before[1] and PlayerFrame.moves==before[8],
+    "leaving combat still does not move Blizzard frames")
+assert(ChalkBox_ScreenLayoutSet(true) and ChalkBoxDB.barShiftChrome==true)
+assert(MinimapCluster.moves==before[7],
+    "turning the old shift back on does not resume moving frames")
+print("PASS: top chrome is never moved, so login cannot block a Blizzard-only action")

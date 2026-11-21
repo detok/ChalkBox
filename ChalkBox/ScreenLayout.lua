@@ -69,49 +69,10 @@ local function IsSafeFrame(frame)
     end
     return true
 end
-local function Position(frame,anchor)
-    if not Valid(anchor) then return false end
-    local original=ReadAnchor(frame)
-    local success=pcall(function()
-        frame:ClearAllPoints()
-        frame:SetPoint(anchor.point,anchor.relative,anchor.relativePoint,
-            anchor.x,anchor.y)
-    end)
-    if not success and original then
-        -- A partial frame move must never leave an unanchored Blizzard widget.
-        pcall(function()
-            frame:ClearAllPoints()
-            frame:SetPoint(original.point,original.relative,
-                original.relativePoint,original.x,original.y)
-        end)
-    end
-    return success
-end
-local function Offset(anchor)
-    local inset=0
-    if type(ChalkBox_BarTopInsetStatus)=="function" then
-        local ok,state=pcall(ChalkBox_BarTopInsetStatus)
-        local n=ok and type(state)=="table" and state.effective
-        if Safe(n) and type(n)=="number" and n>=0 and n<=120 then
-            inset=n
-        end
-    end
-    return {point=anchor.point,relative=anchor.relative,
-        relativePoint=anchor.relativePoint,x=anchor.x,y=anchor.y-BAR_HEIGHT-inset}
-end
-local function Restore(name)
-    local old=tracked[name]
-    if not old then return end
-    local frame=_G[name]
-    local safe=IsSafeFrame(frame)
-    local current=safe and ReadAnchor(frame) or nil
-    if current and Same(current,old.applied) then
-        Position(frame,old.original)
-    end
-    tracked[name]=nil
-end
-local function Apply(name)
-    if abandoned[name] then return end
+-- Read anchors only. ClearAllPoints/SetPoint on these frames raises
+-- ADDON_ACTION_BLOCKED at login on Forever. pcall does not hide that popup,
+-- and IsProtected() is not a reliable permission to move them.
+local function Inspect(name)
     local frame=_G[name]
     if not frame then return end
     local safe,reason=IsSafeFrame(frame)
@@ -123,31 +84,7 @@ local function Apply(name)
         end
         return
     end
-    local current=ReadAnchor(frame)
-    if not current then
-        skippedCustom=skippedCustom+1
-        return
-    end
-    local old=tracked[name]
-    if old then
-        if Same(current,old.applied) then
-            local updated=Offset(old.original)
-            if not Same(updated,old.applied) and Position(frame,updated) then
-                old.applied=updated
-            end
-            return
-        end
-        if not Same(current,old.original) then
-            tracked[name]=nil
-            abandoned[name]=true
-            skippedCustom=skippedCustom+1
-            return -- another addon or Edit Mode owns the new position
-        end
-    end
-    local target=Offset(current)
-    if Position(frame,target) then
-        tracked[name]={original=current,applied=target}
-    end
+    if not ReadAnchor(frame) then skippedCustom=skippedCustom+1 end
 end
 function ChalkBox_ScreenLayoutAdjust()
     if not db then return false end
@@ -155,15 +92,8 @@ function ChalkBox_ScreenLayoutAdjust()
     pending=false
     skippedProtected=0
     skippedCustom=0
-    local enabled=db.bar~="off" and db.bar=="top"
-        and db.barShiftChrome~=false
-    if not enabled then
-        for _,name in ipairs(targets) do Restore(name) end
-        lastReason="off"
-        return true
-    end
-    for _,name in ipairs(targets) do Apply(name) end
-    lastReason="top offset applied where safe"
+    for _,name in ipairs(targets) do Inspect(name) end
+    lastReason="Blizzard frames stay put"
     return true
 end
 function ChalkBox_ScreenLayoutSet(enabled)

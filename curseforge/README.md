@@ -1,3 +1,23 @@
+# ChalkBox 2.2.34 — stable CurseForge publisher kit
+
+**Stable 2.2.34:** Game file `ChalkBox-2.2.34.zip`.
+
+# ChalkBox 2.2.33 — stable CurseForge publisher kit
+
+**Stable 2.2.33:** Game file `ChalkBox-2.2.33.zip`.
+
+# ChalkBox 2.2.32 — stable CurseForge publisher kit
+
+**Stable 2.2.32:** Game file `ChalkBox-2.2.32.zip`.
+
+# ChalkBox 2.2.31 — stable CurseForge publisher kit
+
+**Stable 2.2.31:** Game file `ChalkBox-2.2.31.zip`.
+
+# ChalkBox 2.2.30 — stable CurseForge publisher kit
+
+**Stable 2.2.30:** Meter, bar, auction scans, and data transfer. Saved data is kept.
+
 # ChalkBox 2.2.29 — stable CurseForge publisher kit
 
 

@@ -408,6 +408,9 @@ local function Capture()
             area and location.key or nil,
             area and location.name or nil)
     end
+    if type(ChalkBox_ChronicleNoteLoot)=="function" then
+        pcall(ChalkBox_ChronicleNoteLoot,counts)
+    end
 end
 local function Interval(hits,n)
     if not Number(n) or n<=0 then return end

@@ -1,5 +1,37 @@
 # Changelog
 
+## 2.2.34 — Emota waits for a click
+
+- Idle, combat, and login no longer call the protected emote. ChalkBox suggests one instead.
+- `/chalk emota play` and Play suggestion in settings perform it. `/chalk taintcheck` names Emota if that call was blocked.
+
+## 2.2.33 — Login block fix and Black Market
+
+- Login and reload no longer move the minimap, buffs, unit frames, or bag anchors. `/chalk taintcheck` reports a blocked action if one was recorded.
+- Black Market listings are saved on their own. They do not mix into auction prices, Fill price, or Inventory Intelligence. `/chalk bmah` and the AuctionSense Black Market view show them. Nothing is bid.
+
+## 2.2.32 — Chronicle, intelligence, posting help, storybook, and a scan that answers
+
+- The auction Scan Market button stays clickable and says what it is doing. `/chalk auction debug` prints the API path and the throttle.
+- Adventure Chronicle records new levels, quests, deaths, and party dungeons without rewriting old sessions.
+- Inventory Intelligence loads again, off until enabled, and keeps old notes.
+- Fill price copies a saved ask only when you click it, and never presses Post.
+- `/chalk journal` opens a read-only storybook of the other modules.
+
+## 2.2.31 — Feature contract and journal
+
+- Added `docs/FEATURES.md`, the intended behavior of every feature.
+- Session journal counts quiet time longer than ten minutes, keeps the highest drop counts, and leaves an unfamiliar save untouched.
+
+## 2.2.30 — Meter, bar, scans, and transfer
+
+- Combat meter reports why it is empty, survives locked numbers, keeps an empty live fight empty, labels pets, and holds its dragged size.
+- When Blizzard's damage meter is missing, locked, or empty, a personal combat-log count of you and your pet is shown. Those numbers are not saved.
+- Bar resize grips drag. Stat text stays inside its module. Icons stay off until explicitly enabled. Saved widths are kept.
+- Auction browse keeps a page it already received, and falls back to the classic auction list when the modern API is missing.
+- Protected auction tabs, protected bags, and the whole quest tracker frame are left alone.
+- Data transfer keeps the higher discovery count, dedupes sales, and writes a backup before import.
+
 ## 2.2.29 — Stable restoration release
 
 - Restored the AuctionSense Market tab, Browse/Full scans, My Items, Sales and historical data presentation from the last stable 2.2.26 implementation. Experimental Inventory Intelligence Lab is paused in shipped addon without deleting saved data.
