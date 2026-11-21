@@ -1,3 +1,7 @@
+# ChalkBox 2.2.30 — publisher kit
+
+**Stable 2.2.30:** Upload `ChalkBox-2.2.30.zip`.
+
 # ChalkBox 2.2.29 — publisher kit
 
 
