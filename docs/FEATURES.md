@@ -134,7 +134,7 @@ ChalkBox is one optional companion. It reads the game and shows notes. It does n
 
 **Supposed to:** Optional idle emotes, off unless the player turns automatic behavior on. Nothing during combat. A preview command shows one emote on purpose.
 
-**Status:** Works. The game can accept an emote request and still not play the animation. That limit is the client's. For one second after login or a UI reload, automatic emotes wait so the client does not block them. After that they run as before.
+**Status:** Works. The game can accept an emote request and still not play the animation. That limit is the client's. For five seconds after the world appears on login or a UI reload, automatic emotes wait. After that they run as before. A click still plays immediately.
 
 ## QuietGuard
 
