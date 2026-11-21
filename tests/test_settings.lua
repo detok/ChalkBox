@@ -368,7 +368,7 @@ assert(loadfile("ChalkBox_Settings.lua"))("ChalkBox")
 local loader=frames[#frames]
 assert(loader.event=="PLAYER_LOGIN","must register settings when the client is ready")
 loader.script.OnEvent(loader,"PLAYER_LOGIN")
-assert(#registered==27,
+assert(#registered==26,
     "native settings include the notch-safe Bar page and experimental child pages")
 for _,texture in ipairs(textures) do
     assert(not (texture.color and texture.color[1]==0.02
@@ -457,29 +457,9 @@ ControlIn("AuctionSense","Charts Lab (Experimental)"):Click()
 assert(opened[#opened]==categories["AuctionSense Charts (Experimental)"].ID
     and auctionOpens==0 and auctionScans==0,
     "opening chart settings does not open AH or request any auction scan")
-assert(categories["AuctionSense Intelligence (Experimental)"]
-    and categories["AuctionSense Intelligence (Experimental)"].parent==categories["AuctionSense"],
-    "experimental intelligence stays nested under AuctionSense")
-assert(ControlIn("AuctionSense","Intelligence Lab"),
-    "AuctionSense exposes Intelligence as a settings-only experiment")
-ControlIn("AuctionSense","Intelligence Lab"):Click()
-assert(opened[#opened]==categories["AuctionSense Intelligence (Experimental)"].ID
-    and auctionOpens==0 and auctionScans==0,
-    "opening intelligence settings never opens or scans the AH")
--- Native mock checkboxes populate checked state during panel OnShow.
-categories["AuctionSense Intelligence (Experimental)"].panel:Show()
-local intelChecks=FindCheckByParentTitle("AuctionSense Intelligence (Experimental)")
-assert(#intelChecks==3 and not intelChecks[1].checked and
-    intelChecks[3].checked,
-    "Intelligence starts off while shared profession protection defaults on")
-assert(ControlIn("AuctionSense Intelligence (Experimental)","Skill Up") and
-    ControlIn("AuctionSense Intelligence (Experimental)","Make Gold"),
-    "both planners are selectable inside settings")
-assert(ControlIn("AuctionSense Intelligence (Experimental)",
-    "Pin last scanned profession") and
-    ControlIn("AuctionSense Intelligence (Experimental)",
-    "Use automatic profession"),
-    "experimental settings expose a stable selectable profession goal")
+assert(categories["AuctionSense Intelligence (Experimental)"]==nil and
+    not ControlIn("AuctionSense","Intelligence Lab"),
+    "paused experimental intelligence is not exposed on stable release")
 assert(ControlIn("AuctionSense","Open AuctionSense Tab"),
     "settings directs the player to the native AH tab")
 ControlIn("AuctionSense","Open AuctionSense Tab"):Click()
