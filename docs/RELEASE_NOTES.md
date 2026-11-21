@@ -6,7 +6,7 @@
 
 - **Combat Meter:** Now a personal, display-only meter. All ChalkBox manual PRINT, PARTY/SAY reporting, automatic after-combat messages, queued sends, copy-report windows and reporting menus have been removed. Legacy slash commands are silent no-ops. The live DPS/healing display, icons, window layout, fight selections and confirmed session reset remain available.
 - **QuestSense:** Closest First or Lowest Level First, completed quests last by default, improved verification of objectives on nearby zone micro-maps, five/ten selection budget and solo exclusion of verified group quests. Blizzard's protected tracker stays in control.
-- **AuctionSense and professions:** Previous optional inventory intelligence, recipe guidance, item-value history and price insights remain.
+- **AuctionSense restored:** The Market tab, Browse/Full scanning, My Items, Sales, and saved price history use the last stable 2.2.26 implementation. Experimental Intelligence is paused and removed from this build; its saved data remains untouched. Other professions and market features remain available.
 - **The Bar:** Small optional Blizzard icons, colored tooltip details, adjustable module widths and retained Mac notch support.
 - **Discoveries, LootSense and data transfer:** Retained map markers, observed drops, loot hints and cross-computer import/merge.
 
