@@ -15,11 +15,13 @@ local navigation = {
         {key="tooltipcoord", title="Item Insights (Experimental)"}}},
     {key="drops", title="DropSense"},
     {key="auction", title="AuctionSense", children={
-        {key="auctioncharts", title="Charts (Experimental)"}}},
+        {key="auctioncharts", title="Charts (Experimental)"},
+        {key="intel", title="Inventory Intelligence"}}},
     {key="quests", title="QuestSense", children={
         {key="questsmart", title="Smart Rules"},
         {key="questnav", title="Navigation"}}},
-    {key="journal", title="Session Journal"},
+    {key="journal", title="Session Journal", children={
+        {key="chronicle", title="Adventure Chronicle"}}},
     {key="bar", title="The Bar", children={
         {key="barstats", title="Modules"},
         {key="barappearance", title="Appearance"},
@@ -485,10 +487,22 @@ local function MakeAuction()
                 ChalkBox_DisenchantSetTooltips(on)
             end
         end)
+    Toggle(panel,"Suggest a price when posting",
+        "Fills Blizzard's price box only when you click Fill price. ChalkBox never presses Post or switches the auction tab.",
+        -390,
+        function()
+            return type(ChalkBox_AuctionPostEnabled)~="function"
+                or ChalkBox_AuctionPostEnabled()==true
+        end,
+        function(on)
+            if type(ChalkBox_AuctionPostSet)=="function" then
+                ChalkBox_AuctionPostSet(on==true)
+            end
+        end)
     Label(panel,"Scan Market: browse asks  ·  Full listings: 15m cooldown.",
-        "GameFontHighlightSmall",28,-402,500)
+        "GameFontHighlightSmall",28,-450,500)
     Label(panel,"DE uses Classic odds; prices are asks, not sales.",
-        "GameFontHighlightSmall",28,-423,500)
+        "GameFontHighlightSmall",28,-470,500)
     panel:AddRefresh(function()
         local st=ChalkBox_AuctionStatus and ChalkBox_AuctionStatus() or {}
         market:SetText(st.realm and
@@ -503,6 +517,61 @@ local function MakeAuction()
     return panel
 end
 
+local function MakeChronicle()
+    local panel=Panel("Adventure Chronicle",
+        "Notable moments from this update forward. Older session summaries stay as they are.")
+    Toggle(panel,"Record notable events",
+        "Levels, quest turn-ins, deaths, and party dungeons. Off keeps saved events.",
+        -120,
+        function()
+            return type(ChalkBox_ChronicleEnabled)=="function"
+                and ChalkBox_ChronicleEnabled()==true
+        end,
+        function(on)
+            if type(ChalkBox_ChronicleSetEnabled)=="function" then
+                ChalkBox_ChronicleSetEnabled(on==true)
+            end
+        end)
+    Button(panel,"Open Chronicle",28,-190,180,function()
+        if ChalkBox_OpenChronicle then ChalkBox_OpenChronicle("timeline") end
+    end)
+    Button(panel,"Clear saved events",220,-190,180,function()
+        if ChalkBox_ChronicleClear then ChalkBox_ChronicleClear() end
+    end)
+    Button(panel,"Open storybook",28,-230,180,function()
+        if ChalkBox_OpenStorybook then ChalkBox_OpenStorybook("overview") end
+    end)
+    Label(panel,"Slash: /chalk journal  ·  /chalk chronicle today|timeline|history|on|off",
+        "GameFontHighlightSmall",28,-270,480)
+    return panel
+end
+local function MakeIntel()
+    local panel=Panel("Inventory Intelligence",
+        "Optional advice from your known recipes, bags, and saved asking prices. It does not buy, sell, or post.")
+    Toggle(panel,"Enable Inventory Intelligence",
+        "Off until you turn it on. Saved reserves and ignores stay even while it is off.",
+        -120,
+        function()
+            return type(ChalkBox_IntelEnabled)=="function" and ChalkBox_IntelEnabled()==true
+        end,
+        function(on)
+            if type(ChalkBox_IntelSet)=="function" then
+                ChalkBox_IntelSet("enabled",on==true)
+            end
+        end)
+    Button(panel,"Skill-up plan",28,-190,150,function()
+        if ChalkBox_IntelCommand then ChalkBox_IntelCommand("skill") end
+    end)
+    Button(panel,"Make-gold plan",190,-190,150,function()
+        if ChalkBox_IntelCommand then ChalkBox_IntelCommand("gold") end
+    end)
+    Button(panel,"Show plan",352,-190,120,function()
+        if ChalkBox_IntelCommand then ChalkBox_IntelCommand("plan") end
+    end)
+    Label(panel,"Slash: /chalk intel on|off|plan|skill|gold|reserve|ignore",
+        "GameFontHighlightSmall",28,-230,480)
+    return panel
+end
 local function MakeAuctionCharts()
     local panel=Panel("AuctionSense / Charts (Experimental)",
         "Actual saved low asking prices. A private drawing lab; no scans or purchases.")
@@ -534,7 +603,27 @@ local function MakeJournal()
             ChalkBox_OpenSessionJournal("last")
         end
     end)
-    local summary=Label(panel,"","GameFontHighlight",28,-275,505)
+    Toggle(panel,"Record notable events",
+        "New milestones only. Older session summaries are not rewritten. Turning this off keeps what was already saved.",
+        -250,
+        function()
+            return type(ChalkBox_ChronicleEnabled)=="function"
+                and ChalkBox_ChronicleEnabled()==true
+        end,
+        function(on)
+            if type(ChalkBox_ChronicleSetEnabled)=="function" then
+                ChalkBox_ChronicleSetEnabled(on==true)
+            end
+        end)
+    Button(panel,"Open Chronicle",28,-310,180,function()
+        if ChalkBox_OpenChronicle then ChalkBox_OpenChronicle("timeline") end
+    end)
+    Button(panel,"Clear Chronicle...",220,-310,180,function()
+        if ChalkBox_ChronicleCommand then
+            ChalkBox_ChronicleCommand("clear confirm")
+        end
+    end)
+    local summary=Label(panel,"","GameFontHighlight",28,-350,505)
     panel:AddRefresh(function()
         local s=ChalkBox_JournalStatus and ChalkBox_JournalStatus() or {}
         summary:SetText("Current: "..(s.current and "recording" or "not started")..
@@ -1247,7 +1336,7 @@ local function MakeBarAppearance()
     Label(panel,"0% = text only     ·     100% = solid charcoal",
         "GameFontHighlightSmall",36,-225,460)
     Toggle(panel,"Show icons beside Bar stats",
-        "Compact Blizzard icons. Existing module widths, position and notch gap stay unchanged.",
+        "Off until you turn them on. Icons use built-in game art and do not change saved widths.",
         -249,
         function()
             return type(ChalkBox_BarIconsGet)~="function" or
@@ -1725,7 +1814,9 @@ local function Register()
     panels.drops = MakeDrops()
     panels.auction = MakeAuction()
     panels.auctioncharts = MakeAuctionCharts()
+    panels.intel = MakeIntel()
     panels.journal = MakeJournal()
+    panels.chronicle = MakeChronicle()
     panels.forge = MakeForge()
     panels.updates = MakeUpdates()
     panels.loot = MakeLoot()

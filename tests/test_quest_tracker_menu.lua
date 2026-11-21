@@ -1,6 +1,7 @@
 -- Quest tracker integration: native header-only HookScript, non-invasive
 -- modern/legacy menu, safe QuestSense mode and navigation actions.
 local header={hooks={}}
+function header:IsProtected() return false end
 function header:HookScript(event,fn)
     assert(event=="OnMouseUp")
     self.hooks[#self.hooks+1]=fn
@@ -52,11 +53,13 @@ _G.MenuUtil={CreateContextMenu=function(owner,build)
     assert(context.title=="ChalkBox / QuestSense")
 end}
 assert(loadfile("QuestTrackerMenu.lua"))("ChalkBox")
-assert(#header.hooks==1 and listener.events.ADDON_LOADED,
-    "tracker header hooked once using HookScript, not replaced")
+assert(#header.hooks==0 and listener.events.PLAYER_LOGIN,
+    "the tracker is not hooked while the addon file is still loading")
+listener.OnEvent(listener,"PLAYER_LOGIN")
+assert(#header.hooks==1,"after login, only an unprotected header is hooked")
 listener.OnEvent(listener,"ADDON_LOADED","Blizzard_ObjectiveTracker")
 listener.OnEvent(listener,"PLAYER_ENTERING_WORLD")
-assert(#header.hooks==1,"late game events do not duplicate mouse hooks")
+assert(#header.hooks==1,"later events do not duplicate mouse hooks")
 header.hooks[1](header,"LeftButton")
 assert(#menus==0,"normal left-clicks still belong to Blizzard")
 header.hooks[1](header,"RightButton")

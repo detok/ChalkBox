@@ -1,3 +1,34 @@
+# ChalkBox 2.2.33 — Stable WoW Forever Release
+
+Includes 2.2.32. Login no longer moves Blizzard's minimap, buffs, unit frames, or bag anchors, so the blocked-action message at startup is gone. `/chalk taintcheck` reports the last block. The Black Market list is saved apart from auction asking prices.
+
+## Previous: 2.2.32
+
+# ChalkBox 2.2.32 — Stable WoW Forever Release
+
+Includes 2.2.31. The auction Scan Market button always responds. The Adventure Chronicle records new milestones. Inventory Intelligence is back and stays off until enabled. Fill price can copy a saved ask into the sell box when you click it. `/chalk journal` opens the storybook. Saved data is kept.
+
+## Previous: 2.2.31
+
+# ChalkBox 2.2.31 — Stable WoW Forever Release
+
+Includes everything in 2.2.30. The session journal now counts long quiet time, keeps the highest loot counts, and will not erase an unfamiliar save. `docs/FEATURES.md` is the list of what each feature is supposed to do. Saved data is kept.
+
+## Previous: 2.2.30
+
+# ChalkBox 2.2.30 — Stable WoW Forever Release
+
+The meter, the bar, auction scans, and moving your saved data now work as one addon. Your existing SavedVariables, layouts, and widths are kept.
+
+- **Combat meter:** `/chalk meter status` says why the window is empty. Locked combat numbers no longer crash it. An empty live fight stays empty until you choose Last. Pets are labeled as pets. The window keeps the size you drag. When Blizzard's built-in meter is missing, locked, or empty, the window counts your damage and your pet from the combat log with its own fight timer.
+- **The Bar:** The gold resize grip actually drags. Words stay inside each stat. Icons stay off until you turn them on with `/chalk bar icons on`. Saved widths are not rewritten.
+- **Auction scans:** A browse that cannot load another page keeps the prices it already has. If the modern auction API is missing, the classic auction list is read instead. Failed scans still leave the last good snapshot alone.
+- **Auction house tab:** Protected auction tabs are not given an addon click hook. Market still does not change Blizzard's auction mode.
+- **Bags and quests:** A protected bag frame is not nudged. The quest menu attaches only to a real tracker header.
+- **Data transfer:** Export and import copy the real records. Counts keep the higher number, and a backup is saved before anything changes.
+
+## Previous: 2.2.29
+
 # ChalkBox 2.2.29 — Stable WoW Forever Release
 
 **CurseForge-ready stable build.** One installable ZIP carries ChalkBox and its optional data-transfer helper.

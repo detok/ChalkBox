@@ -11,7 +11,7 @@ This page covers issues you can diagnose safely without deleting SavedVariables,
 | Problem | First thing to check |
 | --- | --- |
 | Addon missing from the AddOns list | Wrong game directory, double-nested extracted folder or incomplete download — use the **addon** ZIP, not Source code or media ZIP |
-| ChalkBox settings look strange | Confirm version 2.2.22; native Settings pages should **not** have a solid black sheet over Blizzard's background |
+| ChalkBox settings look strange | Confirm the version on the Updates page matches the addon you installed. Native Settings pages should **not** have a solid black sheet over Blizzard's background |
 | Discoveries button or journal missing | Open the native World Map; run `/chalk drops map` and `/chalk drops map status` |
 | Discoveries shows no items | Run `/chalk drops status`; only **observed, readable** loot windows are saved; choose a zone/dungeon with prior observations |
 | No coordinates for an item | Only later outdoor loot-window observations with usable map coordinates get location samples; dungeon and older rows have no invented positions |
@@ -26,7 +26,7 @@ This page covers issues you can diagnose safely without deleting SavedVariables,
 | Full Scan fails but Browse Scan works | Full Scan uses a heavier account-wide replicate API with a roughly 15-minute successful-request cooldown; another addon can consume it. Version 2.2.22 waits for delayed responses and safely processes large full snapshots, preserving previous prices on failure. Run `/chalk auction status` for the specific refusal or timeout; continue using Browse Scan meanwhile |
 | AuctionSense scan does nothing | Visit an auctioneer and open the **AuctionSense** tab; request a scan manually, check server cooldown and `/chalk auction status` |
 | DE estimate is absent | Not all gear/brackets or AH materials have reliable outcome or price data; try `/chalk de [item]` |
-| Bar hides or overlaps something | Check Bar status, top chrome shift, screen width and existing saved per-character layout |
+| "ChalkBox has been blocked from an action only available to the Blizzard UI" at login | ChalkBox no longer moves the minimap, buffs, unit frames, or bag anchors while logging in. `/chalk taintcheck` prints the last blocked action if one is still recorded |
 | Adventure Journal is transparent or borderless | Open `/chalk session`; version 2.2.22 has a native border and opaque fallback even with global opacity 0. If art is missing, note the client build and retry after reopen; v1 session data should remain intact |
 | Compact Combat Meter empty | It **starts hidden**; use `/chalk meter show`. Native data can be unavailable or protected |
 | QuietGuard blocks an invite unexpectedly | Check saved ON filters and **Blizzard's own built-in social settings** |
@@ -78,7 +78,7 @@ If Blizzard bank panels or bag buttons report a blocked action, note the exact e
 
 ## Combat Meter and camp reminders
 
-The compact meter starts closed. You must explicitly show it. Fight values may remain protected or unavailable; PRINT to PARTY is a manual action gated by safe client data and party context. For a blank Fight session try Last; see `/chalk meter status`.
+The compact meter starts closed. Show it with `/chalk meter show`. `/chalk meter status` tells you whether the numbers are coming from Blizzard's built-in meter or from ChalkBox's own count of your damage and your pet, and why the window is empty if it is. Printing damage to party or say was removed. `/chalk meter print` does nothing. Choose Last yourself if you want the previous fight. It is not swapped in silently.
 
 A **Camp Tent's rested-XP benefit** is not the same as a verified **Camp Benefits** aura. If the UI cannot establish tent use, `/chalk prep tent done` acknowledges it for one hour **in the session only** and grants no real game effect. Toast position, opacity and lock are adjustable under **Adventure Prep → Toast Appearance**.
 
