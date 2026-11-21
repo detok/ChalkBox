@@ -2,7 +2,7 @@
 ## Title: ChalkBox Transfer (Data File)
 ## Notes: SavedVariables file bridge for ChalkBox AuctionSense and Discoveries.
 ## Author: Detok
-## Version: 2.2.29
+## Version: 2.2.31
 ## Dependencies: ChalkBox
 ## SavedVariables: ChalkBoxTransferDB
 

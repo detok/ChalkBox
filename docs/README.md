@@ -1,7 +1,11 @@
 # ChalkBox documentation
 
 
-**Stable 2.2.29:** Original AuctionSense Market/scanning interface restored. The experimental Intelligence Lab is paused; its saved data is preserved. ChalkBox Combat Meter reporting is completely removed, while the local meter display remains.
+**Stable 2.2.31:** See [what each feature is supposed to do](FEATURES.md).
+
+**Stable 2.2.30:** Combat meter fallback, bar resize, auction scans, and a simpler data transfer. Saved data is kept.
+
+**Previous 2.2.29:** Original AuctionSense Market/scanning interface restored. The experimental Intelligence Lab is paused; its saved data is preserved. ChalkBox Combat Meter reporting is completely removed, while the local meter display remains.
 
 This is the **versioned documentation home** for ChalkBox. GitHub has a Wiki feature, but keeping the primary instructions here means user guides, tests and the actual Lua implementation can be reviewed in the same pull request. Release documentation lives with the code it describes.
 

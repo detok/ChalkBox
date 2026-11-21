@@ -7,7 +7,22 @@ local rows={}
 local refreshQueued=false
 local refreshElapsed=0
 local lastDisplayError=nil
+local feedState={source="none",reason="idle"}
 local LIVE_REFRESH_SECONDS=0.75
+local function RememberFeed(source,reason)
+    feedState={source=source or "none",reason=reason or "unknown"}
+end
+-- Forever can hand back secret booleans and secret list lengths. Comparing
+-- those with ordinary Lua throws and blanks the whole window.
+local function Secret(value)
+    return type(issecretvalue)=="function" and issecretvalue(value)==true
+end
+local function TableCount(list)
+    if Secret(list) or type(list)~="table" then return nil end
+    local ok,count=pcall(function() return #list end)
+    if not ok or Secret(count) or type(count)~="number" then return nil end
+    return count
+end
 local modes={
     {key="dps", label="DPS", enum="Dps", perSecond=true},
     {key="damage", label="DMG", enum="DamageDone"},
@@ -78,7 +93,13 @@ local function IsAvailable()
     end
     if type(C_DamageMeter.IsDamageMeterAvailable)=="function" then
         local ok,available,reason=pcall(C_DamageMeter.IsDamageMeterAvailable)
-        if not ok or available~=true then
+        if not ok then
+            return false,"Blizzard's damage meter is not available right now."
+        end
+        if Secret(available) then
+            return false,"Blizzard's damage meter is locked right now."
+        end
+        if available~=true then
             return false,Safe(reason) and type(reason)=="string" and reason
                 or "Blizzard's damage meter is not available right now."
         end
@@ -170,6 +191,14 @@ end
 -- Texture files and numeric specIconID values come from the CLIENT itself.
 local CLASS_ICON_TEXTURE="Interface\\Glues\\CharacterCreate\\UI-CharacterCreate-Classes"
 local UNKNOWN_ICON_TEXTURE="Interface\\Icons\\INV_Misc_QuestionMark"
+local PET_ICON_TEXTURE="Interface\\Icons\\Ability_Hunter_BeastCall"
+local function IsPetSource(source)
+    if type(source)~="table" then return false end
+    if Safe(source.isPet) and source.isPet==true then return true end
+    local unit=Safe(source.unitToken) and source.unitToken
+        or (Safe(source.unit) and source.unit) or nil
+    return unit=="pet"
+end
 local CLASS_ICON_FALLBACK={
     WARRIOR={0,0.25,0,0.25},
     MAGE={0.25,0.49609375,0,0.25},
@@ -199,6 +228,12 @@ local function DisplayClassIcon(row,source)
     local coords=type(class)=="string" and
         ((type(CLASS_ICON_TCOORDS)=="table" and CLASS_ICON_TCOORDS[class]) or
             CLASS_ICON_FALLBACK[class]) or nil
+    if IsPetSource(source) and not coords then
+        icon:SetTexture(PET_ICON_TEXTURE)
+        icon:SetTexCoord(0.08,0.92,0.08,0.92)
+        icon:Show()
+        return
+    end
     if coords and type(coords)=="table" then
         icon:SetTexture(CLASS_ICON_TEXTURE)
         icon:SetTexCoord(coords[1],coords[2],coords[3],coords[4])
@@ -300,6 +335,8 @@ local function DrawRow(row,source,maxValue,perSecond)
         row.playerName:SetText(displayName)
     elseif type(displayName)=="string" and displayName~="" then
         row.playerName:SetText(displayName)
+    elseif IsPetSource(source) then
+        row.playerName:SetText("Pet")
     else
         row.playerName:SetText("Unknown")
     end
@@ -342,43 +379,65 @@ local function Refresh()
     refreshQueued=false
     lastDisplayError=nil
     if not window or not db or db.shown==false or not window:IsShown() then return end
-    local available,reason=IsAvailable()
-    if not available then ResetDisplay(reason);return end
     local mode=Choice()
     local session=Session()
-    local modeId=EnumValue("DamageMeterType",mode.enum,
-        ({Dps=1,DamageDone=0,Hps=3,HealingDone=2,DamageTaken=7,Interrupts=5})[mode.enum])
-    local sessionId=EnumValue("DamageMeterSessionType",session.enum,
-        ({Current=1,Expired=2,Overall=0})[session.enum])
-    -- The native API is readable even in combat, but can return secret fields.
-    local ok,data=pcall(C_DamageMeter.GetCombatSessionFromType,sessionId,modeId)
-    if not ok or not Safe(data) or type(data)~="table" then
-        ResetDisplay("Waiting for Blizzard combat data...")
-        return
+    local personal=false
+    local function TakePersonal(why)
+        if type(ChalkBox_PersonalMeterSnapshot)~="function" then return nil end
+        local okSnap,snap=pcall(ChalkBox_PersonalMeterSnapshot,
+            session.key,mode.key)
+        if not okSnap or type(snap)~="table" then return nil end
+        local count=TableCount(snap.combatSources)
+        if snap.idle or not count or count<1 then return nil end
+        personal=true
+        RememberFeed("personal", why or "fallback")
+        return snap
     end
-    local sources=data.combatSources
-    if not Safe(sources) or type(sources)~="table" then
-        ResetDisplay("Native combat sources unavailable or protected.")
-        return
+    local available,reason=IsAvailable()
+    local data,sources
+    local nativeWhy,nativeText="unavailable","Blizzard's damage meter is not available right now."
+    if not available then
+        nativeWhy="unavailable"
+        nativeText=reason or nativeText
+        if reason and reason:find("this client",1,true) then nativeWhy="api-missing"
+        elseif reason and reason:find("locked",1,true) then nativeWhy="secret" end
+    else
+        local modeId=EnumValue("DamageMeterType",mode.enum,
+            ({Dps=1,DamageDone=0,Hps=3,HealingDone=2,DamageTaken=7,Interrupts=5})[mode.enum])
+        local sessionId=EnumValue("DamageMeterSessionType",session.enum,
+            ({Current=1,Expired=2,Overall=0})[session.enum])
+        local ok,fetched=pcall(C_DamageMeter.GetCombatSessionFromType,sessionId,modeId)
+        if not ok or not Safe(fetched) or type(fetched)~="table" then
+            nativeWhy,nativeText="unreadable","Waiting for Blizzard combat data..."
+        else
+            local list=fetched.combatSources
+            local count=Safe(list) and type(list)=="table" and TableCount(list) or nil
+            if not Safe(list) or type(list)~="table" then
+                nativeWhy,nativeText="protected",
+                    "Native combat sources unavailable or protected."
+            elseif not count then
+                nativeWhy,nativeText="secret",
+                    "Combat numbers are locked by the client right now."
+            elseif count<1 then
+                nativeWhy,nativeText="empty","No fight data yet. Attack something!"
+            else
+                data,sources=fetched,list
+            end
+        end
     end
-    local usingLast=false
-    if session.key=="current" and #sources==0 then
-        -- Blizzard may close Current as soon as the fight ends. The
-        -- compact window should behave like our report sender and show
-        -- the most recently completed fight rather than a blank panel.
-        local expiredID=EnumValue("DamageMeterSessionType","Expired",2)
-        local savedOK,saved=pcall(C_DamageMeter.GetCombatSessionFromType,
-            expiredID,modeId)
-        if savedOK and Safe(saved) and type(saved)=="table" and
-            Safe(saved.combatSources) and
-            type(saved.combatSources)=="table" and
-            #saved.combatSources>0 then
-            data,sources=saved,saved.combatSources
-            usingLast=true
+    if not data then
+        local snap=TakePersonal(nativeWhy)
+        if snap then
+            data,sources=snap,snap.combatSources
+        else
+            RememberFeed(available and "blizzard" or "none", nativeWhy)
+            ResetDisplay(nativeText)
+            return
         end
     end
     if meterTitle then
-        meterTitle:SetText(mode.label.."  /  "..(usingLast and "Last" or session.label))
+        local suffix=personal and "Personal" or session.label
+        meterTitle:SetText(mode.label.."  /  "..suffix)
     end
     local visible,unreadable=0,false
     for i=1,db.rows do
@@ -401,22 +460,25 @@ local function Refresh()
             pcall(ClearRow,rows[i])
         end
     end
-    -- Treat saved rows as a maximum, not permanent blank slots.
-    -- Always retain one row of space for the empty-session message.
-    local shown=math.max(1,math.min(db.rows,visible))
+    -- The dragged height is the player's choice. Empty rows stay hidden
+    -- inside that height instead of pulling the window back down.
     for i,row in ipairs(rows) do
-        if i<=shown then row:Show() else row:Hide() end
+        if i<=db.rows and i<=visible then row:Show() else row:Hide() end
     end
-    if window.SetHeight then window:SetHeight(66+shown*25) end
     local auto=type(ChalkBox_NativeMeterStatus)=="function" and
         ChalkBox_NativeMeterStatus() or nil
-    if auto and auto.ready then
+    if personal then
+        Note("Personal meter · you and your pet")
+    elseif auto and auto.ready then
+        RememberFeed("blizzard", visible>0 and "showing" or "empty")
         Note("Report ready  ·  Menu > Send ready to "..(
             auto.readyChannel or "PARTY"))
     elseif visible==0 then
+        RememberFeed("blizzard","empty")
         Note(unreadable and "Combat data unavailable on this client."
             or "No fight data yet. Attack something!")
     else
+        RememberFeed("blizzard", unreadable and "partial" or "showing")
         Note(unreadable and "Some native combat rows could not be displayed." or "")
     end
 end
@@ -507,9 +569,9 @@ local function CreateWindow()
     window:SetMovable(true)
     if window.SetResizable then window:SetResizable(true) end
     if window.SetResizeBounds then
-        window:SetResizeBounds(300,66+1*25,600,66+12*25)
+        window:SetResizeBounds(300,66+5*25,600,66+12*25)
     elseif window.SetMinResize and window.SetMaxResize then
-        window:SetMinResize(300,66+1*25)
+        window:SetMinResize(300,66+5*25)
         window:SetMaxResize(600,66+12*25)
     end
     if window.SetClampedToScreen then window:SetClampedToScreen(true) end
@@ -564,8 +626,8 @@ local function CreateWindow()
     end)
 
     notice=Font(window,"GameFontHighlightSmall",0.62,0.70,0.77)
-    notice:SetPoint("TOPLEFT",window,"TOPLEFT",28,-67)
-    notice:SetPoint("TOPRIGHT",window,"TOPRIGHT",-20,-67)
+    notice:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",12,26)
+    notice:SetPoint("BOTTOMRIGHT",window,"BOTTOMRIGHT",-28,26)
     if notice.SetJustifyH then notice:SetJustifyH("CENTER") end
     notice:SetText("")
 
@@ -618,6 +680,9 @@ local function ResetNative()
         Chat("Cannot reset damage data during combat.")
         return false
     end
+    if type(ChalkBox_PersonalMeterReset)=="function" then
+        pcall(ChalkBox_PersonalMeterReset)
+    end
     if not C_DamageMeter or type(C_DamageMeter.ResetAllCombatSessions)~="function" then
         Chat("Blizzard damage reset API unavailable.")
         return false
@@ -665,6 +730,7 @@ function ChalkBox_MeterCommand(input)
     elseif value=="status" then
         local enabled=IsAvailable()
         Chat("Native API: "..(enabled and "available" or "unavailable")..
+            " | feed "..feedState.source.." ("..feedState.reason..")"..
             " | "..db.mode.." | "..db.session..
             " | "..db.rows.." rows | "..db.iconMode.." icons | "..math.floor(db.opacity*100)..
             "% background | "..(db.locked and "locked" or "unlocked")..
@@ -708,7 +774,7 @@ function ChalkBox_MeterStatus()
     return {shown=db.shown,locked=db.locked,mode=db.mode,session=db.session,
         rows=db.rows,scale=db.scale,opacity=db.opacity,width=db.width,
         iconMode=db.iconMode,displayError=lastDisplayError,
-        available=enabled}
+        available=enabled,feed=feedState.source,reason=feedState.reason}
 end
 local event=CreateFrame("Frame")
 event:RegisterEvent("ADDON_LOADED")

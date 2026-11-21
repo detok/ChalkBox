@@ -104,6 +104,10 @@ end
 local function HookHeader(frame)
     if not frame then return false end
     if hooked[frame] then return true end
+    if type(frame.IsProtected)=="function" then
+        local ok,protected=pcall(frame.IsProtected,frame)
+        if not ok or protected then return false end
+    end
     if type(frame.HookScript)~="function" then return false end
     local ok=pcall(frame.HookScript,frame,"OnMouseUp",
         function(self,button)
@@ -115,23 +119,26 @@ local function HookHeader(frame)
     return ok
 end
 local function Attach()
-    -- Some Forever builds expose a separate header; others have just the
-    -- tracker container. Hook only the real existing header or tracker.
-    -- Do not touch individual quest rows or their Blizzard context menus.
+    -- Hook only a real header. The tracker frame itself shares secure map
+    -- paths, so a click hook there can block map pins. If no safe header
+    -- exists, settings and /chalk quests remain the way in.
+    if Busy() then return false end
     local tracker=ObjectiveTrackerFrame
     local sub=QuestObjectiveTracker
     local installed=false
-    if tracker then
-        for _,f in ipairs({tracker.Header or false,
-            tracker.HeaderFrame or false,
-            tracker.ContentsFrame and tracker.ContentsFrame.Header or false,
-            tracker.TitleBar or false}) do
-            if f and HookHeader(f) then installed=true end
+    local function Consider(frame,forbidden)
+        if frame and frame~=forbidden and HookHeader(frame) then
+            installed=true
         end
-        if not installed then installed=HookHeader(tracker) end
+    end
+    if tracker then
+        Consider(tracker.Header,tracker)
+        Consider(tracker.HeaderFrame,tracker)
+        Consider(tracker.ContentsFrame and tracker.ContentsFrame.Header,tracker)
+        Consider(tracker.TitleBar,tracker)
     end
     if not installed and sub then
-        installed=HookHeader(sub.Header or sub)
+        Consider(sub.Header,sub)
     end
     return installed
 end

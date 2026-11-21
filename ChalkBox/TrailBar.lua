@@ -264,7 +264,9 @@ local function ModuleWidth(key)
     return saved or specs[key].width
 end
 local function IconsShown()
-    return not db or db.barShowIcons~=false
+    -- Off unless this character explicitly turned icons on. A missing
+    -- saved value is not rewritten, so older layouts keep their widths.
+    return db and db.barShowIcons==true
 end
 local function LayoutModuleIcon(widget)
     if not widget or not widget.text then return end
@@ -556,6 +558,9 @@ local function Reflow()
             widget:SetSize(ModuleWidth(key),16)
             widget:Show()
             displayed[key]=true
+            if widget.resizeGrip and widget.resizeGrip.Place then
+                widget.resizeGrip.Place()
+            end
         else widget:Hide() end
     end
     local function Arrange(list,group,start)
@@ -1008,6 +1013,9 @@ local function CreateBar()
         local key,name,details=unpack(item)
         local widget=CreateFrame("Frame",nil,bar)
         widget:SetSize(ModuleWidth(key),16)
+        if type(widget.SetClipsChildren)=="function" then
+            widget:SetClipsChildren(true)
+        end
         local font=widget:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
         font:SetAllPoints(widget)
         -- Narrow widths must clip to a single Bar line, never spill down
@@ -1054,23 +1062,70 @@ local function CreateBar()
             stroke:SetColorTexture(.95,.76,.40,.95)
         end
         widget.resizeGrip=grip
+        if grip.SetMovable then grip:SetMovable(true) end
+        local function EdgeFor()
+            local group=specs[key] and specs[key].group or "left"
+            for _,name in ipairs({"left","center","right"}) do
+                for _,item in ipairs(groups[name] or {}) do
+                    if item==key then group=name end
+                end
+            end
+            -- Right-side stats are pinned on the right, so the grip that
+            -- actually moves is the left edge. Everywhere else, drag the right.
+            return group=="right" and "left" or "right"
+        end
+        local function PlaceGrip()
+            if type(grip.ClearAllPoints)~="function" or
+                type(grip.SetPoint)~="function" then return end
+            grip.edge=EdgeFor()
+            grip:ClearAllPoints()
+            if grip.edge=="left" then
+                grip:SetPoint("LEFT",widget,"LEFT",0,0)
+            else
+                grip:SetPoint("RIGHT",widget,"RIGHT",0,0)
+            end
+        end
+        grip.Place=PlaceGrip
+        PlaceGrip()
         local function Candidate()
             if not grip.dragStartX or not grip.dragStartWidth then
                 return nil
             end
             local cursor=CursorInBar()
             if not cursor then return nil end
-            return RoundedWidth(grip.dragStartWidth+
-                cursor-grip.dragStartX)
+            local delta=cursor-grip.dragStartX
+            if grip.edge=="left" then delta=-delta end
+            return RoundedWidth(grip.dragStartWidth+delta)
         end
-        grip:SetScript("OnDragStart",function(self)
+        local function BeginDrag(self)
             if not editMode or (type(InCombatLockdown)=="function"
                 and InCombatLockdown()) then return end
             local cursor=CursorInBar()
             if not cursor then return end
+            PlaceGrip()
             self.dragStartX=cursor
             self.dragStartWidth=ModuleWidth(key)
             self.dragging=true
+        end
+        local function FinishDrag(self)
+            if not self.dragging then return end
+            local newWidth=Candidate() or self.dragStartWidth
+            self.dragging=false
+            previewWidths[key]=nil
+            if not ChalkBox_BarWidthSet(key,newWidth) then
+                lastLayout=""
+                Reflow()
+            end
+            PlaceGrip()
+        end
+        grip:SetScript("OnMouseDown",function(self,button)
+            if button=="LeftButton" then BeginDrag(self) end
+        end)
+        grip:SetScript("OnMouseUp",function(self,button)
+            if button=="LeftButton" then FinishDrag(self) end
+        end)
+        grip:SetScript("OnDragStart",function(self)
+            BeginDrag(self)
         end)
         grip:SetScript("OnUpdate",function(self)
             if not self.dragging then return end
@@ -1087,17 +1142,11 @@ local function CreateBar()
                 previewWidths[key]=newWidth
                 lastLayout=""
                 Reflow()
+                PlaceGrip()
             end
         end)
         grip:SetScript("OnDragStop",function(self)
-            if not self.dragging then return end
-            local newWidth=Candidate() or self.dragStartWidth
-            self.dragging=false
-            previewWidths[key]=nil
-            if not ChalkBox_BarWidthSet(key,newWidth) then
-                lastLayout=""
-                Reflow()
-            end
+            FinishDrag(self)
         end)
         if widget.SetMovable then widget:SetMovable(true) end
         if widget.RegisterForDrag then widget:RegisterForDrag("LeftButton") end

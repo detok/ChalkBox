@@ -80,6 +80,7 @@ FILES = (
     "ScreenLayout.lua",
     "TrailBar.lua",
     "BagLayout.lua",
+    "CombatLogMeter.lua",
     "CombatMeter.lua",
     "CombatMeterMenu.lua",
     "ChalkBox_Settings.lua",
