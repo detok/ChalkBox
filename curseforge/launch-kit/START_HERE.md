@@ -17,4 +17,4 @@ Upload `Artwork/PNG/Upload-Ready/Project-Icon-512.png` as the project icon. Use 
 [Release process](../../docs/RELEASE_PROCESS.md)
 
 
-**Developer beta:** ChalkBox 2.2.27 is a QuestSense Smart experiment; 2.2.26 remains the supported stable release. [Beta notes](https://github.com/detok/ChalkBox/blob/feature/smart-quest-native-priorities/docs/RELEASE_NOTES.md).
+**Stable 2.2.29:** AuctionSense restored to the last stable interface; Combat Meter reporting removed.
