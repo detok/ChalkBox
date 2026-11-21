@@ -1,7 +1,7 @@
-# ChalkBox 2.2.28-quest-beta — publisher kit
+# ChalkBox 2.2.29 — publisher kit
 
 
-**Current GitHub beta: 2.2.28-quest-beta.** Includes QuestSense Closest/Lowest priorities, improved verified Nearby filling and the previous opt-in Auction Intelligence. See [technical details](../../docs/AUCTION_INTELLIGENCE.md). Stable version 2.2.26 remains available.
+**Stable 2.2.29:** Original AuctionSense Market/scanning interface restored. The experimental Intelligence Lab is paused; its saved data is preserved. ChalkBox Combat Meter reporting is completely removed, while the local meter display remains.
 
 | Field | Value |
 | --- | --- |
@@ -12,7 +12,7 @@
 | License | MIT for ChalkBox; bundled third-party notices retained |
 | Source | https://github.com/detok/ChalkBox |
 | Support | https://github.com/detok/ChalkBox/issues |
-| Upload | `ChalkBox-2.2.28-quest-beta.zip` (playable addon) |
+| Upload | `ChalkBox-2.2.29.zip` (playable addon) |
 | File type | Release |
 | Project description | `copy/PROJECT_DESCRIPTION.md` |
 | File changelog | `copy/FILE_CHANGELOG_CURRENT.md` |
