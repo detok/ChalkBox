@@ -368,8 +368,8 @@ assert(loadfile("ChalkBox_Settings.lua"))("ChalkBox")
 local loader=frames[#frames]
 assert(loader.event=="PLAYER_LOGIN","must register settings when the client is ready")
 loader.script.OnEvent(loader,"PLAYER_LOGIN")
-assert(#registered==26,
-    "native settings include the notch-safe Bar page and experimental child pages")
+assert(#registered==27,
+    "native settings include the notch-safe Bar page, Chronicle, and experimental child pages")
 for _,texture in ipairs(textures) do
     assert(not (texture.color and texture.color[1]==0.02
         and texture.color[2]==0.02 and texture.color[3]==0.025
