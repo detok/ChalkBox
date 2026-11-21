@@ -61,15 +61,49 @@ local function State()
     if not Integer(db.nextAllowed) then db.nextAllowed=0 end
     return db
 end
-local function MarketID()
-    local realm=Call(GetNormalizedRealmName) or Call(GetRealmName)
-    local faction=Call(UnitFactionGroup,"player")
-    if not Safe(realm) or type(realm)~="string" or #realm==0 or
-        not Safe(faction) or type(faction)~="string" or #faction==0 then
-        return nil
+local function PublicName(value)
+    if not Safe(value) or type(value)~="string" then return nil end
+    if value:gsub("%s+","")=="" then return nil end
+    return value
+end
+local function RealmName()
+    -- A blank or hidden normalized name must not block GetRealmName.
+    -- An empty string is truthy, so it used to skip the fallback and the
+    -- Market tab reported the realm as missing.
+    return PublicName(Call(GetNormalizedRealmName))
+        or PublicName(Call(GetRealmName))
+        or (type(GetCVar)=="function" and PublicName(Call(GetCVar,"realmName")))
+        or nil
+end
+local function SavedMarket(realm)
+    local db=State()
+    local want=realm and realm:lower():gsub("%s+","") or nil
+    local match,only
+    for key,market in pairs(db.markets) do
+        if type(key)=="string" and type(market)=="table" then
+            if only then only=false else only=key end
+            local stored=PublicName(market.realm)
+            stored=stored and stored:lower():gsub("%s+","") or key:match("^([^|]+)")
+            if want and stored==want then match=key end
+        end
     end
-    local normalized=realm:lower():gsub("%s+","")
-    return normalized.."|"..faction:lower(),realm,faction
+    if match then return match,db.markets[match] end
+    if not want and only and only~=false then return only,db.markets[only] end
+end
+local function MarketID()
+    local realm=RealmName()
+    local faction=PublicName(Call(UnitFactionGroup,"player"))
+    if realm and faction then
+        local normalized=realm:lower():gsub("%s+","")
+        return normalized.."|"..faction:lower(),realm,faction
+    end
+    -- Do not invent a new key. Reuse the saved market for this realm, or
+    -- the only saved market, so an existing scan stays readable.
+    local key,market=SavedMarket(realm)
+    if key and market then
+        return key,PublicName(market.realm) or realm,PublicName(market.faction) or faction
+    end
+    return nil
 end
 local function ItemID(item)
     if Integer(item) and item>0 then return item end

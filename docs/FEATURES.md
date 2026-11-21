@@ -38,7 +38,7 @@ ChalkBox is one optional companion. It reads the game and shows notes. It does n
 
 **Supposed to:** At an auctioneer, scan asking prices when the player asks. Browse scan is the normal path. Full scan is the heavier list and can take a long time, with about a 15-minute cooldown after a request is accepted. A failed or partial scan must not erase the last good snapshot. Prices are asks, not sales.
 
-**Status:** Works. The Scan Market button stays clickable. Chat says when a scan starts, which page is being read, when prices are saved, and why a scan cannot start. `/chalk auction debug` prints the detected API and the throttle. A received page is kept if the next page is refused. The old auction list is used when the modern one is missing, with the page number in the position that client expects.
+**Status:** Works. The Scan Market button stays clickable. Chat says when a scan starts, which page is being read, when prices are saved, and why a scan cannot start. `/chalk auction debug` prints the detected API and the throttle. A received page is kept if the next page is refused. The old auction list is used when the modern one is missing, with the page number in the position that client expects. A blank normalized realm name uses the ordinary realm name, and an existing saved market stays on the Market tab.
 
 ## Black Market
 
