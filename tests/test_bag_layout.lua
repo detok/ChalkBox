@@ -144,4 +144,9 @@ assert(frame.y==stockY+25,
     "fresh native anchor prevents movement stacking on repeated layout")
 
 
+frame.IsProtected=function() return true end
+ChalkBox_BagOffsetSet(15)
+assert(frame.y==stockY and ChalkBox_BagStatus().pending,
+    "a protected bag frame keeps Blizzard's anchor")
+frame.IsProtected=nil
 print("PASS: signed separate-bag offset -120..120, no stacking, combined bags untouched, combat deferral, and stock reset")
