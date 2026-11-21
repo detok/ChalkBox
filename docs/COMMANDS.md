@@ -56,7 +56,8 @@
 | `/chalk forge rescan` | Rescan actually learned, active spells |
 | `/chalk forge status` | Spellbook/MacroForge diagnostics |
 | `/chalk auction` | Open AuctionSense when supported and the AH is available |
-| `/chalk auction scan` | Explicit **browse asking-price scan** at an auctioneer |
+| `/chalk auction scan` | Explicit **browse asking-price scan** at an auctioneer. The AuctionSense **Scan Market** button does the same thing and always says what happened |
+| `/chalk auction debug` | Print which auction API was detected, whether another query is allowed, and the last scan error |
 | `/chalk auction full` | Request full listings; server cooldown and API limitations apply |
 | `/chalk auction status` | Current scan state and market snapshot |
 | `/chalk auction tooltip on` / `off` | Show or hide AH asking-price annotations |

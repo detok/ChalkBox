@@ -56,4 +56,23 @@ Fire("AUCTION_ITEM_LIST_UPDATE")
 assert(ChalkBox_AuctionPrice(2589).low==3000 and
     ChalkBox_AuctionPrice(2589).quantity==1,
     "a later classic scan replaces the saved ask instead of adding to it")
+assert(ChalkBox_AuctionStatus().available==true,
+    "the scan button stays available when only the classic list API exists")
+local notes={}
+_G.DEFAULT_CHAT_FRAME.AddMessage=function(_,msg) notes[#notes+1]=msg end
+local short=0
+_G.AuctionFrame={IsShown=function() return true end}
+_G.QueryAuctionItems=function(name,_,_,page,_,_,getAll)
+    assert(name=="" and page==0 and getAll==false,"short classic query")
+    short=short+1
+end
+assert(ChalkBox_AuctionScan() and short==1,
+    "AuctionFrame uses the classic query whose page is the fourth argument")
+local joined=table.concat(notes," ")
+assert(joined:find("Scan requested",1,true) or joined:find("Waiting",1,true),
+    "starting a classic scan says so in chat")
+ChalkBox_AuctionCommand("debug")
+joined=table.concat(notes," ")
+assert(joined:find("classic list",1,true) and joined:find("CanSendAuctionQuery",1,true),
+    "debug reports the API path and the throttle")
 print("PASS: classic auction list scan saves buyouts when the modern browse API is missing")
