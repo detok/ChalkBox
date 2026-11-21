@@ -1317,11 +1317,11 @@ local function MakeBarAppearance()
     Label(panel,"0% = text only     ·     100% = solid charcoal",
         "GameFontHighlightSmall",36,-225,460)
     Toggle(panel,"Show icons beside Bar stats",
-        "Compact Blizzard icons. Existing module widths, position and notch gap stay unchanged.",
+        "Off by default for a cleaner text-only Bar. Turn on compact Blizzard icons here or from the Bar's right-click menu.",
         -249,
         function()
-            return type(ChalkBox_BarIconsGet)~="function" or
-                ChalkBox_BarIconsGet()
+            return type(ChalkBox_BarIconsGet)=="function" and
+                ChalkBox_BarIconsGet()==true
         end,
         function(on)
             if type(ChalkBox_BarIconsSet)=="function" then
