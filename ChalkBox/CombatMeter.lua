@@ -495,141 +495,10 @@ local function MakeButton(parent,title,width,offset,action)
     button:SetScript("OnClick",action)
     return button
 end
--- PRINT is an explicit one-line PARTY report, never an automated broadcast.
--- Forever secret combat values MUST NOT be read or formatted in combat.
-local lastPartyReportAt=-1e9
-local function PrintFight()
-    if type(InCombatLockdown)=="function" and InCombatLockdown() then
-        Chat("Finish combat before reporting the fight; live totals are protected.")
-        return false
-    end
-    -- A party report is never silently redirected to SAY, RAID or local chat.
-    if type(IsInGroup)~="function" or not IsInGroup()
-        or (type(IsInRaid)=="function" and IsInRaid()) then
-        Chat("Join a party to use PRINT. Nothing was sent.")
-        return false
-    end
-    local send=type(SendChatMessage)=="function" and SendChatMessage or
-        (C_ChatInfo and C_ChatInfo.SendChatMessage)
-    if type(send)~="function" then
-        Chat("This client has no supported party chat send API.")
-        return false
-    end
-    local now=type(GetTime)=="function" and GetTime() or nil
-    if Safe(now) and type(now)=="number" and now-lastPartyReportAt<3 then
-        Chat("Party report already requested. Give it a moment.")
-        return false
-    end
-    local available,reason=IsAvailable()
-    if not available then Chat(reason);return false end
-    local mode=Choice()
-    local session=Session()
-    local modeID=EnumValue("DamageMeterType",mode.enum,
-        ({Dps=1,DamageDone=0,Hps=3,HealingDone=2,DamageTaken=7,Interrupts=5})[mode.enum])
-    local requested=EnumValue("DamageMeterSessionType",session.enum,
-        ({Current=1,Expired=2,Overall=0})[session.enum])
-    local function Fetch(sessionID)
-        local ok,record=pcall(C_DamageMeter.GetCombatSessionFromType,sessionID,modeID)
-        if not ok or not Safe(record) or type(record)~="table" then return end
-        local sources=record.combatSources
-        if not Safe(sources) or type(sources)~="table" then return end
-        return sources
-    end
-    local sources=Fetch(requested)
-    local title=session.label
-    if (not sources or #sources==0) and db.session=="current" then
-        sources=Fetch(EnumValue("DamageMeterSessionType","Expired",2))
-        title="Last"
-    end
-    if not sources or #sources==0 then
-        Chat("No completed fight data to report.")
-        return false
-    end
-    -- Build a plain heading and one chat line per player (top three).
-    -- Validate all sources before sending anything; never leak secret data.
-    local parts={}
-    for i=1,math.min(#sources,3) do
-        local source=sources[i]
-        if not Safe(source) or type(source)~="table" then
-            Chat("Fight values are protected; try after combat.")
-            return false
-        end
-        local name=source.name
-        local amount=mode.perSecond and source.amountPerSecond or source.totalAmount
-        if not Safe(name) or type(name)~="string"
-            or not Safe(amount) or type(amount)~="number" then
-            Chat("Fight values are still protected; try after combat.")
-            return false
-        end
-        -- Prevent control codes and chat markup from damaging the summary.
-        name=name:gsub("[%c|]","")
-        if name=="" then name="Unknown" end
-        parts[#parts+1]=string.format("%d %s %.0f",i,name,amount)
-    end
-    local lines={"CB "..mode.label.." ("..title.."):"}
-    for _,part in ipairs(parts) do
-        if #part>255 then
-            Chat("Fight report line is too long; nothing sent.")
-            return false
-        end
-        lines[#lines+1]=part
-    end
-    -- Each visual line is one normal PARTY chat message; no embedded
-    -- newlines, bare pipe escapes, fallback window, or alternate channel.
-    for i,line in ipairs(lines) do
-        local ok,result=pcall(send,line,"PARTY")
-        if not ok or (Safe(result) and result==false) then
-            local detail=not ok and Safe(result) and type(result)=="string"
-                and result:sub(1,180) or "chat API returned false"
-            Chat("PARTY report stopped at line "..i..": "..detail)
-            return false
-        end
-        if i==1 and Safe(now) and type(now)=="number" then lastPartyReportAt=now end
-    end
-    Chat("Party report requested ("..#parts..
-        " players); delivery is controlled by the game.")
-    return true
-end
-function ChalkBox_MeterPrintFight()
-    if not db then db=Settings() end
-    if type(ChalkBox_NativeMeterPrint)=="function" then
-        return ChalkBox_MeterReportSelected("PARTY")
-    end
-    return PrintFight() -- legacy test/client fallback when native helper absent
-end
--- Use the native report encoder, validation, configurable Top 3/5/10,
--- channels. Never maintain a second print path.
-function ChalkBox_MeterReportAdapter()
-    if not db then db=Settings() end
-    if not IsAvailable() then return nil end
-    local mode=Choice()
-    local session=Session()
-    local kind=EnumValue("DamageMeterType",mode.enum,
-        ({Dps=1,DamageDone=0,Hps=3,HealingDone=2,DamageTaken=7,Interrupts=5})[mode.enum])
-    local sessionID=EnumValue("DamageMeterSessionType",session.enum,
-        ({Current=1,Expired=2,Overall=0})[session.enum])
-    return {
-        GetDamageMeterType=function() return kind end,
-        GetSessionType=function() return sessionID end,
-        GetCombatSession=function()
-            local ok,data=pcall(C_DamageMeter.GetCombatSessionFromType,
-                sessionID,kind)
-            if ok and Safe(data) and type(data)=="table" then return data end
-        end,
-    }
-end
-function ChalkBox_MeterReportSelected(channel)
-    local adapter=ChalkBox_MeterReportAdapter()
-    if not adapter then
-        Chat("Blizzard damage meter unavailable.")
-        return false
-    end
-    if type(ChalkBox_NativeMeterPrint)~="function" then
-        Chat("Shared native report helper unavailable.")
-        return false
-    end
-    return ChalkBox_NativeMeterPrint(adapter,channel or "PARTY")
-end
+-- Reporting retired: silent, side-effect-free compatibility entry points.
+function ChalkBox_MeterPrintFight() return false end
+function ChalkBox_MeterReportAdapter() return nil end
+function ChalkBox_MeterReportSelected() return false end
 
 local function CreateWindow()
     if window or not UIParent then return end
@@ -776,9 +645,7 @@ end
 local function Help()
     Chat("/chalk meter [show|hide|toggle|dps|damage|hps|healing|taken|interrupts]")
     Chat("/chalk meter [current|last|overall|print|lock|unlock|icons class/spec/off|rows 5/8/12|opacity 0-100|reset]")
-    Chat("Native gear menu: PARTY/SAY reports, Top 3/5/10, optional auto after combat.")
-    Chat("/chalk meter native on|off|status|auto on|off|rows 3/5/10|channel party/say")
-    Chat("PRINT sends a single top-three summary to PARTY after combat; RESET asks before clearing all Blizzard sessions.")
+    Chat("Combat meter is a local display. RESET asks before clearing Blizzard sessions.")
 end
 function ChalkBox_MeterCommand(input)
     if not db then db=Settings() end
@@ -789,13 +656,11 @@ function ChalkBox_MeterCommand(input)
     elseif value=="hide" or value=="off" then SetShown(false)
     elseif value=="reset" then ConfirmReset()
     elseif value=="reset confirm" then ResetNative()
-    elseif value=="print" then ChalkBox_MeterPrintFight()
-    elseif value:match("^native%s+") then
-        if type(ChalkBox_NativeMeterCommand)=="function" then
-            ChalkBox_NativeMeterCommand(value:match("^native%s+(.+)$"))
-        else
-            Chat("Native Blizzard meter integration is not loaded.")
-        end
+    elseif value=="print" or value=="print local" or
+        value=="print party" or value=="print say" or
+        value=="party" or value=="say" or
+        value:match("^native%s+") then
+        return false -- historical reporter commands are silent and inert
     elseif value=="help" then Help()
     elseif value=="status" then
         local enabled=IsAvailable()
