@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.31 — Feature contract and journal
+
+- Added `docs/FEATURES.md`, the intended behavior of every feature.
+- Session journal counts quiet time longer than ten minutes, keeps the highest drop counts, and leaves an unfamiliar save untouched.
+
 ## 2.2.30 — Meter, bar, scans, and transfer
 
 - Combat meter reports why it is empty, survives locked numbers, keeps an empty live fight empty, labels pets, and holds its dragged size.

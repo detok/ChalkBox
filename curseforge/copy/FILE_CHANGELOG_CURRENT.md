@@ -1,3 +1,9 @@
+# ChalkBox 2.2.31 — Stable Update
+
+- Includes the 2.2.30 meter, bar, auction scan, and data-transfer fixes.
+- Session journal time and drop totals stay accurate, and an unfamiliar journal save is not replaced.
+- `docs/FEATURES.md` states what each feature is supposed to do. Inventory Intelligence and the full Adventure Chronicle stay paused.
+
 # ChalkBox 2.2.30 — Stable Update
 
 - **Combat meter:** Status explains an empty window. Locked numbers no longer crash it. The dragged size stays. Pets are labeled as pets. If Blizzard's meter is missing, locked, or empty, your own combat log supplies your damage and your pet.

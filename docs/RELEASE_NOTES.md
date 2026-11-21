@@ -1,3 +1,9 @@
+# ChalkBox 2.2.31 — Stable WoW Forever Release
+
+Includes everything in 2.2.30. The session journal now counts long quiet time, keeps the highest loot counts, and will not erase an unfamiliar save. `docs/FEATURES.md` is the list of what each feature is supposed to do. Saved data is kept.
+
+## Previous: 2.2.30
+
 # ChalkBox 2.2.30 — Stable WoW Forever Release
 
 The meter, the bar, auction scans, and moving your saved data now work as one addon. Your existing SavedVariables, layouts, and widths are kept.
