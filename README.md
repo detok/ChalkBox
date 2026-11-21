@@ -1,6 +1,8 @@
 <div align="center">
 
 
+**Stable 2.2.32 for WoW Forever:** Auction scan answers every click. Chronicle, intelligence, and the storybook are in. [Feature list](docs/FEATURES.md).
+
 **Stable 2.2.31 for WoW Forever:** Same fixes as 2.2.30, plus an honest session journal. [Feature list](docs/FEATURES.md).
 
 **Stable 2.2.30 for WoW Forever:** The combat meter, the bar, auction scans, and saved-data transfer now work together. Your saved layouts and records are kept. [Download stable](https://github.com/detok/ChalkBox/releases/tag/v2.2.30).

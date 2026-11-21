@@ -1,3 +1,9 @@
+# ChalkBox 2.2.32 — Stable WoW Forever Release
+
+Includes 2.2.31. The auction Scan Market button always responds. The Adventure Chronicle records new milestones. Inventory Intelligence is back and stays off until enabled. Fill price can copy a saved ask into the sell box when you click it. `/chalk journal` opens the storybook. Saved data is kept.
+
+## Previous: 2.2.31
+
 # ChalkBox 2.2.31 — Stable WoW Forever Release
 
 Includes everything in 2.2.30. The session journal now counts long quiet time, keeps the highest loot counts, and will not erase an unfamiliar save. `docs/FEATURES.md` is the list of what each feature is supposed to do. Saved data is kept.

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.32 — Chronicle, intelligence, posting help, storybook, and a scan that answers
+
+- The auction Scan Market button stays clickable and says what it is doing. `/chalk auction debug` prints the API path and the throttle.
+- Adventure Chronicle records new levels, quests, deaths, and party dungeons without rewriting old sessions.
+- Inventory Intelligence loads again, off until enabled, and keeps old notes.
+- Fill price copies a saved ask only when you click it, and never presses Post.
+- `/chalk journal` opens a read-only storybook of the other modules.
+
 ## 2.2.31 — Feature contract and journal
 
 - Added `docs/FEATURES.md`, the intended behavior of every feature.

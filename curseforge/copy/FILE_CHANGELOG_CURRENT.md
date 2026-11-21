@@ -1,3 +1,9 @@
+# ChalkBox 2.2.32 — Stable Update
+
+- Auction Scan Market always reports start, progress, success, or the reason it cannot run.
+- Adventure Chronicle, Inventory Intelligence (off until enabled), Fill price, and the storybook (`/chalk journal`) are included.
+- Saved data from older versions is kept.
+
 # ChalkBox 2.2.31 — Stable Update
 
 - Includes the 2.2.30 meter, bar, auction scan, and data-transfer fixes.

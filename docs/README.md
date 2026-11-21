@@ -1,6 +1,8 @@
 # ChalkBox documentation
 
 
+**Stable 2.2.32:** Scan button, chronicle, intelligence, and storybook. See [features](FEATURES.md).
+
 **Stable 2.2.31:** See [what each feature is supposed to do](FEATURES.md).
 
 **Stable 2.2.30:** Combat meter fallback, bar resize, auction scans, and a simpler data transfer. Saved data is kept.
