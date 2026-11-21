@@ -70,8 +70,12 @@ for _,entry in ipairs(ChalkBox_EmotaCatalog()) do
 end
 ChalkBox_EmotaCommand("auto on")
 now=122;Tick()
+assert(#emotes==0 and ChalkBox_EmotaPending()
+    and ChalkBox_EmotaPending().token=="JOKE",
+    "idle only suggests an emote; it does not call PerformEmote")
+ChalkBox_EmotaCommand("play")
 assert(#emotes==1 and emotes[1]=="JOKE",
-    "safe non-pose idle personality still runs when opted in")
+    "the player can play that suggestion with a slash command")
 
 -- Movement, casting, feign, riding, and vendors all suppress idle reactions.
 local count=#emotes

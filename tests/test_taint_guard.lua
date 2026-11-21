@@ -39,11 +39,14 @@ end
 assert(loadfile("TaintGuard.lua"))("ChalkBox")
 captured(nil,"ADDON_ACTION_BLOCKED","ChalkBox","SetPoint")
 captured(nil,"ADDON_ACTION_BLOCKED","OtherAddon","SetPoint")
+captured(nil,"ADDON_ACTION_BLOCKED","ChalkBox","PerformEmote")
 local report=ChalkBox_TaintCheck()
-assert(report.lastEvent=="ADDON_ACTION_BLOCKED" and report.lastFunc=="SetPoint",
-    "only ChalkBox's own blocked action is remembered")
+assert(report.lastEvent=="ADDON_ACTION_BLOCKED" and report.lastFunc=="PerformEmote"
+    and report.module=="Emota",
+    "a blocked emote is attributed to Emota")
 local joined=table.concat(notes," ")
-assert(joined:find("SetPoint",1,true) and joined:find("stay with Blizzard",1,true),
-    "taintcheck tells the player what was blocked and that frames were left alone")
+assert(joined:find("PerformEmote",1,true) and joined:find("Emota",1,true)
+    and joined:find("stay with Blizzard",1,true),
+    "taintcheck names Emota when the blocked call was an emote")
 assert(not moved,"reporting a block still does not move the minimap or player frame")
 print("PASS: taint check records the blocked action and does not touch Blizzard frames")
