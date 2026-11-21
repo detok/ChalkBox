@@ -103,3 +103,10 @@ For earlier version-specific fixes, see the [historical changelog](../CHANGELOG.
 In WoW Forever, a damage meter can show correct combat totals while the game refuses addon-created chat messages. ChalkBox checks `C_ChatInfo.InChatMessagingLockdown()` and `C_ChatInfo.AreOutgoingAddonChatMessagesRestricted()` when supported. If a manual PARTY/SAY report is denied, 2.2.23 provides a **copyable summary** (Ctrl+C) you can paste into normal chat. It never silently changes channels. Successful API submission does not guarantee server delivery. Automatic SAY outside instances is skipped when restricted.
 
 Try after combat. Use `/chalk meter status` and `/chalk meter native status` for diagnostics. Report the selected channel and whether the copy window appeared. **2.2.22 remains the stable release** until this change is verified in-game.
+
+
+## After-combat DPS auto report (test fix PR #116)
+
+Automatic outgoing reports depend on the actual Forever group/chat state, not simply on a visible meter. Choose `/chalk meter native auto on` and `/chalk meter native channel party`; the native default is OFF. `/chalk meter native status` now explains its last state (fighting, waiting, restricted, skipped, ready, submitted), the current group route (PARTY or INSTANCE_CHAT), minimum-fight duration, cooldown, and available click-to-send report. SAY is *never* transmitted automatically—it requires a player click.
+
+The updated client retries briefly after a finished fight while the game's chat messaging restriction is active. If the restriction persists it announces that the report was **not sent** and exposes **Meter → Menu → Send ready report**. The log message *submitted* only means the chat API accepted a request; it is **not** proof that another player received it. To verify a fix, perform a real group fight and have another player confirm the lines appeared in their chat. The automated tests cannot verify delivery.
