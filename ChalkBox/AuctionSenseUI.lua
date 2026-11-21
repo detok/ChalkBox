@@ -867,6 +867,13 @@ end
 local function CombatLocked()
     return type(InCombatLockdown)=="function" and InCombatLockdown()
 end
+-- A missing protection query is not proof the frame is secure. A positive
+-- or failed answer is. Never hook a secure auction tab's click.
+local function ProtectedFrame(widget)
+    if not widget or type(widget.IsProtected)~="function" then return false end
+    local ok,value=pcall(widget.IsProtected,widget)
+    return not ok or value==true
+end
 local function NativeMode()
     if not host or type(host.GetDisplayMode)~="function" then return nil end
     local ok,value=pcall(host.GetDisplayMode,host)
@@ -929,6 +936,7 @@ local function HookOtherTabs()
         {host.BuyTab,host.SellTab,host.AuctionsTab}
     for _,button in pairs(tabs) do
         if button and button~=tab and not hooked[button] and
+            not ProtectedFrame(button) and
             type(button.HookScript)=="function" then
             hooked[button]=true
             pcall(button.HookScript,button,"OnClick",function(clicked)
@@ -1006,7 +1014,7 @@ function ChalkBox_AuctionAttach()
             end
             Refresh()
         end)
-        if type(host.HookScript)=="function" then
+        if type(host.HookScript)=="function" and not ProtectedFrame(host) then
             host:HookScript("OnHide",function()
                 HidePane()
                 marketSelectionActive=false
