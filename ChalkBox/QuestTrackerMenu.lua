@@ -104,10 +104,10 @@ end
 local function HookHeader(frame)
     if not frame then return false end
     if hooked[frame] then return true end
-    if type(frame.IsProtected)=="function" then
-        local ok,protected=pcall(frame.IsProtected,frame)
-        if not ok or protected then return false end
-    end
+    -- Missing or failed protection info is not permission to hook.
+    if type(frame.IsProtected)~="function" then return false end
+    local okProtected,protected=pcall(frame.IsProtected,frame)
+    if not okProtected or protected~=false then return false end
     if type(frame.HookScript)~="function" then return false end
     local ok=pcall(frame.HookScript,frame,"OnMouseUp",
         function(self,button)
@@ -146,15 +146,16 @@ function ChalkBox_QuestTrackerMenuStatus()
     return {attached=Attach(),nativeTracker=ObjectiveTrackerFrame~=nil}
 end
 local listener=CreateFrame("Frame")
-for _,event in ipairs({"ADDON_LOADED","PLAYER_ENTERING_WORLD"}) do
+local loggedIn=false
+for _,event in ipairs({"PLAYER_LOGIN","PLAYER_ENTERING_WORLD",
+    "PLAYER_REGEN_ENABLED","ADDON_LOADED"}) do
     pcall(listener.RegisterEvent,listener,event)
 end
 listener:SetScript("OnEvent",function(_,event,name)
-    if event=="ADDON_LOADED" and name==addonName then
-        Attach()
-    elseif event=="ADDON_LOADED" or event=="PLAYER_ENTERING_WORLD" then
-        -- The actual Blizzard tracker might appear after another addon loads.
-        Attach()
-    end
+    if event=="PLAYER_LOGIN" then loggedIn=true end
+    -- Do not hook during addon file load or before the player is in the world.
+    if not loggedIn then return end
+    if event=="ADDON_LOADED" and name~=addonName
+        and name~="Blizzard_ObjectiveTracker" then return end
+    Attach()
 end)
-Attach()

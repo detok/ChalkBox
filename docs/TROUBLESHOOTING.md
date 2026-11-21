@@ -26,7 +26,7 @@ This page covers issues you can diagnose safely without deleting SavedVariables,
 | Full Scan fails but Browse Scan works | Full Scan uses a heavier account-wide replicate API with a roughly 15-minute successful-request cooldown; another addon can consume it. Version 2.2.22 waits for delayed responses and safely processes large full snapshots, preserving previous prices on failure. Run `/chalk auction status` for the specific refusal or timeout; continue using Browse Scan meanwhile |
 | AuctionSense scan does nothing | Visit an auctioneer and open the **AuctionSense** tab; request a scan manually, check server cooldown and `/chalk auction status` |
 | DE estimate is absent | Not all gear/brackets or AH materials have reliable outcome or price data; try `/chalk de [item]` |
-| Bar hides or overlaps something | Check Bar status, top chrome shift, screen width and existing saved per-character layout |
+| "ChalkBox has been blocked from an action only available to the Blizzard UI" at login | ChalkBox no longer moves the minimap, buffs, unit frames, or bag anchors while logging in. `/chalk taintcheck` prints the last blocked action if one is still recorded |
 | Adventure Journal is transparent or borderless | Open `/chalk session`; version 2.2.22 has a native border and opaque fallback even with global opacity 0. If art is missing, note the client build and retry after reopen; v1 session data should remain intact |
 | Compact Combat Meter empty | It **starts hidden**; use `/chalk meter show`. Native data can be unavailable or protected |
 | QuietGuard blocks an invite unexpectedly | Check saved ON filters and **Blizzard's own built-in social settings** |

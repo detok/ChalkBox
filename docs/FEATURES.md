@@ -86,13 +86,13 @@ ChalkBox is one optional companion. It reads the game and shows notes. It does n
 
 **Supposed to:** A thin strip of level, experience, bags, gold, repair, and similar stats. The player can show, hide, move, and resize each stat. Widths and order are saved per character and not reset on update. Icons stay off until turned on. On a notched Mac, the center of the bar can split around the camera cutout when the client reports one, or when the player sets a gap. Repair numbers with a tilde are estimates from real repair quotes.
 
-**Status:** Works. The resize grip drags. Text stays inside the stat. A display with no notch and no saved gap is unchanged.
+**Status:** Works. The resize grip drags. Text stays inside the stat. A display with no notch and no saved gap is unchanged. The bar does not move the minimap, buffs, or unit frames. `/chalk taintcheck` reports whether the client blocked an action.
 
 ## Bag position
 
 **Supposed to:** Nudge separate bag windows up or down by a saved amount between 120 pixels either way. Combined bags, the bank, and protected frames are not moved. Combat waits.
 
-**Status:** Works.
+**Status:** Works. Logging in does not force the bags to move. The saved nudge is applied when Blizzard lays the bags out, and only if that bag frame is not protected.
 
 ## Combat meter
 

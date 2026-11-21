@@ -73,12 +73,15 @@ local function ApplyOffset()
     pending = false
     if shift == 0 then return end
     local frame = ShownFirstBag()
-    if frame and type(frame.IsProtected)=="function" then
-        local ok,protected=pcall(frame.IsProtected,frame)
-        if not ok or protected then
-            pending=true
-            return
-        end
+    -- A missing protection check is not permission to move a bag frame.
+    if not frame or type(frame.IsProtected)~="function" then
+        pending=true
+        return
+    end
+    local ok,protected=pcall(frame.IsProtected,frame)
+    if not ok or protected~=false then
+        pending=true
+        return
     end
     if not PlayerBag(frame) or type(frame.GetPoint)~="function"
         or type(frame.GetParent)~="function"
@@ -191,8 +194,10 @@ events:SetScript("OnEvent",function(_,event,name)
         end
         InstallHook() -- Blizzard bag UI may load after ChalkBox.
     elseif event=="PLAYER_LOGIN" or event=="PLAYER_ENTERING_WORLD" then
+        -- Install the hook only. Calling Blizzard's layout function from
+        -- here re-anchors protected bags during login and shows the block.
         InstallHook()
-        if db and Offset()~=0 then RefreshLayout() end
+        if db and Offset()~=0 then pending=true end
     elseif event=="PLAYER_REGEN_ENABLED" and pending then
         RefreshLayout()
     end
