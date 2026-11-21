@@ -148,6 +148,7 @@ _G.CreateFrame = function(_, name, parent)
         if point=="CENTER" then return offset end
         if point=="RIGHT" then return relative.width+offset-self.width/2 end
     end
+    function frame:SetClipsChildren(v) self.clips=v end
     function frame:SetMovable(v) self.movable=v end
     function frame:RegisterForDrag(v) self.dragButton=v end
     function frame:StartMoving() self.moving=true end
@@ -386,6 +387,11 @@ local function RootIsBaseline()
        and select(5,UIParent:GetPoint(2))==0
 end
 assert(bar.height==18,"bar should remain slim")
+local clipped=false
+for _,frame in ipairs(frames) do
+    if frame.parent==bar and frame.clips then clipped=true end
+end
+assert(clipped,"each Bar stat clips its text inside its own width")
 assert(ChalkBox_BarIconsGet(),"new Bar layouts show compact module icons")
 local moduleIcons=0
 for _,frame in ipairs(frames) do
