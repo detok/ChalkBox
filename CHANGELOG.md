@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.38 — Taint log and journal frames
+
+- `/chalk taintcheck` saves the last blocked actions with function, module, stack, and time.
+- A zero bag offset does not hook bag layout at login. The bar does not anchor to a protected world frame.
+- The storybook and adventure chronicle match the session journal and have a Close button. Escape closes them.
+
 ## 2.2.37 — Market tab realm line restored
 
 - A blank normalized realm name falls through to the ordinary realm name.

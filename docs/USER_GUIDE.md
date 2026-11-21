@@ -1,6 +1,8 @@
 # ChalkBox player handbook
 
 
+**Stable 2.2.38:** Includes 2.2.37. The storybook and chronicle use the session journal frame and a Close button.
+
 **Stable 2.2.37:** Includes 2.2.36. The Market tab shows the realm and faction again.
 
 **Stable 2.2.36:** Includes 2.2.35. The reload emote wait starts when the world appears.

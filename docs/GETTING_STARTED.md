@@ -1,6 +1,8 @@
 # Getting started with ChalkBox
 
 
+**Stable 2.2.38:** Includes 2.2.37. `/chalk journal` opens a window you can close with Escape or Close.
+
 **Stable 2.2.37:** Includes 2.2.36. The auction Market tab writes the realm name again.
 
 **Stable 2.2.36:** Includes 2.2.35. Automatic emotes wait five seconds after the world appears on a reload.

@@ -1,3 +1,8 @@
+# ChalkBox 2.2.38 — Stable Update
+
+- `/chalk taintcheck` records blocked actions so the next popup can be identified.
+- The storybook and adventure chronicle match the other ChalkBox windows and can be closed.
+
 # ChalkBox 2.2.37 — Stable Update
 
 - The Market tab shows the realm again, and a scan no longer stops because a blank normalized realm name looked missing.

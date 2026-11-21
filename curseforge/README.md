@@ -1,3 +1,7 @@
+# ChalkBox 2.2.38 — stable CurseForge publisher kit
+
+**Stable 2.2.38:** Game file `ChalkBox-2.2.38.zip`.
+
 # ChalkBox 2.2.37 — stable CurseForge publisher kit
 
 **Stable 2.2.37:** Game file `ChalkBox-2.2.37.zip`.

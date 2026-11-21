@@ -1,3 +1,9 @@
+# ChalkBox 2.2.38 — Stable WoW Forever Release
+
+Includes 2.2.37. `/chalk taintcheck` now keeps the last blocked actions, with the function name, the module, the stack, and the time, so the next popup can be named. A bag nudge of zero no longer hooks Blizzard's bag layout at login. The storybook and adventure chronicle use the same frame and Close button as the session journal, and Escape closes them.
+
+## Previous: 2.2.37
+
 # ChalkBox 2.2.37 — Stable WoW Forever Release
 
 Includes 2.2.36. A blank normalized realm name no longer makes the Market tab and the scan say the realm is missing. The ordinary realm name is used, and an existing saved market stays on the tab under its original key.

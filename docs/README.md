@@ -1,6 +1,8 @@
 # ChalkBox documentation
 
 
+**Stable 2.2.38:** Journal windows and taint check. See [features](FEATURES.md).
+
 **Stable 2.2.37:** The Market tab shows the realm again. See [features](FEATURES.md).
 
 **Stable 2.2.36:** Reload no longer shows the ChalkBox Emota blocked-action line. See [features](FEATURES.md).

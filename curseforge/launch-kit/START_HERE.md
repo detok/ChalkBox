@@ -1,3 +1,7 @@
+# ChalkBox 2.2.38 — publisher kit
+
+**Stable 2.2.38:** The game file is `ChalkBox-2.2.38.zip`.
+
 # ChalkBox 2.2.37 — publisher kit
 
 **Stable 2.2.37:** The game file is `ChalkBox-2.2.37.zip`.
