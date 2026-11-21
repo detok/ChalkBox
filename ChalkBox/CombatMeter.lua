@@ -7,7 +7,11 @@ local rows={}
 local refreshQueued=false
 local refreshElapsed=0
 local lastDisplayError=nil
+local feedState={source="none",reason="idle"}
 local LIVE_REFRESH_SECONDS=0.75
+local function RememberFeed(source,reason)
+    feedState={source=source or "none",reason=reason or "unknown"}
+end
 local modes={
     {key="dps", label="DPS", enum="Dps", perSecond=true},
     {key="damage", label="DMG", enum="DamageDone"},
@@ -343,7 +347,12 @@ local function Refresh()
     lastDisplayError=nil
     if not window or not db or db.shown==false or not window:IsShown() then return end
     local available,reason=IsAvailable()
-    if not available then ResetDisplay(reason);return end
+    if not available then
+        RememberFeed("none", reason and reason:find("this client",1,true)
+            and "api-missing" or "unavailable")
+        ResetDisplay(reason)
+        return
+    end
     local mode=Choice()
     local session=Session()
     local modeId=EnumValue("DamageMeterType",mode.enum,
@@ -353,11 +362,13 @@ local function Refresh()
     -- The native API is readable even in combat, but can return secret fields.
     local ok,data=pcall(C_DamageMeter.GetCombatSessionFromType,sessionId,modeId)
     if not ok or not Safe(data) or type(data)~="table" then
+        RememberFeed("blizzard","unreadable")
         ResetDisplay("Waiting for Blizzard combat data...")
         return
     end
     local sources=data.combatSources
     if not Safe(sources) or type(sources)~="table" then
+        RememberFeed("blizzard","protected")
         ResetDisplay("Native combat sources unavailable or protected.")
         return
     end
@@ -411,12 +422,15 @@ local function Refresh()
     local auto=type(ChalkBox_NativeMeterStatus)=="function" and
         ChalkBox_NativeMeterStatus() or nil
     if auto and auto.ready then
+        RememberFeed("blizzard", visible>0 and "showing" or "empty")
         Note("Report ready  ·  Menu > Send ready to "..(
             auto.readyChannel or "PARTY"))
     elseif visible==0 then
+        RememberFeed("blizzard","empty")
         Note(unreadable and "Combat data unavailable on this client."
             or "No fight data yet. Attack something!")
     else
+        RememberFeed("blizzard", unreadable and "partial" or "showing")
         Note(unreadable and "Some native combat rows could not be displayed." or "")
     end
 end
@@ -665,6 +679,7 @@ function ChalkBox_MeterCommand(input)
     elseif value=="status" then
         local enabled=IsAvailable()
         Chat("Native API: "..(enabled and "available" or "unavailable")..
+            " | feed "..feedState.source.." ("..feedState.reason..")"..
             " | "..db.mode.." | "..db.session..
             " | "..db.rows.." rows | "..db.iconMode.." icons | "..math.floor(db.opacity*100)..
             "% background | "..(db.locked and "locked" or "unlocked")..
@@ -708,7 +723,7 @@ function ChalkBox_MeterStatus()
     return {shown=db.shown,locked=db.locked,mode=db.mode,session=db.session,
         rows=db.rows,scale=db.scale,opacity=db.opacity,width=db.width,
         iconMode=db.iconMode,displayError=lastDisplayError,
-        available=enabled}
+        available=enabled,feed=feedState.source,reason=feedState.reason}
 end
 local event=CreateFrame("Frame")
 event:RegisterEvent("ADDON_LOADED")

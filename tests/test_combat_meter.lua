@@ -163,6 +163,9 @@ assert(callCount==0,"hidden heartbeat must not poll native combat data")
 ChalkBox_MeterCommand("show")
 Flush()
 assert(lastMeterType==1 and lastSession==1,"manual show defaults to current DPS")
+local shown=ChalkBox_MeterStatus()
+assert(shown.feed=="blizzard" and shown.reason=="showing",
+    "status names the live feed and why the window looks the way it does")
 local bars,labels={},{}
 for _,f in ipairs(frames) do
     if f.kind=="StatusBar" then bars[#bars+1]=f end
