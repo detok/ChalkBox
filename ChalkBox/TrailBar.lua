@@ -1011,6 +1011,9 @@ local function CreateBar()
         local key,name,details=unpack(item)
         local widget=CreateFrame("Frame",nil,bar)
         widget:SetSize(ModuleWidth(key),16)
+        if type(widget.SetClipsChildren)=="function" then
+            widget:SetClipsChildren(true)
+        end
         local font=widget:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
         font:SetAllPoints(widget)
         -- Narrow widths must clip to a single Bar line, never spill down
