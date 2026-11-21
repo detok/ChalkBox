@@ -55,8 +55,8 @@ _G.CreateFrame=function()
 end
 assert(loadfile("BagLayout.lua"))("ChalkBox")
 eventFrame.callback(eventFrame,"ADDON_LOADED","ChalkBox")
-assert(ChalkBox_BagStatus().hooked and ChalkBox_BagStatus().offset==0,
-    "should detect Forever's native bag anchor API without changing defaults")
+assert(not ChalkBox_BagStatus().hooked and ChalkBox_BagStatus().offset==0,
+    "a zero offset does not taint Blizzard bag layout at login")
 UpdateContainerFrameAnchors()
 assert(frame.y==85,"zero default does not touch Blizzard's anchor")
 

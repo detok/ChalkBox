@@ -1464,6 +1464,10 @@ local function PlaceBar()
             reservation.position="manual lift"
         else
             local full=FullscreenReference()
+            if full and type(full.IsProtected)=="function" then
+                local ok,prot=pcall(full.IsProtected,full)
+                if not ok or prot~=false then full=nil end
+            end
             if full then
                 reference=full
                 y=0

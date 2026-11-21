@@ -36,14 +36,24 @@ _G.CreateFrame=function()
     function f:SetScript(_,fn) captured=fn end
     return f
 end
+_G.ChalkBoxDB={}
+_G.time=function() return 1700000000 end
+_G.debugstack=function() return "[string \"QuestSense.lua\"]:10: in function" end
 assert(loadfile("TaintGuard.lua"))("ChalkBox")
-captured(nil,"ADDON_ACTION_BLOCKED","ChalkBox","SetPoint")
+ChalkBox_TaintMark("QuestSense")
+captured(nil,"ADDON_ACTION_FORBIDDEN","ChalkBox","UNKNOWN()")
 captured(nil,"ADDON_ACTION_BLOCKED","OtherAddon","SetPoint")
 local report=ChalkBox_TaintCheck()
-assert(report.lastEvent=="ADDON_ACTION_BLOCKED" and report.lastFunc=="SetPoint",
-    "only ChalkBox's own blocked action is remembered")
+assert(report.lastEvent=="ADDON_ACTION_FORBIDDEN" and report.lastFunc=="UNKNOWN()"
+    and report.lastModule=="QuestSense",
+    "a forbidden action records the function and the module that was in the call")
+assert(ChalkBoxDB.taintLog and ChalkBoxDB.taintLog[1].module=="QuestSense"
+    and ChalkBoxDB.taintLog[1].time==1700000000
+    and ChalkBoxDB.taintLog[1].stack:find("QuestSense.lua",1,true),
+    "the last blocked actions are saved with a stack and a timestamp")
 local joined=table.concat(notes," ")
-assert(joined:find("SetPoint",1,true) and joined:find("stay with Blizzard",1,true),
-    "taintcheck tells the player what was blocked and that frames were left alone")
+assert(joined:find("UNKNOWN()",1,true) and joined:find("QuestSense",1,true)
+    and joined:find("stay with Blizzard",1,true),
+    "taintcheck tells the player what was blocked and which module was in the call")
 assert(not moved,"reporting a block still does not move the minimap or player frame")
 print("PASS: taint check records the blocked action and does not touch Blizzard frames")
