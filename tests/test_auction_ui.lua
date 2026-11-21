@@ -592,8 +592,8 @@ scanButton.scripts.OnEnter(scanButton)
 assert(tip.shown and tip.lines[1].text=="Scan Market",
     "scan controls have brief, useful tooltips")
 scanButton.scripts.OnLeave()
-assert(Button("Full listings (15m)").enabled==false,
-    "full scan button honors cooldown")
+assert(Button("Full listings (15m)").enabled==true,
+    "full scan stays clickable during cooldown so the click can explain the wait")
 assert(Button("Scan Market").enabled==true,
     "everyday browse scan is available during full cooldown")
 Button("Scan Market"):Click()
@@ -665,4 +665,9 @@ ChalkBox_AuctionHide()
 assert(not pane.shown and AuctionHouseFrame.AuctionsFrame.shown,
     "closing Market restores Blizzard native subframes without changing mode")
 assert(nativeRegistryEdits==0,"no protected PanelTemplates mutations")
+local secure=Element("Button",AuctionHouseFrame,"AHSecure")
+function secure:IsProtected() return true end
+AuctionHouseFrame.Tabs[#AuctionHouseFrame.Tabs+1]=secure
+assert(ChalkBox_AuctionAttach())
+assert(not secure.hooks,"a protected auction tab is never given an addon click hook")
 print("PASS: Market never writes AH displayMode; Cozy Sleeping Bag item-use path safe, native tabs restore, real AH artwork, market scans and responsive table")

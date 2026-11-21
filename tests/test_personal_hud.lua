@@ -148,6 +148,7 @@ _G.CreateFrame = function(_, name, parent)
         if point=="CENTER" then return offset end
         if point=="RIGHT" then return relative.width+offset-self.width/2 end
     end
+    function frame:SetClipsChildren(v) self.clips=v end
     function frame:SetMovable(v) self.movable=v end
     function frame:RegisterForDrag(v) self.dragButton=v end
     function frame:StartMoving() self.moving=true end
@@ -386,22 +387,32 @@ local function RootIsBaseline()
        and select(5,UIParent:GetPoint(2))==0
 end
 assert(bar.height==18,"bar should remain slim")
-assert(ChalkBox_BarIconsGet(),"new Bar layouts show compact module icons")
+local clipped=false
+for _,frame in ipairs(frames) do
+    if frame.parent==bar and frame.clips then clipped=true end
+end
+assert(clipped,"each Bar stat clips its text inside its own width")
+assert(not ChalkBox_BarIconsGet() and ChalkBoxDB.barShowIcons==nil,
+    "icons stay off until chosen, without writing a new saved value")
 local moduleIcons=0
 for _,frame in ipairs(frames) do
     if frame.parent==bar and frame.icon then
         moduleIcons=moduleIcons+1
         assert(frame.icon.texture and
             frame.icon.texture:find("Interface",1,true)==1,
-            "every Bar module uses a native Blizzard icon path")
-        assert(frame.icon.width==13 and frame.icon.height==13 and
-            frame.icon.visible~=false,
-            "icons fit inside the original 18-pixel bar")
-        assert(frame.font.points[1][4]==18,
-            "metric text starts after its icon, not underneath it")
+            "every Bar module keeps a native Blizzard icon path")
+        assert(frame.icon.visible==false and frame.font.points[1][4]==1,
+            "icons are hidden and text uses the full module until enabled")
     end
 end
 assert(moduleIcons==13,"all supported Bar metrics receive their own icon")
+assert(ChalkBox_BarIconsSet(true) and ChalkBox_BarIconsGet())
+for _,frame in ipairs(frames) do
+    if frame.parent==bar and frame.icon then
+        assert(frame.icon.visible~=false and frame.font.points[1][4]==18,
+            "turning icons on insets the text instead of drawing over it")
+    end
+end
 assert(ChalkBox_BarIconsSet(false) and not ChalkBox_BarIconsGet())
 for _,frame in ipairs(frames) do
     if frame.parent==bar and frame.icon then
@@ -692,12 +703,13 @@ local bagWidget=FindMetric("Bags ")
 assert(bagWidget and bagWidget.movable and bagWidget.dragButton=="LeftButton",
     "user can physically drag stat modules within the 18px bar")
 local grip=bagWidget.resizeGrip
-assert(grip and grip.parent==bagWidget and grip.visible and
-    grip.dragButton=="LeftButton" and ChalkBox_BarWidthGet("bags")==90,
-    "Edit Mode adds a gold right-edge grip while preserving the module body drag")
+assert(grip and grip.parent==bagWidget and grip.visible and grip.movable and
+    grip.dragButton=="LeftButton" and grip.edge=="left" and
+    ChalkBox_BarWidthGet("bags")==90,
+    "Edit Mode adds a movable grip on the edge that actually grows")
 cursorX=300
 grip.scripts.OnDragStart(grip)
-cursorX=347
+cursorX=253
 grip.scripts.OnUpdate(grip,.1)
 assert(bagWidget.width==136 and ChalkBox_BarWidthGet("bags")==136 and
     ChalkBox_BarLayoutWidthGet("bags")==nil,

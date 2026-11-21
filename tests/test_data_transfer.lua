@@ -55,7 +55,7 @@ _G.ChalkBoxZoneDB=Char(2,12)
 assert(ChalkBox_TransferExport())
 local a=ChalkBoxTransferDB
 assert(a.kind=="ChalkBoxData" and a.version==1 and
-    a.drops.windows==2 and type(a.dropParts)=="table" and
+    a.drops.windows==2 and a.dropParts==nil and
     a.auction.markets["whitemaine|alliance"].scannedAt==1770000100)
 assert(a.drops.enabled==nil and a.drops.tooltip==nil and
     a.auction.nextAllowed==nil and a.auction.tooltip==nil and
@@ -68,13 +68,17 @@ local aAccount=ChalkBoxDB
 _G.ChalkBoxDB=Account(1770000200,75,{Sale("b",20),Sale("c",30)})
 _G.ChalkBoxZoneDB=Char(3,13)
 _G.ChalkBoxTransferDB=a
+local beforeWindows=ChalkBoxZoneDB.dropSense.windows
 local ok,summary=ChalkBox_TransferImport()
 assert(ok and summary:find("discoveries merged",1,true))
+assert(ChalkBoxZoneDB.transferBackup and
+    ChalkBoxZoneDB.transferBackup.dropSense.windows==beforeWindows,
+    "import keeps a backup of the discoveries it is about to change")
 local d=ChalkBoxZoneDB.dropSense
-assert(d.windows==5 and d.observedItems==10 and
-    d.items["2589"].quantity==10 and
-    d.areas["z:1"].sources["c:10"].windows==5,
-    "independent computers must sum genuinely distinct loot windows")
+assert(d.windows==3 and d.observedItems==6 and
+    d.items["2589"].quantity==6 and
+    d.areas["z:1"].sources["c:10"].windows==3,
+    "import keeps the higher discovery count and never lowers it")
 assert(ChalkBoxDB.auctionSense.markets["whitemaine|alliance"].scannedAt==1770000200,
     "newer market snapshot wins")
 local history=ChalkBoxDB.auctionSense.markets[
@@ -88,7 +92,7 @@ assert(ChalkBoxZoneDB.discoveriesKnownFlights.nodes[12] and
     ChalkBoxZoneDB.discoveriesKnownFlights.nodes[13],
     "flight discoveries merged rather than replaced")
 assert(ChalkBox_TransferImport())
-assert(ChalkBoxZoneDB.dropSense.windows==5 and
+assert(ChalkBoxZoneDB.dropSense.windows==3 and
     #ChalkBoxDB.auctionInsights.characters[
         "whitemaine|alliance|hunter"].sales==3,
     "importing same file twice must NOT double count")
@@ -112,18 +116,20 @@ d.areas["z:1"].sources["c:10"].items["2589"].quantity=
 ChalkBox_TransferRecordDrop({["2589"]=2},2,"z:1","c:10")
 assert(ChalkBox_TransferExport())
 local b=ChalkBoxTransferDB
-assert(b.drops.windows==6)
+assert(b.drops.windows==4)
 -- Return to original machine A. Its original baseline should not be
 -- recounted: only B's three historic windows plus one fresh window are added.
 _G.ChalkBoxDB=aAccount
 _G.ChalkBoxZoneDB=aChar
 _G.ChalkBoxTransferDB=b
 assert(ChalkBox_TransferImport())
-assert(ChalkBoxZoneDB.dropSense.windows==6 and
-    ChalkBoxZoneDB.dropSense.items["2589"].quantity==12,
-    "roundtrip preserves original baseline and adds only B's independent events")
+assert(ChalkBoxZoneDB.dropSense.windows==4 and
+    ChalkBoxZoneDB.dropSense.items["2589"].quantity==8,
+    "the higher saved discovery count replaces the smaller one")
+assert(ChalkBoxZoneDB.transferBackup.dropSense.windows==2,
+    "the backup is the data from before this import")
 assert(ChalkBox_TransferImport())
-assert(ChalkBoxZoneDB.dropSense.windows==6,
+assert(ChalkBoxZoneDB.dropSense.windows==4,
     "roundtrip file remains idempotent")
 assert(#ChalkBoxDB.auctionInsights.characters[
     "whitemaine|alliance|hunter"].sales==3)
@@ -140,5 +146,13 @@ local before=ChalkBoxZoneDB.dropSense.windows
 assert(not ChalkBox_TransferImport() and
     ChalkBoxZoneDB.dropSense.windows==before,
     "invalid export cannot overwrite the receiver")
+-- A stale shadow ledger must not pull a higher live count back down.
+_G.UnitName=function() return "Hunter" end
+_G.ChalkBoxZoneDB=Char(9,12)
+_G.ChalkBoxTransferDB=b
+b.dropParts={old={windows=1,observedItems=1,items={},areas={}}}
+assert(ChalkBox_TransferImport())
+assert(ChalkBoxZoneDB.dropSense.windows==9,
+    "an old partial ledger cannot reduce discoveries you already have")
 print("PASS: file-only scoped export, newer market scans, exact invoice dedupe, "
-    .."independent DropSense counts, replay-safe two-PC roundtrip, flight union, character isolation")
+    .."higher discovery counts kept, backup before import, replay-safe roundtrip")

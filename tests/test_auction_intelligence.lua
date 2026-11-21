@@ -457,6 +457,10 @@ assert(ChalkBox_IntelAnnotate(fallback,{freeSlots=2})==nil)
 assert(fallback[1].intel==nil and
     fallback[1].note=="Auction candidate",
     "toggle off restores legacy notes without user-facing changes")
+ChalkBoxProfessionDB.intelligence.legacyNote="keep-me"
+assert(ChalkBox_IntelSet("enabled",false) and
+    ChalkBoxProfessionDB.intelligence.legacyNote=="keep-me",
+    "old intelligence notes survive being loaded and toggled")
 assert(_G.PostAuction==nil and _G.UseContainerItem==nil,
     "no direct auction or inventory actions were introduced")
 print("PASS: opt-in intelligence, learning bounds, actual recipes, capped skill, two-step crafting, shared-stock budget, reserves, mixed/stale/protected safety and off no-op")
