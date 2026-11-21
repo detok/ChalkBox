@@ -359,10 +359,13 @@ ChalkBox_MeterCommand("native status")
 assert(#chat==reportChatBefore and #rawPartyMessages==reportSendBefore,
     "old print commands make no chat messages and cannot send anything")
 assert(resetCount==1,"report commands do not reset Blizzard sessions")
--- Once a fight completes, empty Current must display the last native
--- session rather than an apparently broken all-zero meter.
+-- An empty current fight must stay empty. Last is only shown when chosen.
+Flush()
 local fallbackGetter=C_DamageMeter.GetCombatSessionFromType
+local askedExpired=false
 C_DamageMeter.GetCombatSessionFromType=function(session,kind)
+    _G.lastSession=session
+    if session==Enum.DamageMeterSessionType.Expired then askedExpired=true end
     if session==Enum.DamageMeterSessionType.Current then
         return {maxAmount=0,combatSources={}}
     end
@@ -370,9 +373,10 @@ C_DamageMeter.GetCombatSessionFromType=function(session,kind)
 end
 ChalkBox_MeterCommand("current")
 Flush()
-assert(lastSession==Enum.DamageMeterSessionType.Expired and
-    bars[1].parent.value.text~=nil,
-    "compact display falls back to Last after Current becomes empty")
+assert(lastSession==Enum.DamageMeterSessionType.Current and
+    not askedExpired and bars[1].parent.value.text=="",
+    "empty current fight does not silently show the previous pull")
+assert(ChalkBox_MeterStatus().reason=="empty")
 C_DamageMeter.GetCombatSessionFromType=fallbackGetter
 -- An intermittent player entry failure must not prevent other rows from
 -- showing, nor retain a stale player number.
