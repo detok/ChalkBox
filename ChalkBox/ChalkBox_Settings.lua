@@ -487,10 +487,22 @@ local function MakeAuction()
                 ChalkBox_DisenchantSetTooltips(on)
             end
         end)
+    Toggle(panel,"Suggest a price when posting",
+        "Fills Blizzard's price box only when you click Fill price. ChalkBox never presses Post or switches the auction tab.",
+        -390,
+        function()
+            return type(ChalkBox_AuctionPostEnabled)~="function"
+                or ChalkBox_AuctionPostEnabled()==true
+        end,
+        function(on)
+            if type(ChalkBox_AuctionPostSet)=="function" then
+                ChalkBox_AuctionPostSet(on==true)
+            end
+        end)
     Label(panel,"Scan Market: browse asks  ·  Full listings: 15m cooldown.",
-        "GameFontHighlightSmall",28,-402,500)
+        "GameFontHighlightSmall",28,-450,500)
     Label(panel,"DE uses Classic odds; prices are asks, not sales.",
-        "GameFontHighlightSmall",28,-423,500)
+        "GameFontHighlightSmall",28,-470,500)
     panel:AddRefresh(function()
         local st=ChalkBox_AuctionStatus and ChalkBox_AuctionStatus() or {}
         market:SetText(st.realm and

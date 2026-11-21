@@ -451,6 +451,9 @@ local function Refresh()
         if type(ChalkBox_IntelAnnotate)=="function" then
             pcall(ChalkBox_IntelAnnotate,entries,extra)
         end
+        if type(ChalkBox_AuctionPostNote)=="function" then
+            pcall(ChalkBox_AuctionPostNote,labels,selectedItemID,view)
+        end
         labels.details:SetText(("Bags: %d items  ·  %d priced"):format(
             extra.stacks or 0,extra.priced or 0))
         labels.info:SetText("Bag asks "..Coin(extra.marketValue or 0)..
@@ -597,6 +600,7 @@ local function Refresh()
             and not status.busy and cooldown==0)
     end
 end
+function ChalkBox_AuctionSelected() return selectedItemID end
 function ChalkBox_AuctionRefreshUI() Refresh() end
 -- The journal is mounted INSIDE Blizzard's AH, not a detached window.
 -- No edits to Blizzard's protected Tabs list or PanelTemplates_SetTab.
@@ -860,6 +864,9 @@ local function Ensure()
     if labels.info.ClearAllPoints then labels.info:ClearAllPoints() end
     labels.info:SetPoint("BOTTOMLEFT",f,"BOTTOMLEFT",21,12)
     frame=f
+    if type(ChalkBox_AuctionPostAttach)=="function" then
+        pcall(ChalkBox_AuctionPostAttach,f)
+    end
     f:SetScript("OnUpdate",function(self,elapsed)
         seconds=seconds+(type(elapsed)=="number" and elapsed or 0)
         if seconds>=1 then seconds=0;Refresh() end
