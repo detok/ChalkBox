@@ -19,7 +19,8 @@ local navigation = {
     {key="quests", title="QuestSense", children={
         {key="questsmart", title="Smart Rules"},
         {key="questnav", title="Navigation"}}},
-    {key="journal", title="Session Journal"},
+    {key="journal", title="Session Journal", children={
+        {key="chronicle", title="Adventure Chronicle"}}},
     {key="bar", title="The Bar", children={
         {key="barstats", title="Modules"},
         {key="barappearance", title="Appearance"},
@@ -503,6 +504,31 @@ local function MakeAuction()
     return panel
 end
 
+local function MakeChronicle()
+    local panel=Panel("Adventure Chronicle",
+        "Notable moments from this update forward. Older session summaries stay as they are.")
+    Toggle(panel,"Record notable events",
+        "Levels, quest turn-ins, deaths, and party dungeons. Off keeps saved events.",
+        -120,
+        function()
+            return type(ChalkBox_ChronicleEnabled)=="function"
+                and ChalkBox_ChronicleEnabled()==true
+        end,
+        function(on)
+            if type(ChalkBox_ChronicleSetEnabled)=="function" then
+                ChalkBox_ChronicleSetEnabled(on==true)
+            end
+        end)
+    Button(panel,"Open Chronicle",28,-190,180,function()
+        if ChalkBox_OpenChronicle then ChalkBox_OpenChronicle("timeline") end
+    end)
+    Button(panel,"Clear saved events",220,-190,180,function()
+        if ChalkBox_ChronicleClear then ChalkBox_ChronicleClear() end
+    end)
+    Label(panel,"Slash: /chalk chronicle | today | timeline | history | on | off",
+        "GameFontHighlightSmall",28,-230,480)
+    return panel
+end
 local function MakeAuctionCharts()
     local panel=Panel("AuctionSense / Charts (Experimental)",
         "Actual saved low asking prices. A private drawing lab; no scans or purchases.")
@@ -534,7 +560,27 @@ local function MakeJournal()
             ChalkBox_OpenSessionJournal("last")
         end
     end)
-    local summary=Label(panel,"","GameFontHighlight",28,-275,505)
+    Toggle(panel,"Record notable events",
+        "New milestones only. Older session summaries are not rewritten. Turning this off keeps what was already saved.",
+        -250,
+        function()
+            return type(ChalkBox_ChronicleEnabled)=="function"
+                and ChalkBox_ChronicleEnabled()==true
+        end,
+        function(on)
+            if type(ChalkBox_ChronicleSetEnabled)=="function" then
+                ChalkBox_ChronicleSetEnabled(on==true)
+            end
+        end)
+    Button(panel,"Open Chronicle",28,-310,180,function()
+        if ChalkBox_OpenChronicle then ChalkBox_OpenChronicle("timeline") end
+    end)
+    Button(panel,"Clear Chronicle...",220,-310,180,function()
+        if ChalkBox_ChronicleCommand then
+            ChalkBox_ChronicleCommand("clear confirm")
+        end
+    end)
+    local summary=Label(panel,"","GameFontHighlight",28,-350,505)
     panel:AddRefresh(function()
         local s=ChalkBox_JournalStatus and ChalkBox_JournalStatus() or {}
         summary:SetText("Current: "..(s.current and "recording" or "not started")..
@@ -1726,6 +1772,7 @@ local function Register()
     panels.auction = MakeAuction()
     panels.auctioncharts = MakeAuctionCharts()
     panels.journal = MakeJournal()
+    panels.chronicle = MakeChronicle()
     panels.forge = MakeForge()
     panels.updates = MakeUpdates()
     panels.loot = MakeLoot()
