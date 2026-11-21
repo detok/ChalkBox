@@ -70,7 +70,8 @@ local function Items()
         Add("Reports","Auto after combat: "..(report.auto and "ON" or "OFF"),function()
             Native(report.auto and "auto off" or "auto on")
         end),
-        Add("Reports","Auto channel: "..(report.channel or "PARTY"),function()
+        Add("Reports","Auto channel: "..(report.channel or "PARTY")..
+            (report.channel=="SAY" and " (click only)" or ""),function()
             Native("channel "..Next((report.channel or "PARTY"):lower(),{"party","say"}))
         end),
         Add("Reports","Auto stat: "..(report.metric or "dps"),function()
