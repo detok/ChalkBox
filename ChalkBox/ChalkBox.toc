@@ -2,7 +2,7 @@
 ## Title: ChalkBox
 ## Notes: Loot, quests, professions, auction insights and adventure tools in one lightweight WoW Forever addon.
 ## Author: Detok Whitemaine
-## Version: 2.2.28-quest-beta
+## Version: 2.2.29
 ## SavedVariables: ChalkBoxDB
 ## SavedVariablesPerCharacter: ChalkBoxZoneDB, ChalkBoxProfessionDB
 ## IconTexture: Interface\AddOns\ChalkBox\assets\Icon
@@ -67,9 +67,7 @@ TrailBarLayout.lua
 ScreenLayout.lua
 TrailBar.lua
 BagLayout.lua
-MeterReportCopy.lua
 CombatMeter.lua
-NativeMeterPrint.lua
 CombatMeterMenu.lua
 ChalkBox_Settings.lua
 QuestTrackerMenu.lua
