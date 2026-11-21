@@ -94,6 +94,12 @@ local function Overview()
         lines[#lines+1]="Auction asks on file: "..tostring(Num(auction.items) or 0)
             .." items"..(Text(auction.realm) and (" on "..auction.realm) or "").."."
     end
+    local black=Call(ChalkBox_BlackMarketStatus)
+    if type(black)=="table" then
+        lines[#lines+1]="Black Market, kept separate: "
+            ..tostring(Num(black.listings) or 0).." listed, "
+            ..tostring(Num(black.history) or 0).." remembered."
+    end
     local bank=Call(ChalkBox_BankValueStatus)
     if type(bank)=="table" and Num(bank.vendorCopper) then
         lines[#lines+1]="Bank last seen at vendor value "..Money(bank.vendorCopper).."."
