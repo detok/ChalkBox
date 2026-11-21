@@ -450,7 +450,8 @@ local function Install()
                 end
                 Note("After-combat reports "..(db.nativeAutoPrint and "ON" or "OFF")..".")
             end)
-            root:CreateButton("Auto channel: "..db.nativeAutoChannel,
+            root:CreateButton("Auto channel: "..db.nativeAutoChannel..
+                (db.nativeAutoChannel=="SAY" and " (click only)" or ""),
                 function()
                 db.nativeAutoChannel=Cycle(db.nativeAutoChannel,{"PARTY","SAY"})
                 Note("Auto reports use "..db.nativeAutoChannel..
