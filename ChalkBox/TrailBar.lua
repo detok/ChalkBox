@@ -264,7 +264,9 @@ local function ModuleWidth(key)
     return saved or specs[key].width
 end
 local function IconsShown()
-    return not db or db.barShowIcons~=false
+    -- Text-only is the fresh-install default. Preserve an explicit opt-in
+    -- saved by players who already chose to show module icons.
+    return db~=nil and db.barShowIcons==true
 end
 local function LayoutModuleIcon(widget)
     if not widget or not widget.text then return end
