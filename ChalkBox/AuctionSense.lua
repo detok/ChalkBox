@@ -89,18 +89,22 @@ local function FullAH()
 end
 local function BrowseAH()
     local ah=AH()
+    -- Paging helpers are optional. One page of results is still a scan.
     return ah and type(ah.SendBrowseQuery)=="function" and
-        type(ah.GetBrowseResults)=="function" and
-        type(ah.HasFullBrowseResults)=="function" and
-        type(ah.RequestMoreBrowseResults)=="function" and ah or nil
+        type(ah.GetBrowseResults)=="function" and ah or nil
+end
+local function Shown(widget)
+    return widget and type(widget.IsShown)=="function"
+        and Call(widget.IsShown,widget)==true
 end
 local function AtAuctioneer()
     if auctionOpen then return true end
-    local ahFrame=AuctionHouseFrame
-    if ahFrame and type(ahFrame.IsShown)=="function" then
-        return Call(ahFrame.IsShown,ahFrame)==true
-    end
-    return false
+    return Shown(AuctionHouseFrame) or Shown(AuctionFrame)
+end
+local function ClassicReady()
+    return type(QueryAuctionItems)=="function"
+        and type(GetNumAuctionItems)=="function"
+        and type(GetAuctionItemInfo)=="function"
 end
 local function UIRefresh()
     if type(ChalkBox_AuctionRefreshUI)=="function" then
@@ -485,9 +489,10 @@ local function BrowseRead(scan)
     local rows,count={},0
     for _,info in ipairs(results) do
         if type(info)=="table" and type(info.itemKey)=="table" then
-            local id=info.itemKey.itemID
-            local price=info.minPrice
+            local id=info.itemKey.itemID or info.itemKey.itemId or info.itemID
+            local price=info.minPrice or info.buyoutAmount or info.unitPrice
             local qty=info.totalQuantity
+            if not Integer(qty) then qty=info.quantity end
             if Integer(id) and id>0 and Integer(price) and price>0
                 and Integer(qty) and qty>=0 then
                 local key=tostring(id)
@@ -539,6 +544,15 @@ local function StepBrowse(_,elapsed)
     elapsed=type(elapsed)=="number" and elapsed or 0
     scan.elapsed=scan.elapsed+elapsed
     scan.poll=(scan.poll or 0)+elapsed
+    -- Some Forever builds fill GetBrowseResults without the browse event.
+    if not scan.received and scan.elapsed>=0.5 then
+        local ah=BrowseAH()
+        local results=ah and Call(ah.GetBrowseResults)
+        if type(results)=="table" and #results>0 then
+            scan.received=true
+            scan.updated=true
+        end
+    end
     -- The server can fire a browse event with no actual rows. Empty
     -- callbacks are not progress; fail quickly and preserve the old market.
     if (not scan.received or scan.seen==0) and scan.elapsed>=12 then
@@ -558,9 +572,15 @@ local function StepBrowse(_,elapsed)
     if ready then
         state=("Reading market: %d items"):format(scan.itemCount)
         local ah=BrowseAH()
-        if ah and Call(ah.HasFullBrowseResults)==true then
+        local function FinishPage()
             if scan.itemCount>0 then Commit(scan)
             else Abort("No auction results. Previous prices kept.") end
+        end
+        local knownFull=ah and type(ah.HasFullBrowseResults)=="function"
+        local complete=scan.pagingStopped or not knownFull
+            or Call(ah.HasFullBrowseResults)==true
+        if complete then
+            FinishPage()
             return
         end
         -- Request another page only after current results arrive and the
@@ -570,14 +590,25 @@ local function StepBrowse(_,elapsed)
             canSend=Call(ah.IsThrottledMessageSystemReady)==true
         end
         if canSend and scan.seen>0 and scan.elapsed>=scan.nextPageAt
-            and not scan.awaitingPage then
+            and not scan.awaitingPage
+            and type(ah.RequestMoreBrowseResults)=="function" then
             scan.awaitingPage=true
+            scan.pageSeen=scan.seen
             scan.nextPageAt=scan.elapsed+1
             local ok,accepted=pcall(ah.RequestMoreBrowseResults)
             if not ok or accepted==false then
+                -- Keep the page we already have instead of discarding it.
                 scan.awaitingPage=false
-                scan.nextPageAt=scan.elapsed+2
+                scan.pagingStopped=true
+                FinishPage()
+                return
             end
+        elseif scan.awaitingPage and scan.elapsed>=(scan.nextPageAt or 0)+3
+            and scan.seen==scan.pageSeen then
+            scan.awaitingPage=false
+            scan.pagingStopped=true
+            FinishPage()
+            return
         end
         UIRefresh()
     elseif why~="Waiting for browse results" then
@@ -728,6 +759,102 @@ local function AcceptFullResults(elapsed)
     end
     return false
 end
+local function ReadClassicRow(scan,index)
+    local values={pcall(GetAuctionItemInfo,"list",index)}
+    if values[1]~=true then return false end
+    local name,count,buyout=values[2],values[4],values[11]
+    local itemID=values[18]
+    if type(GetAuctionItemLink)=="function" then
+        local link=Call(GetAuctionItemLink,"list",index)
+        if type(link)=="string" then
+            local parsed=tonumber(link:match("item:(%d+)"))
+            if Integer(parsed) then itemID=parsed end
+        end
+    end
+    if not Integer(count) or count<1 then count=1 end
+    if not Integer(buyout) or buyout<=0 then
+        scan.bidOnly=(scan.bidOnly or 0)+1
+        return true
+    end
+    if not Integer(itemID) or itemID<=0 then return false end
+    local id=tostring(itemID)
+    local row=scan.rows[id]
+    if not row then
+        scan.itemCount=(scan.itemCount or 0)+1
+        if scan.itemCount>MAX_ITEMS then scan.tooMany=true;return true end
+        row={name=Safe(name) and type(name)=="string" and name~=""
+                and name:sub(1,76) or ("Item #"..id),
+            low=math.ceil(buyout/count),listings=0,quantity=0,totalCopper=0}
+        scan.rows[id]=row
+    end
+    local price=math.ceil(buyout/count)
+    if price<row.low then row.low=price end
+    if row.quantity+count>=1e15 or row.totalCopper+buyout>=1e15 then
+        scan.tooMany=true
+        return true
+    end
+    row.listings=row.listings+1
+    row.quantity=row.quantity+count
+    row.totalCopper=row.totalCopper+buyout
+    return true
+end
+local function SendClassicQuery(scan)
+    if type(CanSendAuctionQuery)=="function" then
+        local ok,ready=pcall(CanSendAuctionQuery)
+        if ok and ready==false then return false end
+    end
+    local ok,accepted=pcall(QueryAuctionItems,"",nil,nil,nil,nil,nil,
+        scan.page or 0,false,nil,scan.getAll==true)
+    return ok and accepted~=false
+end
+local function ReadClassicList(scan)
+    local ok,batch,total=pcall(GetNumAuctionItems,"list")
+    if not ok or not Integer(batch) or batch<0 then return false end
+    scan.gotList=true
+    for index=1,batch do
+        if not ReadClassicRow(scan,index) then return false end
+        if scan.tooMany then
+            Abort("Market too large for safe storage. Previous prices kept.")
+            return true
+        end
+    end
+    local pageSize=type(NUM_AUCTION_ITEMS_PER_PAGE)=="number"
+        and NUM_AUCTION_ITEMS_PER_PAGE or 50
+    local covered=((scan.page or 0)*pageSize)+batch
+    if scan.getAll or not Integer(total) or total<=0 or covered>=total
+        or batch==0 then
+        Commit(scan)
+        return true
+    end
+    scan.page=(scan.page or 0)+1
+    if not SendClassicQuery(scan) then
+        if scan.itemCount>0 then Commit(scan)
+        else Abort("Auction list query was refused. Previous prices kept.") end
+    end
+    return true
+end
+local function StartClassic(mode,key)
+    job={mode=mode,key=key,rows={},itemCount=0,bidOnly=0,page=0,
+        getAll=mode=="full",elapsed=0,classic=true,total=0}
+    progress=0
+    lastMode=mode
+    lastError=nil
+    state=mode=="full" and "Requesting the classic full auction list..."
+        or "Requesting the classic auction list..."
+    frame:SetScript("OnUpdate",function(_,elapsed)
+        if not job or not job.classic then return end
+        job.elapsed=job.elapsed+(type(elapsed)=="number" and elapsed or 0)
+        if not job.gotList and job.elapsed>=20 then
+            Abort("No auction list arrived in 20s. Previous prices kept.")
+        end
+    end)
+    UIRefresh()
+    if not SendClassicQuery(job) then
+        Abort("Auction query was refused. Previous prices kept.")
+        return false,state
+    end
+    return true
+end
 local function StartScan(mode)
     if job then return false,"Scan already in progress" end
     if not AtAuctioneer() then
@@ -738,6 +865,7 @@ local function StartScan(mode)
     if mode=="browse" then
         local ah=BrowseAH()
         if not ah then
+            if ClassicReady() then return StartClassic("browse",key) end
             lastError="Browse API unavailable on this client"
             state=lastError
             return false,lastError
@@ -757,6 +885,9 @@ local function StartScan(mode)
         local query={searchString="",sorts={},filters={},itemClassFilters={}}
         local ok,accepted=pcall(ah.SendBrowseQuery,query)
         if not ok or accepted==false then
+            if ClassicReady() and StartClassic("browse",key) then
+                return true
+            end
             Abort("Browse request refused. Check the AH and try again.")
             return false,state
         end
@@ -768,6 +899,7 @@ local function StartScan(mode)
     end
     local ah=FullAH()
     if not ah then
+        if ClassicReady() then return StartClassic("full",key) end
         lastError="Full listing API unavailable"
         state=lastError
         return false,lastError
@@ -895,6 +1027,8 @@ local function OnEvent(_,event,name)
     elseif event=="AUCTION_HOUSE_BROWSE_FAILURE" and job and
         job.mode=="browse" then
         Abort("Browse scan failed. Your last snapshot was kept.")
+    elseif event=="AUCTION_ITEM_LIST_UPDATE" and job and job.classic then
+        ReadClassicList(job)
     elseif event=="AUCTION_HOUSE_THROTTLED_MESSAGE_DROPPED"
         and job and job.mode=="full" and job.phase=="waiting" then
         Abort("Full auction request was dropped by the server. "..
@@ -918,7 +1052,8 @@ for _,event in ipairs({"ADDON_LOADED","AUCTION_HOUSE_SHOW",
     "AUCTION_HOUSE_BROWSE_RESULTS_UPDATED",
     "AUCTION_HOUSE_BROWSE_RESULTS_ADDED",
     "AUCTION_HOUSE_BROWSE_FAILURE",
-    "AUCTION_HOUSE_THROTTLED_MESSAGE_DROPPED"}) do
+    "AUCTION_HOUSE_THROTTLED_MESSAGE_DROPPED",
+    "AUCTION_ITEM_LIST_UPDATE"}) do
     pcall(frame.RegisterEvent,frame,event)
 end
 frame:SetScript("OnEvent",OnEvent)
