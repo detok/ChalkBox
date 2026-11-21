@@ -397,24 +397,9 @@ local function Refresh()
         ResetDisplay("Combat numbers are locked by the client right now.")
         return
     end
-    local usingLast=false
-    if session.key=="current" and sourceCount==0 then
-        -- Blizzard may close Current as soon as the fight ends. The
-        -- compact window should behave like our report sender and show
-        -- the most recently completed fight rather than a blank panel.
-        local expiredID=EnumValue("DamageMeterSessionType","Expired",2)
-        local savedOK,saved=pcall(C_DamageMeter.GetCombatSessionFromType,
-            expiredID,modeId)
-        if savedOK and Safe(saved) and type(saved)=="table" and
-            Safe(saved.combatSources) and
-            type(saved.combatSources)=="table" and
-            (TableCount(saved.combatSources) or 0)>0 then
-            data,sources=saved,saved.combatSources
-            usingLast=true
-        end
-    end
+    -- An empty current fight stays empty. Last is a separate, explicit choice.
     if meterTitle then
-        meterTitle:SetText(mode.label.."  /  "..(usingLast and "Last" or session.label))
+        meterTitle:SetText(mode.label.."  /  "..session.label)
     end
     local visible,unreadable=0,false
     for i=1,db.rows do
