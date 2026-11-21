@@ -386,22 +386,32 @@ local function RootIsBaseline()
        and select(5,UIParent:GetPoint(2))==0
 end
 assert(bar.height==18,"bar should remain slim")
-assert(ChalkBox_BarIconsGet(),"new Bar layouts show compact module icons")
+assert(not ChalkBox_BarIconsGet() and ChalkBoxDB.barShowIcons==nil,
+    "fresh Bar layouts default to text-only without overwriting saved preference")
 local moduleIcons=0
 for _,frame in ipairs(frames) do
     if frame.parent==bar and frame.icon then
         moduleIcons=moduleIcons+1
         assert(frame.icon.texture and
             frame.icon.texture:find("Interface",1,true)==1,
-            "every Bar module uses a native Blizzard icon path")
+            "every Bar module keeps an optional native Blizzard icon")
         assert(frame.icon.width==13 and frame.icon.height==13 and
-            frame.icon.visible~=false,
-            "icons fit inside the original 18-pixel bar")
-        assert(frame.font.points[1][4]==18,
-            "metric text starts after its icon, not underneath it")
+            frame.icon.visible==false,
+            "icons start hidden inside the original 18-pixel bar")
+        assert(frame.font.points[1][4]==1,
+            "default text uses the full module width")
     end
 end
-assert(moduleIcons==13,"all supported Bar metrics receive their own icon")
+assert(moduleIcons==13,"all supported Bar metrics retain optional icons")
+assert(ChalkBox_BarIconsSet(true) and ChalkBox_BarIconsGet() and
+    ChalkBoxDB.barShowIcons==true,
+    "icons can be enabled and saved")
+for _,frame in ipairs(frames) do
+    if frame.parent==bar and frame.icon then
+        assert(frame.icon.visible~=false and frame.font.points[1][4]==18,
+            "enabled icons fit beside text inside the original 18-pixel bar")
+    end
+end
 assert(ChalkBox_BarIconsSet(false) and not ChalkBox_BarIconsGet())
 for _,frame in ipairs(frames) do
     if frame.parent==bar and frame.icon then
@@ -411,7 +421,7 @@ for _,frame in ipairs(frames) do
 end
 ChalkBox_BarCommand("icons on")
 assert(ChalkBox_BarIconsGet() and ChalkBoxDB.barShowIcons==true,
-    "icon preference persists and slash command restores native textures")
+    "slash command restores saved native textures")
 assert(bar.height==18,"icons must never increase Bar height")
 assert(bar.strata=="BACKGROUND" and bar.level==1,
     "Bar chrome must be behind LOW/MEDIUM Blizzard unit frames and resting ZZZ")
