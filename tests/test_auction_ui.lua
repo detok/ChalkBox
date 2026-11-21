@@ -388,6 +388,8 @@ assert(not AuctionHouseFrame.BrowseResultsFrame.shown
     and not AuctionHouseFrame.CategoriesList.shown,
     "Blizzard's own Browse controls are hidden, not overlapped by dark sheet")
 assert(Text("AuctionSense") and Text("Whitemane / Alliance"))
+assert(not Text("Market unavailable"),
+    "the Market tab writes the realm and faction, not a missing-realm line")
 assert(Text("15s 0c") and Text("—"),
     "browse results have a low price but no fabricated average")
 assert(VisibleRows()==1 and rows[1].shown and

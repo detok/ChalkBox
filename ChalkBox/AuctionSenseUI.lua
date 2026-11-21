@@ -85,13 +85,9 @@ local function Button(parent,title,x,y,width,callback)
     b:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y)
     b:SetText(title)
     -- Forever's button template does not always register clicks on its own.
+    -- Stay in the parent's strata so these buttons do not cover the realm line.
     if b.RegisterForClicks then b:RegisterForClicks("LeftButtonUp","RightButtonUp") end
     if b.EnableMouse then b:EnableMouse(true) end
-    if b.SetFrameStrata then b:SetFrameStrata("HIGH") end
-    if b.SetFrameLevel and parent.GetFrameLevel then
-        local ok,level=pcall(parent.GetFrameLevel,parent)
-        if ok and type(level)=="number" then b:SetFrameLevel(level+10) end
-    end
     b:SetScript("OnClick",callback)
     return b
 end
@@ -422,7 +418,8 @@ local function Refresh()
     if not frame or not frame.IsShown or not frame:IsShown() then return end
     local status=ChalkBox_AuctionStatus and ChalkBox_AuctionStatus() or {}
     local market=status.realm and (status.realm.." / "..(status.faction or "?"))
-        or "Market unavailable"
+        or labels.market.lastMarket or "Market unavailable"
+    if status.realm then labels.market.lastMarket=market end
     labels.market:SetText(market)
     labels.status:SetText(status.state or "Ready")
     Tint(labels.status,status.error and COLOR.error or
