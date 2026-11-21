@@ -184,8 +184,8 @@ local function SendReport(frame,channel,auto,preparedLines)
     if type(InCombatLockdown)=="function" and InCombatLockdown() then
         return Reject("Finish combat before reporting.")
     end
-    if channel~="PARTY" and channel~="SAY" then
-        return Reject("Choose PARTY or SAY.")
+    if channel~="PARTY" and channel~="SAY" and channel~="LOCAL" then
+        return Reject("Choose LOCAL, PARTY or SAY.")
     end
     -- Forever's SAY channel can require a hardware event both inside and
     -- outside instances. Never send SAY from unattended callbacks.
@@ -200,9 +200,12 @@ local function SendReport(frame,channel,auto,preparedLines)
     if reportInProgress then return Reject("A report is already being sent.") end
     if now-lastSentAt<3 then return Reject("Report just sent. Try again shortly.") end
     if auto and now-lastAutoAt<Settings().nativeAutoCooldown then return false end
-    local send=type(SendChatMessage)=="function" and SendChatMessage or
-        (C_ChatInfo and C_ChatInfo.SendChatMessage)
-    if type(send)~="function" then return Reject("Chat API unavailable.") end
+    local send
+    if channel~="LOCAL" then
+        send=type(SendChatMessage)=="function" and SendChatMessage or
+            (C_ChatInfo and C_ChatInfo.SendChatMessage)
+        if type(send)~="function" then return Reject("Chat API unavailable.") end
+    end
     local lines,reason
     if type(preparedLines)=="table" then
         -- A legitimate click can send the already sanitized snapshot.
@@ -237,6 +240,21 @@ local function SendReport(frame,channel,auto,preparedLines)
         lines,reason=BuildMessages(sources,label,title,perSecond,
             Settings().nativeReportRows)
         if not lines then return Reject(reason) end
+    end
+    -- Local chat output uses Blizzard's chat frame directly. It is the same
+    -- kind of local notification Questie uses and never sends to other players.
+    if channel=="LOCAL" then
+        if not DEFAULT_CHAT_FRAME or
+            type(DEFAULT_CHAT_FRAME.AddMessage)~="function" then
+            return Reject("Local chat frame unavailable.")
+        end
+        for _,line in ipairs(lines) do
+            local ok=pcall(DEFAULT_CHAT_FRAME.AddMessage,DEFAULT_CHAT_FRAME,
+                "|cffefc574ChalkBox Meter|r "..line)
+            if not ok then return Reject("Local report could not be written to chat.") end
+        end
+        Note("Report printed locally.")
+        return true
     end
     -- Only the local fingerprint uses a newline; no newline goes to chat.
     local fingerprint=table.concat(lines,"\n")
