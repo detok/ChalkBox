@@ -84,8 +84,24 @@ local function Button(parent,title,x,y,width,callback)
     b:SetSize(width,25)
     b:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y)
     b:SetText(title)
+    -- Forever's button template does not always register clicks on its own.
+    if b.RegisterForClicks then b:RegisterForClicks("LeftButtonUp","RightButtonUp") end
+    if b.EnableMouse then b:EnableMouse(true) end
+    if b.SetFrameStrata then b:SetFrameStrata("HIGH") end
+    if b.SetFrameLevel and parent.GetFrameLevel then
+        local ok,level=pcall(parent.GetFrameLevel,parent)
+        if ok and type(level)=="number" then b:SetFrameLevel(level+10) end
+    end
     b:SetScript("OnClick",callback)
     return b
+end
+local function Tell(message)
+    if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
+        DEFAULT_CHAT_FRAME:AddMessage("|cff67c6b7ChalkBox AuctionSense|r "..message)
+    end
+    if labels.status and labels.status.SetText then
+        labels.status:SetText(message)
+    end
 end
 local function Coin(value)
     if type(value)~="number" or value<0 then return "--" end
@@ -591,13 +607,12 @@ local function Refresh()
         end
     end
     labels.page:SetText(("Page %d / %d"):format(page,maxPages))
-    if labels.scan and labels.scan.SetEnabled then
-        labels.scan:SetEnabled(status.open and status.available and
-            not status.busy)
-    end
+    -- Keep both scan buttons clickable. A disabled button swallows the
+    -- click and looks like nothing happened. The click itself explains why
+    -- a scan cannot start.
+    if labels.scan and labels.scan.SetEnabled then labels.scan:SetEnabled(true) end
     if labels.fullscan and labels.fullscan.SetEnabled then
-        labels.fullscan:SetEnabled(status.open and status.fullAvailable
-            and not status.busy and cooldown==0)
+        labels.fullscan:SetEnabled(true)
     end
 end
 function ChalkBox_AuctionSelected() return selectedItemID end
@@ -664,19 +679,23 @@ local function Ensure()
     -- Scan results live under the view choices, not between buttons/search.
     labels.details=Font(f,"GameFontHighlightSmall",21,-117,446)
     labels.scan=Button(f,"Scan Market",21,-106,125,function()
-        if type(ChalkBox_AuctionScan)=="function" then
-            local ok,reason=ChalkBox_AuctionScan()
-            if not ok then labels.status:SetText(reason or "Browse unavailable") end
-            Refresh()
+        if type(ChalkBox_AuctionScan)~="function" then
+            Tell("Auction scan is not loaded.")
+            return
         end
+        local ok,reason=ChalkBox_AuctionScan()
+        Tell(ok and "Scan started." or (reason or "Scan could not start."))
+        Refresh()
     end)
     Hint(labels.scan,"Scan Market","Browse asking prices","No full-scan cooldown")
     labels.fullscan=Button(f,"Full listings (15m)",154,-106,153,function()
-        if type(ChalkBox_AuctionFullScan)=="function" then
-            local ok,reason=ChalkBox_AuctionFullScan()
-            if not ok then labels.status:SetText(reason or "Full scan unavailable") end
-            Refresh()
+        if type(ChalkBox_AuctionFullScan)~="function" then
+            Tell("Full scan is not loaded.")
+            return
         end
+        local ok,reason=ChalkBox_AuctionFullScan()
+        Tell(ok and "Full scan started." or (reason or "Full scan could not start."))
+        Refresh()
     end)
     Hint(labels.fullscan,"Full listings","Complete auction listing snapshot",
         "Server limit: once every 15 minutes")

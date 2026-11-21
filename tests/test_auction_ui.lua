@@ -592,8 +592,8 @@ scanButton.scripts.OnEnter(scanButton)
 assert(tip.shown and tip.lines[1].text=="Scan Market",
     "scan controls have brief, useful tooltips")
 scanButton.scripts.OnLeave()
-assert(Button("Full listings (15m)").enabled==false,
-    "full scan button honors cooldown")
+assert(Button("Full listings (15m)").enabled==true,
+    "full scan stays clickable during cooldown so the click can explain the wait")
 assert(Button("Scan Market").enabled==true,
     "everyday browse scan is available during full cooldown")
 Button("Scan Market"):Click()

@@ -121,7 +121,8 @@ function ChalkBox_AuctionStatus()
     if not Integer(detailAt) and market and market.source=="full" then
         detailAt=market.scannedAt -- older valid full-scan SavedVariables
     end
-    return {available=BrowseAH()~=nil,fullAvailable=FullAH()~=nil,
+    return {available=BrowseAH()~=nil or ClassicReady(),
+        fullAvailable=FullAH()~=nil or ClassicReady(),
         open=AtAuctioneer(),busy=job~=nil,mode=job and job.mode or lastMode,
         state=state,progress=progress,error=lastError,
         phase=job and job.phase or nil,
@@ -333,6 +334,7 @@ local function Finish(message)
 end
 local function Abort(message)
     lastError=message
+    Note(message)
     Finish(message)
 end
 local function Commit(scan)
@@ -414,14 +416,15 @@ local function Commit(scan)
     progress=100
     lastError=nil
     if scan.mode=="browse" then
+        Note(("Done, %d prices saved."):format(found))
         Finish(("Saved %d browse prices (low + units). Avg/listings require full data"):format(found))
     else
         local partial=(scan.partial or 0)>0 and
             (" (%d listings with uncached names)"):format(scan.partial) or ""
+        Note(("Done, %d prices saved."):format(found))
         Finish(("Saved %d items from %d auctions%s"):format(
             found,scan.total,partial))
     end
-    Note("Saved "..found.." items. Asking prices only, not sales.")
 end
 local function ReadRow(scan,index)
     local ah=AH()
@@ -798,13 +801,42 @@ local function ReadClassicRow(scan,index)
     row.totalCopper=row.totalCopper+buyout
     return true
 end
+local function TocVersion()
+    if type(GetBuildInfo)~="function" then return nil end
+    local ok,_,_,toc=pcall(GetBuildInfo)
+    return ok and type(toc)=="number" and toc or nil
+end
+-- Classic list queries put the page number fourth. The later house UI
+-- puts it seventh. Forever's two flavors (11509 and 16001) are both
+-- older than retail's modern browse API, so the short form is used
+-- whenever the old AuctionFrame is the one on screen.
+local function ShortQuery()
+    if AuctionFrame~=nil and AuctionHouseFrame==nil then return true end
+    local toc=TocVersion()
+    if toc and toc<90000 and AuctionHouseFrame==nil
+        and type(C_AuctionHouse)~="table" then
+        return true
+    end
+    return false
+end
 local function SendClassicQuery(scan)
     if type(CanSendAuctionQuery)=="function" then
         local ok,ready=pcall(CanSendAuctionQuery)
-        if ok and ready==false then return false end
+        if ok and ready==false then
+            lastError="The auction house is not ready for another query yet."
+            return false
+        end
     end
-    local ok,accepted=pcall(QueryAuctionItems,"",nil,nil,nil,nil,nil,
-        scan.page or 0,false,nil,scan.getAll==true)
+    local page=scan.page or 0
+    local getAll=scan.getAll==true
+    local ok,accepted
+    scan.queryShape=ShortQuery() and "classic-page-4" or "classic-page-7"
+    if scan.queryShape=="classic-page-4" then
+        ok,accepted=pcall(QueryAuctionItems,"",nil,nil,page,false,nil,getAll)
+    else
+        ok,accepted=pcall(QueryAuctionItems,"",nil,nil,nil,nil,nil,
+            page,false,nil,getAll)
+    end
     return ok and accepted~=false
 end
 local function ReadClassicList(scan)
@@ -821,6 +853,12 @@ local function ReadClassicList(scan)
     local pageSize=type(NUM_AUCTION_ITEMS_PER_PAGE)=="number"
         and NUM_AUCTION_ITEMS_PER_PAGE or 50
     local covered=((scan.page or 0)*pageSize)+batch
+    local pages=Integer(total) and total>0 and math.max(1,math.ceil(total/pageSize)) or nil
+    local shownPage=(scan.page or 0)+1
+    state=pages and ("Scanning page "..shownPage.." of "..pages)
+        or ("Scanning page "..shownPage)
+    Note(state)
+    UIRefresh()
     if scan.getAll or not Integer(total) or total<=0 or covered>=total
         or batch==0 then
         Commit(scan)
@@ -850,9 +888,12 @@ local function StartClassic(mode,key)
     end)
     UIRefresh()
     if not SendClassicQuery(job) then
-        Abort("Auction query was refused. Previous prices kept.")
+        Abort(lastError or "Auction query was refused. Previous prices kept.")
         return false,state
     end
+    state="Scan requested. Waiting for the auction list..."
+    Note(state)
+    UIRefresh()
     return true
 end
 local function StartScan(mode)
@@ -892,7 +933,8 @@ local function StartScan(mode)
             return false,state
         end
         if job and job.mode=="browse" then
-            state="Loading market results..."
+            state="Scan started. Loading market results..."
+            Note(state)
             UIRefresh()
         end
         return true
@@ -918,7 +960,8 @@ local function StartScan(mode)
     progress=0
     lastMode=mode
     lastError=nil
-    state="Requesting full auction snapshot; waiting for server response..."
+    state="Full scan started. Waiting for the server..."
+    Note(state)
     frame:SetScript("OnUpdate",function(_,elapsed)
         if not job then return end
         if job.phase=="reading" then
@@ -976,6 +1019,30 @@ function ChalkBox_AuctionCommand(cmd)
     elseif cmd=="full" then
         local ok,why=ChalkBox_AuctionFullScan()
         Note(ok and "Full listing scan requested." or why)
+    elseif cmd=="debug" then
+        local throttle="unknown"
+        if type(CanSendAuctionQuery)=="function" then
+            local ok,ready=pcall(CanSendAuctionQuery)
+            throttle=ok and tostring(ready) or "error"
+        else
+            throttle="no CanSendAuctionQuery"
+        end
+        local path=BrowseAH() and "modern browse" or
+            (ClassicReady() and (ShortQuery() and "classic list (page is argument 4)"
+                or "classic list (page is argument 7)") or "no auction API")
+        local fullPath=FullAH() and "modern replicate" or
+            (ClassicReady() and "classic full list" or "no full API")
+        Note("API path: "..path)
+        Note("Full scan path: "..fullPath)
+        Note("Throttle CanSendAuctionQuery="..throttle
+            .." | cooldown "..ChalkBox_AuctionStatus().cooldown.."s")
+        Note("House open: "..tostring(AtAuctioneer())
+            .." | event flag "..tostring(auctionOpen)
+            .." | AuctionHouseFrame "..tostring(AuctionHouseFrame~=nil)
+            .." | AuctionFrame "..tostring(AuctionFrame~=nil))
+        Note("Interface toc "..tostring(TocVersion() or "unknown")
+            .." | last error: "..tostring(lastError or "none")
+            .." | state: "..tostring(state))
     elseif cmd=="status" then
         local status=ChalkBox_AuctionStatus()
         Note(status.state.." | market "..tostring(status.marketKey or "unknown")..
