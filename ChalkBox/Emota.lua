@@ -22,11 +22,12 @@ local sessionIdleActions = 0
 local lastIdleToken, previousIdleToken = nil, nil
 local activePose, poseUntil = nil, nil
 local idleTicker = nil
--- /reload and the first login run protected actions while the UI is still
--- locked. Automatic emotes wait out that moment. Clicks and slash commands
--- are unchanged, and idle after this window is unchanged.
-local quietAutomaticUntil = 0
+-- /reload keeps protected calls blocked past the loading screen. The old
+-- one-second clock started when the addon file loaded, so it had already
+-- run out before the world appeared. Count from the world appearing.
+local worldAt = nil
 local sawWorld = false
+local RELOAD_QUIET = 5
 
 -- Blizzard's EMOTE##_TOKEN constants expose this client's native emote list.
 -- Triggered emotes stay enabled by default; other entries are opt-in for idle
@@ -185,7 +186,8 @@ local function NativeEmote(token, reason, manual, targetName)
     if not manual and (poseTokens[token] or token=="STAND") then
         return false
     end
-    if not manual and GetTime() < quietAutomaticUntil then
+    -- Automatic only. A click or slash command is a hardware event and still runs.
+    if not manual and (not worldAt or GetTime() < worldAt + RELOAD_QUIET) then
         return false
     end
 
@@ -216,23 +218,18 @@ local function NativeEmote(token, reason, manual, targetName)
         return false
     end
 
-    -- pcall catches a Lua error; it does NOT bypass a protected-action rule.
-    local ok, returned
+    -- Call it directly. pcall makes Forever report the blocked function as
+    -- UNKNOWN() and still shows the popup. A direct call outside combat is
+    -- the same emote the player already gets.
     if targetName then
-        ok, returned = pcall(C_ChatInfo.PerformEmote, token, targetName)
+        C_ChatInfo.PerformEmote(token, targetName)
     else
-        ok, returned = pcall(C_ChatInfo.PerformEmote, token)
+        C_ChatInfo.PerformEmote(token)
     end
-    if ok then
-        -- A false return was observed even when Forever visibly played WAVE/TRAIN.
-        -- Do not label this harmless return as an error or spam it in chat.
-        -- It remains an observation, not proof of successful playback.
-        Note(("Emote requested: %s (%s)"):format(token, reason), manual)
-        return true
-    else
-        Note(("%s -> %s: API raised an error or restriction"):format(reason, token), true)
-    end
-    return false
+    -- A false return was observed even when Forever visibly played WAVE/TRAIN.
+    -- Do not label that return as an error or spam it in chat.
+    Note(("Emote requested: %s (%s)"):format(token, reason), manual)
+    return true
 end
 
 local function React(token, reason, chance, targetName)
@@ -504,7 +501,7 @@ local function OnEvent(_, event, ...)
             and math.max(0,math.min(100,math.floor(saved.jokeFrequency+0.5))) or 50
         if type(saved.allowedEmotes)~="table" then saved.allowedEmotes={} end
         settings = saved
-        quietAutomaticUntil = GetTime() + 1
+        worldAt = nil
         if not idleTicker and C_Timer and C_Timer.NewTicker then
             idleTicker = C_Timer.NewTicker(5, CheckIdle)
         end
@@ -513,9 +510,10 @@ local function OnEvent(_, event, ...)
         RefreshCompanions()
         if event == "PLAYER_ENTERING_WORLD" then
             local isInitialLogin, isReloadingUi = ...
-            if isInitialLogin == true or isReloadingUi == true
-                or (not sawWorld and isInitialLogin ~= false) then
-                quietAutomaticUntil = GetTime() + 1
+            -- The first world entry is always a login or a /reload, even when
+            -- this client does not pass the two flags.
+            if not sawWorld or isInitialLogin == true or isReloadingUi == true then
+                worldAt = GetTime()
             end
             sawWorld = true
             EndIdle()
@@ -612,8 +610,10 @@ local function OnEvent(_, event, ...)
         MaybeWaveBack(text, sender, target)
     elseif event == "ADDON_ACTION_BLOCKED" or event == "ADDON_ACTION_FORBIDDEN" then
         local sourceAddon, functionName = ...
-        if sourceAddon == addonName then
-            Note("Blizzard blocked an addon action: " .. (Hidden(functionName) and "(secret)" or tostring(functionName)), true)
+        -- Debug only. Printing this for every ChalkBox block labeled the
+        -- whole addon as "ChalkBox Emota" and showed pcall's UNKNOWN().
+        if sourceAddon == addonName and settings and settings.debug then
+            Note("Blizzard blocked an addon action: " .. (Hidden(functionName) and "(secret)" or tostring(functionName)))
         end
     end
 end
