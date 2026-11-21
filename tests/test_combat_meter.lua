@@ -412,6 +412,23 @@ assert(ChalkBox_MeterStatus().reason=="secret" and
     not ChalkBox_MeterStatus().displayError,
     "a locked availability flag is reported instead of crashing the meter")
 C_DamageMeter.IsDamageMeterAvailable=availableCheck
+local petGetter=C_DamageMeter.GetCombatSessionFromType
+C_DamageMeter.GetCombatSessionFromType=function()
+    return {maxAmount=100,combatSources={
+        {name="Wolf",isPet=true,isLocalPlayer=false,
+            amountPerSecond=40,totalAmount=400},
+        {name="",isPet=true,isLocalPlayer=false,
+            amountPerSecond=10,totalAmount=80},
+    }}
+end
+ChalkBox_MeterCommand("damage")
+Flush()
+assert(bars[1].parent.playerName.text=="Wolf" and
+    icons[1].texturePath=="Interface\\Icons\\Ability_Hunter_BeastCall",
+    "a named pet keeps its name and uses the pet icon")
+assert(bars[2].parent.playerName.text=="Pet",
+    "an unnamed pet is labeled Pet instead of a player class")
+C_DamageMeter.GetCombatSessionFromType=petGetter
 local api=C_DamageMeter
 C_DamageMeter=nil
 ChalkBox_MeterCommand("status")
