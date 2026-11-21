@@ -392,22 +392,27 @@ for _,frame in ipairs(frames) do
     if frame.parent==bar and frame.clips then clipped=true end
 end
 assert(clipped,"each Bar stat clips its text inside its own width")
-assert(ChalkBox_BarIconsGet(),"new Bar layouts show compact module icons")
+assert(not ChalkBox_BarIconsGet() and ChalkBoxDB.barShowIcons==nil,
+    "icons stay off until chosen, without writing a new saved value")
 local moduleIcons=0
 for _,frame in ipairs(frames) do
     if frame.parent==bar and frame.icon then
         moduleIcons=moduleIcons+1
         assert(frame.icon.texture and
             frame.icon.texture:find("Interface",1,true)==1,
-            "every Bar module uses a native Blizzard icon path")
-        assert(frame.icon.width==13 and frame.icon.height==13 and
-            frame.icon.visible~=false,
-            "icons fit inside the original 18-pixel bar")
-        assert(frame.font.points[1][4]==18,
-            "metric text starts after its icon, not underneath it")
+            "every Bar module keeps a native Blizzard icon path")
+        assert(frame.icon.visible==false and frame.font.points[1][4]==1,
+            "icons are hidden and text uses the full module until enabled")
     end
 end
 assert(moduleIcons==13,"all supported Bar metrics receive their own icon")
+assert(ChalkBox_BarIconsSet(true) and ChalkBox_BarIconsGet())
+for _,frame in ipairs(frames) do
+    if frame.parent==bar and frame.icon then
+        assert(frame.icon.visible~=false and frame.font.points[1][4]==18,
+            "turning icons on insets the text instead of drawing over it")
+    end
+end
 assert(ChalkBox_BarIconsSet(false) and not ChalkBox_BarIconsGet())
 for _,frame in ipairs(frames) do
     if frame.parent==bar and frame.icon then

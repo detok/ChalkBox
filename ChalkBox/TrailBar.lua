@@ -264,7 +264,9 @@ local function ModuleWidth(key)
     return saved or specs[key].width
 end
 local function IconsShown()
-    return not db or db.barShowIcons~=false
+    -- Off unless this character explicitly turned icons on. A missing
+    -- saved value is not rewritten, so older layouts keep their widths.
+    return db and db.barShowIcons==true
 end
 local function LayoutModuleIcon(widget)
     if not widget or not widget.text then return end
