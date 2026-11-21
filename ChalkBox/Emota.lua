@@ -22,6 +22,11 @@ local sessionIdleActions = 0
 local lastIdleToken, previousIdleToken = nil, nil
 local activePose, poseUntil = nil, nil
 local idleTicker = nil
+-- /reload and the first login run protected actions while the UI is still
+-- locked. Automatic emotes wait out that moment. Clicks and slash commands
+-- are unchanged, and idle after this window is unchanged.
+local quietAutomaticUntil = 0
+local sawWorld = false
 
 -- Blizzard's EMOTE##_TOKEN constants expose this client's native emote list.
 -- Triggered emotes stay enabled by default; other entries are opt-in for idle
@@ -178,6 +183,9 @@ local function NativeEmote(token, reason, manual, targetName)
     -- Automatic sitting/sleeping/standing can interrupt drinking and player
     -- actions even outside combat. Keep pose emotes as manual previews only.
     if not manual and (poseTokens[token] or token=="STAND") then
+        return false
+    end
+    if not manual and GetTime() < quietAutomaticUntil then
         return false
     end
 
@@ -496,6 +504,7 @@ local function OnEvent(_, event, ...)
             and math.max(0,math.min(100,math.floor(saved.jokeFrequency+0.5))) or 50
         if type(saved.allowedEmotes)~="table" then saved.allowedEmotes={} end
         settings = saved
+        quietAutomaticUntil = GetTime() + 1
         if not idleTicker and C_Timer and C_Timer.NewTicker then
             idleTicker = C_Timer.NewTicker(5, CheckIdle)
         end
@@ -503,6 +512,12 @@ local function OnEvent(_, event, ...)
     elseif event == "PLAYER_ENTERING_WORLD" or event == "GROUP_ROSTER_UPDATE" then
         RefreshCompanions()
         if event == "PLAYER_ENTERING_WORLD" then
+            local isInitialLogin, isReloadingUi = ...
+            if isInitialLogin == true or isReloadingUi == true
+                or (not sawWorld and isInitialLogin ~= false) then
+                quietAutomaticUntil = GetTime() + 1
+            end
+            sawWorld = true
             EndIdle()
             if type(IsPlayerMoving) == "function" then
                 local moving = IsPlayerMoving()
