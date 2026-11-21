@@ -457,8 +457,13 @@ ControlIn("AuctionSense","Charts Lab (Experimental)"):Click()
 assert(opened[#opened]==categories["AuctionSense Charts (Experimental)"].ID
     and auctionOpens==0 and auctionScans==0,
     "opening chart settings does not open AH or request any auction scan")
+local intelButton=false
+for _,widget in ipairs(widgets) do
+    if widget.parent==categories["AuctionSense"].panel and
+        widget.text=="Intelligence Lab" then intelButton=true end
+end
 assert(categories["AuctionSense Intelligence (Experimental)"]==nil and
-    not ControlIn("AuctionSense","Intelligence Lab"),
+    not intelButton,
     "paused experimental intelligence is not exposed on stable release")
 assert(ControlIn("AuctionSense","Open AuctionSense Tab"),
     "settings directs the player to the native AH tab")
