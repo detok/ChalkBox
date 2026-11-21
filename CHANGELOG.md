@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.33 — Login block fix and Black Market
+
+- Login and reload no longer move the minimap, buffs, unit frames, or bag anchors. `/chalk taintcheck` reports a blocked action if one was recorded.
+- Black Market listings are saved on their own. They do not mix into auction prices, Fill price, or Inventory Intelligence. `/chalk bmah` and the AuctionSense Black Market view show them. Nothing is bid.
+
 ## 2.2.32 — Chronicle, intelligence, posting help, storybook, and a scan that answers
 
 - The auction Scan Market button stays clickable and says what it is doing. `/chalk auction debug` prints the API path and the throttle.

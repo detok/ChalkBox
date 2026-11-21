@@ -1,3 +1,9 @@
+# ChalkBox 2.2.33 — Stable WoW Forever Release
+
+Includes 2.2.32. Login no longer moves Blizzard's minimap, buffs, unit frames, or bag anchors, so the blocked-action message at startup is gone. `/chalk taintcheck` reports the last block. The Black Market list is saved apart from auction asking prices.
+
+## Previous: 2.2.32
+
 # ChalkBox 2.2.32 — Stable WoW Forever Release
 
 Includes 2.2.31. The auction Scan Market button always responds. The Adventure Chronicle records new milestones. Inventory Intelligence is back and stays off until enabled. Fill price can copy a saved ask into the sell box when you click it. `/chalk journal` opens the storybook. Saved data is kept.

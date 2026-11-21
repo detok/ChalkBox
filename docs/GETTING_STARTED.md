@@ -1,6 +1,8 @@
 # Getting started with ChalkBox
 
 
+**Stable 2.2.33:** Includes 2.2.32. Login leaves Blizzard frames alone. `/chalk bmah` reads the Black Market when that window exists.
+
 **Stable 2.2.32:** Includes 2.2.31. `/chalk journal` opens the storybook. The auction scan button always answers.
 
 **Stable 2.2.31:** Includes 2.2.30. The session journal keeps long sessions and high drop counts.

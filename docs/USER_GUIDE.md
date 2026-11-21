@@ -1,6 +1,8 @@
 # ChalkBox player handbook
 
 
+**Stable 2.2.33:** Includes 2.2.32. `/chalk taintcheck` and `/chalk bmah`.
+
 **Stable 2.2.32:** Includes 2.2.31. `/chalk journal` opens the storybook.
 
 **Stable 2.2.31:** Includes 2.2.30. Read [the feature list](FEATURES.md) for what each tool is supposed to do.

@@ -1,6 +1,8 @@
 # ChalkBox documentation
 
 
+**Stable 2.2.33:** Login block fix and separate Black Market listings. See [features](FEATURES.md).
+
 **Stable 2.2.32:** Scan button, chronicle, intelligence, and storybook. See [features](FEATURES.md).
 
 **Stable 2.2.31:** See [what each feature is supposed to do](FEATURES.md).

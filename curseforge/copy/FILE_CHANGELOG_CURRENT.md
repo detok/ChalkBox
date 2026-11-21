@@ -1,3 +1,8 @@
+# ChalkBox 2.2.33 — Stable Update
+
+- The login blocked-action message is fixed. Blizzard frames are left alone.
+- Black Market listings are recorded separately from auction prices. `/chalk bmah`.
+
 # ChalkBox 2.2.32 — Stable Update
 
 - Auction Scan Market always reports start, progress, success, or the reason it cannot run.
