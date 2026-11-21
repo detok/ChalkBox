@@ -89,7 +89,8 @@
 | `/chalk bar repair status` | Check quote-learning sample count |
 | `/chalk bar repair reset` | **Clear this character's repair quote history** |
 | `/chalk bar top` / `bottom` / `off` | Bar placement/visibility |
-| `/chalk bar reserve on` / `off` | Selective safe shift of eligible top Blizzard chrome |
+| `/chalk bar reserve on` / `off` | Remembers the old preference. ChalkBox does not move the minimap, buffs, or unit frames |
+| `/chalk taintcheck` | Say whether combat is locked, whether a blocked action was recorded, and that Blizzard frames were left alone |
 | `/chalk bar reset` | Reset XP/hour and net-gold session counters |
 | `/chalk bags offset -40` | Move separate bag windows 40px up (range -120 to +120) |
 | `/chalk bags reset` | Return bags to Blizzard's position |

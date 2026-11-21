@@ -145,4 +145,3 @@ events:SetScript("OnEvent",function(_,event,loadedName)
         if MacroFrame then Attach() end
     end
 end)
-Attach()

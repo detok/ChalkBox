@@ -535,6 +535,10 @@ SlashCmdList.CHALKBOX = function(input)
         db.lootAdvice = (argument == "on")
         Note("Extra item advice: " .. (db.lootAdvice and "ON" or "OFF") ..
             ". Original quest warnings remain active.")
+    elseif command=="taintcheck" or command=="taint" then
+        if type(ChalkBox_TaintCheck)=="function" then
+            ChalkBox_TaintCheck()
+        else Note("Taint check is unavailable.") end
     elseif command=="bags" or command=="bag" then
         if type(ChalkBox_BagCommand)=="function" then
             ChalkBox_BagCommand(argument)
