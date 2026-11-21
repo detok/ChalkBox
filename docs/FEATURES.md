@@ -132,9 +132,9 @@ ChalkBox is one optional companion. It reads the game and shows notes. It does n
 
 ## Emota
 
-**Supposed to:** Optional idle emotes, off unless the player turns automatic behavior on. Nothing during combat. A preview command shows one emote on purpose.
+**Supposed to:** Optional idle ideas, off unless the player turns automatic behavior on. Nothing during combat. The client only allows the character to emote from a real click or keypress, so ChalkBox suggests one and waits.
 
-**Status:** Works. The game can accept an emote request and still not play the animation. That limit is the client's.
+**Status:** Works. Standing still can suggest an emote in chat. `/chalk emota play`, or **Play suggestion** in settings, performs it. Wave, Test Joke, and Surprise Me still play immediately because they are clicks. Automatic timers never call the emote.
 
 ## QuietGuard
 

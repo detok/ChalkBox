@@ -30,7 +30,7 @@ This page covers issues you can diagnose safely without deleting SavedVariables,
 | Adventure Journal is transparent or borderless | Open `/chalk session`; version 2.2.22 has a native border and opaque fallback even with global opacity 0. If art is missing, note the client build and retry after reopen; v1 session data should remain intact |
 | Compact Combat Meter empty | It **starts hidden**; use `/chalk meter show`. Native data can be unavailable or protected |
 | QuietGuard blocks an invite unexpectedly | Check saved ON filters and **Blizzard's own built-in social settings** |
-| Emota appears inactive | Automatic emotes require opt-in; idle pacing is intentionally slow and no automated emotes run in combat |
+| Emota appears inactive | Turn automatic behavior on. It suggests an emote; you play it with `/chalk emota play` or Play suggestion. Nothing plays by itself, and nothing plays in combat |
 
 ## Installation, updates and SaveVariables
 

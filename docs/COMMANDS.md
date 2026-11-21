@@ -119,8 +119,9 @@ The Bar's fresh layout differs from players' older saved layouts; upgrades do **
 | `/chalk prep tent done` / `clear` | Manually acknowledge tent use for one hour this session, or clear the acknowledgement |
 | `/chalk prep tent status` | Check tent-state evidence |
 | `/chalk emota status` | Personal emote/idle diagnostics |
-| `/chalk emota auto on` / `off` | Toggle optional automatic native emotes |
-| `/chalk emota idle preview` | Manually preview an idle emote |
+| `/chalk emota auto on` / `off` | Toggle optional emote suggestions. Nothing is performed until you play it |
+| `/chalk emota play` | Perform the suggested emote. This is a keypress, so the client allows it |
+| `/chalk emota idle preview` | Play one idle emote now |
 | `/chalk guard` | Print QuietGuard filter status |
 | `/chalk guard duel on` / `off` | Configure a single filter; other keys: guild, party, trade, channel |
 | `/chalk update` | Installed version and GitHub release link |

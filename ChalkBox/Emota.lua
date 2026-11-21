@@ -22,6 +22,12 @@ local sessionIdleActions = 0
 local lastIdleToken, previousIdleToken = nil, nil
 local activePose, poseUntil = nil, nil
 local idleTicker = nil
+-- PerformEmote is a Blizzard-only action unless the player just clicked
+-- or pressed a key. Timers and event handlers must never call it.
+local fromPlayer=false
+local suggestion
+local suggestCount=0
+local lastSuggestNote=-1e8
 
 -- Blizzard's EMOTE##_TOKEN constants expose this client's native emote list.
 -- Triggered emotes stay enabled by default; other entries are opt-in for idle
@@ -208,6 +214,17 @@ local function NativeEmote(token, reason, manual, targetName)
         return false
     end
 
+    -- A timer, OnUpdate, or event is not a hardware event. Suggest instead.
+    if not fromPlayer then
+        suggestion={token=token,reason=reason,target=targetName,at=now}
+        suggestCount=suggestCount+1
+        if now-lastSuggestNote>=45 then
+            lastSuggestNote=now
+            Note("Suggests /"..token:lower()..
+                ". Click Play suggestion, or type /chalk emota play.", true)
+        end
+        return false
+    end
     -- pcall catches a Lua error; it does NOT bypass a protected-action rule.
     local ok, returned
     if targetName then
@@ -439,6 +456,12 @@ local function CheckIdle()
     StartIdle()
 end
 
+function ChalkBox_EmotaPending()
+    return suggestion
+end
+function ChalkBox_EmotaSuggestCount()
+    return suggestCount
+end
 function ChalkBox_EmotaPreviewIdle()
     if not settings then return end
     local picked=PickIdle()
@@ -446,7 +469,10 @@ function ChalkBox_EmotaPreviewIdle()
         Note("Enable at least one idle emote in the Emote Catalog first.",true)
         return
     end
-    return NativeEmote(picked.token,"idle-preview",true,picked.petName)
+    fromPlayer=true
+    local played=NativeEmote(picked.token,"idle-preview",true,picked.petName)
+    fromPlayer=false
+    return played
 end
 
 local function MaybeWaveBack(text, sender, target)
@@ -619,7 +645,12 @@ end
 function ChalkBox_EmotaTest(token)
     if type(token)=="string" then
         for _,entry in ipairs(Catalog()) do
-            if entry.token==token then return NativeEmote(token,"catalog-preview",true) end
+            if entry.token==token then
+                fromPlayer=true
+                local played=NativeEmote(token,"catalog-preview",true)
+                fromPlayer=false
+                return played
+            end
         end
     end
     return false
@@ -631,7 +662,10 @@ function ChalkBox_EmotaSetJokeFrequency(value)
 end
 
 function ChalkBox_EmotaTestJoke()
-    NativeEmote("JOKE", "manual-settings-joke-test", true)
+    fromPlayer=true
+    local played=NativeEmote("JOKE", "manual-settings-joke-test", true)
+    fromPlayer=false
+    return played
 end
 
 -- Called by both the native settings checkboxes and slash commands.
@@ -650,7 +684,7 @@ function ChalkBox_EmotaCommand(message)
     if not settings then return end
     local command, arg = strsplit(" ", string.lower(message or ""))
     if command == "" or command == "settings" or command == "config" then
-        Note("Use /chalk emota auto on/off | idle on/off/test/reset/preview | variety on/off | status", true)
+        Note("Use /chalk emota auto on/off | play | idle on/off/test/reset/preview | variety on/off | status", true)
     elseif command == "auto" and (arg == "on" or arg == "off") then
         settings.auto = arg == "on"
         ChalkBox_EmotaOnSettingChanged("auto")
@@ -676,8 +710,19 @@ function ChalkBox_EmotaCommand(message)
             ", lastIdle=" .. tostring(lastIdleToken) ..
             ", pose=" .. tostring(activePose) ..
             ", nextIdle=" .. tostring(idleAfterSeconds) .. "s", true)
+    elseif command == "play" then
+        if not suggestion or not suggestion.token then
+            Note("No emote is waiting. Stand still with automatic emotes on, or use /chalk emota test.", true)
+        else
+            fromPlayer=true
+            local played=NativeEmote(suggestion.token,"player-play",true,suggestion.target)
+            fromPlayer=false
+            if played then suggestion=nil end
+        end
     elseif command == "test" then
+        fromPlayer=true
         NativeEmote("WAVE", "manual-test", true)
+        fromPlayer=false
     elseif command == "idle" then
         if arg == "on" or arg == "off" then
             settings.idleAuto = arg == "on"
@@ -685,7 +730,9 @@ function ChalkBox_EmotaCommand(message)
             Note("Idle personality: " .. (settings.idleAuto and "ON" or "OFF") ..
                 " (master /chalk emota auto must also be enabled)", true)
         elseif arg == "test" then
+            fromPlayer=true
             NativeEmote("JOKE", "manual-idle-joke-test", true)
+            fromPlayer=false
         elseif arg == "preview" then
             ChalkBox_EmotaPreviewIdle()
         elseif arg == "reset" then
@@ -705,6 +752,6 @@ function ChalkBox_EmotaCommand(message)
                 sessionJokeCount,tostring(settings.idleAuto)),true)
         end
     else
-        Note("Commands: /chalk emota auto on/off | variety on/off | idle on/off/test/preview/reset | status",true)
+        Note("Commands: /chalk emota play | auto on/off | variety on/off | idle on/off/test/preview/reset | status",true)
     end
 end

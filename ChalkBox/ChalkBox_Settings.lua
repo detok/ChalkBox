@@ -1418,6 +1418,8 @@ local function MakeEmota()
         slider:SetValue(value)
         setting=false
     end)
+    Button(panel,"Play suggestion",27,-428,140,function()
+        if ChalkBox_EmotaCommand then ChalkBox_EmotaCommand("play") end end)
     Button(panel,"Wave",27,-393,67,function()
         if ChalkBox_EmotaCommand then ChalkBox_EmotaCommand("test") end end)
     Button(panel,"Test Joke",100,-393,86,function()

@@ -842,27 +842,32 @@ end
 Fire("PLAYER_STOPPED_MOVING")
 now=1261
 for _,tick in ipairs(timers) do tick() end
-assert(emotes[#emotes]=="JOKE","default idle pool still includes racial jokes")
+assert(#emotes==1 and ChalkBox_EmotaPending()
+    and ChalkBox_EmotaPending().token=="JOKE",
+    "idle suggests a joke without calling PerformEmote")
 ChalkBox_EmotaSetEnabled("JOKE",false)
 ChalkBox_EmotaCommand("idle reset")
-local before=#emotes
+local suggested=ChalkBox_EmotaSuggestCount()
 now=1322
 for _,tick in ipairs(timers) do tick() end
-assert(#emotes==before+1 and emotes[#emotes]~="JOKE",
-    "blocking JOKE should rotate to another enabled idle behavior")
+assert(#emotes==1 and ChalkBox_EmotaSuggestCount()==suggested+1
+    and ChalkBox_EmotaPending().token~="JOKE",
+    "blocking JOKE rotates the suggestion, still without PerformEmote")
 ChalkBox_EmotaSetEnabled("JOKE",true)
 ChalkBox_EmotaSetJokeFrequency(100)
 assert(ChalkBoxDB.emota.jokeFrequency==100)
+suggested=ChalkBox_EmotaSuggestCount()
 now=1342
 for _,tick in ipairs(timers) do tick() end
-assert(#emotes==before+2,
-    "rightmost slider increases idle opportunities when enabled")
+assert(ChalkBox_EmotaSuggestCount()==suggested+1 and #emotes==1,
+    "rightmost slider offers another suggestion and still does not emote")
 ChalkBox_EmotaSetJokeFrequency(0)
 assert(ChalkBoxDB.emota.jokeFrequency==0)
-before=#emotes
+suggested=ChalkBox_EmotaSuggestCount()
 now=1400
 for _,tick in ipairs(timers) do tick() end
-assert(#emotes==before,"leftmost slider is much slower than normal")
+assert(ChalkBox_EmotaSuggestCount()==suggested and #emotes==1,
+    "leftmost slider is much slower than normal")
 assert(#ChalkBox_EmotaCatalog()>=20,"catalog exposes multiple native emotes")
 assert(ChalkBox_EmotaGetEnabled("SIT")==true and
     ChalkBox_EmotaGetEnabled("SLEEP")==true and

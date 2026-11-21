@@ -140,7 +140,7 @@ The Adventure Chronicle records new milestones only: levels, quest turn-ins, dea
 
 **Adventure Prep** is a reminder/checklist system for known camping, tent/rested XP, food/buffs, supplies and class/pet-care signals. A tent's rested-XP effect does not prove the separate **Camp Benefits** effect is active. If the client cannot verify tent use, **Tent Used** / `/chalk prep tent done` acknowledges it for one hour of the current session; it does not grant an in-game buff. Toast appearance, lock and transparency are configurable.
 
-**Emota** optionally tries native character emotes, jokes and idle behaviors with randomized pacing, race/class flavor and supported contextual checks. Automatic reactions are **opt-in** and avoid interruption during combat. Preview with `/chalk emota idle preview` and tune behavior under Emota's nested pages. The addon cannot guarantee a native emote animation merely because the request returned successfully.
+**Emota** can suggest an idle emote, joke, or reaction. The suggestion is opt-in and stays quiet in combat. The character does not emote until you click **Play suggestion** or type `/chalk emota play`. Wave, Test Joke, and Surprise Me play immediately because those are your clicks. `/chalk emota idle preview` also plays one on purpose. A timer never performs the emote, because this client blocks that and shows the Blizzard-only action message.
 
 **QuietGuard** uses optional guild, duel, party, trade and channel-request filters. **All five start OFF on a fresh installation.** A previously saved ON selection remains ON across upgrades. Blizzard's own social blocking settings can also block invitations independently of ChalkBox.
 

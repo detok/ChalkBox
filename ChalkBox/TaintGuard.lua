@@ -23,6 +23,20 @@ local function Protected(name)
     if not ok or Secret(value) then return "unknown" end
     return value==true and "protected" or "not protected"
 end
+local function ModuleFor(func)
+    local name=tostring(func or ""):lower()
+    if name:find("performemote",1,true) or name:find("doemote",1,true)
+        or name=="sendchatmessage" then
+        return "Emota"
+    end
+    if name:find("questwatch",1,true) then return "QuestSense" end
+    if name:find("container",1,true) or name:find("bag",1,true) then
+        return "Bags"
+    end
+    if name=="setpoint" or name=="clearallpoints" or name=="setattribute" then
+        return "a protected Blizzard frame"
+    end
+end
 function ChalkBox_TaintStatus()
     local chrome={}
     for _,name in ipairs({"MinimapCluster","BuffFrame","PlayerFrame",
@@ -39,6 +53,7 @@ function ChalkBox_TaintStatus()
         combat=Combat(),
         lastEvent=lastEvent,
         lastFunc=lastFunc,
+        module=ModuleFor(lastFunc),
         chrome=chrome,
         layout=layout and layout.reason or "not loaded",
         bagsPending=bags and bags.pending or false,
@@ -48,8 +63,10 @@ end
 function ChalkBox_TaintCheck()
     local st=ChalkBox_TaintStatus()
     Note("Taint check. Combat lockdown: "..(st.combat and "yes" or "no")..".")
+    local who=st.module and (" The module was "..st.module..".") or ""
     Note("Last blocked action: "..(st.lastEvent and
-        (st.lastEvent.." "..tostring(st.lastFunc or "")) or "none recorded")..".")
+        (st.lastEvent.." "..tostring(st.lastFunc or "").."."..who)
+        or "none recorded."))
     Note("Top frames stay with Blizzard ("..(st.layout or "unread")..").")
     local bits={}
     for name,state in pairs(st.chrome) do
