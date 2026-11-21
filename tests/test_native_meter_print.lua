@@ -15,6 +15,8 @@ local function RecordLine(message,channel)
     end
 end
 local group,raid,combat,editing=true,false,false,false
+local instanceGroup=false
+_G.LE_PARTY_CATEGORY_INSTANCE=2
 local now=100
 local secret="SECRET"
 local source1={name="Detok",amountPerSecond=555,totalAmount=5550}
@@ -48,7 +50,10 @@ _G.C_DamageMeter={GetCombatSessionFromType=function(kind,stat)
     return old
 end}
 _G.InCombatLockdown=function() return combat end
-_G.IsInGroup=function() return group end
+_G.IsInGroup=function(category)
+    if category==LE_PARTY_CATEGORY_INSTANCE then return instanceGroup end
+    return group
+end
 _G.IsInRaid=function() return raid end
 _G.GetTime=function() return now end
 _G.issecretvalue=function(v) return v==secret end
@@ -348,9 +353,15 @@ Fire("PLAYER_REGEN_DISABLED")
 now=735
 Fire("PLAYER_REGEN_ENABLED")
 Tick(2.1)
+assert(#sends==15 and ChalkBox_NativeMeterStatus().waiting and
+    ChalkBox_NativeMeterStatus().stage=="waiting" and
+    not ChalkBox_NativeMeterStatus().ready,
+    "temporary outgoing chat restrictions cause an automatic retry")
+for _=1,4 do Tick(1.6) end
 assert(#sends==15 and ChalkBox_NativeMeterStatus().ready and
-    ChalkBox_NativeMeterStatus().readyChannel=="PARTY",
-    "chat lockdown never attempts automatic PARTY communication")
+    ChalkBox_NativeMeterStatus().readyChannel=="PARTY" and
+    ChalkBox_NativeMeterStatus().stage=="ready",
+    "persistent lockdown yields a clearly labeled click-to-send report")
 C_ChatInfo.InChatMessagingLockdown=nil
 MenuOpen()
 Button("Send ready report to PARTY")()
@@ -382,6 +393,29 @@ Tick(2.1);Tick(1.6);Tick(1.6)
 assert(#sends==18 and sends[18].text:find("918",1,true),
     "auto retry waits for the server-completed snapshot, without spamming")
 C_DamageMeter.GetCombatSessionFromType=normal
+-- Temporary lockdown clears on retry: automatically send without a click.
+now=1010
+old={combatSources={{name="Delay Clear",amountPerSecond=1033,totalAmount=10330}}}
+C_ChatInfo.InChatMessagingLockdown=function() return true end
+Fire("PLAYER_REGEN_DISABLED")
+now=1026;Fire("PLAYER_REGEN_ENABLED");Tick(2.1)
+assert(ChalkBox_NativeMeterStatus().waiting and
+    not ChalkBox_NativeMeterStatus().ready,
+    "temporary restriction does not prematurely demand a click")
+C_ChatInfo.InChatMessagingLockdown=nil
+Tick(1.6)
+assert(#sends==19 and sends[19].text:find("1033",1,true)
+    and ChalkBox_NativeMeterStatus().stage=="submitted",
+    "automatic report retries once post-fight chat restriction is cleared")
+-- Instance groups require their actual group channel, not outdoor PARTY.
+now=1120;group=false;instanceGroup=true
+old={combatSources={{name="Instance Group",amountPerSecond=1144,totalAmount=11440}}}
+Fire("PLAYER_REGEN_DISABLED")
+now=1135;Fire("PLAYER_REGEN_ENABLED");Tick(2.1)
+assert(#sends==20 and sends[20].channel=="INSTANCE_CHAT"
+    and ChalkBox_NativeMeterStatus().actualGroupChannel=="INSTANCE_CHAT",
+    "instance-group auto routes through the game-supported group chat")
+group=true;instanceGroup=false
 ChalkBox_NativeMeterCommand("auto off")
 assert(not ChalkBox_NativeMeterStatus().ready)
 print("PASS: native PARTY/SAY, late fight retry, restricted-chat click fallback, no background SAY, Top 3/5/10 and no spam")
