@@ -22,6 +22,7 @@ function frame:SetPoint(point,relative,relativePoint,x,y)
     self.point,self.relative,self.relativePoint,self.x,self.y=
         point,relative,relativePoint,x,y
 end
+function frame:IsProtected() return false end
 
 _G.ChalkBoxDB={}
 _G.DEFAULT_CHAT_FRAME={AddMessage=function() end}
@@ -132,16 +133,26 @@ assert(frame.y==stockY and ChalkBox_BagStatus().applied==0,
 frame.GetBagID=nil
 UpdateContainerFrameAnchors()
 assert(frame.y==stockY-45,"regular bag behavior returns after bank")
--- Saved negative/upward offsets must be restored immediately on login.
+-- Login must not call Blizzard's bag layout. The saved offset applies
+-- only when Blizzard lays the bags out itself.
 ChalkBox_BagOffsetSet(0)
 ChalkBoxDB.bagOffsetY=-25
+local yAtLogin=frame.y
 eventFrame.callback(eventFrame,"PLAYER_LOGIN")
+assert(frame.y==yAtLogin and ChalkBox_BagStatus().pending,
+    "login does not force a bag layout")
+UpdateContainerFrameAnchors()
 assert(frame.y==stockY+25,
-    "negative saved positions restore at login, not only after bag events")
+    "Blizzard's own layout applies the saved offset")
 -- Two toggles must never accumulate shifts.
 UpdateContainerFrameAnchors()
 assert(frame.y==stockY+25,
     "fresh native anchor prevents movement stacking on repeated layout")
 
 
+frame.IsProtected=function() return true end
+ChalkBox_BagOffsetSet(15)
+assert(frame.y==stockY and ChalkBox_BagStatus().pending,
+    "a protected bag frame keeps Blizzard's anchor")
+frame.IsProtected=nil
 print("PASS: signed separate-bag offset -120..120, no stacking, combined bags untouched, combat deferral, and stock reset")

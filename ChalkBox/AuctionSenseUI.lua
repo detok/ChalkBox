@@ -84,8 +84,24 @@ local function Button(parent,title,x,y,width,callback)
     b:SetSize(width,25)
     b:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y)
     b:SetText(title)
+    -- Forever's button template does not always register clicks on its own.
+    if b.RegisterForClicks then b:RegisterForClicks("LeftButtonUp","RightButtonUp") end
+    if b.EnableMouse then b:EnableMouse(true) end
+    if b.SetFrameStrata then b:SetFrameStrata("HIGH") end
+    if b.SetFrameLevel and parent.GetFrameLevel then
+        local ok,level=pcall(parent.GetFrameLevel,parent)
+        if ok and type(level)=="number" then b:SetFrameLevel(level+10) end
+    end
     b:SetScript("OnClick",callback)
     return b
+end
+local function Tell(message)
+    if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
+        DEFAULT_CHAT_FRAME:AddMessage("|cff67c6b7ChalkBox AuctionSense|r "..message)
+    end
+    if labels.status and labels.status.SetText then
+        labels.status:SetText(message)
+    end
 end
 local function Coin(value)
     if type(value)~="number" or value<0 then return "--" end
@@ -448,6 +464,12 @@ local function Refresh()
             entries,extra=ChalkBox_MarketBagRows(searchText,250)
         end
         extra=extra or {}
+        if type(ChalkBox_IntelAnnotate)=="function" then
+            pcall(ChalkBox_IntelAnnotate,entries,extra)
+        end
+        if type(ChalkBox_AuctionPostNote)=="function" then
+            pcall(ChalkBox_AuctionPostNote,labels,selectedItemID,view)
+        end
         labels.details:SetText(("Bags: %d items  ·  %d priced"):format(
             extra.stacks or 0,extra.priced or 0))
         labels.info:SetText("Bag asks "..Coin(extra.marketValue or 0)..
@@ -466,6 +488,15 @@ local function Refresh()
             "  ·  Proceeds "..Coin(extra.proceeds or 0)..
             "  ·  Fees "..Coin(extra.fees or 0)..
             "  ·  Captured invoices only"))
+    elseif view=="black" then
+        local black=type(ChalkBox_BlackMarketStatus)=="function" and
+            ChalkBox_BlackMarketStatus() or {}
+        entries=type(ChalkBox_BlackMarketRows)=="function" and
+            ChalkBox_BlackMarketRows(searchText) or {}
+        labels.details:SetText(("%d listed  ·  %d remembered"):format(
+            black.listings or 0,black.history or 0))
+        labels.info:SetText(black.message or
+            "Black Market is separate from auction asking prices.")
     else
         labels.details:SetText(("%d items  ·  %s"):format(
             status.items or 0,
@@ -489,12 +520,15 @@ local function Refresh()
     end
     if labels.hdrLow then
         labels.hdrLow:SetText(view=="bags" and "LOW / UNIT" or
-            (view=="sales" and "GROSS" or "LOW / UNIT"))
+            (view=="sales" and "GROSS" or
+            (view=="black" and "BID" or "LOW / UNIT")))
         labels.hdrAverage:SetText(view=="bags" and "DE / ITEM" or
-            (view=="sales" and "PROCEEDS" or "AVG ASK"))
+            (view=="sales" and "PROCEEDS" or
+            (view=="black" and "MIN BID" or "AVG ASK")))
         labels.hdrListings:SetText(view=="bags" and "IN BAG" or
-            (view=="sales" and "SOLD" or "LISTINGS"))
-        for _,mode in ipairs({"market","bags","sales"}) do
+            (view=="sales" and "SOLD" or
+            (view=="black" and "BIDS" or "LISTINGS")))
+        for _,mode in ipairs({"market","bags","sales","black"}) do
             Tint(labels["mode_"..mode],view==mode and COLOR.ready or COLOR.muted)
         end
     end
@@ -545,6 +579,13 @@ local function Refresh()
                 row.listings:SetText(tostring(item.count or 1).."x")
                 row.note:SetText("Confirmed seller invoice  ·  "..Coin(item.cut).." fee")
                 Tint(row.note,COLOR.muted)
+            elseif view=="black" then
+                row.low:SetText(Coin(item.low))
+                row.average:SetText(Coin(item.average))
+                row.listings:SetText(item.listings and
+                    (tostring(item.listings).." bids") or "—")
+                row.note:SetText(item.note or "Black Market")
+                Tint(row.note,COLOR.muted)
             else
                 row.low:SetText(Coin(item.low))
                 row.average:SetText(Coin(item.average))
@@ -585,15 +626,15 @@ local function Refresh()
         end
     end
     labels.page:SetText(("Page %d / %d"):format(page,maxPages))
-    if labels.scan and labels.scan.SetEnabled then
-        labels.scan:SetEnabled(status.open and status.available and
-            not status.busy)
-    end
+    -- Keep both scan buttons clickable. A disabled button swallows the
+    -- click and looks like nothing happened. The click itself explains why
+    -- a scan cannot start.
+    if labels.scan and labels.scan.SetEnabled then labels.scan:SetEnabled(true) end
     if labels.fullscan and labels.fullscan.SetEnabled then
-        labels.fullscan:SetEnabled(status.open and status.fullAvailable
-            and not status.busy and cooldown==0)
+        labels.fullscan:SetEnabled(true)
     end
 end
+function ChalkBox_AuctionSelected() return selectedItemID end
 function ChalkBox_AuctionRefreshUI() Refresh() end
 -- The journal is mounted INSIDE Blizzard's AH, not a detached window.
 -- No edits to Blizzard's protected Tabs list or PanelTemplates_SetTab.
@@ -654,22 +695,27 @@ local function Ensure()
     labels.mode_market=Button(f,"Prices",21,-87,78,function() Mode("market") end)
     labels.mode_bags=Button(f,"My Items",104,-87,92,function() Mode("bags") end)
     labels.mode_sales=Button(f,"Sales & Stats",201,-87,114,function() Mode("sales") end)
+    labels.mode_black=Button(f,"Black Market",320,-87,118,function() Mode("black") end)
     -- Scan results live under the view choices, not between buttons/search.
     labels.details=Font(f,"GameFontHighlightSmall",21,-117,446)
     labels.scan=Button(f,"Scan Market",21,-106,125,function()
-        if type(ChalkBox_AuctionScan)=="function" then
-            local ok,reason=ChalkBox_AuctionScan()
-            if not ok then labels.status:SetText(reason or "Browse unavailable") end
-            Refresh()
+        if type(ChalkBox_AuctionScan)~="function" then
+            Tell("Auction scan is not loaded.")
+            return
         end
+        local ok,reason=ChalkBox_AuctionScan()
+        Tell(ok and "Scan started." or (reason or "Scan could not start."))
+        Refresh()
     end)
     Hint(labels.scan,"Scan Market","Browse asking prices","No full-scan cooldown")
     labels.fullscan=Button(f,"Full listings (15m)",154,-106,153,function()
-        if type(ChalkBox_AuctionFullScan)=="function" then
-            local ok,reason=ChalkBox_AuctionFullScan()
-            if not ok then labels.status:SetText(reason or "Full scan unavailable") end
-            Refresh()
+        if type(ChalkBox_AuctionFullScan)~="function" then
+            Tell("Full scan is not loaded.")
+            return
         end
+        local ok,reason=ChalkBox_AuctionFullScan()
+        Tell(ok and "Full scan started." or (reason or "Full scan could not start."))
+        Refresh()
     end)
     Hint(labels.fullscan,"Full listings","Complete auction listing snapshot",
         "Server limit: once every 15 minutes")
@@ -857,6 +903,9 @@ local function Ensure()
     if labels.info.ClearAllPoints then labels.info:ClearAllPoints() end
     labels.info:SetPoint("BOTTOMLEFT",f,"BOTTOMLEFT",21,12)
     frame=f
+    if type(ChalkBox_AuctionPostAttach)=="function" then
+        pcall(ChalkBox_AuctionPostAttach,f)
+    end
     f:SetScript("OnUpdate",function(self,elapsed)
         seconds=seconds+(type(elapsed)=="number" and elapsed or 0)
         if seconds>=1 then seconds=0;Refresh() end
@@ -866,6 +915,13 @@ local function Ensure()
 end
 local function CombatLocked()
     return type(InCombatLockdown)=="function" and InCombatLockdown()
+end
+-- A missing protection query is not proof the frame is secure. A positive
+-- or failed answer is. Never hook a secure auction tab's click.
+local function ProtectedFrame(widget)
+    if not widget or type(widget.IsProtected)~="function" then return false end
+    local ok,value=pcall(widget.IsProtected,widget)
+    return not ok or value==true
 end
 local function NativeMode()
     if not host or type(host.GetDisplayMode)~="function" then return nil end
@@ -929,6 +985,7 @@ local function HookOtherTabs()
         {host.BuyTab,host.SellTab,host.AuctionsTab}
     for _,button in pairs(tabs) do
         if button and button~=tab and not hooked[button] and
+            not ProtectedFrame(button) and
             type(button.HookScript)=="function" then
             hooked[button]=true
             pcall(button.HookScript,button,"OnClick",function(clicked)
@@ -1006,7 +1063,7 @@ function ChalkBox_AuctionAttach()
             end
             Refresh()
         end)
-        if type(host.HookScript)=="function" then
+        if type(host.HookScript)=="function" and not ProtectedFrame(host) then
             host:HookScript("OnHide",function()
                 HidePane()
                 marketSelectionActive=false

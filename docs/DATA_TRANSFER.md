@@ -32,10 +32,10 @@ small SavedVariables file bridge, not a second UI or gameplay addon.
   preserved for items in both snapshots.
 - Verified auction seller-invoice receipts. Stable invoice signatures prevent
   reimporting the same sale twice. New receipts are added up to the journal cap.
-- This character's DropSense observed loot/area/source counters. Independent
-  contributions carry their own IDs, so repeat imports do not inflate drop
-  rates. Imported map positions are combined without pretending to be creature
-  death locations.
+- This character's DropSense observed loot/area/source counters. For every
+  count, the higher number is kept. Importing the same file again does not
+  raise it a second time, and a smaller file cannot lower what you already have.
+  Map positions are combined without pretending to be creature death locations.
 - This character's confirmed flight discoveries.
 
 The file **does not** contain character UI settings, layouts, quest watches,
@@ -51,9 +51,11 @@ importing on a different character.
 - The Import button reads the file **already loaded at login**. You cannot
   copy a new file into the folder while WoW is running and expect an immediate
   import.
-- This is a **merge**, not a replacement. Local observations remain, and the
-  same export may be imported repeatedly without double-counting its recorded
-  sales and discovery counters.
+- This is a **merge**, not a replacement. Before anything is changed, ChalkBox
+  stores a backup in `ChalkBoxDB.transferBackup` and
+  `ChalkBoxZoneDB.transferBackup` (and keeps the previous backup one step
+  back). The same export may be imported repeatedly without double-counting
+  sales or discovery counters.
 - Unknown item variants are not converted into confirmed sales.
 - WoW may truncate saved market history and sales to their normal retention
   limits. Import cannot recover older data that was already pruned.

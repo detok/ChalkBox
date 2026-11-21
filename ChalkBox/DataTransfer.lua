@@ -1,6 +1,7 @@
--- ChalkBox Data Transfer: explicit file export/import (no settings or trading).
--- ChalkBoxTransfer companion's SavedVariables writes ChalkBoxTransfer.lua on
--- logout or /reload. File imports merge known evidence; no UI or transactions.
+-- Move AuctionSense and Discoveries between computers.
+-- One explicit export, one explicit import. The companion addon only gives
+-- WoW a file to write. This module does not keep a second copy of loot
+-- counts, and it never lowers a number you already have.
 local MAX_COUNT=100000000
 local MAX_MARKETS,MAX_HISTORY,MAX_SALES=6,7,400
 local function Int(n)
@@ -8,7 +9,6 @@ local function Int(n)
 end
 local function Amount(n) return Int(n) and math.min(n,MAX_COUNT) or 0 end
 local function Stamp(n) return Int(n) and n or 0 end
-local function Add(a,b) return math.min(MAX_COUNT,Amount(a)+Amount(b)) end
 local function Str(s,max)
     return type(s)=="string" and #s>0 and #s<=(max or 160)
 end
@@ -38,6 +38,7 @@ local function Copy(x,depth,budget,seen)
     return out
 end
 local function Snapshot(t)
+    if t==nil then return nil end
     local budget={n=0,tooLarge=false}
     local result=Copy(t,0,budget,{})
     return not budget.tooLarge and result or nil
@@ -72,136 +73,14 @@ local function Node(s,key)
     if type(s[key])~="table" then s[key]={} end
     return s[key]
 end
-local function NewSourceID()
-    local now=type(time)=="function" and time() or 0
-    local clock=type(GetTime)=="function" and GetTime() or 0
-    local rand=math.random(1,1000000000)
-    return tostring(now)..":"..tostring(math.floor(clock*1000))..
-        ":"..tostring(rand)
-end
--- Count-only event components. Provenance prevents importing the same
--- cumulative data twice or counting a previous machine's baseline again.
-local function PartFromDrops(d)
-    local part={windows=Amount(d.windows),observedItems=Amount(d.observedItems),
-        items={},areas={}}
-    for id,row in pairs(type(d.items)=="table" and d.items or {}) do
-        if Str(tostring(id),32) and type(row)=="table" then
-            part.items[id]={quantity=Amount(row.quantity),
-                windows=Amount(row.windows)}
-        end
-    end
-    for key,area in pairs(type(d.areas)=="table" and d.areas or {}) do
-        if Str(key,100) and type(area)=="table" then
-            local a={windows=Amount(area.windows),items={},sources={}}
-            for id,row in pairs(type(area.items)=="table" and area.items or {}) do
-                if type(row)=="table" then
-                    a.items[id]={quantity=Amount(row.quantity),
-                        windows=Amount(row.windows)}
-                end
-            end
-            for source,row in pairs(type(area.sources)=="table" and area.sources or {}) do
-                if Str(source,80) and type(row)=="table" then
-                    local r={windows=Amount(row.windows),items={}}
-                    for id,item in pairs(type(row.items)=="table" and row.items or {}) do
-                        if type(item)=="table" then
-                            r.items[id]={quantity=Amount(item.quantity),
-                                windows=Amount(item.windows)}
-                        end
-                    end
-                    a.sources[source]=r
-                end
-            end
-            part.areas[key]=a
-        end
-    end
-    return part
-end
+-- Kept so DropSense can call them. They no longer rewrite discoveries.
+function ChalkBox_TransferPrepareDrop() return true end
+function ChalkBox_TransferRecordDrop() return true end
 local function MaxPair(dst,src)
+    if type(src)~="table" then return end
     dst.quantity=math.max(Amount(dst.quantity),Amount(src.quantity))
     dst.windows=math.max(Amount(dst.windows),Amount(src.windows))
-end
-local function MaxPart(dst,src)
-    dst.windows=math.max(Amount(dst.windows),Amount(src.windows))
-    dst.observedItems=math.max(Amount(dst.observedItems),Amount(src.observedItems))
-    for id,row in pairs(type(src.items)=="table" and src.items or {}) do
-        if type(row)=="table" and Count(dst.items)<5100 then
-            MaxPair(Node(dst.items,id),row)
-        end
-    end
-    for key,area in pairs(type(src.areas)=="table" and src.areas or {}) do
-        if type(area)=="table" and Count(dst.areas)<250 then
-            local target=Node(dst.areas,key)
-            target.windows=math.max(Amount(target.windows),Amount(area.windows))
-            local items=Node(target,"items")
-            for id,row in pairs(type(area.items)=="table" and area.items or {}) do
-                if type(row)=="table" and Count(items)<760 then
-                    MaxPair(Node(items,id),row)
-                end
-            end
-            local sources=Node(target,"sources")
-            for source,sourceRow in pairs(type(area.sources)=="table" and area.sources or {}) do
-                if type(sourceRow)=="table" and Count(sources)<155 then
-                    local r=Node(sources,source)
-                    r.windows=math.max(Amount(r.windows),Amount(sourceRow.windows))
-                    local hits=Node(r,"items")
-                    for id,item in pairs(type(sourceRow.items)=="table" and sourceRow.items or {}) do
-                        if type(item)=="table" and Count(hits)<760 then
-                            MaxPair(Node(hits,id),item)
-                        end
-                    end
-                end
-            end
-        end
-    end
-end
-local function Tracking()
-    if type(ChalkBoxZoneDB)~="table" then ChalkBoxZoneDB={} end
-    local t=ChalkBoxZoneDB.transferDrops
-    if type(t)~="table" or t.version~=1 then
-        t={version=1,localID=NewSourceID(),parts={}}
-        ChalkBoxZoneDB.transferDrops=t
-        t.parts[t.localID]=PartFromDrops(ChalkBoxZoneDB.dropSense or {})
-    end
-    if type(t.parts)~="table" then t.parts={} end
-    if not Str(t.localID,80) then t.localID=NewSourceID() end
-    if type(t.parts[t.localID])~="table" then
-        t.parts[t.localID]={windows=0,observedItems=0,
-            items={},areas={}}
-    end
-    return t
-end
-function ChalkBox_TransferPrepareDrop()
-    Tracking()
-end
-function ChalkBox_TransferRecordDrop(counts,total,areaKey,sourceKey)
-    local t=Tracking()
-    local part=t.parts[t.localID]
-    part.windows=Add(part.windows,1)
-    part.observedItems=Add(part.observedItems,total)
-    local area
-    if Str(areaKey,100) then
-        area=Node(Node(part,"areas"),areaKey)
-        area.windows=Add(area.windows,1)
-    end
-    local source
-    if area and Str(sourceKey,80) then
-        source=Node(Node(area,"sources"),sourceKey)
-        source.windows=Add(source.windows,1)
-    end
-    for id,quantity in pairs(type(counts)=="table" and counts or {}) do
-        if Str(tostring(id),32) then
-            local g=Node(Node(part,"items"),id)
-            g.windows=Add(g.windows,1);g.quantity=Add(g.quantity,quantity)
-            if area then
-                local a=Node(Node(area,"items"),id)
-                a.windows=Add(a.windows,1);a.quantity=Add(a.quantity,quantity)
-            end
-            if source then
-                local r=Node(Node(source,"items"),id)
-                r.windows=Add(r.windows,1);r.quantity=Add(r.quantity,quantity)
-            end
-        end
-    end
+    if not Str(dst.name) and Str(src.name,120) then dst.name=src.name end
 end
 local function MergeLocations(dst,src)
     if type(src)~="table" then return end
@@ -215,129 +94,59 @@ local function MergeLocations(dst,src)
             end
             if match then
                 match.count=math.max(Amount(match.count),Amount(point.count))
-            else
+            elseif #dst.locations<6 then
                 dst.locations[#dst.locations+1]={x=point.x,y=point.y,
                     count=Amount(point.count)}
             end
         end
     end
-    while #dst.locations>6 do table.remove(dst.locations,1) end
 end
-local function MergeDropMetadata(target,foreign)
-    for id,row in pairs(type(foreign.items)=="table" and foreign.items or {}) do
-        if type(row)=="table" and Count(target.items)<5100 then
-            local localRow=Node(target.items,id)
-            if not Str(localRow.name) and Str(row.name,120) then localRow.name=row.name end
-            if not localRow.reference and row.reference then
-                localRow.reference=Snapshot(row.reference)
-            end
+local function MaxTree(dst,src)
+    if type(src)~="table" then return end
+    dst.windows=math.max(Amount(dst.windows),Amount(src.windows))
+    dst.observedItems=math.max(Amount(dst.observedItems),Amount(src.observedItems))
+    dst.legacyWindows=math.max(Amount(dst.legacyWindows),Amount(src.legacyWindows))
+    dst.items=type(dst.items)=="table" and dst.items or {}
+    dst.areas=type(dst.areas)=="table" and dst.areas or {}
+    for id,row in pairs(type(src.items)=="table" and src.items or {}) do
+        if type(row)=="table" and Count(dst.items)<5100 then
+            MaxPair(Node(dst.items,id),row)
+            MergeLocations(Node(dst.items,id),row.locations)
         end
     end
-    for key,area in pairs(type(foreign.areas)=="table" and foreign.areas or {}) do
-        if type(area)=="table" and Count(target.areas)<250 then
-            local a=Node(target.areas,key)
+    for key,area in pairs(type(src.areas)=="table" and src.areas or {}) do
+        if type(area)=="table" and Count(dst.areas)<250 then
+            local target=Node(dst.areas,key)
+            target.windows=math.max(Amount(target.windows),Amount(area.windows))
             for _,field in ipairs({"kind","name","mapID","instanceID",
                 "difficulty","entranceZoneID","entranceZoneName"}) do
-                if a[field]==nil and (type(area[field])=="string" or
-                    Int(area[field])) then a[field]=area[field] end
+                if target[field]==nil and (type(area[field])=="string" or
+                    Int(area[field])) then target[field]=area[field] end
             end
             for id,row in pairs(type(area.items)=="table" and area.items or {}) do
-                if type(row)=="table" and Count(Node(a,"items"))<760 then
-                    MergeLocations(Node(a.items,id),row.locations)
+                if type(row)=="table" and Count(Node(target,"items"))<760 then
+                    local item=Node(target.items,id)
+                    MaxPair(item,row)
+                    MergeLocations(item,row.locations)
                 end
             end
-            for src,source in pairs(type(area.sources)=="table" and area.sources or {}) do
-                if type(source)=="table" and Count(Node(a,"sources"))<155 then
-                    local s=Node(a.sources,src)
-                    if not Str(s.name) and Str(source.name) then s.name=source.name end
-                    for id,row in pairs(type(source.items)=="table" and source.items or {}) do
-                        if type(row)=="table" and Count(Node(s,"items"))<760 then
-                            MergeLocations(Node(s.items,id),row.locations)
+            for source,row in pairs(type(area.sources)=="table" and area.sources or {}) do
+                if type(row)=="table" and Count(Node(target,"sources"))<155 then
+                    local saved=Node(target.sources,source)
+                    saved.windows=math.max(Amount(saved.windows),Amount(row.windows))
+                    if not Str(saved.name) and Str(row.name,80) then
+                        saved.name=row.name
+                    end
+                    for id,item in pairs(type(row.items)=="table" and row.items or {}) do
+                        if type(item)=="table" and Count(Node(saved,"items"))<760 then
+                            local hit=Node(saved.items,id)
+                            MaxPair(hit,item)
+                            MergeLocations(hit,item.locations)
                         end
                     end
                 end
             end
         end
-    end
-end
-local function ApplyTotals(d,parts)
-    d.windows,d.observedItems=0,0
-    for _,r in pairs(d.items) do
-        if type(r)=="table" then r.windows=0;r.quantity=0 end
-    end
-    for _,a in pairs(d.areas) do
-        if type(a)=="table" then
-            a.windows=0
-            for _,r in pairs(type(a.items)=="table" and a.items or {}) do
-                if type(r)=="table" then r.windows=0;r.quantity=0 end
-            end
-            for _,s in pairs(type(a.sources)=="table" and a.sources or {}) do
-                if type(s)=="table" then
-                    s.windows=0
-                    for _,r in pairs(type(s.items)=="table" and s.items or {}) do
-                        if type(r)=="table" then r.windows=0;r.quantity=0 end
-                    end
-                end
-            end
-        end
-    end
-    for _,part in pairs(parts) do
-        d.windows=Add(d.windows,part.windows)
-        d.observedItems=Add(d.observedItems,part.observedItems)
-        for id,row in pairs(type(part.items)=="table" and part.items or {}) do
-            local r=Node(d.items,id)
-            r.quantity=Add(r.quantity,row.quantity);r.windows=Add(r.windows,row.windows)
-            if not Str(r.name) then r.name="Item #"..tostring(id) end
-        end
-        for key,area in pairs(type(part.areas)=="table" and part.areas or {}) do
-            local a=Node(d.areas,key)
-            a.windows=Add(a.windows,area.windows)
-            for id,row in pairs(type(area.items)=="table" and area.items or {}) do
-                local r=Node(Node(a,"items"),id)
-                r.quantity=Add(r.quantity,row.quantity)
-                r.windows=Add(r.windows,row.windows)
-            end
-            for src,source in pairs(type(area.sources)=="table" and area.sources or {}) do
-                local s=Node(Node(a,"sources"),src)
-                s.windows=Add(s.windows,source.windows)
-                for id,row in pairs(type(source.items)=="table" and source.items or {}) do
-                    local r=Node(Node(s,"items"),id)
-                    r.quantity=Add(r.quantity,row.quantity)
-                    r.windows=Add(r.windows,row.windows)
-                end
-            end
-        end
-    end
-end
-local function MergeDrops(foreign,foreignParts,foreignOrigin)
-    local t=Tracking()
-    local d=ChalkBoxZoneDB.dropSense
-    if type(d)~="table" or d.version~=2 then
-        d={version=2,items={},areas={},windows=0,observedItems=0}
-        ChalkBoxZoneDB.dropSense=d
-    end
-    d.items=type(d.items)=="table" and d.items or {}
-    d.areas=type(d.areas)=="table" and d.areas or {}
-    MergeDropMetadata(d,foreign)
-    for id,part in pairs(type(foreignParts)=="table" and foreignParts or {}) do
-        if Str(id,80) and type(part)=="table" and Count(t.parts)<16 then
-            if not t.parts[id] then
-                t.parts[id]={windows=0,observedItems=0,items={},areas={}}
-            end
-            MaxPart(t.parts[id],part)
-        end
-    end
-    -- A later import from a copied installation starts a NEW local branch.
-    -- Historical contributions keep their original IDs and are not doubled.
-    ApplyTotals(d,t.parts)
-    -- Fork only when the source FILE was exported by this same source ID
-    -- (e.g. a cloned SavedVariables directory). Reimporting a remote file
-    -- must not leave a trail of empty origins that eventually exhaust caps.
-    if foreignOrigin==t.localID then
-        t.localID=NewSourceID()
-        while t.parts[t.localID] do t.localID=NewSourceID() end
-        t.parts[t.localID]={windows=0,observedItems=0,
-            items={},areas={}}
     end
 end
 local function MergeHistory(a,b)
@@ -371,8 +180,7 @@ local function MergeMarkets(src)
     db.markets=type(db.markets)=="table" and db.markets or {}
     local merged=0
     for key,incoming in pairs(type(src.markets)=="table" and src.markets or {}) do
-        if Str(key,128) and type(incoming)=="table" and
-            Int(incoming.scannedAt) then
+        if Str(key,128) and type(incoming)=="table" and Int(incoming.scannedAt) then
             local current=db.markets[key]
             local newer=type(current)~="table" or
                 Stamp(incoming.scannedAt)>Stamp(current.scannedAt) or
@@ -384,17 +192,10 @@ local function MergeMarkets(src)
                 winning.items=type(winning.items)=="table" and winning.items or {}
                 for itemID,item in pairs(winning.items) do
                     if type(item)=="table" then
-                        local old=type(older)=="table" and
-                            type(older.items)=="table" and older.items[itemID]
+                        local old=type(older)=="table" and type(older.items)=="table"
+                            and older.items[itemID]
                         if type(old)=="table" then
                             item.history=MergeHistory(item.history,old.history)
-                            if not item.mixed and not old.mixed and
-                                not item.detailAverage and old.detailAverage and
-                                Int(old.detailAt) then
-                                item.detailAverage=old.detailAverage
-                                item.detailListings=old.detailListings
-                                item.detailAt=old.detailAt
-                            end
                         end
                     end
                 end
@@ -473,13 +274,27 @@ local function MergeFlights(src)
     d.nodes=type(d.nodes)=="table" and d.nodes or {}
     local added=0
     for key,node in pairs(type(src.nodes)=="table" and src.nodes or {}) do
-        if Str(tostring(key),60) and d.nodes[key]==nil and
-            type(node)=="table" then
-            d.nodes[key]=Snapshot(node);added=added+1
+        if Str(tostring(key),60) and d.nodes[key]==nil and type(node)=="table" then
+            d.nodes[key]=Snapshot(node)
+            added=added+1
         end
     end
     if added>0 then d.revision=Amount(d.revision)+1 end
     return added
+end
+local function MergeDrops(src)
+    if type(ChalkBoxZoneDB)~="table" then ChalkBoxZoneDB={} end
+    local d=ChalkBoxZoneDB.dropSense
+    if type(d)~="table" then
+        d={version=2,items={},areas={},windows=0,observedItems=0}
+        ChalkBoxZoneDB.dropSense=d
+    end
+    if d.version~=2 then return false end
+    MaxTree(d,src)
+    if type(src)=="table" and type(src.parts)=="table" then
+        for _,part in pairs(src.parts) do MaxTree(d,part) end
+    end
+    return true
 end
 local lastMessage="No transfer created yet."
 local function StatusCount(d)
@@ -496,7 +311,12 @@ function ChalkBox_TransferStatus()
         discoveryAreas=transfer and transfer.drops and
             StatusCount(transfer.drops.areas) or 0,
         character=transfer and transfer.character,
+        backup=type(ChalkBoxDB)=="table" and ChalkBoxDB.transferBackup~=nil,
         message=lastMessage}
+end
+local function Evidence(root,key)
+    local value=root and root[key]
+    return type(value)=="table" and value or {}
 end
 function ChalkBox_TransferExport()
     if not IsLoaded() then
@@ -504,73 +324,119 @@ function ChalkBox_TransferExport()
     end
     local character=Character()
     if not character then return false,"Character/realm isn't ready." end
-    local parts=Tracking()
     local now=type(time)=="function" and time() or 0
-    local a=ChalkBoxDB and ChalkBoxDB.auctionSense or {}
-    local s=ChalkBoxDB and ChalkBoxDB.auctionInsights or {}
-    local d=ChalkBoxZoneDB and ChalkBoxZoneDB.dropSense or {}
-    local f=ChalkBoxZoneDB and ChalkBoxZoneDB.discoveriesKnownFlights or {}
-    -- Export DATA ONLY. Account/character settings, scan cooldowns and
-    -- preferences are intentionally excluded from the portable file.
+    local a=Evidence(ChalkBoxDB,"auctionSense")
+    local s=Evidence(ChalkBoxDB,"auctionInsights")
+    local d=Evidence(ChalkBoxZoneDB,"dropSense")
+    local f=Evidence(ChalkBoxZoneDB,"discoveriesKnownFlights")
     local auction=Snapshot({version=1,markets=a.markets or {}})
     local sales=Snapshot({version=1,characters=s.characters or {}})
     local drops=Snapshot({version=2,items=d.items or {},areas=d.areas or {},
         windows=d.windows or 0,observedItems=d.observedItems or 0,
         legacyWindows=d.legacyWindows or 0})
-    local dropParts=Snapshot(parts.parts)
     local flights=Snapshot({version=1,nodes=f.nodes or {}})
-    if not auction or not sales or not drops or
-        not dropParts or not flights then
+    if not auction or not sales or not drops or not flights then
         return false,"Too much or invalid transfer data; old file unchanged."
     end
     _G.ChalkBoxTransferDB={
         kind="ChalkBoxData",version=1,exportedAt=Int(now) and now or 0,
-        character=character,origin=parts.localID,
-        auction=auction,sales=sales,drops=drops,
-        dropParts=dropParts,flights=flights,
+        character=character,auction=auction,sales=sales,
+        drops=drops,flights=flights,
     }
     lastMessage="Export prepared. /reload or log out to write ChalkBoxTransfer.lua."
     return true,lastMessage
+end
+local function Backup()
+    if type(ChalkBoxDB)~="table" then ChalkBoxDB={} end
+    if type(ChalkBoxZoneDB)~="table" then ChalkBoxZoneDB={} end
+    local now=type(time)=="function" and time() or 0
+    local account={at=now,
+        auctionSense=Snapshot(ChalkBoxDB.auctionSense),
+        auctionInsights=Snapshot(ChalkBoxDB.auctionInsights)}
+    local character={at=now,
+        dropSense=Snapshot(ChalkBoxZoneDB.dropSense),
+        discoveriesKnownFlights=Snapshot(ChalkBoxZoneDB.discoveriesKnownFlights)}
+    if type(ChalkBoxDB.auctionSense)=="table" and not account.auctionSense then
+        return nil
+    end
+    if type(ChalkBoxZoneDB.dropSense)=="table" and not character.dropSense then
+        return nil
+    end
+    if type(ChalkBoxDB.transferBackup)=="table" then
+        ChalkBoxDB.transferBackupPrevious=ChalkBoxDB.transferBackup
+    end
+    ChalkBoxDB.transferBackup=account
+    if type(ChalkBoxZoneDB.transferBackup)=="table" then
+        ChalkBoxZoneDB.transferBackupPrevious=ChalkBoxZoneDB.transferBackup
+    end
+    ChalkBoxZoneDB.transferBackup=character
+    return account,character
+end
+local function Restore(account,character)
+    if type(account)=="table" then
+        ChalkBoxDB.auctionSense=account.auctionSense
+        ChalkBoxDB.auctionInsights=account.auctionInsights
+    end
+    if type(character)=="table" then
+        ChalkBoxZoneDB.dropSense=character.dropSense
+        ChalkBoxZoneDB.discoveriesKnownFlights=character.discoveriesKnownFlights
+    end
 end
 function ChalkBox_TransferImport()
     if not IsLoaded() then return false,
         "ChalkBoxTransfer companion addon isn't enabled." end
     local data=ChalkBoxTransferDB
-    if type(data)~="table" or data.kind~="ChalkBoxData" or
-        data.version~=1 then return false,
-        "No valid transfer file. Exit WoW, copy the file, then log in." end
+    if type(data)~="table" or data.kind~="ChalkBoxData" or data.version~=1 then
+        return false,"No valid transfer file. Exit WoW, copy the file, then log in."
+    end
     if type(data.auction)~="table" or type(data.sales)~="table" or
-        type(data.drops)~="table" or type(data.dropParts)~="table" or
-        data.auction.version~=1 or data.sales.version~=1 or
-        data.drops.version~=2 or
+        type(data.drops)~="table" or data.auction.version~=1 or
+        data.sales.version~=1 or data.drops.version~=2 or
         (data.flights and data.flights.version~=1) then
-        return false,"Incomplete or incompatible transfer; no changes made." end
-    -- Fail closed. An unfamiliar saved schema must never be reset just
-    -- because an older transfer file was imported.
+        return false,"Incomplete or incompatible transfer; no changes made."
+    end
     if type(ChalkBoxDB)=="table" and
         ((type(ChalkBoxDB.auctionSense)=="table" and
             ChalkBoxDB.auctionSense.version~=1) or
          (type(ChalkBoxDB.auctionInsights)=="table" and
             ChalkBoxDB.auctionInsights.version~=1)) then
-        return false,"Newer local auction schema; import blocked safely." end
+        return false,"Newer local auction schema; import blocked safely."
+    end
     if type(ChalkBoxZoneDB)=="table" and
         ((type(ChalkBoxZoneDB.dropSense)=="table" and
             ChalkBoxZoneDB.dropSense.version~=2) or
          (type(ChalkBoxZoneDB.discoveriesKnownFlights)=="table" and
             ChalkBoxZoneDB.discoveriesKnownFlights.version~=1)) then
-        return false,"Different local Discoveries schema; import blocked safely." end
-    -- Deep-copy first: imports never mutate the file or share table aliases.
+        return false,"Different local Discoveries schema; import blocked safely."
+    end
     local copied=Snapshot(data)
-    if type(copied)~="table" or
-        type(copied.dropParts)~="table" then
-        return false,"Transfer exceeds safe limits or is malformed." end
-    local markets=MergeMarkets(copied.auction)
-    local sales=MergeSales(copied.sales)
-    local dropStatus="discovery data skipped (different character)"
-    if Character() and copied.character==Character() then
-        MergeDrops(copied.drops,copied.dropParts,copied.origin)
-        local flights=MergeFlights(copied.flights)
-        dropStatus="discoveries merged; "..flights.." new flight nodes"
+    if type(copied)~="table" then
+        return false,"Transfer exceeds safe limits or is malformed."
+    end
+    -- Old transfer files carried a second loot ledger. Fold it with max
+    -- so those files still import, without ever adding the same counts twice.
+    if type(copied.dropParts)=="table" then
+        copied.drops.parts=copied.dropParts
+    end
+    local account,character=Backup()
+    if not account then
+        return false,"Could not back up local data. Nothing was changed."
+    end
+    local ok,markets,sales,dropStatus=pcall(function()
+        local marketCount=MergeMarkets(copied.auction)
+        local saleCount=MergeSales(copied.sales)
+        local note="discovery data skipped (different character)"
+        if Character() and copied.character==Character() then
+            if not MergeDrops(copied.drops) then error("drops") end
+            local flights=MergeFlights(copied.flights)
+            note="discoveries merged; "..flights.." new flight nodes"
+        end
+        return marketCount,saleCount,note
+    end)
+    if not ok then
+        Restore(account,character)
+        lastMessage="Import failed. Local data was restored from the backup."
+        return false,lastMessage
     end
     if type(ChalkBox_IntelInvalidate)=="function" then
         pcall(ChalkBox_IntelInvalidate)
