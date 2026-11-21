@@ -73,6 +73,13 @@ local function ApplyOffset()
     pending = false
     if shift == 0 then return end
     local frame = ShownFirstBag()
+    if frame and type(frame.IsProtected)=="function" then
+        local ok,protected=pcall(frame.IsProtected,frame)
+        if not ok or protected then
+            pending=true
+            return
+        end
+    end
     if not PlayerBag(frame) or type(frame.GetPoint)~="function"
         or type(frame.GetParent)~="function"
         or type(frame.ClearAllPoints)~="function"
