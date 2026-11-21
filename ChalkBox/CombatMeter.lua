@@ -438,13 +438,11 @@ local function Refresh()
             pcall(ClearRow,rows[i])
         end
     end
-    -- Treat saved rows as a maximum, not permanent blank slots.
-    -- Always retain one row of space for the empty-session message.
-    local shown=math.max(1,math.min(db.rows,visible))
+    -- The dragged height is the player's choice. Empty rows stay hidden
+    -- inside that height instead of pulling the window back down.
     for i,row in ipairs(rows) do
-        if i<=shown then row:Show() else row:Hide() end
+        if i<=db.rows and i<=visible then row:Show() else row:Hide() end
     end
-    if window.SetHeight then window:SetHeight(66+shown*25) end
     local auto=type(ChalkBox_NativeMeterStatus)=="function" and
         ChalkBox_NativeMeterStatus() or nil
     if auto and auto.ready then
@@ -547,9 +545,9 @@ local function CreateWindow()
     window:SetMovable(true)
     if window.SetResizable then window:SetResizable(true) end
     if window.SetResizeBounds then
-        window:SetResizeBounds(300,66+1*25,600,66+12*25)
+        window:SetResizeBounds(300,66+5*25,600,66+12*25)
     elseif window.SetMinResize and window.SetMaxResize then
-        window:SetMinResize(300,66+1*25)
+        window:SetMinResize(300,66+5*25)
         window:SetMaxResize(600,66+12*25)
     end
     if window.SetClampedToScreen then window:SetClampedToScreen(true) end
@@ -604,8 +602,8 @@ local function CreateWindow()
     end)
 
     notice=Font(window,"GameFontHighlightSmall",0.62,0.70,0.77)
-    notice:SetPoint("TOPLEFT",window,"TOPLEFT",28,-67)
-    notice:SetPoint("TOPRIGHT",window,"TOPRIGHT",-20,-67)
+    notice:SetPoint("BOTTOMLEFT",window,"BOTTOMLEFT",12,26)
+    notice:SetPoint("BOTTOMRIGHT",window,"BOTTOMRIGHT",-28,26)
     if notice.SetJustifyH then notice:SetJustifyH("CENTER") end
     notice:SetText("")
 

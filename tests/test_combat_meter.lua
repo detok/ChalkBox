@@ -172,12 +172,12 @@ for _,f in ipairs(frames) do
     if f.kind=="FontString" then labels[#labels+1]=f end
 end
 assert(#bars==12,"five default rows and seven latent raid row bars")
-assert(window.h==141 and bars[1].parent.shown and not bars[4].parent.shown,
-    "three recorded combatants produce only three populated rows, no blank slots")
+assert(window.h==191 and bars[1].parent.shown and not bars[4].parent.shown,
+    "three recorded combatants fill three rows inside the saved window")
 ChalkBox_MeterCommand("rows 8")
 Flush()
-assert(ChalkBox_MeterStatus().rows==8 and window.h==141,
-    "raid row cap may expand but height still follows actual combatants")
+assert(ChalkBox_MeterStatus().rows==8 and window.h==266,
+    "raising the row cap keeps that height instead of collapsing")
 ChalkBox_MeterCommand("rows 5")
 Flush()
 assert(bars[1].value==rawValue and bars[1].max==maxValue,
@@ -315,6 +315,10 @@ grip.script.OnMouseUp(grip)
 assert(ChalkBoxDB.meter.width==422 and ChalkBoxDB.meter.rows==10,
     "dragged width/height turn into saved width and visible row count")
 assert(window.w==422 and window.h==316,"resized meter keeps dimensions")
+Flush()
+event.script.OnUpdate(event,0.8)
+assert(window.h==316 and window.w==422,
+    "a later refresh does not shrink a size the player just dragged")
 -- No combat-session event was fired: the visible-only heartbeat still
 -- repaints one bounded native sample instead of leaving values stale.
 Flush()
