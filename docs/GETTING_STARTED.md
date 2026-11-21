@@ -1,7 +1,23 @@
 # Getting started with ChalkBox
 
 
-**Stable 2.2.29:** Original AuctionSense Market/scanning interface restored. The experimental Intelligence Lab is paused; its saved data is preserved. ChalkBox Combat Meter reporting is completely removed, while the local meter display remains.
+**Stable 2.2.38:** Includes 2.2.37. `/chalk journal` opens a window you can close with Escape or Close.
+
+**Stable 2.2.37:** Includes 2.2.36. The auction Market tab writes the realm name again.
+
+**Stable 2.2.36:** Includes 2.2.35. Automatic emotes wait five seconds after the world appears on a reload.
+
+**Stable 2.2.35:** Includes 2.2.33. An automatic emote waits one second after login or reload.
+
+**Stable 2.2.33:** Includes 2.2.32. Login leaves Blizzard frames alone. `/chalk bmah` reads the Black Market when that window exists.
+
+**Stable 2.2.32:** Includes 2.2.31. `/chalk journal` opens the storybook. The auction scan button always answers.
+
+**Stable 2.2.31:** Includes 2.2.30. The session journal keeps long sessions and high drop counts.
+
+**Stable 2.2.30:** Combat meter fallback, bar resize, auction scans, and a simpler data transfer. Saved data is kept.
+
+**Previous 2.2.29:** Original AuctionSense Market/scanning interface restored. The experimental Intelligence Lab is paused; its saved data is preserved. ChalkBox Combat Meter reporting is completely removed, while the local meter display remains.
 
 **For WoW Forever · 2.2.29 stable; download the installable GitHub release ZIP**
 

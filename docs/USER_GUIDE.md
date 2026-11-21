@@ -1,7 +1,23 @@
 # ChalkBox player handbook
 
 
-**Stable 2.2.29:** Original AuctionSense Market/scanning interface restored. The experimental Intelligence Lab is paused; its saved data is preserved. ChalkBox Combat Meter reporting is completely removed, while the local meter display remains.
+**Stable 2.2.38:** Includes 2.2.37. The storybook and chronicle use the session journal frame and a Close button.
+
+**Stable 2.2.37:** Includes 2.2.36. The Market tab shows the realm and faction again.
+
+**Stable 2.2.36:** Includes 2.2.35. The reload emote wait starts when the world appears.
+
+**Stable 2.2.35:** Includes 2.2.33. Emota waits one second after a UI reload.
+
+**Stable 2.2.33:** Includes 2.2.32. `/chalk taintcheck` and `/chalk bmah`.
+
+**Stable 2.2.32:** Includes 2.2.31. `/chalk journal` opens the storybook.
+
+**Stable 2.2.31:** Includes 2.2.30. Read [the feature list](FEATURES.md) for what each tool is supposed to do.
+
+**Stable 2.2.30:** Combat meter fallback, bar resize, auction scans, and a simpler data transfer. Saved data is kept.
+
+**Previous 2.2.29:** Original AuctionSense Market/scanning interface restored. The experimental Intelligence Lab is paused; its saved data is preserved. ChalkBox Combat Meter reporting is completely removed, while the local meter display remains.
 
 **ChalkBox 2.2.29 (stable) · World of Warcraft: Forever**
 
@@ -66,6 +82,8 @@ These are three related but distinct systems:
 
 **To scan:** Visit an auctioneer, open Blizzard's Auction House and choose the **AuctionSense** tab. Press **Scan Market** for the normal browse snapshot. **Full listings** is a separate, more expensive request; on supported servers it can have roughly a 15-minute cooldown. Scans happen only when you start them. The panel shows the realm/faction market, observation time and available data; stale or mixed equipment variants can make a value unreliable.
 
+**Black Market:** Open the Black Market window. ChalkBox reads the list when the client sends it and keeps it apart from auction asking prices. In the AuctionSense panel, choose **Black Market** for what is listed now and what was seen before. `/chalk bmah` prints the count. ChalkBox does not bid. If this client has no Black Market, that command says so.
+
 If a browse result does not provide listing-level information, an **average ask or number of listings cannot be assumed**. If a previous full scan supplied real averages and listing counts, those remain visible with their original full-scan age after Browse Scan refreshes the minimum price. Do not interpret listing asks as real completed sales. Existing complete snapshots should survive an incomplete or failed scan.
 
 **Experimental charts (2.2.24 beta):** Open **ChalkBox → AuctionSense → Charts (Experimental)** from Blizzard's AddOns settings. Enter a previously scanned item name or ID and select **Find Item**. The chart plots up to seven existing, dated observations of the **lowest asking price per unit** with hover details, using native lines or a texture fallback. One point is not a trend; a missing item has no invented graph. It does not start scans, retain weekly history, or establish actual selling prices. See the [release candidate test](RELEASE_CANDIDATE_TEST_2.2.24.md).
@@ -122,7 +140,9 @@ The optional compact **Combat Meter starts hidden**. Open it from settings or `/
 
 **Combat reports retired in 2.2.29.** ChalkBox neither broadcasts nor prepares DPS/party/say summaries, automatically or manually. The old print/native report slash commands are silent no-ops, and report menus have been removed. Blizzard's combat meter and normal party chat remain unaffected. **RESET** still requires confirmation and clears the native shared combat sessions.
 
-**Adventure Journal (Session Journal)** now opens in a fully framed, warm wood window with Session Summary and Field Notes sections; it remains readable even if global background opacity is zero. The existing recording still keeps the current session and up to **20 prior** snapshots of supported observed statistics: XP, gold, completed quests, sampled loot, camp reminders and other available events. It does not retroactively invent events from before installation. Use `/chalk session` or `/chalk session last`. A future [Full Adventure Chronicle](ADVENTURE_CHRONICLE_DESIGN.md) will add validated, bounded individual milestones and Today/Timeline/History views; those features do **not** record events in 2.2.22.
+**Adventure Journal (Session Journal)** now opens in a fully framed, warm wood window with Session Summary and Field Notes sections; it remains readable even if global background opacity is zero. The existing recording still keeps the current session and up to **20 prior** snapshots of supported observed statistics: XP, gold, completed quests, sampled loot, camp reminders and other available events. It does not retroactively invent events from before installation. Use `/chalk session` or `/chalk session last` for that summary. `/chalk journal` opens the storybook, which reads the session, the chronicle, discoveries, quests, professions, auction asks, bank value, combat, and camp notes into one window. It does not change those records, and it waits until combat ends before refreshing. Left-click the level stat on the Bar to open the same window.
+
+The Adventure Chronicle records new milestones only: levels, quest turn-ins, deaths, party dungeons, and rare drops the client identifies. Turn it on or off under **Session Journal → Adventure Chronicle**. Old session summaries are not rewritten.
 
 ## Adventure Prep, Emota and QuietGuard
 

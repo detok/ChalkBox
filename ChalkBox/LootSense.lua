@@ -489,6 +489,10 @@ SlashCmdList.CHALKBOX = function(input)
         if type(ChalkBox_AuctionCommand)=="function" then
             ChalkBox_AuctionCommand(argument)
         else Note("AuctionSense isn't available on this client.") end
+    elseif command=="bmah" or command=="blackmarket" or command=="black" then
+        if type(ChalkBox_BlackMarketCommand)=="function" then
+            ChalkBox_BlackMarketCommand()
+        else Note("Black Market is unavailable.") end
     elseif command=="intel" or command=="intelligence" then
         if type(ChalkBox_IntelCommand)=="function" then
             ChalkBox_IntelCommand(argument)
@@ -515,6 +519,14 @@ SlashCmdList.CHALKBOX = function(input)
         if type(ChalkBox_DropCommand)=="function" then
             ChalkBox_DropCommand(argument)
         else Note("DropSense is unavailable in this client.") end
+    elseif command=="journal" or command=="story" or command=="storybook" then
+        if type(ChalkBox_OpenStorybook)=="function" then
+            ChalkBox_OpenStorybook(argument)
+        else Note("The storybook is unavailable.") end
+    elseif command=="chronicle" then
+        if type(ChalkBox_ChronicleCommand)=="function" then
+            ChalkBox_ChronicleCommand(argument)
+        else Note("Adventure Chronicle is unavailable.") end
     elseif command=="session" or command=="journal" then
         if type(ChalkBox_OpenSessionJournal)=="function" then
             ChalkBox_OpenSessionJournal(argument=="last" and "last" or "current")
@@ -527,6 +539,10 @@ SlashCmdList.CHALKBOX = function(input)
         db.lootAdvice = (argument == "on")
         Note("Extra item advice: " .. (db.lootAdvice and "ON" or "OFF") ..
             ". Original quest warnings remain active.")
+    elseif command=="taintcheck" or command=="taint" then
+        if type(ChalkBox_TaintCheck)=="function" then
+            ChalkBox_TaintCheck()
+        else Note("Taint check is unavailable.") end
     elseif command=="bags" or command=="bag" then
         if type(ChalkBox_BagCommand)=="function" then
             ChalkBox_BagCommand(argument)
