@@ -1,3 +1,7 @@
+# ChalkBox 2.2.34 — install and first use
+
+**Stable 2.2.34:** Download `ChalkBox-2.2.34.zip`.
+
 # ChalkBox 2.2.33 — install and first use
 
 **Stable 2.2.33:** Download `ChalkBox-2.2.33.zip`.

@@ -1,6 +1,8 @@
 # ChalkBox player handbook
 
 
+**Stable 2.2.34:** Includes 2.2.33. Emota suggests; you play the emote.
+
 **Stable 2.2.33:** Includes 2.2.32. `/chalk taintcheck` and `/chalk bmah`.
 
 **Stable 2.2.32:** Includes 2.2.31. `/chalk journal` opens the storybook.

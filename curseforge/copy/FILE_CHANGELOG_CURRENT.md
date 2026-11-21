@@ -1,3 +1,7 @@
+# ChalkBox 2.2.34 — Stable Update
+
+- Emota suggests an emote and waits for a click or `/chalk emota play`. Automatic emotes no longer cause the blocked-action popup.
+
 # ChalkBox 2.2.33 — Stable Update
 
 - The login blocked-action message is fixed. Blizzard frames are left alone.

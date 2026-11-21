@@ -1,6 +1,8 @@
 # ChalkBox documentation
 
 
+**Stable 2.2.34:** Emota suggests instead of performing an emote on its own. See [features](FEATURES.md).
+
 **Stable 2.2.33:** Login block fix and separate Black Market listings. See [features](FEATURES.md).
 
 **Stable 2.2.32:** Scan button, chronicle, intelligence, and storybook. See [features](FEATURES.md).

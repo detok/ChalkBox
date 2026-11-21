@@ -1,3 +1,9 @@
+# ChalkBox 2.2.34 — Stable WoW Forever Release
+
+Includes 2.2.33. Emota no longer performs an emote by itself. Idle and reactions suggest one, and you play it with a click or `/chalk emota play`. That removes the blocked-action popup that came from Emota.
+
+## Previous: 2.2.33
+
 # ChalkBox 2.2.33 — Stable WoW Forever Release
 
 Includes 2.2.32. Login no longer moves Blizzard's minimap, buffs, unit frames, or bag anchors, so the blocked-action message at startup is gone. `/chalk taintcheck` reports the last block. The Black Market list is saved apart from auction asking prices.

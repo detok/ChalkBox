@@ -1,6 +1,8 @@
 # Getting started with ChalkBox
 
 
+**Stable 2.2.34:** Includes 2.2.33. Emota will not emote until you click or type `/chalk emota play`.
+
 **Stable 2.2.33:** Includes 2.2.32. Login leaves Blizzard frames alone. `/chalk bmah` reads the Black Market when that window exists.
 
 **Stable 2.2.32:** Includes 2.2.31. `/chalk journal` opens the storybook. The auction scan button always answers.

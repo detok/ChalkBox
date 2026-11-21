@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.34 — Emota waits for a click
+
+- Idle, combat, and login no longer call the protected emote. ChalkBox suggests one instead.
+- `/chalk emota play` and Play suggestion in settings perform it. `/chalk taintcheck` names Emota if that call was blocked.
+
 ## 2.2.33 — Login block fix and Black Market
 
 - Login and reload no longer move the minimap, buffs, unit frames, or bag anchors. `/chalk taintcheck` reports a blocked action if one was recorded.
