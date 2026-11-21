@@ -15,7 +15,8 @@ local navigation = {
         {key="tooltipcoord", title="Item Insights (Experimental)"}}},
     {key="drops", title="DropSense"},
     {key="auction", title="AuctionSense", children={
-        {key="auctioncharts", title="Charts (Experimental)"}}},
+        {key="auctioncharts", title="Charts (Experimental)"},
+        {key="intel", title="Inventory Intelligence"}}},
     {key="quests", title="QuestSense", children={
         {key="questsmart", title="Smart Rules"},
         {key="questnav", title="Navigation"}}},
@@ -526,6 +527,33 @@ local function MakeChronicle()
         if ChalkBox_ChronicleClear then ChalkBox_ChronicleClear() end
     end)
     Label(panel,"Slash: /chalk chronicle | today | timeline | history | on | off",
+        "GameFontHighlightSmall",28,-230,480)
+    return panel
+end
+local function MakeIntel()
+    local panel=Panel("Inventory Intelligence",
+        "Optional advice from your known recipes, bags, and saved asking prices. It does not buy, sell, or post.")
+    Toggle(panel,"Enable Inventory Intelligence",
+        "Off until you turn it on. Saved reserves and ignores stay even while it is off.",
+        -120,
+        function()
+            return type(ChalkBox_IntelEnabled)=="function" and ChalkBox_IntelEnabled()==true
+        end,
+        function(on)
+            if type(ChalkBox_IntelSet)=="function" then
+                ChalkBox_IntelSet("enabled",on==true)
+            end
+        end)
+    Button(panel,"Skill-up plan",28,-190,150,function()
+        if ChalkBox_IntelCommand then ChalkBox_IntelCommand("skill") end
+    end)
+    Button(panel,"Make-gold plan",190,-190,150,function()
+        if ChalkBox_IntelCommand then ChalkBox_IntelCommand("gold") end
+    end)
+    Button(panel,"Show plan",352,-190,120,function()
+        if ChalkBox_IntelCommand then ChalkBox_IntelCommand("plan") end
+    end)
+    Label(panel,"Slash: /chalk intel on|off|plan|skill|gold|reserve|ignore",
         "GameFontHighlightSmall",28,-230,480)
     return panel
 end
@@ -1771,6 +1799,7 @@ local function Register()
     panels.drops = MakeDrops()
     panels.auction = MakeAuction()
     panels.auctioncharts = MakeAuctionCharts()
+    panels.intel = MakeIntel()
     panels.journal = MakeJournal()
     panels.chronicle = MakeChronicle()
     panels.forge = MakeForge()

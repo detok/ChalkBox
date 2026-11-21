@@ -50,6 +50,7 @@ FILES = (
     "DataTransfer.lua",
     "DropSense.lua",
     "AuctionSense.lua",
+    "AuctionIntelligence.lua",
     "AuctionSenseUI.lua",
     "AuctionCharts.lua",
     "Libs/ForeverDisenchantData/Materials.lua",

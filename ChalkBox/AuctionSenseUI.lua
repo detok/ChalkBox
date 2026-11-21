@@ -448,6 +448,9 @@ local function Refresh()
             entries,extra=ChalkBox_MarketBagRows(searchText,250)
         end
         extra=extra or {}
+        if type(ChalkBox_IntelAnnotate)=="function" then
+            pcall(ChalkBox_IntelAnnotate,entries,extra)
+        end
         labels.details:SetText(("Bags: %d items  ·  %d priced"):format(
             extra.stacks or 0,extra.priced or 0))
         labels.info:SetText("Bag asks "..Coin(extra.marketValue or 0)..
