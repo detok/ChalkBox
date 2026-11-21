@@ -191,6 +191,14 @@ end
 -- Texture files and numeric specIconID values come from the CLIENT itself.
 local CLASS_ICON_TEXTURE="Interface\\Glues\\CharacterCreate\\UI-CharacterCreate-Classes"
 local UNKNOWN_ICON_TEXTURE="Interface\\Icons\\INV_Misc_QuestionMark"
+local PET_ICON_TEXTURE="Interface\\Icons\\Ability_Hunter_BeastCall"
+local function IsPetSource(source)
+    if type(source)~="table" then return false end
+    if Safe(source.isPet) and source.isPet==true then return true end
+    local unit=Safe(source.unitToken) and source.unitToken
+        or (Safe(source.unit) and source.unit) or nil
+    return unit=="pet"
+end
 local CLASS_ICON_FALLBACK={
     WARRIOR={0,0.25,0,0.25},
     MAGE={0.25,0.49609375,0,0.25},
@@ -220,6 +228,12 @@ local function DisplayClassIcon(row,source)
     local coords=type(class)=="string" and
         ((type(CLASS_ICON_TCOORDS)=="table" and CLASS_ICON_TCOORDS[class]) or
             CLASS_ICON_FALLBACK[class]) or nil
+    if IsPetSource(source) and not coords then
+        icon:SetTexture(PET_ICON_TEXTURE)
+        icon:SetTexCoord(0.08,0.92,0.08,0.92)
+        icon:Show()
+        return
+    end
     if coords and type(coords)=="table" then
         icon:SetTexture(CLASS_ICON_TEXTURE)
         icon:SetTexCoord(coords[1],coords[2],coords[3],coords[4])
@@ -321,6 +335,8 @@ local function DrawRow(row,source,maxValue,perSecond)
         row.playerName:SetText(displayName)
     elseif type(displayName)=="string" and displayName~="" then
         row.playerName:SetText(displayName)
+    elseif IsPetSource(source) then
+        row.playerName:SetText("Pet")
     else
         row.playerName:SetText("Unknown")
     end
