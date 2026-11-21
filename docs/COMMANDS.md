@@ -74,6 +74,7 @@
 | `/chalk bar status` | XP rate, Bar layout and safe display diagnostics |
 | `/chalk bar safe auto` / `safe split 40-400` / `safe up 0-120` / `safe 0-120` | On notched Macs, automatically split the top bar's **center modules to either side of the camera cutout**. Use `safe split 120` for a manual center gap if the client does not report a notch. The height slider raises the bar UP into the notch area (`safe up 32`); `safe 32` lowers the bar as a fallback. Settings: The Bar → Mac / Notch Safe Area. |
 | `/chalk bar edit` or `edit on` / `off` | Toggle/finish Edit Mode; empty-Bar right-click also has **Done editing** |
+| `/chalk bar icons on` / `off` | Show or hide optional module icons; new Bars start text-only |
 | `/chalk bar layout` | Show positions of Bar modules |
 | `/chalk bar layout reset` | Restore default Bar positions, alignment **and module widths**, leaving other settings alone |
 | `/chalk bar width bags 112` | Set one module's width (60–280 px, snapped to 4); resize by dragging its right-hand gold grip in Edit Mode |
