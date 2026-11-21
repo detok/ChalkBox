@@ -1,3 +1,7 @@
+# ChalkBox 2.2.37 — Stable Update
+
+- The Market tab shows the realm again, and a scan no longer stops because a blank normalized realm name looked missing.
+
 # ChalkBox 2.2.36 — Stable Update
 
 - Reloading no longer prints "ChalkBox Emota" with a blocked action named UNKNOWN().

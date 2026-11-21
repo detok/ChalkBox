@@ -1,6 +1,8 @@
 # Getting started with ChalkBox
 
 
+**Stable 2.2.37:** Includes 2.2.36. The auction Market tab writes the realm name again.
+
 **Stable 2.2.36:** Includes 2.2.35. Automatic emotes wait five seconds after the world appears on a reload.
 
 **Stable 2.2.35:** Includes 2.2.33. An automatic emote waits one second after login or reload.

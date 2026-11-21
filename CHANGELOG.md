@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.37 — Market tab realm line restored
+
+- A blank normalized realm name falls through to the ordinary realm name.
+- An existing saved market stays visible and keeps its original key.
+
 ## 2.2.36 — Reload emote wait actually covers the world appearing
 
 - The one-second wait started too early and the emote call was wrapped in pcall, which the client reported as UNKNOWN() under the name ChalkBox Emota.

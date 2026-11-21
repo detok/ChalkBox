@@ -1,6 +1,8 @@
 # ChalkBox player handbook
 
 
+**Stable 2.2.37:** Includes 2.2.36. The Market tab shows the realm and faction again.
+
 **Stable 2.2.36:** Includes 2.2.35. The reload emote wait starts when the world appears.
 
 **Stable 2.2.35:** Includes 2.2.33. Emota waits one second after a UI reload.

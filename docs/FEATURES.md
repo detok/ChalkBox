@@ -1,6 +1,6 @@
 # What ChalkBox is supposed to do
 
-This is the player-facing contract for ChalkBox on WoW Forever. It describes the addon as of 2.2.36.
+This is the player-facing contract for ChalkBox on WoW Forever. It describes the addon as of 2.2.37.
 
 ChalkBox is one optional companion. It reads the game and shows notes. It does not buy, sell, move items, press your buttons, or send combat chat. A price can be copied into the auction sell box only when you click Fill price, and you still press Post yourself. When the client hides a value, the addon says so or skips the action. Saved data is kept across updates.
 
