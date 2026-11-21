@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.2.35 — No blocked-action popup on reload
+
+- Automatic emotes wait one second after login or `/reload`. Everything else about Emota is unchanged.
+
 ## 2.2.33 — Login block fix and Black Market
 
 - Login and reload no longer move the minimap, buffs, unit frames, or bag anchors. `/chalk taintcheck` reports a blocked action if one was recorded.

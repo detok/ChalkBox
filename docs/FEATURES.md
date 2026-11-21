@@ -1,6 +1,6 @@
 # What ChalkBox is supposed to do
 
-This is the player-facing contract for ChalkBox on WoW Forever. It describes the addon as of 2.2.33.
+This is the player-facing contract for ChalkBox on WoW Forever. It describes the addon as of 2.2.35.
 
 ChalkBox is one optional companion. It reads the game and shows notes. It does not buy, sell, move items, press your buttons, or send combat chat. A price can be copied into the auction sell box only when you click Fill price, and you still press Post yourself. When the client hides a value, the addon says so or skips the action. Saved data is kept across updates.
 
@@ -134,7 +134,7 @@ ChalkBox is one optional companion. It reads the game and shows notes. It does n
 
 **Supposed to:** Optional idle emotes, off unless the player turns automatic behavior on. Nothing during combat. A preview command shows one emote on purpose.
 
-**Status:** Works. The game can accept an emote request and still not play the animation. That limit is the client's.
+**Status:** Works. The game can accept an emote request and still not play the animation. That limit is the client's. For one second after login or a UI reload, automatic emotes wait so the client does not block them. After that they run as before.
 
 ## QuietGuard
 

@@ -1,6 +1,8 @@
 # ChalkBox player handbook
 
 
+**Stable 2.2.35:** Includes 2.2.33. Emota waits one second after a UI reload.
+
 **Stable 2.2.33:** Includes 2.2.32. `/chalk taintcheck` and `/chalk bmah`.
 
 **Stable 2.2.32:** Includes 2.2.31. `/chalk journal` opens the storybook.

@@ -1,3 +1,9 @@
+# ChalkBox 2.2.35 — Stable WoW Forever Release
+
+Includes 2.2.33. Automatic emotes wait one second after login or a UI reload, so the blocked-action popup does not appear. Idle, combat, level-up, chat, and the Emota buttons are unchanged after that second.
+
+## Previous: 2.2.33
+
 # ChalkBox 2.2.33 — Stable WoW Forever Release
 
 Includes 2.2.32. Login no longer moves Blizzard's minimap, buffs, unit frames, or bag anchors, so the blocked-action message at startup is gone. `/chalk taintcheck` reports the last block. The Black Market list is saved apart from auction asking prices.

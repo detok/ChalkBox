@@ -1,3 +1,7 @@
+# ChalkBox 2.2.35 — Stable Update
+
+- Reloading the UI no longer shows the blocked-action popup from an automatic emote.
+
 # ChalkBox 2.2.33 — Stable Update
 
 - The login blocked-action message is fixed. Blizzard frames are left alone.
