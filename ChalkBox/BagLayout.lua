@@ -95,10 +95,13 @@ local function ApplyOffset()
         or type(y)~="number" then
         return -- Another bag mover or a changed Blizzard layout owns this anchor.
     end
-    if pcall(function()
+    if type(ChalkBox_TaintMark)=="function" then ChalkBox_TaintMark("BagLayout") end
+    local moved=pcall(function()
         frame:ClearAllPoints()
         frame:SetPoint("BOTTOMRIGHT",relative,"BOTTOMRIGHT",x,y-shift)
-    end) then
+    end)
+    if type(ChalkBox_TaintClear)=="function" then ChalkBox_TaintClear() end
+    if moved then
         lastApplied=shift
     end
 end
@@ -192,12 +195,15 @@ events:SetScript("OnEvent",function(_,event,name)
                 db.bagOffsetY=0
             end
         end
-        InstallHook() -- Blizzard bag UI may load after ChalkBox.
+        -- A zero offset must not taint Blizzard's bag layout at login.
+        if Offset()~=0 then InstallHook() end
     elseif event=="PLAYER_LOGIN" or event=="PLAYER_ENTERING_WORLD" then
-        -- Install the hook only. Calling Blizzard's layout function from
-        -- here re-anchors protected bags during login and shows the block.
-        InstallHook()
-        if db and Offset()~=0 then pending=true end
+        -- Install the hook only when a saved nudge exists. Calling
+        -- Blizzard's layout function here re-anchors bags during login.
+        if db and Offset()~=0 then
+            InstallHook()
+            pending=true
+        end
     elseif event=="PLAYER_REGEN_ENABLED" and pending then
         RefreshLayout()
     end

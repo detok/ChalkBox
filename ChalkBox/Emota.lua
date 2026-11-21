@@ -221,11 +221,13 @@ local function NativeEmote(token, reason, manual, targetName)
     -- Call it directly. pcall makes Forever report the blocked function as
     -- UNKNOWN() and still shows the popup. A direct call outside combat is
     -- the same emote the player already gets.
+    if type(ChalkBox_TaintMark)=="function" then ChalkBox_TaintMark("Emota") end
     if targetName then
         C_ChatInfo.PerformEmote(token, targetName)
     else
         C_ChatInfo.PerformEmote(token)
     end
+    if type(ChalkBox_TaintClear)=="function" then ChalkBox_TaintClear() end
     -- A false return was observed even when Forever visibly played WAVE/TRAIN.
     -- Do not label that return as an error or spam it in chat.
     Note(("Emote requested: %s (%s)"):format(token, reason), manual)

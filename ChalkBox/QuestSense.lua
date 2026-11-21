@@ -386,6 +386,12 @@ local function CanEdit(dungeonSmart)
     return true
 end
 local QueueUpdate
+local function WatchAPI(fn,id)
+    if type(ChalkBox_TaintMark)=="function" then ChalkBox_TaintMark("QuestSense") end
+    local ok=pcall(fn,id)
+    if type(ChalkBox_TaintClear)=="function" then ChalkBox_TaintClear() end
+    return ok
+end
 local function Reconcile()
     queued=false
     if not settings or not API() then
@@ -444,7 +450,7 @@ local function Reconcile()
         settings.suspendedManual[focusID]=nil
         if not watched[focusID] then
             if Count(watched)<limit then
-                local ok=pcall(C_QuestLog.AddQuestWatch,focusID)
+                local ok=WatchAPI(C_QuestLog.AddQuestWatch,focusID)
                 if ok then
                     local after=Watches()
                     if after and after[focusID] then
@@ -662,7 +668,7 @@ local function Reconcile()
     for id in pairs(settings.managed) do
         if not desired[id] or not accepted[id] or not settings.enabled then
             if watched[id] then
-                local ok=pcall(C_QuestLog.RemoveQuestWatch,id)
+                local ok=WatchAPI(C_QuestLog.RemoveQuestWatch,id)
                 if ok then
                     local after=Watches()
                     if after and not after[id] then
@@ -680,7 +686,7 @@ local function Reconcile()
     end
     for id in pairs(toSuspend) do
         if watched[id] then
-            local ok=pcall(C_QuestLog.RemoveQuestWatch,id)
+            local ok=WatchAPI(C_QuestLog.RemoveQuestWatch,id)
             if ok then
                 local after=Watches()
                 if after and not after[id] then
@@ -698,7 +704,7 @@ local function Reconcile()
             elseif Count(watched)>=MaxWatches() then
                 failed=failed+1
             else
-                local ok=pcall(C_QuestLog.AddQuestWatch,id)
+                local ok=WatchAPI(C_QuestLog.AddQuestWatch,id)
                 if ok then
                     local after=Watches()
                     if after and after[id] then
@@ -717,7 +723,7 @@ local function Reconcile()
                 if Count(watched)>=limit or Count(watched)>=MaxWatches() then
                     failed=failed+1
                 else
-                    local ok=pcall(C_QuestLog.AddQuestWatch,id)
+                    local ok=WatchAPI(C_QuestLog.AddQuestWatch,id)
                     if ok then
                         local after=Watches()
                         if after and after[id] then
