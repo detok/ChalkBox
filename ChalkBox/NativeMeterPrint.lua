@@ -216,7 +216,10 @@ local function SendReport(frame,channel,auto,preparedLines)
     -- Forever's SAY channel can require a hardware event both inside and
     -- outside instances. Never send SAY from unattended callbacks.
     if auto and channel=="SAY" then return false end
-    local target=channel=="PARTY" and PartyChannel() or channel
+    -- Never use `and/or` here: nil from PartyChannel must NOT fall back
+    -- to PARTY or bypass the real group/raid eligibility check.
+    local target=channel
+    if channel=="PARTY" then target=PartyChannel() end
     if channel=="PARTY" and not target then
         if auto then
             AutoStage("not grouped","No eligible normal/instance party when report was ready.")
