@@ -12,6 +12,17 @@ local LIVE_REFRESH_SECONDS=0.75
 local function RememberFeed(source,reason)
     feedState={source=source or "none",reason=reason or "unknown"}
 end
+-- Forever can hand back secret booleans and secret list lengths. Comparing
+-- those with ordinary Lua throws and blanks the whole window.
+local function Secret(value)
+    return type(issecretvalue)=="function" and issecretvalue(value)==true
+end
+local function TableCount(list)
+    if Secret(list) or type(list)~="table" then return nil end
+    local ok,count=pcall(function() return #list end)
+    if not ok or Secret(count) or type(count)~="number" then return nil end
+    return count
+end
 local modes={
     {key="dps", label="DPS", enum="Dps", perSecond=true},
     {key="damage", label="DMG", enum="DamageDone"},
@@ -82,7 +93,13 @@ local function IsAvailable()
     end
     if type(C_DamageMeter.IsDamageMeterAvailable)=="function" then
         local ok,available,reason=pcall(C_DamageMeter.IsDamageMeterAvailable)
-        if not ok or available~=true then
+        if not ok then
+            return false,"Blizzard's damage meter is not available right now."
+        end
+        if Secret(available) then
+            return false,"Blizzard's damage meter is locked right now."
+        end
+        if available~=true then
             return false,Safe(reason) and type(reason)=="string" and reason
                 or "Blizzard's damage meter is not available right now."
         end
@@ -348,8 +365,10 @@ local function Refresh()
     if not window or not db or db.shown==false or not window:IsShown() then return end
     local available,reason=IsAvailable()
     if not available then
-        RememberFeed("none", reason and reason:find("this client",1,true)
-            and "api-missing" or "unavailable")
+        local why="unavailable"
+        if reason and reason:find("this client",1,true) then why="api-missing"
+        elseif reason and reason:find("locked",1,true) then why="secret" end
+        RememberFeed("none", why)
         ResetDisplay(reason)
         return
     end
@@ -372,8 +391,14 @@ local function Refresh()
         ResetDisplay("Native combat sources unavailable or protected.")
         return
     end
+    local sourceCount=TableCount(sources)
+    if not sourceCount then
+        RememberFeed("blizzard","secret")
+        ResetDisplay("Combat numbers are locked by the client right now.")
+        return
+    end
     local usingLast=false
-    if session.key=="current" and #sources==0 then
+    if session.key=="current" and sourceCount==0 then
         -- Blizzard may close Current as soon as the fight ends. The
         -- compact window should behave like our report sender and show
         -- the most recently completed fight rather than a blank panel.
@@ -383,7 +408,7 @@ local function Refresh()
         if savedOK and Safe(saved) and type(saved)=="table" and
             Safe(saved.combatSources) and
             type(saved.combatSources)=="table" and
-            #saved.combatSources>0 then
+            (TableCount(saved.combatSources) or 0)>0 then
             data,sources=saved,saved.combatSources
             usingLast=true
         end

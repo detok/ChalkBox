@@ -400,6 +400,14 @@ Flush()
 assert(thirdValueLabel.text=="",
     "unused combat rows clear stale numerical text as well as names")
 C_DamageMeter.GetCombatSessionFromType=fewer
+local availableCheck=C_DamageMeter.IsDamageMeterAvailable
+C_DamageMeter.IsDamageMeterAvailable=function() return Secret(true) end
+ChalkBox_MeterCommand("dps")
+Flush()
+assert(ChalkBox_MeterStatus().reason=="secret" and
+    not ChalkBox_MeterStatus().displayError,
+    "a locked availability flag is reported instead of crashing the meter")
+C_DamageMeter.IsDamageMeterAvailable=availableCheck
 local api=C_DamageMeter
 C_DamageMeter=nil
 ChalkBox_MeterCommand("status")
