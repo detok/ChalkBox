@@ -131,6 +131,7 @@ local function Widget(kind,name,parent)
     return w
 end
 _G.CreateFrame=Widget
+assert(loadfile("CombatLogMeter.lua"))("ChalkBox")
 assert(loadfile("CombatMeter.lua"))("ChalkBox")
 local event
 for _,f in ipairs(frames) do
@@ -440,6 +441,17 @@ assert(chat[#chat]:find("unavailable",1,true),"native API absence is explicit")
 ChalkBox_MeterCommand("dps")
 Flush()
 assert(window.shown)
+ChalkBox_PersonalMeterIngest(1,"SWING_DAMAGE",false,
+    "Player-1","Detok",0x401,0,"Creature-1","Boar",0,0,250)
+ChalkBox_PersonalMeterIngest(1,"SWING_DAMAGE",false,
+    "Pet-1","Wolf",0x1101,0,"Creature-1","Boar",0,0,50)
+ChalkBox_MeterCommand("dps")
+Flush()
+assert(ChalkBox_MeterStatus().feed=="personal" and
+    bars[1].parent.playerName.text=="Detok" and
+    tonumber(bars[1].parent.value.text)==250 and
+    bars[2].parent.playerName.text=="Wolf",
+    "a missing built-in meter shows your damage and your pet from the combat log")
 event.script.OnEvent(event,"PLAYER_LOGIN")
 assert(not window.shown and ChalkBoxDB.meter.shown==false,
     "previously open meter starts closed on a fresh login")

@@ -379,43 +379,65 @@ local function Refresh()
     refreshQueued=false
     lastDisplayError=nil
     if not window or not db or db.shown==false or not window:IsShown() then return end
-    local available,reason=IsAvailable()
-    if not available then
-        local why="unavailable"
-        if reason and reason:find("this client",1,true) then why="api-missing"
-        elseif reason and reason:find("locked",1,true) then why="secret" end
-        RememberFeed("none", why)
-        ResetDisplay(reason)
-        return
-    end
     local mode=Choice()
     local session=Session()
-    local modeId=EnumValue("DamageMeterType",mode.enum,
-        ({Dps=1,DamageDone=0,Hps=3,HealingDone=2,DamageTaken=7,Interrupts=5})[mode.enum])
-    local sessionId=EnumValue("DamageMeterSessionType",session.enum,
-        ({Current=1,Expired=2,Overall=0})[session.enum])
-    -- The native API is readable even in combat, but can return secret fields.
-    local ok,data=pcall(C_DamageMeter.GetCombatSessionFromType,sessionId,modeId)
-    if not ok or not Safe(data) or type(data)~="table" then
-        RememberFeed("blizzard","unreadable")
-        ResetDisplay("Waiting for Blizzard combat data...")
-        return
+    local personal=false
+    local function TakePersonal(why)
+        if type(ChalkBox_PersonalMeterSnapshot)~="function" then return nil end
+        local okSnap,snap=pcall(ChalkBox_PersonalMeterSnapshot,
+            session.key,mode.key)
+        if not okSnap or type(snap)~="table" then return nil end
+        local count=TableCount(snap.combatSources)
+        if snap.idle or not count or count<1 then return nil end
+        personal=true
+        RememberFeed("personal", why or "fallback")
+        return snap
     end
-    local sources=data.combatSources
-    if not Safe(sources) or type(sources)~="table" then
-        RememberFeed("blizzard","protected")
-        ResetDisplay("Native combat sources unavailable or protected.")
-        return
+    local available,reason=IsAvailable()
+    local data,sources
+    local nativeWhy,nativeText="unavailable","Blizzard's damage meter is not available right now."
+    if not available then
+        nativeWhy="unavailable"
+        nativeText=reason or nativeText
+        if reason and reason:find("this client",1,true) then nativeWhy="api-missing"
+        elseif reason and reason:find("locked",1,true) then nativeWhy="secret" end
+    else
+        local modeId=EnumValue("DamageMeterType",mode.enum,
+            ({Dps=1,DamageDone=0,Hps=3,HealingDone=2,DamageTaken=7,Interrupts=5})[mode.enum])
+        local sessionId=EnumValue("DamageMeterSessionType",session.enum,
+            ({Current=1,Expired=2,Overall=0})[session.enum])
+        local ok,fetched=pcall(C_DamageMeter.GetCombatSessionFromType,sessionId,modeId)
+        if not ok or not Safe(fetched) or type(fetched)~="table" then
+            nativeWhy,nativeText="unreadable","Waiting for Blizzard combat data..."
+        else
+            local list=fetched.combatSources
+            local count=Safe(list) and type(list)=="table" and TableCount(list) or nil
+            if not Safe(list) or type(list)~="table" then
+                nativeWhy,nativeText="protected",
+                    "Native combat sources unavailable or protected."
+            elseif not count then
+                nativeWhy,nativeText="secret",
+                    "Combat numbers are locked by the client right now."
+            elseif count<1 then
+                nativeWhy,nativeText="empty","No fight data yet. Attack something!"
+            else
+                data,sources=fetched,list
+            end
+        end
     end
-    local sourceCount=TableCount(sources)
-    if not sourceCount then
-        RememberFeed("blizzard","secret")
-        ResetDisplay("Combat numbers are locked by the client right now.")
-        return
+    if not data then
+        local snap=TakePersonal(nativeWhy)
+        if snap then
+            data,sources=snap,snap.combatSources
+        else
+            RememberFeed(available and "blizzard" or "none", nativeWhy)
+            ResetDisplay(nativeText)
+            return
+        end
     end
-    -- An empty current fight stays empty. Last is a separate, explicit choice.
     if meterTitle then
-        meterTitle:SetText(mode.label.."  /  "..session.label)
+        local suffix=personal and "Personal" or session.label
+        meterTitle:SetText(mode.label.."  /  "..suffix)
     end
     local visible,unreadable=0,false
     for i=1,db.rows do
@@ -445,7 +467,9 @@ local function Refresh()
     end
     local auto=type(ChalkBox_NativeMeterStatus)=="function" and
         ChalkBox_NativeMeterStatus() or nil
-    if auto and auto.ready then
+    if personal then
+        Note("Personal meter · you and your pet")
+    elseif auto and auto.ready then
         RememberFeed("blizzard", visible>0 and "showing" or "empty")
         Note("Report ready  ·  Menu > Send ready to "..(
             auto.readyChannel or "PARTY"))
@@ -655,6 +679,9 @@ local function ResetNative()
     if type(InCombatLockdown)=="function" and InCombatLockdown() then
         Chat("Cannot reset damage data during combat.")
         return false
+    end
+    if type(ChalkBox_PersonalMeterReset)=="function" then
+        pcall(ChalkBox_PersonalMeterReset)
     end
     if not C_DamageMeter or type(C_DamageMeter.ResetAllCombatSessions)~="function" then
         Chat("Blizzard damage reset API unavailable.")
