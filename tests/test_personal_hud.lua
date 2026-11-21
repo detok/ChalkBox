@@ -692,12 +692,13 @@ local bagWidget=FindMetric("Bags ")
 assert(bagWidget and bagWidget.movable and bagWidget.dragButton=="LeftButton",
     "user can physically drag stat modules within the 18px bar")
 local grip=bagWidget.resizeGrip
-assert(grip and grip.parent==bagWidget and grip.visible and
-    grip.dragButton=="LeftButton" and ChalkBox_BarWidthGet("bags")==90,
-    "Edit Mode adds a gold right-edge grip while preserving the module body drag")
+assert(grip and grip.parent==bagWidget and grip.visible and grip.movable and
+    grip.dragButton=="LeftButton" and grip.edge=="left" and
+    ChalkBox_BarWidthGet("bags")==90,
+    "Edit Mode adds a movable grip on the edge that actually grows")
 cursorX=300
 grip.scripts.OnDragStart(grip)
-cursorX=347
+cursorX=253
 grip.scripts.OnUpdate(grip,.1)
 assert(bagWidget.width==136 and ChalkBox_BarWidthGet("bags")==136 and
     ChalkBox_BarLayoutWidthGet("bags")==nil,
