@@ -1,5 +1,4 @@
--- ChalkBox compact meter menu. Reuse native reporting and its preferences,
--- not an independent serializer or alternate chat sender.
+-- Compact meter display/window controls only. Reporting has been retired.
 local dropdown
 local function Next(value,options)
     for i,v in ipairs(options) do
@@ -15,8 +14,6 @@ end
 local function Items()
     local st=type(ChalkBox_MeterStatus)=="function" and
         ChalkBox_MeterStatus() or {}
-    local report=type(ChalkBox_NativeMeterStatus)=="function" and
-        ChalkBox_NativeMeterStatus() or {}
     local mode=st.mode or "dps"
     local session=st.session or "current"
     local modeLabel={dps="DPS",damage="Damage",hps="HPS",
@@ -30,11 +27,6 @@ local function Items()
     local function Meter(command)
         if type(ChalkBox_MeterCommand)=="function" then
             ChalkBox_MeterCommand(command)
-        end
-    end
-    local function Native(command)
-        if type(ChalkBox_NativeMeterCommand)=="function" then
-            ChalkBox_NativeMeterCommand(command)
         end
     end
     local function Add(group,title,action)
@@ -53,34 +45,6 @@ local function Items()
         end),
         Add("Display","Class icons: "..(st.iconMode or "class"),function()
             Meter("icons "..Next(st.iconMode or "class",icons))
-        end),
-        Add("Reports","Print top "..(report.rows or 3).." to PARTY",function()
-            if type(ChalkBox_MeterReportSelected)=="function" then
-                ChalkBox_MeterReportSelected("PARTY")
-            end
-        end),
-        Add("Reports","Print top "..(report.rows or 3).." to SAY",function()
-            if type(ChalkBox_MeterReportSelected)=="function" then
-                ChalkBox_MeterReportSelected("SAY")
-            end
-        end),
-        Add("Reports","Report size: Top "..(report.rows or 3).." (3 / 5 / 10)",function()
-            Native("rows "..Next(report.rows or 3,{3,5,10}))
-        end),
-        Add("Reports","Auto after combat: "..(report.auto and "ON" or "OFF"),function()
-            Native(report.auto and "auto off" or "auto on")
-        end),
-        Add("Reports","Auto channel: "..(report.channel or "PARTY"),function()
-            Native("channel "..Next((report.channel or "PARTY"):lower(),{"party","say"}))
-        end),
-        Add("Reports","Auto stat: "..(report.metric or "dps"),function()
-            Native("metric "..Next(report.metric or "dps",{"dps","damage","healing"}))
-        end),
-        Add("Reports","Minimum fight: "..(report.minFight or 10).."s",function()
-            Native("min "..Next(report.minFight or 10,{0,10,20,30}))
-        end),
-        Add("Reports","Auto cooldown: "..(report.cooldown or 60).."s",function()
-            Native("cooldown "..Next(report.cooldown or 60,{30,60,120}))
         end),
         Add("Window","Background: "..opacity.."%",function()
             local index=sizes[1]
@@ -101,13 +65,6 @@ local function Items()
             end
         end),
     }
-    if report.ready and type(ChalkBox_NativeMeterSendReady)=="function" then
-        -- Uses the existing menu; this click supplies the necessary
-        -- hardware action if automatic outgoing chat was blocked.
-        table.insert(entries,7,Add("Reports",
-            "Send ready report to "..(report.readyChannel or "PARTY"),
-            ChalkBox_NativeMeterSendReady))
-    end
     return entries
 end
 function ChalkBox_MeterOpenMenu(owner)

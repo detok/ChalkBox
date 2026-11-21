@@ -1,9 +1,9 @@
 # ChalkBox player handbook
 
 
-**Current beta 2.2.28-quest-beta:** QuestSense adds Closest/Lowest priorities and more complete verified Nearby detection; previous experimental Auction Intelligence remains opt-in and off by default. See [technical details](AUCTION_INTELLIGENCE.md). The official stable release remains 2.2.26.
+**Stable 2.2.29:** Original AuctionSense Market/scanning interface restored. The experimental Intelligence Lab is paused; its saved data is preserved. ChalkBox Combat Meter reporting is completely removed, while the local meter display remains.
 
-**ChalkBox 2.2.28-quest-beta (prerelease) · World of Warcraft: Forever**
+**ChalkBox 2.2.29 (stable) · World of Warcraft: Forever**
 
 ChalkBox is a set of optional quality-of-life features inside **one addon**. Use Blizzard's **Options → AddOns → ChalkBox** pages or type `/chalk` (also `/cb`). Features that display observations are not proofs of unseen game data; ChalkBox should be conservative when Forever withholds information.
 
@@ -120,7 +120,7 @@ The optional **Shift top UI below the Bar** uses selective Blizzard-frame positi
 
 The optional compact **Combat Meter starts hidden**. Open it from settings or `/chalk meter show`. The header has one **Menu** button; right-clicking the header opens the same menu. Switch DPS/damage/healing/HPS/taken/interrupts and Current/Last/Overall, choose icon style or lock, and resize the window. Its default maximum is **five rows**, automatically collapsed to actual visible participants; optionally increase the cap for raids. On-window and settings opacity controls adjust **only the background**, leaving names, DPS and class icons readable.
 
-**Print top 3 / 5 / 10 to PARTY or SAY** is a deliberate user action using the **same report logic and preferences** as Blizzard's native meter gear menu. Automatic reporting remains OFF by default and uses its explicit channel, minimum fight and cooldown choices. One heading and a separate plain text row per player are sent to the chosen channel; PARTY rows are spaced 200 ms apart, and SAY rows are sent during the click. There is no automatic copy popup, channel switching, or retry when chat rejects a message. An accepted API call is not proof of server delivery. Some Forever combat values are protected, especially during combat; ChalkBox never invents them. **RESET** requires confirmation and clears shared Blizzard meter sessions, not just ChalkBox.
+**Combat reports retired in 2.2.29.** ChalkBox neither broadcasts nor prepares DPS/party/say summaries, automatically or manually. The old print/native report slash commands are silent no-ops, and report menus have been removed. Blizzard's combat meter and normal party chat remain unaffected. **RESET** still requires confirmation and clears the native shared combat sessions.
 
 **Adventure Journal (Session Journal)** now opens in a fully framed, warm wood window with Session Summary and Field Notes sections; it remains readable even if global background opacity is zero. The existing recording still keeps the current session and up to **20 prior** snapshots of supported observed statistics: XP, gold, completed quests, sampled loot, camp reminders and other available events. It does not retroactively invent events from before installation. Use `/chalk session` or `/chalk session last`. A future [Full Adventure Chronicle](ADVENTURE_CHRONICLE_DESIGN.md) will add validated, bounded individual milestones and Today/Timeline/History views; those features do **not** record events in 2.2.22.
 

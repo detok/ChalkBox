@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.2.29 — Stable restoration release
+
+- Restored the AuctionSense Market tab, Browse/Full scans, My Items, Sales and historical data presentation from the last stable 2.2.26 implementation. Experimental Inventory Intelligence Lab is paused in shipped addon without deleting saved data.
+- Removed all automatic and manual Combat Meter chat reports. The native reporter and copy window are omitted from the install ZIP, reporting menus removed and old commands silently disabled.
+- Local combat stats, QuestSense, The Bar, Discoveries, LootSense, MacroForge and data transfer remain.
+- Published as a versioned stable CurseForge-ready ZIP with retained character SavedVariables.
+
 ## 2.2.28-quest-beta — Cleaner QuestSense Smart and Nearby
 
 - Smart priority options are Closest First and Lowest Level First, with completed quests last by default and an optional completed-first override.

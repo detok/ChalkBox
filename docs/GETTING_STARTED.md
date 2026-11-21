@@ -1,9 +1,9 @@
 # Getting started with ChalkBox
 
 
-**Current beta 2.2.28-quest-beta:** QuestSense adds Closest/Lowest priorities and more complete verified Nearby detection; previous experimental Auction Intelligence remains opt-in and off by default. See [technical details](AUCTION_INTELLIGENCE.md). The official stable release remains 2.2.26.
+**Stable 2.2.29:** Original AuctionSense Market/scanning interface restored. The experimental Intelligence Lab is paused; its saved data is preserved. ChalkBox Combat Meter reporting is completely removed, while the local meter display remains.
 
-**For WoW Forever · 2.2.28-quest-beta prerelease; download the installable GitHub release ZIP**
+**For WoW Forever · 2.2.29 stable; download the installable GitHub release ZIP**
 
 ChalkBox is one addon folder. It contains the runtime modules and their bundled static recipe reference files. There is no second AddOn to install, no account to connect, and no third-party service to configure.
 

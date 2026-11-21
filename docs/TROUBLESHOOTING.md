@@ -1,6 +1,6 @@
 # Troubleshooting ChalkBox
 
-**Current stable baseline: 2.2.22 · World of Warcraft: Forever**
+**Current stable baseline: 2.2.29 · World of Warcraft: Forever**
 
 This page covers issues you can diagnose safely without deleting SavedVariables, reinstalling unrelated addons or modifying Blizzard's protected interface.
 
@@ -98,8 +98,8 @@ For earlier version-specific fixes, see the [historical changelog](../CHANGELOG.
 
 [Documentation home](README.md) · [Commands](COMMANDS.md) · [Maintainer runbook](MAINTAINER_RUNBOOK.md)
 
-## 2.2.23 beta: DPS reports rejected by chat
+## Combat reports retired in 2.2.29
 
-In WoW Forever, a damage meter can show correct combat totals while the game refuses addon-created chat messages. ChalkBox checks `C_ChatInfo.InChatMessagingLockdown()` and `C_ChatInfo.AreOutgoingAddonChatMessagesRestricted()` when supported. If a manual PARTY/SAY report is denied, 2.2.23 provides a **copyable summary** (Ctrl+C) you can paste into normal chat. It never silently changes channels. Successful API submission does not guarantee server delivery. Automatic SAY outside instances is skipped when restricted.
+ChalkBox no longer sends, queues or prints combat chat reports. The Combat Meter is visual only; `/chalk meter print` and previous native-report commands are silent. Existing SavedVariables and Blizzard's normal auction and party chat are unaffected.
 
-Try after combat. Use `/chalk meter status` and `/chalk meter native status` for diagnostics. Report the selected channel and whether the copy window appeared. **2.2.22 remains the stable release** until this change is verified in-game.
+AuctionSense's Market tab, Browse/Full scans, My Items and Sales use the former stable 2.2.26 implementation. The experimental Intelligence Lab is paused without deleting its saved observations.

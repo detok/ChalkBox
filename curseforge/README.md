@@ -1,9 +1,9 @@
-# ChalkBox 2.2.28-quest-beta — publisher kit
+# ChalkBox 2.2.29 — stable CurseForge publisher kit
 
 
-**Current GitHub beta: 2.2.28-quest-beta.** Includes QuestSense Closest/Lowest priorities, improved verified Nearby filling and the previous opt-in Auction Intelligence. See [technical details](../docs/AUCTION_INTELLIGENCE.md). Stable version 2.2.26 remains available.
+**Stable 2.2.29:** The compact Combat Meter no longer sends or prepares chat reports. QuestSense, AuctionSense, colored Bar tips, Discoveries and data transfer remain. See [release notes](../docs/RELEASE_NOTES.md).
 
-The **game ZIP** is `ChalkBox-2.2.28-quest-beta.zip`; upload that as the addon. The separate **media ZIP** contains images, listing copy and checklists—it is not installable.
+The **game ZIP** is `ChalkBox-2.2.29.zip`; upload that as the addon. The separate **media ZIP** contains images, listing copy and checklists—it is not installable.
 
 ## Ready-to-paste listing
 
@@ -17,4 +17,4 @@ Use the original avatar under `Artwork/PNG/Upload-Ready/Project-Icon-512.png`, a
 **WoW Forever only.** Verify the game flavor in CurseForge's uploader before submission. License: MIT for ChalkBox, with bundled library notices.
 
 
-**Developer beta:** ChalkBox 2.2.27 is a QuestSense Smart experiment; 2.2.26 remains the supported stable release. [Beta notes](https://github.com/detok/ChalkBox/blob/feature/smart-quest-native-priorities/docs/RELEASE_NOTES.md).
+**Stable 2.2.29:** AuctionSense restored to the last stable interface; Combat Meter reporting removed.

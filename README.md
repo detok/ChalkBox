@@ -1,7 +1,7 @@
 <div align="center">
 
 
-**QuestSense beta 2.2.28-quest-beta:** Smart now offers **Closest First** or **Lowest Level First**, with completed quests last by default. Nearby verifies objectives across zone micro-maps and quest-specific waypoints, then fills up to five or ten eligible quests. This beta includes all previous AuctionSense Intelligence, tooltip, Mac notch, and data-transfer work. [Download beta](https://github.com/detok/ChalkBox/releases/tag/v2.2.28-quest-beta). Stable 2.2.26 remains available.
+**Stable 2.2.29 for WoW Forever:** ChalkBox's personal Combat Meter remains, but all ChalkBox DPS chat reporting (manual and automatic) has been removed. QuestSense, AuctionSense, The Bar, Discoveries and data-transfer improvements from the consolidated beta are included. [Download stable](https://github.com/detok/ChalkBox/releases/tag/v2.2.29).
 
 <img src="curseforge/artwork/chalkbox-github-header-1600x470.svg" alt="ChalkBox for WoW Forever" width="100%" />
 
@@ -29,11 +29,11 @@ Everything is optional. Set up ChalkBox your way from the in-game AddOns setting
 
 ## Install
 
-Download **ChalkBox-2.2.26.zip** from [GitHub Releases](https://github.com/detok/ChalkBox/releases/latest) or an approved CurseForge file. Extract the included `ChalkBox` folder to `Interface/AddOns/`, then type **`/chalk`**. Keep SavedVariables when updating.
+Download **ChalkBox-2.2.29.zip** from [GitHub Releases](https://github.com/detok/ChalkBox/releases/latest) or an approved CurseForge file. Extract the included `ChalkBox` folder to `Interface/AddOns/`, then type **`/chalk`**. Keep SavedVariables when updating.
 
-**Version 2.2.26 · WoW Forever** · [What's new](docs/RELEASE_NOTES.md) · [User guide](docs/USER_GUIDE.md)
+**Version 2.2.29 · WoW Forever** · [What's new](docs/RELEASE_NOTES.md) · [User guide](docs/USER_GUIDE.md)
 
 ChalkBox is an independent community addon. [MIT license](LICENSE); bundled libraries retain their own notices. Observed loot rates and auction asking prices are estimates, not official drop rates or completed sales.
 
 
-**Developer beta:** ChalkBox 2.2.27 is a QuestSense Smart experiment; 2.2.26 remains the supported stable release. [Beta notes](https://github.com/detok/ChalkBox/blob/feature/smart-quest-native-priorities/docs/RELEASE_NOTES.md).
+**Stable 2.2.29:** Restores the previous AuctionSense Market/scanner, removes all DPS reporting and preserves other consolidated features.

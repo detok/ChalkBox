@@ -15,8 +15,7 @@ local navigation = {
         {key="tooltipcoord", title="Item Insights (Experimental)"}}},
     {key="drops", title="DropSense"},
     {key="auction", title="AuctionSense", children={
-        {key="auctioncharts", title="Charts (Experimental)"},
-        {key="auctionintel", title="Intelligence (Experimental)"}}},
+        {key="auctioncharts", title="Charts (Experimental)"}}},
     {key="quests", title="QuestSense", children={
         {key="questsmart", title="Smart Rules"},
         {key="questnav", title="Navigation"}}},
@@ -467,9 +466,6 @@ local function MakeAuction()
     end)
     Label(panel,"AuctionSense is part of Blizzard's Auction House.",
         "GameFontHighlightSmall",28,-287,295)
-    Button(panel,"Intelligence Lab",334,-283,188,function()
-        Activate("auctionintel")
-    end)
     Toggle(panel,"Show auction prices on item tooltips",
         "Only when a market scan exists; always includes scan age.",
         -311,function()
@@ -503,72 +499,6 @@ local function MakeAuction()
             st.items or 0,st.source=="browse" and "Browse snapshot" or
             (st.source=="full" and "Full listing snapshot" or "Unscanned"),
             st.age and (math.floor(st.age/60).."m old") or "No scan"))
-    end)
-    return panel
-end
-
-local function MakeAuctionIntel()
-    local panel=Panel("AuctionSense / Intelligence (Experimental)",
-        "Read-only inventory decisions. OFF by default on every character.")
-    local function Status()
-        return type(ChalkBox_IntelStatus)=="function" and
-            ChalkBox_IntelStatus() or {enabled=false,mode="skill",
-            target=25,margin=25,learn=true,protectGoal=true,recipes=0}
-    end
-    local function Set(key,value)
-        if type(ChalkBox_IntelSet)=="function" then
-            ChalkBox_IntelSet(key,value)
-        end
-        if panel.OnRefresh then panel.OnRefresh() end
-    end
-    Toggle(panel,"Enable Inventory Intelligence",
-        "Starts OFF; never buys, crafts, sells or posts auctions.",
-        -108,function() return Status().enabled end,
-        function(on) Set("enabled",on) end)
-    Toggle(panel,"Use my confirmed auction-sale history",nil,
-        -163,function() return Status().learn end,
-        function(on) Set("learn",on) end)
-    Toggle(panel,"Protect Skill Up materials in Make Gold mode",nil,
-        -201,function() return Status().protectGoal end,
-        function(on) Set("protectGoal",on) end)
-    Label(panel,"DECISION GOAL","GameFontNormalLarge",28,-239,480)
-    Button(panel,"Skill Up",28,-260,231,function() Set("mode","skill") end)
-    Button(panel,"Make Gold",273,-260,231,function() Set("mode","gold") end)
-    local goalLabel=Label(panel,"Goal: open a profession window",
-        "GameFontHighlightSmall",28,-299,500)
-    Button(panel,"Pin last scanned profession",28,-314,235,function()
-        local st=Status()
-        if st.lastObserved then Set("profession",st.lastObserved) end
-    end)
-    Button(panel,"Use automatic profession",274,-314,230,function()
-        Set("profession",nil)
-    end)
-    Label(panel,"SKILL FORECAST","GameFontNormal",28,-355,240)
-    Label(panel,"AUCTION / CRAFT MARGIN","GameFontNormal",281,-355,240)
-    for i,n in ipairs({10,25,50}) do
-        Button(panel,"+"..n,28+(i-1)*76,-376,67,function()
-            Set("target",n)
-        end)
-    end
-    for i,n in ipairs({15,25,50}) do
-        Button(panel,n.."%",281+(i-1)*76,-376,67,function()
-            Set("margin",n)
-        end)
-    end
-    local state=Label(panel,"Disabled","GameFontHighlightSmall",28,-419,500)
-    panel:AddRefresh(function()
-        local st=Status()
-        local skill=st.skill
-        goalLabel:SetText("Goal: "..tostring(st.profession or "No profession scanned")..
-            (skill and type(skill.rank)=="number" and
-             type(skill.cap)=="number" and
-             ("  "..skill.rank.."/"..skill.cap) or "")..
-            (st.goalPinned and "  (PINNED)" or "  (AUTO)"))
-        state:SetText((st.enabled and "ON" or "OFF")..
-            "  |  "..(st.mode=="gold" and "Make Gold" or "Skill Up")..
-            "  |  +"..tostring(st.target or 25).." points  |  "..
-            tostring(st.margin or 25).."% margin  |  "..
-            tostring(st.recipes or 0).." scanned recipes")
     end)
     return panel
 end
@@ -1782,7 +1712,7 @@ local function MakeMeter()
     Button(panel,"Show Window",27,-396,133,function() Run("show") end)
     Button(panel,"Reset Position",172,-396,145,function() Run("position reset") end)
     Button(panel,"Reset Data...",328,-396,140,function() Run("reset") end)
-    Label(panel,"Blizzard meter gear: Party / Say / Top 3, 5, 10 / Auto after combat.",
+    Label(panel,"Combat data stays in your meter window.",
         "GameFontHighlightSmall",28,-428,495)
     return panel
 end
@@ -1795,7 +1725,6 @@ local function Register()
     panels.drops = MakeDrops()
     panels.auction = MakeAuction()
     panels.auctioncharts = MakeAuctionCharts()
-    panels.auctionintel = MakeAuctionIntel()
     panels.journal = MakeJournal()
     panels.forge = MakeForge()
     panels.updates = MakeUpdates()

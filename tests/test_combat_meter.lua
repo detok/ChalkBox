@@ -342,90 +342,20 @@ assert(StaticPopupDialogs.CHALKBOX_METER_RESET.OnAccept()==false and resetCount=
 locked=false
 assert(StaticPopupDialogs.CHALKBOX_METER_RESET.OnAccept()==true and resetCount==1,
     "user-confirmed action resets Blizzard's shared sessions")
--- Printing is ONE explicit party chat line, never a multi-line chat flood.
-locked=true
-local oldChat=#chat
-ChalkBox_MeterPrintFight()
-assert(#chat==oldChat+1 and chat[#chat]:find("Finish combat",1,true)
-    and #partyMessages==0,
-    "legacy print never uses in-combat secret totals or sends to party")
-locked=false
-oldChat=#chat
-ChalkBox_MeterPrintFight()
-assert(#chat==oldChat+1 and chat[#chat]:find("protected",1,true)
-    and #partyMessages==0,
-    "protected values after combat are never sent or formatted")
-protected=false
-grouped=false
-ChalkBox_MeterPrintFight()
-assert(#partyMessages==0 and chat[#chat]:find("Join a party",1,true),
-    "solo players do not get a SAY or local-chat fallback")
-grouped=true
-raiding=true
-ChalkBox_MeterPrintFight()
-assert(#partyMessages==0,"strict party request must never broadcast to raid")
-raiding=false
-ChalkBox_MeterPrintFight()
-assert(#partyMessages==1 and partyMessages[1].channel=="PARTY"
-    and #partyMessages[1].lines==3 and #rawPartyMessages==3
-    and rawPartyMessages[1].message=="CB HEAL (Overall):",
-    "one click sends a heading and separate safe PARTY lines for each player")
-assert(partyMessages[1].message:find("CB HEAL (Overall):",1,true)
-    and partyMessages[1].message:find("1 Detok 4400",1,true)
-    and partyMessages[1].message:find("2 Other Player 2200",1,true)
-    and #partyMessages[1].message<=255,
-    "party report includes selected stat, selected session and ranking")
-oldChat=#chat
-ChalkBox_MeterPrintFight()
-assert(#partyMessages==1 and #chat==oldChat+1
-    and chat[#chat]:find("already requested",1,true),
-    "double-clicking within three seconds does not spam group chat")
-now=1004
-local copies={}
-_G.ChalkBox_MeterShowCopy=function(message,reason)
-    copies[#copies+1]={text=message,reason=reason}
-end
-C_ChatInfo.SendChatMessage=function()
-    error("Forever party chat restriction")
-end
-oldChat=#chat
-ChalkBox_MeterPrintFight()
-assert(#partyMessages==1 and #copies==0
-    and chat[#chat]:find("report stopped at line",1,true),
-    "failed PARTY report prints error without copy fallback")
-C_ChatInfo.InChatMessagingLockdown=function() return true end
-ChalkBox_MeterPrintFight()
-assert(#copies==0 and #partyMessages==1,
-    "lockdown does not trigger copy dialogs or alternate sends")
-C_ChatInfo.InChatMessagingLockdown=nil
-C_ChatInfo.SendChatMessage=nil
-_G.SendChatMessage=function(message,channel)
-    RecordParty(message,channel,true)
-end
-ChalkBox_MeterPrintFight()
-assert(#partyMessages==2 and partyMessages[2].legacy
-    and partyMessages[2].channel=="PARTY",
-    "old Classic API is a supported fallback when modern chat API is absent")
-C_ChatInfo.SendChatMessage=function(message,channel)
-    RecordParty(message,channel)
-end
-_G.SendChatMessage=nil
-now=1010
-local saved=C_DamageMeter.GetCombatSessionFromType
-C_DamageMeter.GetCombatSessionFromType=function(session,typeId)
-    if session==Enum.DamageMeterSessionType.Current then
-        return {combatSources={}}
-    end
-    return saved(session,typeId)
-end
-ChalkBox_MeterCommand("current")
-Flush()
-ChalkBox_MeterPrintFight()
-assert(#partyMessages==3
-    and partyMessages[3].message:find("CB HEAL (Last):",1,true),
-    "when the current session is empty, report the last recorded fight")
-C_DamageMeter.GetCombatSessionFromType=saved
-assert(resetCount==1,"PRINT never resets Blizzard's shared sessions")
+-- The deprecated print API and every legacy slash command are inert.
+local reportChatBefore=#chat
+local reportSendBefore=#rawPartyMessages
+assert(ChalkBox_MeterPrintFight()==false)
+assert(ChalkBox_MeterReportAdapter()==nil)
+assert(ChalkBox_MeterReportSelected("PARTY")==false)
+ChalkBox_MeterCommand("print")
+ChalkBox_MeterCommand("print local")
+ChalkBox_MeterCommand("native auto on")
+ChalkBox_MeterCommand("native channel party")
+ChalkBox_MeterCommand("native status")
+assert(#chat==reportChatBefore and #rawPartyMessages==reportSendBefore,
+    "old print commands make no chat messages and cannot send anything")
+assert(resetCount==1,"report commands do not reset Blizzard sessions")
 -- Once a fight completes, empty Current must display the last native
 -- session rather than an apparently broken all-zero meter.
 local fallbackGetter=C_DamageMeter.GetCombatSessionFromType
@@ -479,18 +409,9 @@ assert(not window.shown and ChalkBoxDB.meter.shown==false,
     "previously open meter starts closed on a fresh login")
 C_DamageMeter=api
 ChalkBox_MeterCommand("last")
-local adapter=ChalkBox_MeterReportAdapter()
-assert(adapter and adapter:GetSessionType()==Enum.DamageMeterSessionType.Expired
-    and adapter:GetDamageMeterType()==Enum.DamageMeterType.Dps
-    and adapter:GetCombatSession().combatSources[1].name=="Detok",
-    "compact menu reads its selected last fight and DPS from the shared native API")
-local delegated
-_G.ChalkBox_NativeMeterPrint=function(selected,channel)
-    delegated={selected=selected,channel=channel}
-    return true
-end
-assert(ChalkBox_MeterReportSelected("SAY")
-    and delegated and delegated.channel=="SAY"
-    and delegated.selected:GetSessionType()==Enum.DamageMeterSessionType.Expired,
-    "compact reporting always delegates to native sender, never a second chat path")
-print("PASS: compact native report adapter, five-row auto-fit, secret/solo/raid guards, confirmed RESET, icons, gear header and all sessions")
+assert(ChalkBox_MeterStatus().session=="expired",
+    "the local combat display still shows the previous fight")
+assert(ChalkBox_MeterPrintFight()==false
+    and ChalkBox_MeterReportSelected("SAY")==false,
+    "report APIs remain harmless after all session changes")
+print("PASS: Combat Meter still displays Blizzard data, resets safely, and has zero chat reporting")
