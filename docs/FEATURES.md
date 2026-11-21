@@ -1,10 +1,8 @@
 # What ChalkBox is supposed to do
 
-This is the player-facing contract for ChalkBox on WoW Forever, taken from the handbook, settings, slash commands, code comments, and the owner's open issues. It describes the addon as of the 2.2.31 release branch, which includes the 2.2.30 fixes.
+This is the player-facing contract for ChalkBox on WoW Forever. It describes the addon as of 2.2.32.
 
-ChalkBox is one optional companion. It reads the game and shows notes. It does not buy, sell, post auctions, move items, press buttons, or send combat chat. When the client hides a value, the addon says so or skips the action. Saved data is kept across updates.
-
-Inventory Intelligence stays paused. The full Adventure Chronicle (a second event diary) stays unbuilt. Both were experiments or future designs, not the current addon.
+ChalkBox is one optional companion. It reads the game and shows notes. It does not buy, sell, move items, press your buttons, or send combat chat. A price can be copied into the auction sell box only when you click Fill price, and you still press Post yourself. When the client hides a value, the addon says so or skips the action. Saved data is kept across updates.
 
 ## LootSense
 
@@ -40,13 +38,13 @@ Inventory Intelligence stays paused. The full Adventure Chronicle (a second even
 
 **Supposed to:** At an auctioneer, scan asking prices when the player asks. Browse scan is the normal path. Full scan is the heavier list and can take a long time, with about a 15-minute cooldown after a request is accepted. A failed or partial scan must not erase the last good snapshot. Prices are asks, not sales.
 
-**Status:** Works on the 2.2.30 scan fix. A page already received is kept if the next page is refused. If the modern auction API is missing, the classic auction list is read instead.
+**Status:** Works. The Scan Market button stays clickable. Chat says when a scan starts, which page is being read, when prices are saved, and why a scan cannot start. `/chalk auction debug` prints the detected API and the throttle. A received page is kept if the next page is refused. The old auction list is used when the modern one is missing, with the page number in the position that client expects.
 
 ## Auction Insights
 
 **Supposed to:** In the auction house, show bag vendor value and seller-mail receipts the addon has actually seen. It is not a lifetime sales ledger.
 
-**Status:** Works. It does not post auctions or pick a stack and price. That posting handoff was an experiment and is not part of this addon, because a click from the auction tab can block using items.
+**Status:** Works. My Items can suggest a saved asking price. **Fill price** writes that number into Blizzard's sell boxes only when you click the button, and only when those boxes are not protected. ChalkBox never switches the auction tab and never presses Post. You click Post yourself. The auction cut and deposit are not included in the suggestion.
 
 ## Price charts
 
@@ -56,9 +54,9 @@ Inventory Intelligence stays paused. The full Adventure Chronicle (a second even
 
 ## Inventory Intelligence
 
-**Supposed to:** Stay off. Saved notes from the experiment are not deleted. `/chalk intel` says it is unavailable.
+**Supposed to:** Optional advice from known recipes, bags, bank snapshots, and saved asking prices. It starts off. Old reserves, ignores, and recipe notes stay in the save. `/chalk intel on` turns it on. It does not buy, sell, craft, or post.
 
-**Status:** Paused on purpose. Not revived.
+**Status:** Works, and it stays off until you enable it under AuctionSense → Inventory Intelligence.
 
 ## Bank value
 
@@ -106,7 +104,19 @@ Inventory Intelligence stays paused. The full Adventure Chronicle (a second even
 
 **Supposed to:** A per-character summary of this login and up to 20 finished ones: time, experience, gold change, quests turned in, sampled loot, camp reminders, and repair quotes. Only events the addon actually saw. Opening it must not freeze the clock during a long quiet stretch. The drop list should be the highest counts, not whichever items happened to appear first. An old or newer save must not be deleted just because the version number is unfamiliar.
 
-**Status:** Works after the 2.2.31 journal correction. The full Adventure Chronicle (a second diary of individual milestones, Today, and Timeline) is unfinished on purpose and is not recorded.
+**Status:** Works. `/chalk session` opens this summary. `/chalk journal` opens the storybook.
+
+## Adventure Chronicle
+
+**Supposed to:** From this update forward, remember levels, quest turn-ins, deaths, party-dungeon visits, and rare drops the client actually identifies. Older session summaries are not rewritten into a fake timeline. Recording can be turned off without deleting what was saved.
+
+**Status:** Works. Settings → Session Journal → Adventure Chronicle, or `/chalk chronicle`. Today, Timeline, and History are in that window.
+
+## Storybook
+
+**Supposed to:** One movable, resizable window that reads the other modules and tells the story back: an overview, a timeline, milestones, and personal bests. It does not change their saved data. It does not rebuild the page during combat. It remembers where you put it.
+
+**Status:** Works. `/chalk journal` opens it. So does Settings → Adventure Chronicle → Open storybook, and a left-click on the level stat on the Bar. `/chalk session` is still the older session summary.
 
 ## Adventure prep
 

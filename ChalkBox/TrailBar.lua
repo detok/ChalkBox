@@ -1226,6 +1226,8 @@ local function CreateBar()
                     ChalkBox_BarToggleBags()
                 elseif key=="bagvalue" then
                     ChalkBox_BarBagValueModeToggle()
+                elseif key=="level" and type(ChalkBox_OpenStorybook)=="function" then
+                    ChalkBox_OpenStorybook("overview")
                 end
             end
         end)

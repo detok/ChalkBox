@@ -78,6 +78,7 @@ FILES = (
     "QuestNavigator.lua",
     "RepairLearning.lua",
     "AdventureChronicle.lua",
+    "Storybook.lua",
     "TrailBarStats.lua",
     "TrailBarLayout.lua",
     "ScreenLayout.lua",

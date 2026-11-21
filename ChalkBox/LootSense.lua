@@ -515,6 +515,10 @@ SlashCmdList.CHALKBOX = function(input)
         if type(ChalkBox_DropCommand)=="function" then
             ChalkBox_DropCommand(argument)
         else Note("DropSense is unavailable in this client.") end
+    elseif command=="journal" or command=="story" or command=="storybook" then
+        if type(ChalkBox_OpenStorybook)=="function" then
+            ChalkBox_OpenStorybook(argument)
+        else Note("The storybook is unavailable.") end
     elseif command=="chronicle" then
         if type(ChalkBox_ChronicleCommand)=="function" then
             ChalkBox_ChronicleCommand(argument)

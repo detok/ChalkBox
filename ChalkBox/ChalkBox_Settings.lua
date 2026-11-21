@@ -538,8 +538,11 @@ local function MakeChronicle()
     Button(panel,"Clear saved events",220,-190,180,function()
         if ChalkBox_ChronicleClear then ChalkBox_ChronicleClear() end
     end)
-    Label(panel,"Slash: /chalk chronicle | today | timeline | history | on | off",
-        "GameFontHighlightSmall",28,-230,480)
+    Button(panel,"Open storybook",28,-230,180,function()
+        if ChalkBox_OpenStorybook then ChalkBox_OpenStorybook("overview") end
+    end)
+    Label(panel,"Slash: /chalk journal  ·  /chalk chronicle today|timeline|history|on|off",
+        "GameFontHighlightSmall",28,-270,480)
     return panel
 end
 local function MakeIntel()
