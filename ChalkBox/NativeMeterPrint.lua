@@ -13,6 +13,14 @@ local readyReport=nil -- transient, never persisted to SavedVariables
 local lastPreparedFingerprint=nil
 local MAX_AUTO_ATTEMPTS=5
 local AUTO_RETRY_SECONDS=1.5
+-- Runtime-only evidence, not a claim that another player received chat.
+local lastAutoStage="idle"
+local lastAutoReason="No eligible post-fight event observed this login."
+local lastAutoEventAt=nil
+local function AutoStage(stage,reason)
+    lastAutoStage=stage
+    lastAutoReason=reason
+end
 
 local function Safe(value)
     return value~=nil and
@@ -147,6 +155,23 @@ local function BuildMessages(sources,label,title,perSecond,limit)
     end
     return lines
 end
+-- A queued instance group can be in INSTANCE_CHAT rather than PARTY.
+-- Route only to the real group channel, never to SAY or an unrelated raid.
+local function PartyChannel()
+    if type(IsInGroup)~="function" then return nil end
+    local instance=false
+    if type(LE_PARTY_CATEGORY_INSTANCE)=="number" then
+        local ok,yes=pcall(IsInGroup,LE_PARTY_CATEGORY_INSTANCE)
+        instance=ok and yes==true
+    end
+    local ok,normal=pcall(IsInGroup)
+    if not (instance or (ok and normal==true)) then return nil end
+    if type(IsInRaid)=="function" then
+        local raidOk,raid=pcall(IsInRaid)
+        if not raidOk or raid==true then return nil end
+    end
+    return instance and "INSTANCE_CHAT" or "PARTY"
+end
 local function MessagingRestricted()
     local api=C_ChatInfo
     if not api then return false end
@@ -171,8 +196,9 @@ local function SaveReady(lines,channel,reason)
     if fingerprint==lastPreparedFingerprint then return false end
     readyReport={lines=lines,channel=channel,fingerprint=fingerprint}
     lastPreparedFingerprint=fingerprint
-    Note("Post-fight report ready; meter Menu > Send ready to "..channel..
-        ". "..(reason or "Chat needs a player click."))
+    AutoStage("ready",reason or "Click required to send a report.")
+    Note("Post-fight report ready, but NOT sent. Meter > Menu > Send ready to "..
+        channel..". "..(reason or "Chat needs a player click."))
     return true
 end
 local function SendReport(frame,channel,auto,preparedLines)
@@ -190,10 +216,12 @@ local function SendReport(frame,channel,auto,preparedLines)
     -- Forever's SAY channel can require a hardware event both inside and
     -- outside instances. Never send SAY from unattended callbacks.
     if auto and channel=="SAY" then return false end
-    if channel=="PARTY" and (type(IsInGroup)~="function"
-        or not IsInGroup() or
-        (type(IsInRaid)=="function" and IsInRaid())) then
-        return Reject("PARTY requires a normal party. No message sent.")
+    local target=channel=="PARTY" and PartyChannel() or channel
+    if channel=="PARTY" and not target then
+        if auto then
+            AutoStage("not grouped","No eligible normal/instance party when report was ready.")
+        end
+        return Reject("PARTY requires a normal/instance party (not raid). No message sent.")
     end
     local now=Clock()
     if not now then return Reject("Combat report clock unavailable.") end
@@ -241,7 +269,10 @@ local function SendReport(frame,channel,auto,preparedLines)
     -- Only the local fingerprint uses a newline; no newline goes to chat.
     local fingerprint=table.concat(lines,"\n")
     if auto and fingerprint==lastAutoMessage then return false end
-    if auto and MessagingRestricted() then return false end
+    if auto and MessagingRestricted() then
+        AutoStage("restricted","Client currently restricts outgoing addon-created chat.")
+        return false
+    end
     -- As in Details!, send ordinary chat lines in order with small spacing.
     -- Group chat permits deferred addon messages. For SAY, use the actual
     -- user click for every line so hardware-event restrictions still apply.
@@ -250,20 +281,26 @@ local function SendReport(frame,channel,auto,preparedLines)
         type(C_Timer.After)=="function")
     local function Finished()
         reportInProgress=false
-        if auto then lastAutoAt=now;lastAutoMessage=fingerprint end
+        if auto then
+            lastAutoAt=now
+            lastAutoMessage=fingerprint
+            AutoStage("submitted","Chat API accepted the report request to "..target..
+                "; recipient delivery is not yet verified.")
+        end
         if readyReport and readyReport.fingerprint==fingerprint then
             readyReport=nil
         end
-        Note((auto and "Auto report" or "Report").." requested in "..channel..
-            " (delivery is controlled by the game).")
+        Note((auto and "Auto report" or "Report").." submitted to "..target..
+            " (recipient delivery NOT verified).")
     end
     local SendLine
     SendLine=function(i)
-        local ok,result=pcall(send,lines[i],channel)
+        local ok,result=pcall(send,lines[i],target)
         if not ok or (Safe(result) and result==false) then
             reportInProgress=false
             if auto then
-                SaveReady(lines,channel,"The client declined automatic chat.")
+                AutoStage("rejected","Chat API rejected line "..i.." on "..target..".")
+                SaveReady(lines,channel,"Chat API rejected an automatic send.")
             else
                 local detail=not ok and Safe(result) and type(result)=="string"
                     and result:sub(1,180) or "chat API returned false"
@@ -298,6 +335,11 @@ function ChalkBox_NativeMeterStatus()
     local db=Settings()
     return {installed=installed,enabled=Enabled(),rows=db.nativeReportRows,
         auto=db.nativeAutoPrint,channel=db.nativeAutoChannel,
+        actualGroupChannel=PartyChannel(),
+        stage=lastAutoStage,reason=lastAutoReason,
+        lastFightEventAt=lastAutoEventAt,
+        waiting=pendingDelay~=nil,attempts=autoAttempts,
+        chatRestricted=MessagingRestricted(),
         ready=readyReport~=nil,
         readyChannel=readyReport and readyReport.channel or nil,
         minFight=db.nativeAutoMinFight,cooldown=db.nativeAutoCooldown,
@@ -322,6 +364,9 @@ function ChalkBox_NativeMeterCommand(message)
         Note("Native meter reports "..(db.nativePrint and "ON" or "OFF")..".")
     elseif value=="auto on" or value=="auto off" then
         db.nativeAutoPrint=value=="auto on"
+        AutoStage(db.nativeAutoPrint and "armed" or "off",
+            db.nativeAutoPrint and "Waiting for next eligible combat." or
+            "Auto-report switched off.")
         if not db.nativeAutoPrint then
             pendingDelay=nil
             readyReport=nil
@@ -349,6 +394,14 @@ function ChalkBox_NativeMeterCommand(message)
             " | Top "..st.rows.." | Auto "..(st.auto and "ON" or "OFF")..
             " to "..st.channel.." | "..st.metric..
             " | min "..st.minFight.."s | pause "..st.cooldown.."s")
+        Note("Auto state: "..st.stage.." | "..st.reason)
+        Note("Group route: "..(st.actualGroupChannel or "NONE")..
+            " | chat restriction: "..(st.chatRestricted and "YES" or "NO")..
+            " | retries "..st.attempts.." | pending "..(st.waiting and
+            "YES" or "NO").." | ready to click "..(st.ready and "YES" or "NO"))
+        if st.auto and st.channel=="SAY" then
+            Note("Auto to SAY is click-to-send only. Choose PARTY for unattended group reports.")
+        end
     end
 end
 local function Install()
@@ -434,16 +487,26 @@ events:SetScript("OnEvent",function(_,event,name)
     elseif event=="PLAYER_REGEN_DISABLED" then
         combatStartedAt=Clock()
         pendingDelay=nil
+        if Settings().nativeAutoPrint then
+            AutoStage("combat","Combat started; measuring eligibility.")
+        end
     elseif event=="PLAYER_REGEN_ENABLED" then
         local finishedAt=Clock()
         local startedAt=combatStartedAt
         combatStartedAt=nil
         local db=Settings()
-        if Enabled() and db.nativeAutoPrint and finishedAt and startedAt
-            and finishedAt>=startedAt
-            and finishedAt-startedAt>=db.nativeAutoMinFight then
-            pendingDelay=2
-            autoAttempts=0
+        if Enabled() and db.nativeAutoPrint then
+            lastAutoEventAt=finishedAt
+            if not startedAt or not finishedAt or finishedAt<startedAt then
+                AutoStage("skipped","No matching combat-start time or clock.")
+            elseif finishedAt-startedAt<db.nativeAutoMinFight then
+                AutoStage("skipped","Combat shorter than minimum "..
+                    db.nativeAutoMinFight.." seconds.")
+            else
+                pendingDelay=2
+                autoAttempts=0
+                AutoStage("waiting","Fight ended; awaiting Blizzard's completed session.")
+            end
         end
     end
 end)
@@ -461,47 +524,65 @@ events:SetScript("OnUpdate",function(_,elapsed)
     if not Number(elapsed) or elapsed<0 then return end
     if type(InCombatLockdown)=="function" and InCombatLockdown() then
         pendingDelay=nil
+        AutoStage("skipped","Entered combat again before report was ready.")
         return
     end
     pendingDelay=pendingDelay-elapsed
-    if pendingDelay<=0 then
-        pendingDelay=nil
-        local db=Settings()
-        if not Enabled() or not db.nativeAutoPrint then return end
-        local lines,reason=PrepareAuto()
-        if not lines then
-            autoAttempts=autoAttempts+1
-            if autoAttempts<MAX_AUTO_ATTEMPTS then
-                -- Forever's server may finalize the previous fight later
-                -- than the first two seconds after PLAYER_REGEN_ENABLED.
-                pendingDelay=AUTO_RETRY_SECONDS
-            else
-                Note("Auto report couldn't read a completed fight: "..
-                    (reason or "no data")..
-                    ". Check the native meter after combat.")
-            end
-            return
+    if pendingDelay>0 then return end
+    pendingDelay=nil
+    local db=Settings()
+    if not Enabled() or not db.nativeAutoPrint then
+        AutoStage("off","Auto report was disabled before sending.")
+        return
+    end
+    local lines,reason=PrepareAuto()
+    if not lines then
+        autoAttempts=autoAttempts+1
+        if autoAttempts<MAX_AUTO_ATTEMPTS then
+            AutoStage("waiting","Native fight data not yet available; retry "..
+                autoAttempts.."/"..MAX_AUTO_ATTEMPTS..".")
+            pendingDelay=AUTO_RETRY_SECONDS
+        else
+            AutoStage("no data",reason or "No completed fight values.")
+            Note("Auto report NOT sent: "..lastAutoReason)
         end
-        local channel=db.nativeAutoChannel
-        local fingerprint=table.concat(lines,"\n")
-        if fingerprint==lastAutoMessage or
-            fingerprint==lastPreparedFingerprint then return end
-        local now=Clock()
-        if now and now-lastAutoAt<db.nativeAutoCooldown then return end
-        -- PARTY may be permitted in a normal group outside chat lockdown.
-        -- Automatic SAY requires a hardware event on Forever: never try.
-        local mayAuto=channel=="PARTY" and not MessagingRestricted()
-            and type(IsInGroup)=="function" and IsInGroup()
-            and (type(IsInRaid)~="function" or not IsInRaid())
-        if mayAuto then
-            local sent=SendReport(nil,channel,true,lines)
-            if sent then return end
+        return
+    end
+    local channel=db.nativeAutoChannel
+    local fingerprint=table.concat(lines,"\\n")
+    if fingerprint==lastAutoMessage or
+        fingerprint==lastPreparedFingerprint then
+        AutoStage("duplicate","Completed report matches one already submitted/prepared.")
+        return
+    end
+    local now=Clock()
+    if now and now-lastAutoAt<db.nativeAutoCooldown then
+        AutoStage("cooldown","Another auto report was submitted within "..
+            db.nativeAutoCooldown.." seconds.")
+        return
+    end
+    if channel=="SAY" then
+        SaveReady(lines,channel,"Auto SAY requires a click; choose PARTY for group auto.")
+        return
+    end
+    if not PartyChannel() then
+        SaveReady(lines,channel,"Not in an eligible party at report time.")
+        return
+    end
+    if MessagingRestricted() then
+        autoAttempts=autoAttempts+1
+        if autoAttempts<MAX_AUTO_ATTEMPTS then
+            AutoStage("waiting","Chat restricted after fight; retry "..
+                autoAttempts.."/"..MAX_AUTO_ATTEMPTS..".")
+            pendingDelay=AUTO_RETRY_SECONDS
+        else
+            SaveReady(lines,channel,"Chat still restricted after retries; click Send ready.")
         end
-        -- Do not silently swallow restrictions; offer a real click using
-        -- the existing meter gear menu and the prepared, sanitized summary.
-        if SaveReady(lines,channel,
-            "Forever may require a player click to send chat.") then
-            lastAutoAt=now or lastAutoAt
-        end
+        return
+    end
+    AutoStage("sending","Sending to "..(PartyChannel() or "PARTY")..".")
+    if not SendReport(nil,channel,true,lines) then
+        -- We cannot force restricted chat, but never hide an eligible report.
+        SaveReady(lines,channel,"Automatic delivery was declined; click Send ready.")
     end
 end)
