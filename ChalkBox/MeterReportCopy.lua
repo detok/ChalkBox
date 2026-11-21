@@ -1,3 +1,6 @@
+-- RETIRED. This file is not listed in ChalkBox.toc or ChalkBox_Camelot.toc.
+-- Do not add it back to the load list. The combat meter no longer opens a copy window.
+-- It remains in the source tree so the old behavior can still be read and tested.
 -- Read-only report copy window. This is a manual alternative when Forever
 -- refuses addon-created party / say messages. It never sends chat itself.
 local window,edit
