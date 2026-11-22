@@ -1,3 +1,6 @@
+-- RETIRED. This file is not listed in ChalkBox.toc or ChalkBox_Camelot.toc.
+-- Do not add it back to the load list. It can send party and say chat.
+-- It remains in the source tree so the old behavior can still be read and tested.
 -- ChalkBox report controls for Blizzard's native damage-meter gear menu.
 -- Read Blizzard-owned sessions only; do not guess secret combat data.
 local addonName=...

@@ -16,8 +16,10 @@ local textRows={}
 local current
 local lastClock
 local function Safe(v)
-    return v~=nil and (type(issecretvalue)~="function" or
-        not issecretvalue(v))
+    if type(issecretvalue)=="function" and issecretvalue(v) then
+        return false
+    end
+    return v~=nil
 end
 local function Num(v)
     return Safe(v) and type(v)=="number" and v==v and v>=0 and v<1e12
@@ -36,12 +38,14 @@ end
 local function DB()
     if type(ChalkBoxZoneDB)~="table" then ChalkBoxZoneDB={} end
     local s=ChalkBoxZoneDB.sessionJournal
-    if type(s)~="table" or s.version~=1 then
+    if type(s)~="table" then
         s={version=1,history={}}
         ChalkBoxZoneDB.sessionJournal=s
     end
+    -- An unfamiliar future save is left untouched. Never replace it.
+    if s.version~=1 then return s,false end
     if type(s.history)~="table" then s.history={} end
-    return s
+    return s,true
 end
 local function NewSession()
     return {label=NowLabel(),seconds=0,xp=0,goldNet=0,levels=0,
@@ -53,8 +57,12 @@ end
 local function Advance()
     if not current then return end
     local now=Clock()
-    if lastClock and now and now>=lastClock and now-lastClock<600 then
-        current.seconds=(current.seconds or 0)+(now-lastClock)
+    if lastClock and now and now>=lastClock then
+        local gap=now-lastClock
+        -- Count quiet time. Only ignore a broken clock that jumps a week.
+        if gap>0 and gap<7*24*3600 then
+            current.seconds=(current.seconds or 0)+gap
+        end
     end
     lastClock=now
 end
@@ -90,7 +98,8 @@ end
 local function Finish()
     if not current then return end
     Advance()
-    local s=DB()
+    local s,writable=DB()
+    if not writable then return end
     current.lastXP=nil;current.lastMaxXP=nil
     current.finished=NowLabel()
     s.history[#s.history+1]=current
@@ -100,8 +109,8 @@ local function Finish()
     lastClock=nil
 end
 local function Begin()
-    local s=DB()
-    if current then return end
+    local s,writable=DB()
+    if not writable or current then return end
     if type(s.current)=="table" then
         -- A prior session survived a forced quit without PLAYER_LOGOUT.
         s.current.finished="Recovered from last login"
@@ -135,10 +144,21 @@ function ChalkBox_JournalNoteLoot(quantity,items,areaKey,areaName)
                 Num(count) and count>0 then
                 local key=id:sub(1,10)
                 current.topDrops[key]=(current.topDrops[key] or 0)+count
-                -- Hard cap on unique item labels to avoid bloating SavedVariables.
-                local keys=0
-                for _ in pairs(current.topDrops) do keys=keys+1 end
-                if keys>16 then current.topDrops[key]=nil end
+                -- Keep the 16 highest counts, not the first 16 item IDs seen.
+                local ranked={}
+                for dropID,dropCount in pairs(current.topDrops) do
+                    ranked[#ranked+1]={dropID,dropCount}
+                end
+                if #ranked>16 then
+                    table.sort(ranked,function(a,b)
+                        if a[2]==b[2] then return a[1]<b[1] end
+                        return a[2]<b[2]
+                    end)
+                    while #ranked>16 do
+                        current.topDrops[ranked[1][1]]=nil
+                        table.remove(ranked,1)
+                    end
+                end
             end
         end
     end
@@ -152,19 +172,46 @@ function ChalkBox_JournalNoteRepair(amount)
         current.repairLast=amount
     end
 end
+local function CopySession(source)
+    if type(source)~="table" then return end
+    local out={}
+    for key,value in pairs(source) do
+        if type(value)~="table" then
+            out[key]=value
+        else
+            local inner={}
+            for innerKey,innerValue in pairs(value) do
+                if type(innerValue)~="table" then
+                    inner[innerKey]=innerValue
+                else
+                    local nested={}
+                    for nestedKey,nestedValue in pairs(innerValue) do
+                        nested[nestedKey]=nestedValue
+                    end
+                    inner[innerKey]=nested
+                end
+            end
+            out[key]=inner
+        end
+    end
+    return out
+end
 function ChalkBox_JournalGet(index)
     local s=DB()
-    if index==nil or index==0 then return current or s.current end
+    if index==nil or index==0 then return CopySession(current or s.current) end
     index=tonumber(index)
     if not Num(index) or index<1 or index%1~=0 then return end
-    return s.history[#s.history-index+1]
+    return CopySession(s.history[#s.history-index+1])
 end
 function ChalkBox_JournalStatus()
     local s=DB()
     return {history=#s.history,current=current~=nil}
 end
 local function Money(copper)
-    if not Num(math.abs(copper or 0)) then return "--" end
+    if not Safe(copper) or type(copper)~="number" or copper~=copper then
+        return "--"
+    end
+    if copper>1e12 or copper<-1e12 then return "--" end
     local sign=copper<0 and "-" or "+"
     local v=math.floor(math.abs(copper))
     return ("%s%dg %02ds %02dc"):format(sign,math.floor(v/10000),
@@ -289,7 +336,7 @@ local function Render()
         "Repair merchant quotes observed     "..tostring(entry.repairQuotes or 0),
         "Last repair quote     "..(entry.repairLast and
             Money(entry.repairLast) or "Not observed"),
-        "Most observed items: "..TopDrops(entry),
+        "Top recorded drops: "..TopDrops(entry),
         "Loot regions: "..AreasLine(entry),
         "Only information ChalkBox actually observed is listed.",
     }
@@ -461,6 +508,18 @@ local event=CreateFrame("Frame")
 for _,name in ipairs({"PLAYER_LOGIN","PLAYER_ENTERING_WORLD",
     "PLAYER_XP_UPDATE","PLAYER_MONEY","PLAYER_LEVEL_UP",
     "QUEST_TURNED_IN","PLAYER_LOGOUT"}) do event:RegisterEvent(name) end
+event.elapsed=0
+event:SetScript("OnUpdate",function(_,elapsed)
+    if not window or not window.IsShown or not window:IsShown() then
+        event.elapsed=0
+        return
+    end
+    event.elapsed=event.elapsed+(type(elapsed)=="number" and elapsed or 0)
+    if event.elapsed<5 then return end
+    event.elapsed=0
+    if current then Advance() end
+    Render()
+end)
 event:SetScript("OnEvent",function(_,name)
     if name=="PLAYER_LOGIN" then
         Begin()
