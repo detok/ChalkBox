@@ -93,4 +93,15 @@ C_AuctionHouse.SendBrowseQuery=query
 Fire("AUCTION_HOUSE_CLOSED")
 assert(not ChalkBox_AuctionScan())
 assert(ChalkBox_AuctionPrice(2589).low==1250)
+-- If the extra page cannot be requested, keep the page already in hand.
+Fire("AUCTION_HOUSE_SHOW")
+full=false
+results={{itemKey={itemID=2589},minPrice=900,totalQuantity=3}}
+local moreRequest=C_AuctionHouse.RequestMoreBrowseResults
+C_AuctionHouse.RequestMoreBrowseResults=function() return false end
+assert(ChalkBox_AuctionScan())
+Tick(1.2)
+assert(not ChalkBox_AuctionStatus().busy and ChalkBox_AuctionPrice(2589).low==900,
+    "a refused extra page still saves the results already received")
+C_AuctionHouse.RequestMoreBrowseResults=moreRequest
 print("PASS: AuctionSense synchronous browse response, native page events, real lowest/quantity, no fabricated average/listings, timeout, throttle isolation and snapshot rollback")

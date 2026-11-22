@@ -1,3 +1,7 @@
+# ChalkBox 2.2.30 — stable CurseForge publisher kit
+
+**Stable 2.2.30:** Meter, bar, auction scans, and data transfer. Saved data is kept.
+
 # ChalkBox 2.2.29 — stable CurseForge publisher kit
 
 
