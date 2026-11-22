@@ -304,13 +304,7 @@ local function OnRegen(enabled)
 end
 local frame=CreateFrame("Frame")
 frame:SetScript("OnEvent",function(_,event,unit)
-    if event=="COMBAT_LOG_EVENT_UNFILTERED" then
-        if type(CombatLogGetCurrentEventInfo)=="function" then
-            pcall(function()
-                ChalkBox_PersonalMeterIngest(CombatLogGetCurrentEventInfo())
-            end)
-        end
-    elseif event=="PLAYER_REGEN_DISABLED" then
+    if event=="PLAYER_REGEN_DISABLED" then
         OnRegen(false)
     elseif event=="PLAYER_REGEN_ENABLED" then
         OnRegen(true)
@@ -321,7 +315,7 @@ frame:SetScript("OnEvent",function(_,event,unit)
         end
     end
 end)
-for _,event in ipairs({"COMBAT_LOG_EVENT_UNFILTERED","PLAYER_REGEN_DISABLED",
+for _,event in ipairs({"PLAYER_REGEN_DISABLED",
     "PLAYER_REGEN_ENABLED","UNIT_PET","PLAYER_LOGIN","PLAYER_ENTERING_WORLD"}) do
     pcall(frame.RegisterEvent,frame,event)
 end
