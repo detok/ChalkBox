@@ -1,6 +1,6 @@
 # Troubleshooting ChalkBox
 
-**Current stable baseline: 2.2.29 · World of Warcraft: Forever**
+**Current stable baseline: 2.2.38 · World of Warcraft: Forever**
 
 This page covers issues you can diagnose safely without deleting SavedVariables, reinstalling unrelated addons or modifying Blizzard's protected interface.
 

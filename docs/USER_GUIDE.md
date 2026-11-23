@@ -19,7 +19,7 @@
 
 **Previous 2.2.29:** Original AuctionSense Market/scanning interface restored. The experimental Intelligence Lab is paused; its saved data is preserved. ChalkBox Combat Meter reporting is completely removed, while the local meter display remains.
 
-**ChalkBox 2.2.29 (stable) · World of Warcraft: Forever**
+**ChalkBox 2.2.38 (stable) · World of Warcraft: Forever**
 
 ChalkBox is a set of optional quality-of-life features inside **one addon**. Use Blizzard's **Options → AddOns → ChalkBox** pages or type `/chalk` (also `/cb`). Features that display observations are not proofs of unseen game data; ChalkBox should be conservative when Forever withholds information.
 
@@ -170,4 +170,4 @@ Start with [Troubleshooting](TROUBLESHOOTING.md), then [Commands](COMMANDS.md) f
 **2.2.25 GitHub beta:** Adds the bank vendor-value label, per-module Trail Bar widths, standard ranked combat chat, experimental price-history charts and optional map additions. Read the [current release notes](RELEASE_NOTES.md). **2.2.22 remains the last fully accepted stable release.**
 
 
-**Developer beta:** ChalkBox 2.2.27 is a QuestSense Smart experiment; 2.2.26 remains the supported stable release. [Beta notes](https://github.com/detok/ChalkBox/blob/feature/smart-quest-native-priorities/docs/RELEASE_NOTES.md).
+Development pull requests may include features that are not in a published build. Use the latest addon ZIP listed in [GitHub Releases](https://github.com/detok/ChalkBox/releases/latest).

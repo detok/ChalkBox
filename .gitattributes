@@ -1,1 +1,6 @@
-*.lua text eol=lf\n*.toc text eol=lf\n*.py text eol=lf\n*.md text eol=lf\n*.yml text eol=lf\n*.tga binary\n
+*.lua text eol=lf
+*.toc text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.tga binary

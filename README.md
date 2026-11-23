@@ -45,11 +45,11 @@ Everything is optional. Set up ChalkBox your way from the in-game AddOns setting
 
 ## Install
 
-Download **ChalkBox-2.2.29.zip** from [GitHub Releases](https://github.com/detok/ChalkBox/releases/latest) or an approved CurseForge file. Extract the included `ChalkBox` folder to `Interface/AddOns/`, then type **`/chalk`**. Keep SavedVariables when updating.
+Download **ChalkBox-2.2.38.zip** from [GitHub Releases](https://github.com/detok/ChalkBox/releases/latest) or an approved CurseForge file. Extract the included `ChalkBox` folder to `Interface/AddOns/`, then type **`/chalk`**. Keep SavedVariables when updating.
 
-**Version 2.2.29 · WoW Forever** · [What's new](docs/RELEASE_NOTES.md) · [User guide](docs/USER_GUIDE.md)
+**Version 2.2.38 · WoW Forever** · [What's new](docs/RELEASE_NOTES.md) · [User guide](docs/USER_GUIDE.md)
 
 ChalkBox is an independent community addon. [MIT license](LICENSE); bundled libraries retain their own notices. Observed loot rates and auction asking prices are estimates, not official drop rates or completed sales.
 
 
-**Stable 2.2.29:** Restores the previous AuctionSense Market/scanner, removes all DPS reporting and preserves other consolidated features.
+**Stable 2.2.38:** Includes the Market fixes, taint diagnostics, journal updates, and the combat-meter startup fix. [Release notes](docs/RELEASE_NOTES.md).

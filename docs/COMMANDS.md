@@ -109,7 +109,7 @@ The Bar's fresh layout differs from players' older saved layouts; upgrades do **
 | `/chalk meter current` / `last` / `overall` | Select combat session |
 | `/chalk meter dps` / `damage` / `healing` | Select supported display mode |
 | `/chalk meter reset` | Request reset confirmation |
-| `/chalk meter status` | Says whether the numbers come from Blizzard's meter or your own combat log, and why the window is empty if it is |
+| `/chalk meter status` | Reports whether Blizzard's damage meter is available and why the window is empty |
 | `/chalk meter rows 5` / `8` / `12` | Limit visible rows, up to five by default; raise cap for raids |
 | `/chalk meter opacity 0-100` | Adjust **background only**; keeps names, icons and values readable |
 | `/chalk meter lock` / `unlock` | Lock/drag and resize the compact window |
@@ -125,7 +125,7 @@ The Bar's fresh layout differs from players' older saved layouts; upgrades do **
 | `/chalk guard duel on` / `off` | Configure a single filter; other keys: guild, party, trade, channel |
 | `/chalk update` | Installed version and GitHub release link |
 
-The compact Combat Meter shows Blizzard's numbers when that feed is readable. When it is missing, locked, or empty, the window switches to a personal combat-log count of your damage and your pet, using its own fight timer. No PARTY/SAY printing. Legacy print commands are silent.
+The compact Combat Meter displays Blizzard's native numbers when available. WoW Forever blocks addons from reading the combat log, so ChalkBox does not register for that event or provide a personal combat-log fallback. No PARTY/SAY printing. Legacy print commands are silent.
 
 Run the exact `status` command for the affected module before opening a [bug report](https://github.com/detok/ChalkBox/issues/new/choose). An error message is much more useful than "doesn't work." The complete source handlers are in `ChalkBox/LootSense.lua` (root command dispatcher) and the individual module files.
 

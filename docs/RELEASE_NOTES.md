@@ -1,6 +1,6 @@
 # ChalkBox 2.2.38 — Stable WoW Forever Release
 
-Includes 2.2.37. `/chalk taintcheck` now keeps the last blocked actions, with the function name, the module, the stack, and the time, so the next popup can be named. A bag nudge of zero no longer hooks Blizzard's bag layout at login. The storybook and adventure chronicle use the same frame and Close button as the session journal, and Escape closes them.
+Includes 2.2.37. `/chalk taintcheck` now keeps the last blocked actions, with the function name, the module, the stack, and the time, so the next popup can be named. A bag nudge of zero no longer hooks Blizzard's bag layout at login. The storybook and adventure chronicle use the same frame and Close button as the session journal, and Escape closes them. The combat meter no longer registers for WoW Forever's blocked combat-log event and continues to use Blizzard's native damage feed.
 
 ## Previous: 2.2.37
 
@@ -44,7 +44,7 @@ Includes everything in 2.2.30. The session journal now counts long quiet time, k
 
 The meter, the bar, auction scans, and moving your saved data now work as one addon. Your existing SavedVariables, layouts, and widths are kept.
 
-- **Combat meter:** `/chalk meter status` says why the window is empty. Locked combat numbers no longer crash it. An empty live fight stays empty until you choose Last. Pets are labeled as pets. The window keeps the size you drag. When Blizzard's built-in meter is missing, locked, or empty, the window counts your damage and your pet from the combat log with its own fight timer.
+- **Combat meter:** `/chalk meter status` says why the window is empty. Locked combat numbers no longer crash it. An empty live fight stays empty until you choose Last. Pets are labeled as pets. The window keeps the size you drag. It uses Blizzard's native feed only; WoW Forever blocks addon access to the combat log.
 - **The Bar:** The gold resize grip actually drags. Words stay inside each stat. Icons stay off until you turn them on with `/chalk bar icons on`. Saved widths are not rewritten.
 - **Auction scans:** A browse that cannot load another page keeps the prices it already has. If the modern auction API is missing, the classic auction list is read instead. Failed scans still leave the last good snapshot alone.
 - **Auction house tab:** Protected auction tabs are not given an addon click hook. Market still does not change Blizzard's auction mode.

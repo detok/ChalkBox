@@ -81,6 +81,7 @@ FILES = (
     "Storybook.lua",
     "TrailBarStats.lua",
     "TrailBarLayout.lua",
+    "TaintGuard.lua",
     "ScreenLayout.lua",
     "TrailBar.lua",
     "BagLayout.lua",

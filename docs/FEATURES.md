@@ -102,9 +102,9 @@ ChalkBox is one optional companion. It reads the game and shows notes. It does n
 
 ## Combat meter
 
-**Supposed to:** A personal window for damage, healing, and a few other combat totals. It starts closed. When Blizzard's own meter returns readable rows, those numbers are shown. When that feed is missing, locked, or empty, the window counts the player's own damage and their pet from the combat log, with the player's own fight timer. Other people are not included. The window keeps the size the player dragged. Pets are labeled as pets. Nothing is printed to chat.
+**Supposed to:** A personal window for Blizzard's damage, healing, and other combat totals. It starts closed and displays native rows when that feed is available. WoW Forever blocks addons from reading its combat log, so ChalkBox does not subscribe to that event or provide a fallback combat-log count. The window keeps the size the player dragged. Pets in Blizzard's rows are labeled as pets. Nothing is printed to chat.
 
-**Status:** Works in 2.2.30. The old "no numbers, and clicks say the addon failed" report is what the personal fallback and the locked-value guards are for. Chat reports stay retired.
+**Status:** Native feed and locked-value handling are covered by the regression suite. If the game has no readable native rows, the meter explains that state; a backup combat-log reader is intentionally disabled. Chat reports stay retired.
 
 ## Session journal
 

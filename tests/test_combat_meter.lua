@@ -132,6 +132,10 @@ local function Widget(kind,name,parent)
 end
 _G.CreateFrame=Widget
 assert(loadfile("CombatLogMeter.lua"))("ChalkBox")
+local personalMeterFrame=frames[#frames]
+assert(personalMeterFrame.events and
+    not personalMeterFrame.events.COMBAT_LOG_EVENT_UNFILTERED,
+    "WoW Forever blocks addon combat-log access; never register the event")
 assert(loadfile("CombatMeter.lua"))("ChalkBox")
 local event
 for _,f in ipairs(frames) do

@@ -321,7 +321,9 @@ frame:SetScript("OnEvent",function(_,event,unit)
         end
     end
 end)
-for _,event in ipairs({"COMBAT_LOG_EVENT_UNFILTERED","PLAYER_REGEN_DISABLED",
+-- WoW Forever blocks addon access to COMBAT_LOG_EVENT_UNFILTERED. Do not
+-- subscribe to it: native Blizzard damage data is the supported meter feed.
+for _,event in ipairs({"PLAYER_REGEN_DISABLED",
     "PLAYER_REGEN_ENABLED","UNIT_PET","PLAYER_LOGIN","PLAYER_ENTERING_WORLD"}) do
     pcall(frame.RegisterEvent,frame,event)
 end
