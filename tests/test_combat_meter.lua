@@ -131,6 +131,11 @@ local function Widget(kind,name,parent)
     return w
 end
 _G.CreateFrame=Widget
+assert(loadfile("CombatLogMeter.lua"))("ChalkBox")
+local personalMeterFrame=frames[#frames]
+assert(personalMeterFrame.events and
+    not personalMeterFrame.events.COMBAT_LOG_EVENT_UNFILTERED,
+    "WoW Forever blocks addon combat-log access; never register the event")
 assert(loadfile("CombatMeter.lua"))("ChalkBox")
 local event
 for _,f in ipairs(frames) do
@@ -163,18 +168,21 @@ assert(callCount==0,"hidden heartbeat must not poll native combat data")
 ChalkBox_MeterCommand("show")
 Flush()
 assert(lastMeterType==1 and lastSession==1,"manual show defaults to current DPS")
+local shown=ChalkBox_MeterStatus()
+assert(shown.feed=="blizzard" and shown.reason=="showing",
+    "status names the live feed and why the window looks the way it does")
 local bars,labels={},{}
 for _,f in ipairs(frames) do
     if f.kind=="StatusBar" then bars[#bars+1]=f end
     if f.kind=="FontString" then labels[#labels+1]=f end
 end
 assert(#bars==12,"five default rows and seven latent raid row bars")
-assert(window.h==141 and bars[1].parent.shown and not bars[4].parent.shown,
-    "three recorded combatants produce only three populated rows, no blank slots")
+assert(window.h==191 and bars[1].parent.shown and not bars[4].parent.shown,
+    "three recorded combatants fill three rows inside the saved window")
 ChalkBox_MeterCommand("rows 8")
 Flush()
-assert(ChalkBox_MeterStatus().rows==8 and window.h==141,
-    "raid row cap may expand but height still follows actual combatants")
+assert(ChalkBox_MeterStatus().rows==8 and window.h==266,
+    "raising the row cap keeps that height instead of collapsing")
 ChalkBox_MeterCommand("rows 5")
 Flush()
 assert(bars[1].value==rawValue and bars[1].max==maxValue,
@@ -312,6 +320,10 @@ grip.script.OnMouseUp(grip)
 assert(ChalkBoxDB.meter.width==422 and ChalkBoxDB.meter.rows==10,
     "dragged width/height turn into saved width and visible row count")
 assert(window.w==422 and window.h==316,"resized meter keeps dimensions")
+Flush()
+event.script.OnUpdate(event,0.8)
+assert(window.h==316 and window.w==422,
+    "a later refresh does not shrink a size the player just dragged")
 -- No combat-session event was fired: the visible-only heartbeat still
 -- repaints one bounded native sample instead of leaving values stale.
 Flush()
@@ -356,10 +368,13 @@ ChalkBox_MeterCommand("native status")
 assert(#chat==reportChatBefore and #rawPartyMessages==reportSendBefore,
     "old print commands make no chat messages and cannot send anything")
 assert(resetCount==1,"report commands do not reset Blizzard sessions")
--- Once a fight completes, empty Current must display the last native
--- session rather than an apparently broken all-zero meter.
+-- An empty current fight must stay empty. Last is only shown when chosen.
+Flush()
 local fallbackGetter=C_DamageMeter.GetCombatSessionFromType
+local askedExpired=false
 C_DamageMeter.GetCombatSessionFromType=function(session,kind)
+    _G.lastSession=session
+    if session==Enum.DamageMeterSessionType.Expired then askedExpired=true end
     if session==Enum.DamageMeterSessionType.Current then
         return {maxAmount=0,combatSources={}}
     end
@@ -367,9 +382,10 @@ C_DamageMeter.GetCombatSessionFromType=function(session,kind)
 end
 ChalkBox_MeterCommand("current")
 Flush()
-assert(lastSession==Enum.DamageMeterSessionType.Expired and
-    bars[1].parent.value.text~=nil,
-    "compact display falls back to Last after Current becomes empty")
+assert(lastSession==Enum.DamageMeterSessionType.Current and
+    not askedExpired and bars[1].parent.value.text=="",
+    "empty current fight does not silently show the previous pull")
+assert(ChalkBox_MeterStatus().reason=="empty")
 C_DamageMeter.GetCombatSessionFromType=fallbackGetter
 -- An intermittent player entry failure must not prevent other rows from
 -- showing, nor retain a stale player number.
@@ -397,6 +413,31 @@ Flush()
 assert(thirdValueLabel.text=="",
     "unused combat rows clear stale numerical text as well as names")
 C_DamageMeter.GetCombatSessionFromType=fewer
+local availableCheck=C_DamageMeter.IsDamageMeterAvailable
+C_DamageMeter.IsDamageMeterAvailable=function() return Secret(true) end
+ChalkBox_MeterCommand("dps")
+Flush()
+assert(ChalkBox_MeterStatus().reason=="secret" and
+    not ChalkBox_MeterStatus().displayError,
+    "a locked availability flag is reported instead of crashing the meter")
+C_DamageMeter.IsDamageMeterAvailable=availableCheck
+local petGetter=C_DamageMeter.GetCombatSessionFromType
+C_DamageMeter.GetCombatSessionFromType=function()
+    return {maxAmount=100,combatSources={
+        {name="Wolf",isPet=true,isLocalPlayer=false,
+            amountPerSecond=40,totalAmount=400},
+        {name="",isPet=true,isLocalPlayer=false,
+            amountPerSecond=10,totalAmount=80},
+    }}
+end
+ChalkBox_MeterCommand("damage")
+Flush()
+assert(bars[1].parent.playerName.text=="Wolf" and
+    icons[1].texturePath=="Interface\\Icons\\Ability_Hunter_BeastCall",
+    "a named pet keeps its name and uses the pet icon")
+assert(bars[2].parent.playerName.text=="Pet",
+    "an unnamed pet is labeled Pet instead of a player class")
+C_DamageMeter.GetCombatSessionFromType=petGetter
 local api=C_DamageMeter
 C_DamageMeter=nil
 ChalkBox_MeterCommand("status")
@@ -404,6 +445,17 @@ assert(chat[#chat]:find("unavailable",1,true),"native API absence is explicit")
 ChalkBox_MeterCommand("dps")
 Flush()
 assert(window.shown)
+ChalkBox_PersonalMeterIngest(1,"SWING_DAMAGE",false,
+    "Player-1","Detok",0x401,0,"Creature-1","Boar",0,0,250)
+ChalkBox_PersonalMeterIngest(1,"SWING_DAMAGE",false,
+    "Pet-1","Wolf",0x1101,0,"Creature-1","Boar",0,0,50)
+ChalkBox_MeterCommand("dps")
+Flush()
+assert(ChalkBox_MeterStatus().feed=="personal" and
+    bars[1].parent.playerName.text=="Detok" and
+    tonumber(bars[1].parent.value.text)==250 and
+    bars[2].parent.playerName.text=="Wolf",
+    "a missing built-in meter shows your damage and your pet from the combat log")
 event.script.OnEvent(event,"PLAYER_LOGIN")
 assert(not window.shown and ChalkBoxDB.meter.shown==false,
     "previously open meter starts closed on a fresh login")

@@ -1,3 +1,58 @@
+# ChalkBox 2.2.38 — Stable WoW Forever Release
+
+Includes 2.2.37. `/chalk taintcheck` now keeps the last blocked actions, with the function name, the module, the stack, and the time, so the next popup can be named. A bag nudge of zero no longer hooks Blizzard's bag layout at login. The storybook and adventure chronicle use the same frame and Close button as the session journal, and Escape closes them. The combat meter no longer registers for WoW Forever's blocked combat-log event and continues to use Blizzard's native damage feed.
+
+## Previous: 2.2.37
+
+# ChalkBox 2.2.37 — Stable WoW Forever Release
+
+Includes 2.2.36. A blank normalized realm name no longer makes the Market tab and the scan say the realm is missing. The ordinary realm name is used, and an existing saved market stays on the tab under its original key.
+
+## Previous: 2.2.36
+
+# ChalkBox 2.2.36 — Stable WoW Forever Release
+
+Includes 2.2.35. The "ChalkBox Emota / UNKNOWN()" line on /reload came from calling the emote through pcall while the one-second wait had already expired. Automatic emotes now wait until the world has been up for five seconds, and the emote is called directly. After that, Emota behaves as before.
+
+## Previous: 2.2.35
+
+# ChalkBox 2.2.35 — Stable WoW Forever Release
+
+Includes 2.2.33. Automatic emotes wait one second after login or a UI reload, so the blocked-action popup does not appear. Idle, combat, level-up, chat, and the Emota buttons are unchanged after that second.
+
+## Previous: 2.2.33
+
+# ChalkBox 2.2.33 — Stable WoW Forever Release
+
+Includes 2.2.32. Login no longer moves Blizzard's minimap, buffs, unit frames, or bag anchors, so the blocked-action message at startup is gone. `/chalk taintcheck` reports the last block. The Black Market list is saved apart from auction asking prices.
+
+## Previous: 2.2.32
+
+# ChalkBox 2.2.32 — Stable WoW Forever Release
+
+Includes 2.2.31. The auction Scan Market button always responds. The Adventure Chronicle records new milestones. Inventory Intelligence is back and stays off until enabled. Fill price can copy a saved ask into the sell box when you click it. `/chalk journal` opens the storybook. Saved data is kept.
+
+## Previous: 2.2.31
+
+# ChalkBox 2.2.31 — Stable WoW Forever Release
+
+Includes everything in 2.2.30. The session journal now counts long quiet time, keeps the highest loot counts, and will not erase an unfamiliar save. `docs/FEATURES.md` is the list of what each feature is supposed to do. Saved data is kept.
+
+## Previous: 2.2.30
+
+# ChalkBox 2.2.30 — Stable WoW Forever Release
+
+The meter, the bar, auction scans, and moving your saved data now work as one addon. Your existing SavedVariables, layouts, and widths are kept.
+
+- **Combat meter:** `/chalk meter status` says why the window is empty. Locked combat numbers no longer crash it. An empty live fight stays empty until you choose Last. Pets are labeled as pets. The window keeps the size you drag. It uses Blizzard's native feed only; WoW Forever blocks addon access to the combat log.
+- **The Bar:** The gold resize grip actually drags. Words stay inside each stat. Icons stay off until you turn them on with `/chalk bar icons on`. Saved widths are not rewritten.
+- **Auction scans:** A browse that cannot load another page keeps the prices it already has. If the modern auction API is missing, the classic auction list is read instead. Failed scans still leave the last good snapshot alone.
+- **Auction house tab:** Protected auction tabs are not given an addon click hook. Market still does not change Blizzard's auction mode.
+- **Bags and quests:** A protected bag frame is not nudged. The quest menu attaches only to a real tracker header.
+- **Data transfer:** Export and import copy the real records. Counts keep the higher number, and a backup is saved before anything changes.
+
+## Previous: 2.2.29
+
 # ChalkBox 2.2.29 — Stable WoW Forever Release
 
 **CurseForge-ready stable build.** One installable ZIP carries ChalkBox and its optional data-transfer helper.

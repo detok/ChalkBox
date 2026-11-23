@@ -61,15 +61,49 @@ local function State()
     if not Integer(db.nextAllowed) then db.nextAllowed=0 end
     return db
 end
-local function MarketID()
-    local realm=Call(GetNormalizedRealmName) or Call(GetRealmName)
-    local faction=Call(UnitFactionGroup,"player")
-    if not Safe(realm) or type(realm)~="string" or #realm==0 or
-        not Safe(faction) or type(faction)~="string" or #faction==0 then
-        return nil
+local function PublicName(value)
+    if not Safe(value) or type(value)~="string" then return nil end
+    if value:gsub("%s+","")=="" then return nil end
+    return value
+end
+local function RealmName()
+    -- A blank or hidden normalized name must not block GetRealmName.
+    -- An empty string is truthy, so it used to skip the fallback and the
+    -- Market tab reported the realm as missing.
+    return PublicName(Call(GetNormalizedRealmName))
+        or PublicName(Call(GetRealmName))
+        or (type(GetCVar)=="function" and PublicName(Call(GetCVar,"realmName")))
+        or nil
+end
+local function SavedMarket(realm)
+    local db=State()
+    local want=realm and realm:lower():gsub("%s+","") or nil
+    local match,only
+    for key,market in pairs(db.markets) do
+        if type(key)=="string" and type(market)=="table" then
+            if only then only=false else only=key end
+            local stored=PublicName(market.realm)
+            stored=stored and stored:lower():gsub("%s+","") or key:match("^([^|]+)")
+            if want and stored==want then match=key end
+        end
     end
-    local normalized=realm:lower():gsub("%s+","")
-    return normalized.."|"..faction:lower(),realm,faction
+    if match then return match,db.markets[match] end
+    if not want and only and only~=false then return only,db.markets[only] end
+end
+local function MarketID()
+    local realm=RealmName()
+    local faction=PublicName(Call(UnitFactionGroup,"player"))
+    if realm and faction then
+        local normalized=realm:lower():gsub("%s+","")
+        return normalized.."|"..faction:lower(),realm,faction
+    end
+    -- Do not invent a new key. Reuse the saved market for this realm, or
+    -- the only saved market, so an existing scan stays readable.
+    local key,market=SavedMarket(realm)
+    if key and market then
+        return key,PublicName(market.realm) or realm,PublicName(market.faction) or faction
+    end
+    return nil
 end
 local function ItemID(item)
     if Integer(item) and item>0 then return item end
@@ -89,18 +123,22 @@ local function FullAH()
 end
 local function BrowseAH()
     local ah=AH()
+    -- Paging helpers are optional. One page of results is still a scan.
     return ah and type(ah.SendBrowseQuery)=="function" and
-        type(ah.GetBrowseResults)=="function" and
-        type(ah.HasFullBrowseResults)=="function" and
-        type(ah.RequestMoreBrowseResults)=="function" and ah or nil
+        type(ah.GetBrowseResults)=="function" and ah or nil
+end
+local function Shown(widget)
+    return widget and type(widget.IsShown)=="function"
+        and Call(widget.IsShown,widget)==true
 end
 local function AtAuctioneer()
     if auctionOpen then return true end
-    local ahFrame=AuctionHouseFrame
-    if ahFrame and type(ahFrame.IsShown)=="function" then
-        return Call(ahFrame.IsShown,ahFrame)==true
-    end
-    return false
+    return Shown(AuctionHouseFrame) or Shown(AuctionFrame)
+end
+local function ClassicReady()
+    return type(QueryAuctionItems)=="function"
+        and type(GetNumAuctionItems)=="function"
+        and type(GetAuctionItemInfo)=="function"
 end
 local function UIRefresh()
     if type(ChalkBox_AuctionRefreshUI)=="function" then
@@ -117,7 +155,8 @@ function ChalkBox_AuctionStatus()
     if not Integer(detailAt) and market and market.source=="full" then
         detailAt=market.scannedAt -- older valid full-scan SavedVariables
     end
-    return {available=BrowseAH()~=nil,fullAvailable=FullAH()~=nil,
+    return {available=BrowseAH()~=nil or ClassicReady(),
+        fullAvailable=FullAH()~=nil or ClassicReady(),
         open=AtAuctioneer(),busy=job~=nil,mode=job and job.mode or lastMode,
         state=state,progress=progress,error=lastError,
         phase=job and job.phase or nil,
@@ -329,6 +368,7 @@ local function Finish(message)
 end
 local function Abort(message)
     lastError=message
+    Note(message)
     Finish(message)
 end
 local function Commit(scan)
@@ -410,14 +450,15 @@ local function Commit(scan)
     progress=100
     lastError=nil
     if scan.mode=="browse" then
+        Note(("Done, %d prices saved."):format(found))
         Finish(("Saved %d browse prices (low + units). Avg/listings require full data"):format(found))
     else
         local partial=(scan.partial or 0)>0 and
             (" (%d listings with uncached names)"):format(scan.partial) or ""
+        Note(("Done, %d prices saved."):format(found))
         Finish(("Saved %d items from %d auctions%s"):format(
             found,scan.total,partial))
     end
-    Note("Saved "..found.." items. Asking prices only, not sales.")
 end
 local function ReadRow(scan,index)
     local ah=AH()
@@ -485,9 +526,10 @@ local function BrowseRead(scan)
     local rows,count={},0
     for _,info in ipairs(results) do
         if type(info)=="table" and type(info.itemKey)=="table" then
-            local id=info.itemKey.itemID
-            local price=info.minPrice
+            local id=info.itemKey.itemID or info.itemKey.itemId or info.itemID
+            local price=info.minPrice or info.buyoutAmount or info.unitPrice
             local qty=info.totalQuantity
+            if not Integer(qty) then qty=info.quantity end
             if Integer(id) and id>0 and Integer(price) and price>0
                 and Integer(qty) and qty>=0 then
                 local key=tostring(id)
@@ -539,6 +581,15 @@ local function StepBrowse(_,elapsed)
     elapsed=type(elapsed)=="number" and elapsed or 0
     scan.elapsed=scan.elapsed+elapsed
     scan.poll=(scan.poll or 0)+elapsed
+    -- Some Forever builds fill GetBrowseResults without the browse event.
+    if not scan.received and scan.elapsed>=0.5 then
+        local ah=BrowseAH()
+        local results=ah and Call(ah.GetBrowseResults)
+        if type(results)=="table" and #results>0 then
+            scan.received=true
+            scan.updated=true
+        end
+    end
     -- The server can fire a browse event with no actual rows. Empty
     -- callbacks are not progress; fail quickly and preserve the old market.
     if (not scan.received or scan.seen==0) and scan.elapsed>=12 then
@@ -558,9 +609,15 @@ local function StepBrowse(_,elapsed)
     if ready then
         state=("Reading market: %d items"):format(scan.itemCount)
         local ah=BrowseAH()
-        if ah and Call(ah.HasFullBrowseResults)==true then
+        local function FinishPage()
             if scan.itemCount>0 then Commit(scan)
             else Abort("No auction results. Previous prices kept.") end
+        end
+        local knownFull=ah and type(ah.HasFullBrowseResults)=="function"
+        local complete=scan.pagingStopped or not knownFull
+            or Call(ah.HasFullBrowseResults)==true
+        if complete then
+            FinishPage()
             return
         end
         -- Request another page only after current results arrive and the
@@ -570,14 +627,25 @@ local function StepBrowse(_,elapsed)
             canSend=Call(ah.IsThrottledMessageSystemReady)==true
         end
         if canSend and scan.seen>0 and scan.elapsed>=scan.nextPageAt
-            and not scan.awaitingPage then
+            and not scan.awaitingPage
+            and type(ah.RequestMoreBrowseResults)=="function" then
             scan.awaitingPage=true
+            scan.pageSeen=scan.seen
             scan.nextPageAt=scan.elapsed+1
             local ok,accepted=pcall(ah.RequestMoreBrowseResults)
             if not ok or accepted==false then
+                -- Keep the page we already have instead of discarding it.
                 scan.awaitingPage=false
-                scan.nextPageAt=scan.elapsed+2
+                scan.pagingStopped=true
+                FinishPage()
+                return
             end
+        elseif scan.awaitingPage and scan.elapsed>=(scan.nextPageAt or 0)+3
+            and scan.seen==scan.pageSeen then
+            scan.awaitingPage=false
+            scan.pagingStopped=true
+            FinishPage()
+            return
         end
         UIRefresh()
     elseif why~="Waiting for browse results" then
@@ -728,6 +796,140 @@ local function AcceptFullResults(elapsed)
     end
     return false
 end
+local function ReadClassicRow(scan,index)
+    local values={pcall(GetAuctionItemInfo,"list",index)}
+    if values[1]~=true then return false end
+    local name,count,buyout=values[2],values[4],values[11]
+    local itemID=values[18]
+    if type(GetAuctionItemLink)=="function" then
+        local link=Call(GetAuctionItemLink,"list",index)
+        if type(link)=="string" then
+            local parsed=tonumber(link:match("item:(%d+)"))
+            if Integer(parsed) then itemID=parsed end
+        end
+    end
+    if not Integer(count) or count<1 then count=1 end
+    if not Integer(buyout) or buyout<=0 then
+        scan.bidOnly=(scan.bidOnly or 0)+1
+        return true
+    end
+    if not Integer(itemID) or itemID<=0 then return false end
+    local id=tostring(itemID)
+    local row=scan.rows[id]
+    if not row then
+        scan.itemCount=(scan.itemCount or 0)+1
+        if scan.itemCount>MAX_ITEMS then scan.tooMany=true;return true end
+        row={name=Safe(name) and type(name)=="string" and name~=""
+                and name:sub(1,76) or ("Item #"..id),
+            low=math.ceil(buyout/count),listings=0,quantity=0,totalCopper=0}
+        scan.rows[id]=row
+    end
+    local price=math.ceil(buyout/count)
+    if price<row.low then row.low=price end
+    if row.quantity+count>=1e15 or row.totalCopper+buyout>=1e15 then
+        scan.tooMany=true
+        return true
+    end
+    row.listings=row.listings+1
+    row.quantity=row.quantity+count
+    row.totalCopper=row.totalCopper+buyout
+    return true
+end
+local function TocVersion()
+    if type(GetBuildInfo)~="function" then return nil end
+    local ok,_,_,toc=pcall(GetBuildInfo)
+    return ok and type(toc)=="number" and toc or nil
+end
+-- Classic list queries put the page number fourth. The later house UI
+-- puts it seventh. Forever's two flavors (11509 and 16001) are both
+-- older than retail's modern browse API, so the short form is used
+-- whenever the old AuctionFrame is the one on screen.
+local function ShortQuery()
+    if AuctionFrame~=nil and AuctionHouseFrame==nil then return true end
+    local toc=TocVersion()
+    if toc and toc<90000 and AuctionHouseFrame==nil
+        and type(C_AuctionHouse)~="table" then
+        return true
+    end
+    return false
+end
+local function SendClassicQuery(scan)
+    if type(CanSendAuctionQuery)=="function" then
+        local ok,ready=pcall(CanSendAuctionQuery)
+        if ok and ready==false then
+            lastError="The auction house is not ready for another query yet."
+            return false
+        end
+    end
+    local page=scan.page or 0
+    local getAll=scan.getAll==true
+    local ok,accepted
+    scan.queryShape=ShortQuery() and "classic-page-4" or "classic-page-7"
+    if scan.queryShape=="classic-page-4" then
+        ok,accepted=pcall(QueryAuctionItems,"",nil,nil,page,false,nil,getAll)
+    else
+        ok,accepted=pcall(QueryAuctionItems,"",nil,nil,nil,nil,nil,
+            page,false,nil,getAll)
+    end
+    return ok and accepted~=false
+end
+local function ReadClassicList(scan)
+    local ok,batch,total=pcall(GetNumAuctionItems,"list")
+    if not ok or not Integer(batch) or batch<0 then return false end
+    scan.gotList=true
+    for index=1,batch do
+        if not ReadClassicRow(scan,index) then return false end
+        if scan.tooMany then
+            Abort("Market too large for safe storage. Previous prices kept.")
+            return true
+        end
+    end
+    local pageSize=type(NUM_AUCTION_ITEMS_PER_PAGE)=="number"
+        and NUM_AUCTION_ITEMS_PER_PAGE or 50
+    local covered=((scan.page or 0)*pageSize)+batch
+    local pages=Integer(total) and total>0 and math.max(1,math.ceil(total/pageSize)) or nil
+    local shownPage=(scan.page or 0)+1
+    state=pages and ("Scanning page "..shownPage.." of "..pages)
+        or ("Scanning page "..shownPage)
+    Note(state)
+    UIRefresh()
+    if scan.getAll or not Integer(total) or total<=0 or covered>=total
+        or batch==0 then
+        Commit(scan)
+        return true
+    end
+    scan.page=(scan.page or 0)+1
+    if not SendClassicQuery(scan) then
+        if scan.itemCount>0 then Commit(scan)
+        else Abort("Auction list query was refused. Previous prices kept.") end
+    end
+    return true
+end
+local function StartClassic(mode,key)
+    job={mode=mode,key=key,rows={},itemCount=0,bidOnly=0,page=0,
+        getAll=mode=="full",elapsed=0,classic=true,total=0}
+    progress=0
+    lastMode=mode
+    lastError=nil
+    state=mode=="full" and "Requesting the classic full auction list..."
+        or "Requesting the classic auction list..."
+    frame:SetScript("OnUpdate",function(_,elapsed)
+        if not job or not job.classic then return end
+        job.elapsed=job.elapsed+(type(elapsed)=="number" and elapsed or 0)
+        if not job.gotList and job.elapsed>=20 then
+            Abort("No auction list arrived in 20s. Previous prices kept.")
+        end
+    end)
+    UIRefresh()
+    if not SendClassicQuery(job) then
+        Abort(lastError or "Auction query was refused. Previous prices kept.")
+        return false,state
+    end
+    state="Scan requested. Waiting for the auction list..."
+    Note(state)
+    UIRefresh()
+    return true
+end
 local function StartScan(mode)
     if job then return false,"Scan already in progress" end
     if not AtAuctioneer() then
@@ -738,6 +940,7 @@ local function StartScan(mode)
     if mode=="browse" then
         local ah=BrowseAH()
         if not ah then
+            if ClassicReady() then return StartClassic("browse",key) end
             lastError="Browse API unavailable on this client"
             state=lastError
             return false,lastError
@@ -757,17 +960,22 @@ local function StartScan(mode)
         local query={searchString="",sorts={},filters={},itemClassFilters={}}
         local ok,accepted=pcall(ah.SendBrowseQuery,query)
         if not ok or accepted==false then
+            if ClassicReady() and StartClassic("browse",key) then
+                return true
+            end
             Abort("Browse request refused. Check the AH and try again.")
             return false,state
         end
         if job and job.mode=="browse" then
-            state="Loading market results..."
+            state="Scan started. Loading market results..."
+            Note(state)
             UIRefresh()
         end
         return true
     end
     local ah=FullAH()
     if not ah then
+        if ClassicReady() then return StartClassic("full",key) end
         lastError="Full listing API unavailable"
         state=lastError
         return false,lastError
@@ -786,7 +994,8 @@ local function StartScan(mode)
     progress=0
     lastMode=mode
     lastError=nil
-    state="Requesting full auction snapshot; waiting for server response..."
+    state="Full scan started. Waiting for the server..."
+    Note(state)
     frame:SetScript("OnUpdate",function(_,elapsed)
         if not job then return end
         if job.phase=="reading" then
@@ -844,6 +1053,30 @@ function ChalkBox_AuctionCommand(cmd)
     elseif cmd=="full" then
         local ok,why=ChalkBox_AuctionFullScan()
         Note(ok and "Full listing scan requested." or why)
+    elseif cmd=="debug" then
+        local throttle="unknown"
+        if type(CanSendAuctionQuery)=="function" then
+            local ok,ready=pcall(CanSendAuctionQuery)
+            throttle=ok and tostring(ready) or "error"
+        else
+            throttle="no CanSendAuctionQuery"
+        end
+        local path=BrowseAH() and "modern browse" or
+            (ClassicReady() and (ShortQuery() and "classic list (page is argument 4)"
+                or "classic list (page is argument 7)") or "no auction API")
+        local fullPath=FullAH() and "modern replicate" or
+            (ClassicReady() and "classic full list" or "no full API")
+        Note("API path: "..path)
+        Note("Full scan path: "..fullPath)
+        Note("Throttle CanSendAuctionQuery="..throttle
+            .." | cooldown "..ChalkBox_AuctionStatus().cooldown.."s")
+        Note("House open: "..tostring(AtAuctioneer())
+            .." | event flag "..tostring(auctionOpen)
+            .." | AuctionHouseFrame "..tostring(AuctionHouseFrame~=nil)
+            .." | AuctionFrame "..tostring(AuctionFrame~=nil))
+        Note("Interface toc "..tostring(TocVersion() or "unknown")
+            .." | last error: "..tostring(lastError or "none")
+            .." | state: "..tostring(state))
     elseif cmd=="status" then
         local status=ChalkBox_AuctionStatus()
         Note(status.state.." | market "..tostring(status.marketKey or "unknown")..
@@ -895,6 +1128,8 @@ local function OnEvent(_,event,name)
     elseif event=="AUCTION_HOUSE_BROWSE_FAILURE" and job and
         job.mode=="browse" then
         Abort("Browse scan failed. Your last snapshot was kept.")
+    elseif event=="AUCTION_ITEM_LIST_UPDATE" and job and job.classic then
+        ReadClassicList(job)
     elseif event=="AUCTION_HOUSE_THROTTLED_MESSAGE_DROPPED"
         and job and job.mode=="full" and job.phase=="waiting" then
         Abort("Full auction request was dropped by the server. "..
@@ -918,7 +1153,8 @@ for _,event in ipairs({"ADDON_LOADED","AUCTION_HOUSE_SHOW",
     "AUCTION_HOUSE_BROWSE_RESULTS_UPDATED",
     "AUCTION_HOUSE_BROWSE_RESULTS_ADDED",
     "AUCTION_HOUSE_BROWSE_FAILURE",
-    "AUCTION_HOUSE_THROTTLED_MESSAGE_DROPPED"}) do
+    "AUCTION_HOUSE_THROTTLED_MESSAGE_DROPPED",
+    "AUCTION_ITEM_LIST_UPDATE"}) do
     pcall(frame.RegisterEvent,frame,event)
 end
 frame:SetScript("OnEvent",OnEvent)

@@ -1,7 +1,23 @@
 <div align="center">
 
 
-**Stable 2.2.29 for WoW Forever:** ChalkBox's personal Combat Meter remains, but all ChalkBox DPS chat reporting (manual and automatic) has been removed. QuestSense, AuctionSense, The Bar, Discoveries and data-transfer improvements from the consolidated beta are included. [Download stable](https://github.com/detok/ChalkBox/releases/tag/v2.2.29).
+**Stable 2.2.38 for WoW Forever:** Journal windows match the other frames, and `/chalk taintcheck` records blocked actions. [Feature list](docs/FEATURES.md).
+
+**Stable 2.2.37 for WoW Forever:** The Market tab shows the realm again. [Feature list](docs/FEATURES.md).
+
+**Stable 2.2.36 for WoW Forever:** Reloading no longer shows the ChalkBox Emota blocked-action line. [Feature list](docs/FEATURES.md).
+
+**Stable 2.2.35 for WoW Forever:** Reloading no longer shows the blocked-action popup. [Feature list](docs/FEATURES.md).
+
+**Stable 2.2.33 for WoW Forever:** Login no longer shows a blocked-action message. Black Market listings stay separate. [Feature list](docs/FEATURES.md).
+
+**Stable 2.2.32 for WoW Forever:** Auction scan answers every click. Chronicle, intelligence, and the storybook are in. [Feature list](docs/FEATURES.md).
+
+**Stable 2.2.31 for WoW Forever:** Same fixes as 2.2.30, plus an honest session journal. [Feature list](docs/FEATURES.md).
+
+**Stable 2.2.30 for WoW Forever:** The combat meter, the bar, auction scans, and saved-data transfer now work together. Your saved layouts and records are kept. [Download stable](https://github.com/detok/ChalkBox/releases/tag/v2.2.30).
+
+**Previous 2.2.29:** ChalkBox's personal Combat Meter remains, but all ChalkBox DPS chat reporting (manual and automatic) has been removed. QuestSense, AuctionSense, The Bar, Discoveries and data-transfer improvements from the consolidated beta are included. [Download stable](https://github.com/detok/ChalkBox/releases/tag/v2.2.29).
 
 <img src="curseforge/artwork/chalkbox-github-header-1600x470.svg" alt="ChalkBox for WoW Forever" width="100%" />
 
@@ -29,11 +45,11 @@ Everything is optional. Set up ChalkBox your way from the in-game AddOns setting
 
 ## Install
 
-Download **ChalkBox-2.2.29.zip** from [GitHub Releases](https://github.com/detok/ChalkBox/releases/latest) or an approved CurseForge file. Extract the included `ChalkBox` folder to `Interface/AddOns/`, then type **`/chalk`**. Keep SavedVariables when updating.
+Download **ChalkBox-2.2.38.zip** from [GitHub Releases](https://github.com/detok/ChalkBox/releases/latest) or an approved CurseForge file. Extract the included `ChalkBox` folder to `Interface/AddOns/`, then type **`/chalk`**. Keep SavedVariables when updating.
 
-**Version 2.2.29 · WoW Forever** · [What's new](docs/RELEASE_NOTES.md) · [User guide](docs/USER_GUIDE.md)
+**Version 2.2.38 · WoW Forever** · [What's new](docs/RELEASE_NOTES.md) · [User guide](docs/USER_GUIDE.md)
 
 ChalkBox is an independent community addon. [MIT license](LICENSE); bundled libraries retain their own notices. Observed loot rates and auction asking prices are estimates, not official drop rates or completed sales.
 
 
-**Stable 2.2.29:** Restores the previous AuctionSense Market/scanner, removes all DPS reporting and preserves other consolidated features.
+**Stable 2.2.38:** Includes the Market fixes, taint diagnostics, journal updates, and the combat-meter startup fix. [Release notes](docs/RELEASE_NOTES.md).

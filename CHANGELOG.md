@@ -1,4 +1,55 @@
+Warning: truncated output (original token count: 19069)
+Total output lines: 676
+
 # Changelog
+
+## 2.2.38 — Taint log and journal frames
+
+- `/chalk taintcheck` saves the last blocked actions with function, module, stack, and time.
+- A zero bag offset does not hook bag layout at login. The bar does not anchor to a protected world frame.
+- The storybook and adventure chronicle match the session journal and have a Close button. Escape closes them.
+- The combat meter no longer registers for WoW Forever's blocked combat-log event; it continues to use Blizzard's native damage feed.
+
+## 2.2.37 — Market tab realm line restored
+
+- A blank normalized realm name falls through to the ordinary realm name.
+- An existing saved market stays visible and keeps its original key.
+
+## 2.2.36 — Reload emote wait actually covers the world appearing
+
+- The one-second wait started too early and the emote call was wrapped in pcall, which the client reported as UNKNOWN() under the name ChalkBox Emota.
+- Automatic emotes wait five seconds after the world appears. The call is direct. Later emotes are unchanged.
+
+## 2.2.35 — No blocked-action popup on reload
+
+- Automatic emotes wait one second after login or `/reload`. Everything else about Emota is unchanged.
+
+## 2.2.33 — Login block fix and Black Market
+
+- Login and reload no longer move the minimap, buffs, unit frames, or bag anchors. `/chalk taintcheck` reports a blocked action if one was recorded.
+- Black Market listings are saved on their own. They do not mix into auction prices, Fill price, or Inventory Intelligence. `/chalk bmah` and the AuctionSense Black Market view show them. Nothing is bid.
+
+## 2.2.32 — Chronicle, intelligence, posting help, storybook, and a scan that answers
+
+- The auction Scan Market button stays clickable and says what it is doing. `/chalk auction debug` prints the API path and the throttle.
+- Adventure Chronicle records new levels, quests, deaths, and party dungeons without rewriting old sessions.
+- Inventory Intelligence loads again, off until enabled, and keeps old notes.
+- Fill price copies a saved ask only when you click it, and never presses Post.
+- `/chalk journal` opens a read-only storybook of the other modules.
+
+## 2.2.31 — Feature contract and journal
+
+- Added `docs/FEATURES.md`, the intended behavior of every feature.
+- Session journal counts quiet time longer than ten minutes, keeps the highest drop counts, and leaves an unfamiliar save untouched.
+
+## 2.2.30 — Meter, bar, scans, and transfer
+
+- Combat meter reports why it is empty, survives locked numbers, keeps an empty live fight empty, labels pets, and holds its dragged size.
+- When Blizzard's damage meter is missing, locked, or empty, a personal combat-log count of you and your pet is shown. Those numbers are not saved.
+- Bar resize grips drag. Stat text stays inside its module. Icons stay off until explicitly enabled. Saved widths are kept.
+- Auction browse keeps a page it already received, and falls back to the classic auction list when the modern API is missing.
+- Protected auction tabs, protected bags, and the whole quest tracker frame are left alone.
+- Data transfer keeps the higher discovery count, dedupes sales, and writes a backup before import.
 
 ## 2.2.29 — Stable restoration release
 
@@ -160,245 +211,7 @@
 - Replace the single-line-looking Macro Preview with a clipped multiline scroll area that keeps long macro text inside its frame; preserve select/copy and intentional installation. Give warnings under Saved Builds a bounded wrapped area and separate Macro Name below.
 - Highlight the currently selected spell assignment and preserve original button/spellbook functions.
 - **The Bar:** restore an empty-space context menu during Edit Mode, so Done editing is reachable without settings. Individual stats still right-click to cycle text alignment.
-- **AddOn Compartment:** optional, default-OFF MacroForge launcher beside ChalkBox, guarded by the native API. Disable after registration takes effect on /reload; no undocumented unregister or taint-prone internal mutations.
-- Update tests and release notes. No macros, protected actions, saved recipes, scanner logic, or existing UI settings are reset.
-
-## 2.2.6 — Bar reference defaults, opt-in social filters, cleaner settings (test release)
-- **The Bar:** new characters start with Left: Level/XP, XP/hr; Center: Session time, Time to level, Rested XP; Right: Bags, Gear, Repair, Junk value, Gold, World latency. Pet status remains available but starts hidden. Fresh Bar profiles show Junk value (not total resale), while previously saved stats, ordering, alignment, value modes and appearances remain untouched. Reset Layout adopts the new reference arrangement.
-- **QuietGuard:** all five filters (guild, duel, party, trade, channel) start OFF when no preference exists. Explicitly saved ON/OFF preferences are retained, and native Blizzard social preferences are never forcibly cleared when ChalkBox's filter is off.
-- **Options:** add a shared dark reading surface behind ChalkBox's native options contents, retaining the game's Settings window, accents and controls. Separate AuctionSense's scan-age hint from the disenchant checkbox and realign footer notes.
-- Regression coverage: fresh/default and saved social filters, Bar initial arrangement, reset, stats and junk mode, AuctionSense spacing and original auction/DE interactions. No AH actions, protected item methods, quest behavior, data schema changes or automatic blocking.
-
-## 2.2.5 — Named quest items and a World Map-style Discoveries backdrop (test release)
-- **LootSense** now reuses Core.lua's existing accepted-quest item-objective cache to show the exact quest title and objective progress alongside the original KEEP protection. Shared items list all matching accepted quests. Completed objectives remain named and protected until quest removal or turn-in. No external quest database, new scans, or speculative ID-to-quest mappings.
-- Extend the existing Core read-only quest lookup without changing merchant BUY FOR QUEST / DO NOT SELL warnings, QuestSense watch logic, or user KEEP priorities. Nonmatching class-12 quest items remain protected but do not invent a quest name.
-- **Discoveries** now draws the same native `gamepad-mapquestlog-bgtile-2k` atlas as Forever's World Map beneath a legible dark glaze and existing accent border. Fallback to the previous solid surface when the atlas is absent. Preserve map ownership/docking, source selector, zone sync, data and positions.
-- No item actions, protected frame modifications, AH trading state changes, or saved-data migration. Add regressions for real quest title/progress, multiple quests, completed/removed objectives, tooltip duplication, native map art, theme failure and fallback.
-
-
-## 2.2.4 — AuctionSense: My Items and Sales & Stats (test release)
-- Expand the existing **native Auction House → Market** pane with three compact subviews: **Prices** (existing scanner), **My Items** (read-only bag price comparison) and **Sales & Stats** (verified seller-invoice receipts). No additional windows or changes to protected Blizzard tabs.
-- My Items aggregates identical item IDs across carried bags, displays fresh low asks, item counts, estimated gross listing value, vendor alternatives and disenchant expected value from the existing DisenchantSense model. User KEEP, quest, and reported bound items get prominent protection; never auto-post, sell, buy or disenchant. Stale, mixed-variant and unpriced items get NO market values.
-- Sales & Stats captures only `GetInboxInvoiceInfo` results with native invoice type `seller` when the player opens a mailbox. Skip pending `seller_temp_invoice`, buyer invoices, invalid or unavailable data. Record original gross bid, house cut, returned deposit and native-mail proceeds; show lifetime capped receipt count and totals. No mail collection, marking as read or UI modifications.
-- Store bounded sales under a new independent `ChalkBoxDB.auctionInsights` subtree, scoped by realm, faction and character. Estimate stable mail identity from invoice data and expiry time for deduplication, but acknowledge this isn't guaranteed complete or perfectly unique in identical-sale cases.
-- Preserve existing AuctionSense snapshot/state, price history, native Buy/Sell/Auctions modes, bag offset, LootSense/DE, map Discoveries and secure item-use fix. No schema migration.
-- Add tests for bag sums, KEEP/bound and stale/mixed guards, seller-mail-only accounting/dedup/realm isolation, and native Market subview navigation with protected AH state unchanged.
-
-
-## 2.2.3 — Forever disenchant accuracy and safety (test release)
-- Replace the homegrown DisenchantSense 2.2.2 outcome table with an **offline, MIT-licensed, pinned Forever reference** from APGM82/DisenchantForever. Source files, full license, build provenance and annotations ship inside the regular ChalkBox addon; no API, companion installation, or third-party addon needed.
-- Derive possible disenchant ranges from Forever client-derived `ItemDisenchantLoot` brackets by item class, item quality and **effective item level**. Yield percentages and quantities remain openly attributed **Classic VMaNGOS/CMaNGOS reference estimates**, not proven Forever server outcomes.
-- Respect the client-generated **NO_DISENCHANT** and special-loot item-ID exception lists. No generic dust/shard valuation for either. Add eligible 5–15 uncommon weapons and source-supported epic brackets; correct rare 56–60 to one Large Brilliant Shard and confine reference Nexus Crystal probabilities to the correct higher tier.
-- **Unconfirmed rare 5–15 reward:** display the uncertainty, withhold the market value and any buy/sell/DE verdict instead of assuming a shard outcome.
-- Keep price/age/mixed-variant guards, existing tooltip and Market hover, saved settings, KEEP/quest protections and the 2.2.1 item-use taint fix. No additional hooks, bag buttons, auctions, spellcasts, or schema changes.
-- Expand tests across all Forever bracket boundaries, source exceptions, price completeness, item metadata, tooltip odds, and integration tests. Keep the bundled source MIT license in the ZIP.
-
-
-## 2.2.2 — Disenchant economics (test release)
-- Add DisenchantSense, a read-only layer connecting LootSense gear tooltips with AuctionSense's same-realm/faction prices. No new windows or scans.
-- Support Classic-based, probability-weighted disenchant outcomes for green/blue weapons and armor with item levels 5–65. We distinguish actual item level from required character level, plus armor vs weapon probabilities.
-- Value possible dust, essence and shard yields using the lowest asking price per material. If even one material price is missing, mixed or older than 24 hours, show price coverage without inventing a total or recommending an action.
-- Compare complete modeled DE values to a gear item's asking price or vendor value. Comparisons are conditional if tradeable and represent gross *asking* values, not actual sales/profits.
-- Hold Shift on gear tooltips for outcome chances, quantity bands and material prices. Market row hover uses the same calculation. /chalk de [item link] provides a readable breakdown and /chalk de on|off toggles tooltip estimates.
-- A matching checkbox lives in AuctionSense's existing native Options page. Existing KEEP/quest protections suppress recommendations to destroy items. All functionality is display-only, with no item-use, trade, AH displayMode or protected bag changes.
-- Add regression tests for expected values, partial/stale/mixed market data, blue/green models, protected tooltips, command routing and auction integration.
-
-
-## 2.2.1 — AuctionSense item-use taint safety hotfix (test release)
-- Fix a concrete high-risk taint path: the Market tab called Blizzard `AuctionHouseFrame:SetDisplayMode()` with an addon-owned mode. Forever's protected bag-item click path consults `AuctionHouseFrame:IsListingAuctions()`, which reads that state and can block using a soulbound item such as the Cozy Sleeping Bag until `/reload`.
-- Market now displays as the same native-looking auction inset and index artwork while *only* temporarily hiding the unprotected frames of the currently active Blizzard AH page. It restores those frames on returning to the native tab, without modifying Blizzard's trading display mode or adding custom data to AuctionHouseFrame.
-- Do not modify the AH's native tab registry or its trading state. Keep Market scans, item rows, price history, auction buttons and normal Buy/Sell/Auctions available.
-- Add a regression mimicking the protected usable-item path and asserting Market never calls `SetDisplayMode` or changes `GetDisplayMode`, including repeated tab switches.
-- Preserve saved data, full-width Bar, bag position slider, map-owned Discoveries and all other modules. The user's exact blocked-function trace is not yet available, so the identified AH taint route is highly plausible, not independently proven as the only cause.
-
-
-## 2.2.0 — Discoveries becomes a World Map extension (test release)
-- Dock Discoveries to the World Map as a compact 488px side panel instead of an independent draggable 660px popup. Prefer the available right side, then left, with an in-map edge fallback when the map fills the screen. Never alter Blizzard's own map position, size, zoom or textures.
-- Parent Discoveries to the existing WorldMapFrame and close it when the map closes. Refuse opening the browser while the World Map is hidden. Preserve the map button and its saved independent position.
-- Fix the Creature Source selector by replacing Forever's transient context menu and broken cycling fallback with a real, clickable, paged and mouse-wheel-capable list. Sort uses the same reliable control; Area retains its working direct picker.
-- Simplify the layout so Area and Creature are together, Sort and Search are together, and the table/footnotes are more compact. Show a clear message when an area lacks identified creature-source data.
-- Preserve DropSense item counts, personal observed loot rates, area/dungeon browsing, map sync, user settings, AuctionSense price links and the rest of ChalkBox. No loot-event, item-use, combat, SavedVariables-schema or data-collection changes.
-- Extend UI regressions for map-owned lifecycle, side docking and maximized-map fallback, direct source selection, source statistics and normal map button behavior.
-
-
-## 2.1.9 — Market belongs inside Blizzard's Auction House (test release)
-- Replace the nearly opaque AuctionSense overlay with Blizzard's **auctionhouse-background-index** artwork and native inset border, matching the built-in Browse results.
-- Switch Market using the existing Auction House `SetDisplayMode` lifecycle. Blizzard's Browse, Search, Sell and Auctions page frames hide while the Market tab is selected and restore normally when switching back. Do not edit the global display-mode list or native tab registry.
-- Spread low/average/listings columns across the full native inset width; align search to the right and pager controls to opposite footer edges.
-- Retain dynamic 1–7 result rows, browse/full-scan API calls, market snapshot distinctions, pricing colors, saved data and protected-combat restrictions.
-- Extend regression coverage for Blizzard artwork, content switching, native Buy/Sell/Auctions controls, responsive pagination and existing tooltips.
-
-
-## 2.1.8 — Restore adjustable separate-bag position (test release)
-- Restore the previously working Blizzard separate-bag vertical offset. The 2.1.5 combat hotfix disabled this functionality without proving it was the source of a blocked-action error.
-- Restore the saved bag offset, including negative/upward values on login. Recalculate from Blizzard's current native anchor on each layout update so offsets never accumulate.
-- Restore a properly working horizontal slider under The Bar settings: **left raises bags**, **right lowers bags**, 0 returns to Blizzard default. Clean labels and live value; Reset Bags is functional again.
-- Continue deferring bag updates during combat or while the bank is open; only adjust the native first player-bag column when the expected Blizzard anchor is available. Never modify individual item buttons or call item-use APIs.
-- Preserve full-width Bar behind portrait effects, safe top-UI shift, auction UI/scanners, Emota combat guard, native DPS reports, and SavedVariables.
-- Expand bag layout and settings regressions (positive/negative offsets, combat deferral, no stacking, bank handling, saved-position recovery and UI control).
-
-
-## 2.1.7 — Bar layering and honest bag controls (test release)
-- Keep the original full-width 18px Bar and 2.1.6 safe top-UI spacing, but render the Bar at BACKGROUND strata, level 1. Blizzard portraits, resting ZZZs, buffs and native HUD art can draw over the strip.
-- Remove the disabled, nonfunctional bag-offset slider and its overlapping scale labels from The Bar settings. Replace it with clear native-bag layout status; no pretend controls or irrelevant reset button.
-- Clarify that Blizzard's separate bag windows stack upward when several bags are opened. ChalkBox's protected container offset remains suspended to avoid blocked item-use actions.
-- Preserve all existing saved data, AuctionSense browsing, native DPS reports, Emota combat restrictions, top-UI layout, and bag-button protections.
-- Add regressions for Bar frame strata and the absence of any bag slider on The Bar settings page.
-
-
-## 2.1.6 — Auction and Bar layout repair (test release)
-- AuctionSense: dynamically show 1–7 rows per page based on actual native Auction House height; anchor search/paging controls and disclaimer within the body above Blizzard's footer.
-- Rename the fourth Auction House tab to the shorter **Market** so the native tab strip fits cleanly. The panel still identifies itself as AuctionSense.
-- The Bar: restore the original full-width 18px strip. A shared top-UI layout manager offsets only unprotected, default-anchored Blizzard frames by 18px, with exact restoration and combat deferral. Never mutate `UIParent`.
-- Regression tests for AH height-sensitive pagination, native tab/footer behavior, full-width Bar, protected top-frame safety, 18px reversibility and combat deferral.
-- Preserve the 2.1.5 combat-protection changes (no protected bag item button mutations, no combat emotes), working auction scanners, saved data and Blizzard-native damage report features.
-
-
-## 2.1.5 — Combat safety: protect Blizzard's UI and item actions (urgent hotfix)
-- Eliminate the UIParent screen-inset system. The Bar now anchors only its own non-protected overlay and never repositions or resizes Blizzard's root UI. Old saved `barReserve` settings migrate to safe overlay.
-- Block Emota native-emote attempts (automatic or manual) during combat, including reaction events. Sit/sleep/stand poses are manual previews only; no idle automation can interrupt food/drink.
-- Suspend the unsafe separate-bag offset hook and stock container reanchoring. Preserve previous saved bag offset for a future secure alternative; the slider is temporarily disabled. Do not modify Blizzard bag/item buttons or their parent frames.
-- Suspend green reagent outlines that previously wrote textures and marker fields onto Blizzard item buttons. Item Insight recipe detection remains active, with preferences preserved.
-- Keep XP, gold, gear, auction scanning, loot insights, Blizzard-native DPS reports and saved data enabled.
-- Add regression traps preventing any Bar UIParent write, any bag-frame hook/move and any Emota combat dispatch.
-
-
-## 2.1.4 — Clear, consistent in-game tooltips (test release)
-- Make the existing item insight status the only header; compact the learned-recipe, possible-use, camp tool and bonus-XP explanations into one useful evidence line.
-- Unify add-on tooltip colors: green useful/known values, gold costs/values, blue counts, amber cautions and red urgent warnings. Leave Blizzard quality colors alone.
-- Shorten AuctionSense item summaries, identify per-unit prices and market source, and remove its repeated module banner.
-- Tighten Drop Journal annotations and Discoveries map hints; keep personal loot sampling distinct from official drop odds.
-- Make Bar hover numbers more readable through semantic colors without changing stat calculations, layout or number of rows.
-- Shorten camp tool notes and reminder toasts; make warnings visibly amber. Remove internal-brand preview captions and redundant MacroForge window branding.
-- Keep shop quest warnings unmistakable with short BUY FOR QUEST / DO NOT SELL labels.
-- Preserve the 2.1.3 Blizzard-native combat print options, auction scans, SavedVariables and other modules. Extend regression coverage.
-
-
-## 2.1.3 — Native meter report controls and clean item tooltips (test release)
-- Expand Blizzard's original damage meter gear menu with direct **Print to PARTY**, **Print to SAY**, and **Top 3/5/10** rank controls, always using the selected native meter stat and session.
-- Add opt-in reports after combat, with configurable PARTY/SAY channel, DPS/damage/healing stat, minimum combat length (0/10/20/30s), and cooldown (30/60/120s). Auto reporting defaults OFF; failed/secret/incomplete combat data is never sent.
-- Keep native WoW combat data as the source of truth, cap chat to one message, and avoid duplicate automatic reports.
-- Remove the redundant **CHALKBOX | ITEM INSIGHT** line from item tooltips; present only the useful classification and evidence. Shorten the **Drop Journal** tooltip heading without a repeated addon brand.
-- Preserve existing scanning, combat display and saved settings. Extend native meter and item tooltip regressions.
-
-
-## 2.1.2 — AuctionSense quick-read tooltips (test release)
-- Use consistent green low ask, amber average ask, blue listing counts and red/amber warnings.
-- Present price facts on separate short lines, with clear missing values instead of invented browse statistics.
-- Add native row-hover price summaries, market/source/scan age and compact scan button hints.
-- Shorten panel status and freshness warnings; retain the working AH tab and both scanners.
-- Expand regression tests for hover behavior and tooltip color hierarchy.
-
-
-## 2.1.1 — AuctionSense native AH tab and scan repair (test release)
-- Move AuctionSense into Blizzard's actual Auction House as a tab; no floating window or hidden settings-only interface.
-- Read all-market browse results through the current Forever browse API, including incremental pages and server throttle readiness. Show lowest asking prices and total units; leave unsupported averages and listing counts blank.
-- Separate full replicate requests behind **Full listings (15m)**; fix synchronous event race by registering the job before requesting.
-- Detect missing browse responses within 12 seconds, handle browse failures, bound page reads and preserve the previous complete snapshot.
-- Keep tooltip integration, realm/faction prices, saved loot data and other ChalkBox modules intact.
-- Test AH tab switching without protected PanelTemplates manipulation, browse pagination, real versus unavailable price fields, failed requests and full-scan events.
-
-
-## 2.1.0 — AuctionSense foundation (test release)
-- New original, read-only AuctionSense module with native AddOns settings and a searchable market browser.
-- Explicit user-initiated WoW Forever full-market scans. Scan in frame-budgeted batches with a conservative 15-minute cooldown, no automated retries or transactions.
-- Save complete snapshots atomically per realm/faction; preserve prior data if the AH closes, metadata is incomplete, or the client rejects the request.
-- Display lowest per-item buyout, quantity-weighted average ask, listings, units and scan age. Flag mixed equipment variants and old scans; never claim recorded prices are completed sales.
-- Keep bounded price history and item storage. Provide shared `ChalkBox_AuctionPrice`, `ChalkBox_AuctionValue` and `ChalkBox_AuctionRows` accessors for LootSense, DropSense and future ProfessionSense uses.
-- Optionally show the saved asking prices on item tooltips and pass current, non-ambiguous market-value metadata to DropSense.
-- Add Lua regression tests for actual AH scan events, item stack math, error recovery, market isolation, saved history, tooltip behavior, and search UI.
-
-
-## 2.0.12 — Clickable Discoveries picker and new addon icon (prerelease)
-- Move the Area / Dungeon popup above the entire Discoveries journal into an independent top-level overlay; keep it aligned with the original dropdown and hide it when the journal closes.
-- Prevent the zone list from being visible but blocked by other controls or the world map.
-- Render the newer ChalkBox project logo into a 64×64, 32-bit, game-compatible TGA during reproducible addon packaging; retain the same IconTexture path in both WoW flavor manifests.
-- Test the popup's parent, strata, anchor, behavior on close, and included icon encoding.
-- Preserve all map sync, area browsing, DropSense history, filters and existing fixes.
-
-
-## 2.0.11 — Direct zone browser and clearer drop stats (prerelease)
-- Replace nested Area / Dungeon menus with a visible, scrollable and paged list of every recorded zone and dungeon.
-- Browse locations independently of the world map or choose Follow world map; retain existing UI, saved preferences, search and filters.
-- Clean up Discoveries and DropSense wording: Found, Drops, Rate and specific mob drops / tracked loots.
-- Never pool unrelated mobs into one drop percentage or claim looted corpses are all kills.
-- Add regression checks for actual dropdown controls, paging and source-specific drop statistics.
-
-
-## 2.0.10 — First-bank-open safety (prerelease)
-- Stop BagReagents from scanning or creating overlays for character-bank, reagent-bank, and other non-inventory item buttons.
-- Defer bag highlighting and native bag layout hook setup while a bank is open, including the first time Blizzard lazily initializes its bank frame.
-- Do not reposition Blizzard's container frames on BANKFRAME_OPENED; restore configured player-bag positioning safely after closing the bank.
-- Add regressions for new-character first bank open, bank frames in container enumeration, bank close, and resuming regular bag behavior.
-- Preserve the native bank, all SavedVariables, UI preferences, and prior Discoveries/QuestSense fixes.
-
-
-## 2.0.9 — Discoveries location browser (prerelease)
-- Extend the existing Area / Dungeon dropdown with a Follow world map choice and grouped Outdoor zones / Dungeons menus covering all places in the player's observed-loot history.
-- Alphabetize locations with item counts; selecting a zone or dungeon switches tabs automatically and does not move the native world map.
-- Make the existing map-sync control a visible on/off toggle, with map following selectable directly from the area dropdown.
-- Save map-sync preference and last manually browsed location per character, and restore manual selection when map sync is turned off.
-- Support nested controls on both modern MenuUtil and legacy EasyMenu clients; preserve source/search/sort filters, journal layout, map button location and current loot history.
-- Expand Lua regression coverage for map-independent browsing, cross-category selection, map sync, persistence, and old-client menus.
-
-
-## 2.0.8 — QuestSense Nearby auto-sync (prerelease)
-- Keep Nearby only restricted to quests confirmed by the current area's quest map or quest-log zone heading; newly accepted distant quests and unscoped POI hints no longer bypass the filter.
-- Temporarily hide nonlocal manually selected quest watches instead of permanently discarding them; restore their manual selection when relevant again, when another tracking mode is selected, or when auto-tracking is disabled.
-- Reconcile Nearby every 12 seconds, in addition to debounced event updates, to recover from missed changes without manual Refresh.
-- Preserve watch limits and native manual decisions; never edit during combat, map/quest-log display, or dungeon instances, or when locality cannot be verified.
-- Show the active tracking mode and temporarily hidden count in settings; expand Lua regression tests.
-
-
-## 2.0.7 — Compact Bar hover tooltips (prerelease)
-- Replace lengthy stat hover explanations with 1–2 essential detail lines.
-- Keep live values and data distinctions for XP, bags, vendor value, repairs, gear, ETA, rested XP, pets, session, latency and gold.
-- Regression-test real hover events, color, text length and data accuracy.
-- Preserve right-click menus, layout, saved data, bag performance and Discoveries.
-
-
-## 2.0.6 — The Bar menu cleanup (prerelease)
-- Right-click a stat for only its relevant controls: Show/Hide, Move, Align, and Bar settings, with contextual vendor-value and repair options.
-- Right-click empty bar space for Modules, Position, Edit layout, Reset layout, Stat settings, and Appearance.
-- Add consistent gold, cyan, green, gray, and amber text cues to modern and legacy dropdown menus; highlight the current position and alignment.
-- Shorten noisy action messages and Bar settings descriptions.
-- Expand regression tests for native/legacy menu structure, colors, and callbacks; preserve all saved layouts, character settings, metrics, and bag refresh improvements.
-
-
-## 2.0.5 — Discoveries journal initialization and legibility (prerelease)
-- Fix eight incorrectly constructed static text labels that could interrupt Discoveries window creation and leave floating buttons.
-- Give all journal font strings explicit contrast and subtle shadows.
-- Strengthen normal-map and lazy-loaded-map tests to reject invalid font templates, coordinates and incomplete windows.
-- Keep 2.0.4 bag refresh optimizations and all saved gameplay data unchanged.
-
-
-## 2.0.4 — Discoveries window and bag responsiveness (prerelease)
-- Draw Discoveries above the native Map & Quest Log in a real Blizzard-style panel, preserving the journal's background and controls together.
-- Coalesce rapid bag marker scans and inventory-related TrailBar refreshes; cache vendor valuation for 750ms.
-- Keep all existing observations, settings, character state, layouts and module options unchanged.
-
-
-## 2.0.3 — Discoveries panel visibility (prerelease)
-- Keep the standalone Discoveries panel legible even with transparent global appearance settings.
-- Add a visible frame edge, bring the journal forward when opened and guard theme failures.
-- Regression-test transparent and failing theme callbacks while preserving all existing data and controls.
-
-
-## 2.0.2 — Settings and CurseForge preparation
-
-- Grouped native AddOns settings beneath their parent modules. The Bar now owns Modules and Appearance; LootSense owns Appearance; Adventure Prep owns Toast Appearance; Emota owns Race Behavior and Emote Catalog.
-- Reorganized the ChalkBox home page into three sections. Standardized the shared panel header, divider, and return-to-ChalkBox navigation.
-- The optional compact combat meter always starts closed on login. Manually showing it remains available by settings or slash command.
-- Updated README and CurseForge copy for the current complete module set, including Discoveries, MacroForge, repair learning, Session Journal, QuestSense, CampSense and updates.
-- Added a reproducible CurseForge media kit ZIP with six original SVGs, nine rendered PNGs and ready-to-use listing files, separate from the playable addon ZIP.
-- Preserved previous saved preferences and character history. Extended automated tests to cover the menu hierarchy, startup state and publishing assets.
-
-
-## 2.0.1 — Discoveries UX and honest update awareness (prerelease)
-
-- **Discoveries browser refresh:** wider, readable item rows with icons, collectible quantities, observed loot-window counts, conservative source-specific rates, and clearer empty states. Three true dropdowns for area/dungeon, creature source and sort; searchable item names/IDs; native menu API with graceful fallback.
-- **Movable Discoveries button:** drag anywhere within the world map; per-character saved position survives reopen/relog. Right-click, DropSense settings or `/chalk drops map reset` restores default. Retain the working 2.0 map loading/attach fix.
-- **Location correctness:** when following the map, an unrecorded zone no longer displays an unrelated zone's loot; unrelated dungeons aren't falsely linked to the viewed map.
+- **AddOn Compartment:** optional, default-OFF MacroForge launcher beside ChalkBox, guarded by the native API. Disable aft…7069 tokens truncated…tion correctness:** when following the map, an unrecorded zone no longer displays an unrelated zone's loot; unrelated dungeons aren't falsely linked to the viewed map.
 - **Updates settings:** read installed version from the TOC, provide a selectable, accurate GitHub Releases URL and `/chalk update` status. Optional party/raid peer version comparison (OFF by default, throttled) can flag newer versions observed on other players, but never pretends to request GitHub directly.
 - Preserve all existing saved loot and settings. Add regressions for menus, search, sorting, button position, map laziness and version notifications.
 

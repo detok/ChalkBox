@@ -128,6 +128,29 @@ combat=false
 standalone=true
 assert(not ChalkBox_EmotaTest("WAVE") and #emotes==count)
 standalone=false
+-- A flagged /reload starts the five-second wait when the world appears.
+-- A click during the wait still plays. A later zone entry does not restart it.
+now=400
+Fire("PLAYER_ENTERING_WORLD", false, true)
+Fire("UI_ERROR_MESSAGE", 0, "Not enough mana")
+Fire("PLAYER_LEVEL_UP")
+assert(#emotes==count, "reload does not fire an automatic emote")
+assert(ChalkBox_EmotaTest("WAVE") and emotes[#emotes]=="WAVE",
+    "a click still plays during the reload moment")
+count=#emotes
+now=404
+Fire("UI_ERROR_MESSAGE", 0, "Not enough mana")
+assert(#emotes==count, "the wait lasts five seconds after the world appears")
+now=406
+Fire("UI_ERROR_MESSAGE", 0, "Not enough mana")
+assert(#emotes==count+1 and emotes[#emotes]=="OOM",
+    "automatic reactions return once that wait has passed")
+count=#emotes
+now=460
+Fire("PLAYER_ENTERING_WORLD", false, false)
+Fire("PLAYER_LEVEL_UP")
+assert(#emotes==count+1 and emotes[#emotes]=="CHEER",
+    "an ordinary zone change does not pause emotes again")
 ChalkBox_EmotaCommand("auto off")
 assert(not ChalkBoxDB.emota.auto)
 math.random=originalRandom

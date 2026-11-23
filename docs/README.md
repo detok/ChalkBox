@@ -1,11 +1,27 @@
 # ChalkBox documentation
 
 
-**Stable 2.2.29:** Original AuctionSense Market/scanning interface restored. The experimental Intelligence Lab is paused; its saved data is preserved. ChalkBox Combat Meter reporting is completely removed, while the local meter display remains.
+**Stable 2.2.38:** Journal windows and taint check. See [features](FEATURES.md).
+
+**Stable 2.2.37:** The Market tab shows the realm again. See [features](FEATURES.md).
+
+**Stable 2.2.36:** Reload no longer shows the ChalkBox Emota blocked-action line. See [features](FEATURES.md).
+
+**Stable 2.2.35:** Reload no longer pops the blocked-action message. See [features](FEATURES.md).
+
+**Stable 2.2.33:** Login block fix and separate Black Market listings. See [features](FEATURES.md).
+
+**Stable 2.2.32:** Scan button, chronicle, intelligence, and storybook. See [features](FEATURES.md).
+
+**Stable 2.2.31:** See [what each feature is supposed to do](FEATURES.md).
+
+**Stable 2.2.30:** Combat meter fallback, bar resize, auction scans, and a simpler data transfer. Saved data is kept.
+
+**Previous 2.2.29:** Original AuctionSense Market/scanning interface restored. The experimental Intelligence Lab is paused; its saved data is preserved. ChalkBox Combat Meter reporting is completely removed, while the local meter display remains.
 
 This is the **versioned documentation home** for ChalkBox. GitHub has a Wiki feature, but keeping the primary instructions here means user guides, tests and the actual Lua implementation can be reviewed in the same pull request. Release documentation lives with the code it describes.
 
-**Stable release: 2.2.29 · World of Warcraft: Forever · [Download the official playable ZIP](https://github.com/detok/ChalkBox/releases/latest). Retail and ordinary Classic are unverified.
+**Stable release: 2.2.38 · World of Warcraft: Forever · [Download the official playable ZIP](https://github.com/detok/ChalkBox/releases/latest). Retail and ordinary Classic are unverified.
 
 ## Player guides
 
@@ -50,4 +66,4 @@ A feature is not considered documented merely because it appears in a historical
 
 
 
-**Developer beta:** ChalkBox 2.2.27 is a QuestSense Smart experiment; 2.2.26 remains the supported stable release. [Beta notes](https://github.com/detok/ChalkBox/blob/feature/smart-quest-native-priorities/docs/RELEASE_NOTES.md).
+Development pull requests may include features that are not in a published build. Use the latest addon ZIP listed in [GitHub Releases](https://github.com/detok/ChalkBox/releases/latest).

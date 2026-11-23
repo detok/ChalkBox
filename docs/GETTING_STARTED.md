@@ -1,15 +1,31 @@
 # Getting started with ChalkBox
 
 
-**Stable 2.2.29:** Original AuctionSense Market/scanning interface restored. The experimental Intelligence Lab is paused; its saved data is preserved. ChalkBox Combat Meter reporting is completely removed, while the local meter display remains.
+**Stable 2.2.38:** Includes 2.2.37. `/chalk journal` opens a window you can close with Escape or Close.
 
-**For WoW Forever · 2.2.29 stable; download the installable GitHub release ZIP**
+**Stable 2.2.37:** Includes 2.2.36. The auction Market tab writes the realm name again.
+
+**Stable 2.2.36:** Includes 2.2.35. Automatic emotes wait five seconds after the world appears on a reload.
+
+**Stable 2.2.35:** Includes 2.2.33. An automatic emote waits one second after login or reload.
+
+**Stable 2.2.33:** Includes 2.2.32. Login leaves Blizzard frames alone. `/chalk bmah` reads the Black Market when that window exists.
+
+**Stable 2.2.32:** Includes 2.2.31. `/chalk journal` opens the storybook. The auction scan button always answers.
+
+**Stable 2.2.31:** Includes 2.2.30. The session journal keeps long sessions and high drop counts.
+
+**Stable 2.2.30:** Combat meter fallback, bar resize, auction scans, and a simpler data transfer. Saved data is kept.
+
+**Previous 2.2.29:** Original AuctionSense Market/scanning interface restored. The experimental Intelligence Lab is paused; its saved data is preserved. ChalkBox Combat Meter reporting is completely removed, while the local meter display remains.
+
+**For WoW Forever · 2.2.38 stable; download the installable GitHub release ZIP**
 
 ChalkBox is one addon folder. It contains the runtime modules and their bundled static recipe reference files. There is no second AddOn to install, no account to connect, and no third-party service to configure.
 
 ## 1. Choose the correct download
 
-From [GitHub Releases](https://github.com/detok/ChalkBox/releases), select the **`ChalkBox-X.Y.Z.zip`** asset for the version you intend to use. Choose the newest tested addon ZIP actually listed there for your Forever client. Version 2.2.26 is the current ChalkBox release for WoW Forever.
+From [GitHub Releases](https://github.com/detok/ChalkBox/releases), select the **`ChalkBox-X.Y.Z.zip`** asset for the version you intend to use. Choose the newest tested addon ZIP actually listed there for your Forever client. The release ZIP contains both the `ChalkBox` addon and its optional transfer helper.
 
 Do **not** download the auto-generated `Source code (zip)` archive. The **`ChalkBox-CurseForge-Media-X.Y.Z.zip`** asset is artwork and publishing copy; it is **not** the addon.
 
@@ -61,4 +77,4 @@ Run the matching diagnostic, such as `/chalk quests status`, `/chalk drops map s
 **2.2.25 GitHub beta:** The bank displays a compact vendor-value label and The Bar supports per-module width resizing. Combat reports send normal ranked PARTY/SAY lines without an escape-code or copy fallback; PARTY rows are paced 200ms apart. Auction charts, optional map-pin navigation and learned flight-master markers remain opt-in/read-only where appropriate. **2.2.22 is still the last fully accepted stable version.** See the [current release notes](RELEASE_NOTES.md).
 
 
-**Developer beta:** ChalkBox 2.2.27 is a QuestSense Smart experiment; 2.2.26 remains the supported stable release. [Beta notes](https://github.com/detok/ChalkBox/blob/feature/smart-quest-native-priorities/docs/RELEASE_NOTES.md).
+Development pull requests may include features that are not in a published build. Use the latest addon ZIP listed in [GitHub Releases](https://github.com/detok/ChalkBox/releases/latest).

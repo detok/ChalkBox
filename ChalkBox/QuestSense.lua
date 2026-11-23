@@ -5,6 +5,7 @@
 local addonName=...
 local settings
 local queued,busy,pending=false,false,false
+local userEdit=false
 local lastZone,lastReason=nil,"not scanned"
 local lastStats={accepted=0,candidates=0,watched=0,auto=0,added=0,removed=0,mode="smart"}
 local recentlyAccepted={}
@@ -385,6 +386,12 @@ local function CanEdit(dungeonSmart)
     return true
 end
 local QueueUpdate
+local function WatchAPI(fn,id)
+    if type(ChalkBox_TaintMark)=="function" then ChalkBox_TaintMark("QuestSense") end
+    local ok=pcall(fn,id)
+    if type(ChalkBox_TaintClear)=="function" then ChalkBox_TaintClear() end
+    return ok
+end
 local function Reconcile()
     queued=false
     if not settings or not API() then
@@ -443,7 +450,7 @@ local function Reconcile()
         settings.suspendedManual[focusID]=nil
         if not watched[focusID] then
             if Count(watched)<limit then
-                local ok=pcall(C_QuestLog.AddQuestWatch,focusID)
+                local ok=WatchAPI(C_QuestLog.AddQuestWatch,focusID)
                 if ok then
                     local after=Watches()
                     if after and after[focusID] then
@@ -573,6 +580,18 @@ local function Reconcile()
         displayGroup[q.id]=q.header
     end
     displayGeneration=displayGeneration+1
+    -- AddQuestWatch is a Blizzard-only action on some Forever clients.
+    -- A login timer is not a hardware event, so the call shows
+    -- ADDON_ACTION_BLOCKED even when pcall swallows the Lua error.
+    -- Slash commands and settings clicks still edit the list directly.
+    if not userEdit and type(issecurevariable)=="function" then
+        local secureOK,secure=pcall(issecurevariable,C_QuestLog,"AddQuestWatch")
+        if secureOK and secure==true then
+            pending=true
+            lastReason="Quest list changes wait for /chalk quests. Login will not touch them."
+            return
+        end
+    end
 
     -- Nearby is a strict current-zone filter, including previously MANUALLY
     -- watched non-local quests. Suspend those selections rather than losing
@@ -649,7 +668,7 @@ local function Reconcile()
     for id in pairs(settings.managed) do
         if not desired[id] or not accepted[id] or not settings.enabled then
             if watched[id] then
-                local ok=pcall(C_QuestLog.RemoveQuestWatch,id)
+                local ok=WatchAPI(C_QuestLog.RemoveQuestWatch,id)
                 if ok then
                     local after=Watches()
                     if after and not after[id] then
@@ -667,7 +686,7 @@ local function Reconcile()
     end
     for id in pairs(toSuspend) do
         if watched[id] then
-            local ok=pcall(C_QuestLog.RemoveQuestWatch,id)
+            local ok=WatchAPI(C_QuestLog.RemoveQuestWatch,id)
             if ok then
                 local after=Watches()
                 if after and not after[id] then
@@ -685,7 +704,7 @@ local function Reconcile()
             elseif Count(watched)>=MaxWatches() then
                 failed=failed+1
             else
-                local ok=pcall(C_QuestLog.AddQuestWatch,id)
+                local ok=WatchAPI(C_QuestLog.AddQuestWatch,id)
                 if ok then
                     local after=Watches()
                     if after and after[id] then
@@ -704,7 +723,7 @@ local function Reconcile()
                 if Count(watched)>=limit or Count(watched)>=MaxWatches() then
                     failed=failed+1
                 else
-                    local ok=pcall(C_QuestLog.AddQuestWatch,id)
+                    local ok=WatchAPI(C_QuestLog.AddQuestWatch,id)
                     if ok then
                         local after=Watches()
                         if after and after[id] then
@@ -758,12 +777,13 @@ QueueUpdate=function()
     end
     if not settings.enabled and not settings.cleanup
         and next(settings.suspendedManual)==nil and not navFocusID then return end
-    queued=true
-    if C_Timer and type(C_Timer.After)=="function" then
-        C_Timer.After(0.4,Reconcile)
-    else
+    -- A slash command is a hardware event. Run it now, before that event ends.
+    if userEdit or not (C_Timer and type(C_Timer.After)=="function") then
         Reconcile()
+        return
     end
+    queued=true
+    C_Timer.After(0.4,Reconcile)
 end
 local function SetupHooks()
     if hooksInstalled then return end
@@ -818,6 +838,7 @@ function ChalkBox_QuestDisplayOrder()
 end
 function ChalkBox_QuestCommand(text)
     if not settings then return end
+    userEdit=true
     local cmd=string.lower((text or ""):match("^%s*(.-)%s*$") or "")
     if cmd=="on" then
         settings.enabled=true
@@ -905,6 +926,7 @@ function ChalkBox_QuestCommand(text)
     else
         Note("/chalk quests on|off|smart|zone|all|sort closest/lowest|nearbyfirst on/off|range 0/500/1000/2000|completefirst on/off|limit 5/10|refresh|status")
     end
+    userEdit=false
 end
 local events=CreateFrame("Frame")
 for _,event in ipairs({
