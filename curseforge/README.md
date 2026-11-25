@@ -1,6 +1,6 @@
-# ChalkBox 2.2.38 — stable CurseForge publisher kit
+# ChalkBox 2.2.39 — stable CurseForge publisher kit
 
-**Stable 2.2.38:** Game file `ChalkBox-2.2.38.zip`.
+**Stable 2.2.39:** Game file `ChalkBox-2.2.39.zip`; QuestSense supports optional solo elite/group tracking.
 
 # ChalkBox 2.2.37 — stable CurseForge publisher kit
 

@@ -1,7 +1,7 @@
 # ChalkBox documentation
 
 
-**Stable 2.2.38:** Journal windows and taint check. See [features](FEATURES.md).
+**Stable 2.2.39:** QuestSense can show elite/group quests while solo and prioritizes newly accepted profession quests. See [features](FEATURES.md).
 
 **Stable 2.2.37:** The Market tab shows the realm again. See [features](FEATURES.md).
 

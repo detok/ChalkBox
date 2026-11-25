@@ -1,3 +1,7 @@
+# ChalkBox 2.2.39 — Stable WoW Forever Release
+
+Includes 2.2.38. QuestSense now lets solo players include quests the client labels elite, dungeon, raid, or group-sized. This makes it possible to track misclassified profession quests such as Triage; newly accepted First Aid, Cooking, and Fishing quests are prioritized in Smart, and pickup zone does not block Smart tracking of objectives elsewhere. Use **Show elite and group quests while solo** in QuestSense settings or `/chalk quests groupsolo on|off`. Existing characters keep the default solo filter unless they turn it on.
+
 # ChalkBox 2.2.38 — Stable WoW Forever Release
 
 Includes 2.2.37. `/chalk taintcheck` now keeps the last blocked actions, with the function name, the module, the stack, and the time, so the next popup can be named. A bag nudge of zero no longer hooks Blizzard's bag layout at login. The storybook and adventure chronicle use the same frame and Close button as the session journal, and Escape closes them. The combat meter no longer registers for WoW Forever's blocked combat-log event and continues to use Blizzard's native damage feed.

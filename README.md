@@ -1,7 +1,7 @@
 <div align="center">
 
 
-**Stable 2.2.38 for WoW Forever:** Journal windows match the other frames, and `/chalk taintcheck` records blocked actions. [Feature list](docs/FEATURES.md).
+**Stable 2.2.39 for WoW Forever:** QuestSense can include elite/group quests while solo, and Smart prioritizes newly accepted profession quests. [Feature list](docs/FEATURES.md).
 
 **Stable 2.2.37 for WoW Forever:** The Market tab shows the realm again. [Feature list](docs/FEATURES.md).
 
