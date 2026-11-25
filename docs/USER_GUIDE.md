@@ -1,7 +1,7 @@
 # ChalkBox player handbook
 
 
-**Stable 2.2.38:** Includes 2.2.37. The storybook and chronicle use the session journal frame and a Close button.
+**Stable 2.2.39:** QuestSense can include elite/group quests while solo; newly accepted profession quests are prioritized in Smart.
 
 **Stable 2.2.37:** Includes 2.2.36. The Market tab shows the realm and faction again.
 

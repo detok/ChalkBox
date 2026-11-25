@@ -1,7 +1,8 @@
-# ChalkBox 2.2.38 — Stable Update
+# ChalkBox 2.2.39 — Stable Update
 
-- `/chalk taintcheck` records blocked actions so the next popup can be identified.
-- The storybook and adventure chronicle match the other ChalkBox windows and can be closed.
+- QuestSense can include elite, dungeon, raid, and group-sized quests while solo.
+- Smart prioritizes newly accepted First Aid, Cooking, and Fishing quests; use this when a quest is tagged incorrectly.
+- Smart does not require a quest's pickup zone to match its objective zone.
 
 # ChalkBox 2.2.37 — Stable Update
 

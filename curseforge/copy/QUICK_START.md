@@ -1,6 +1,6 @@
-# ChalkBox 2.2.38 — install and first use
+# ChalkBox 2.2.39 — install and first use
 
-**Stable 2.2.38:** Download `ChalkBox-2.2.38.zip`.
+**Stable 2.2.39:** Download `ChalkBox-2.2.39.zip`. QuestSense can include elite/group quests while solo.
 
 # ChalkBox 2.2.37 — install and first use
 

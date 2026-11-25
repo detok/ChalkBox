@@ -1,6 +1,6 @@
-# ChalkBox 2.2.38 — publisher kit
+# ChalkBox 2.2.39 — publisher kit
 
-**Stable 2.2.38:** The game file is `ChalkBox-2.2.38.zip`.
+**Stable 2.2.39:** The game file is `ChalkBox-2.2.39.zip`. QuestSense includes an optional solo elite/group setting.
 
 # ChalkBox 2.2.37 — publisher kit
 

@@ -1,7 +1,7 @@
 # Getting started with ChalkBox
 
 
-**Stable 2.2.38:** Includes 2.2.37. `/chalk journal` opens a window you can close with Escape or Close.
+**Stable 2.2.39:** QuestSense can include elite/group quests while solo; newly accepted profession quests are prioritized in Smart.
 
 **Stable 2.2.37:** Includes 2.2.36. The auction Market tab writes the realm name again.
 
