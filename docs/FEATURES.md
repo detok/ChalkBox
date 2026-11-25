@@ -72,7 +72,7 @@ ChalkBox is one optional companion. It reads the game and shows notes. It does n
 
 ## QuestSense
 
-**Supposed to:** Choose which accepted quests stay on Blizzard's tracker. Smart prefers nearby and recent quests, and in a recognized dungeon only quests that match that instance. Nearby is the current zone. All is log order up to the chosen limit. Manual watches are kept and restored. If a dungeon cannot be verified, the tracker is left as the player set it. While solo, group, elite, and dungeon quests are not added automatically.
+**Supposed to:** Choose which accepted quests stay on Blizzard's tracker. Smart prefers nearby and recently accepted quests, and in a recognized dungeon only quests that match that instance. Nearby is the current zone. All is log order up to the chosen limit. Manual watches are kept and restored. If a dungeon cannot be verified, the tracker is left as the player set it. While solo, quests the client labels elite, dungeon, raid, or group-sized are filtered by default; **Show elite and group quests while solo** can include them, which is useful when Forever's metadata mislabels a profession quest such as Triage. Newly accepted quests receive priority in Smart, including First Aid, Cooking, and Fishing quests; Smart does not require the pickup zone to match the objective zone.
 
 **Status:** Works. It does not plan a leveling route.
 

@@ -45,6 +45,7 @@
 | `/chalk quests smart` | Prioritize accepted quests; focus on verified current-dungeon quests when available |
 | `/chalk quests zone` | Nearby-only current-zone watch filtering |
 | `/chalk quests all` | Accepted quests in quest-log order, subject to limits |
+| `/chalk quests groupsolo on` / `off` | Include or filter quests tagged elite, dungeon, raid, or group-sized while solo |
 | `/chalk quests limit 5` / `10` | Choose a total watch budget of five or ten, including existing manual watches; manual overflow remains protected |
 | `/chalk quests refresh` | Queue native quest-watch reconciliation when safe |
 | `/chalk quests status` | Inspect watch count, limit, verified Nearby candidates, missing slots, zone and API diagnostics |
