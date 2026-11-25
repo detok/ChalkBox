@@ -917,8 +917,14 @@ local function MakeQuests()
     Button(panel,"Nearby only",198,-208,145,function() Run("zone") end)
     Button(panel,"All accepted",354,-208,145,function() Run("all") end)
     local modeInfo=Label(panel,"Mode: Smart","GameFontNormal",28,-247,502)
-    Label(panel,"Smart: show verified quests for the current dungeon; restore on exit.",
-        "GameFontHighlightSmall",28,-265,502)
+    Toggle(panel,"Show elite and group quests while solo",
+        "Includes quests Forever labels elite, dungeon, raid, or group-sized.",
+        -265,
+        function()
+            local st=ChalkBox_QuestStatus and ChalkBox_QuestStatus()
+            return st and st.showGroupSolo
+        end,
+        function(on) Run("groupsolo "..(on and "on" or "off")) end)
     Label(panel,"Auto-watch limit","GameFontNormalLarge",28,-302,210)
     for i,n in ipairs({5,10}) do
         Button(panel,tostring(n).." quests",195+(i-1)*130,-298,115,

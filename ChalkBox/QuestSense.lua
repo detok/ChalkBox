@@ -401,7 +401,11 @@ local function Reconcile()
     if not settings.enabled and not settings.cleanup
         and next(settings.suspendedManual)==nil and not navFocusID then return end
     local mode=settings.mode or "smart"
+    -- Keep the old, conservative solo behavior as the default, but let the
+    -- player include elite/group-tagged quests when a profession or zone
+    -- quest is misclassified by Forever's metadata.
     local soloFilter=settings.enabled and not GroupReady()
+        and settings.showGroupSolo~=true
     local limit=math.max(1,math.min(settings.limit or 10,10,MaxWatches()))
     local dungeon=settings.enabled and mode=="smart" and CurrentDungeon() or nil
     local allowed,why=CanEdit(dungeon~=nil)
@@ -823,6 +827,7 @@ function ChalkBox_QuestStatus()
         sort=settings and settings.smartSort or "nearest",
         nearbyFirst=settings and settings.smartNearbyFirst~=false,
         completeFirst=settings and settings.smartCompleteFirst~=false,
+        showGroupSolo=settings and settings.showGroupSolo==true,
         nativeOrder=false,
         nearbyRange=settings and settings.nearbyRange or 0,
         nearest=lastStats.nearest,
@@ -862,7 +867,9 @@ function ChalkBox_QuestCommand(text)
             " | last change +"..st.added.."/-"..st.removed)
         Note("Priority: "..(st.sort=="level" and "Lowest level first" or
             "Closest first").." | completed first "..(st.completeFirst and "ON" or
-            "OFF").." | top quest #"..tostring(st.nearest or "-"))
+            "OFF").." | solo elite/group "..
+            (st.showGroupSolo and "ON" or "OFF")..
+            " | top quest #"..tostring(st.nearest or "-"))
         if st.mode=="zone" then
             Note("Nearby: "..st.localCandidates.." verified in zone | "..
                 st.eligibleCandidates.." eligible | target "..st.limit..
@@ -881,6 +888,11 @@ function ChalkBox_QuestCommand(text)
         Note("QuestSense: "..(cmd=="zone" and
             "Nearby only (auto-updates; other watches saved)." or
             (cmd=="all" and "All accepted." or "Smart.")))
+    elseif cmd=="groupsolo on" or cmd=="groupsolo off" then
+        settings.showGroupSolo=cmd=="groupsolo on"
+        QueueUpdate()
+        Note("Elite and group quests while solo "..
+            (settings.showGroupSolo and "shown." or "hidden."))
     elseif cmd:match("^sort %a+$") then
         local sort=cmd:match("^sort (%a+)$")
         if sort=="nearest" or sort=="closest" then
@@ -924,7 +936,7 @@ function ChalkBox_QuestCommand(text)
             Note("Choose limit 5 or 10.")
         end
     else
-        Note("/chalk quests on|off|smart|zone|all|sort closest/lowest|nearbyfirst on/off|range 0/500/1000/2000|completefirst on/off|limit 5/10|refresh|status")
+        Note("/chalk quests on|off|smart|zone|all|groupsolo on/off|sort closest/lowest|nearbyfirst on/off|range 0/500/1000/2000|completefirst on/off|limit 5/10|refresh|status")
     end
     userEdit=false
 end
@@ -945,6 +957,7 @@ events:SetScript("OnEvent",function(_,event,arg1,arg2)
         if type(ChalkBoxZoneDB)~="table" then ChalkBoxZoneDB={} end
         settings=ChalkBoxZoneDB
         settings.enabled=settings.enabled~=false
+        settings.showGroupSolo=settings.showGroupSolo==true
         if type(settings.managed)~="table" then settings.managed={} end
         if type(settings.muted)~="table" then settings.muted={} end
         if type(settings.suspendedManual)~="table" then
